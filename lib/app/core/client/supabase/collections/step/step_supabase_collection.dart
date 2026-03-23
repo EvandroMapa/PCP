@@ -75,7 +75,13 @@ class StepSupabaseCollection extends StepCollection {
   @override
   Future<StepModel?> add(StepModel model) async {
     try {
-      await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      final map = model.toSupabaseMap();
+      print('DEBUG: StepSupabaseCollection.add payload: $map');
+      final response = await SupabaseService.client
+          .from(tableName)
+          .insert(map)
+          .select();
+      print('DEBUG: StepSupabaseCollection.add response: $response');
       await fetch();
       return model;
     } catch (e) {
@@ -87,10 +93,14 @@ class StepSupabaseCollection extends StepCollection {
   @override
   Future<StepModel?> update(StepModel model) async {
     try {
-      await SupabaseService.client
+      final map = model.toSupabaseMap();
+      print('DEBUG: StepSupabaseCollection.update payload: $map');
+      final response = await SupabaseService.client
           .from(tableName)
-          .update(model.toSupabaseMap())
-          .eq('id', model.id);
+          .update(map)
+          .eq('id', model.id)
+          .select();
+      print('DEBUG: StepSupabaseCollection.update response: $response');
       await fetch();
       return model;
     } catch (e) {
