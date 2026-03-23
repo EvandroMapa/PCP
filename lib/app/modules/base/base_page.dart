@@ -37,9 +37,15 @@ class _BasePageState extends State<BasePage> {
             : null,
         appBar: module.appBar(context) ??
             AppBar(
-              leading: IconButton(
-                onPressed: () => baseCtrl.key.currentState?.openDrawer(),
-                icon: const Icon(Icons.menu, color: Colors.white),
+              leading: Builder(
+                builder: (BuildContext context) {
+                  return IconButton(
+                    icon: const Icon(Icons.menu, color: Colors.white),
+                    onPressed: () {
+                      Scaffold.of(context).openDrawer();
+                    },
+                  );
+                },
               ),
               title: Text(
                 module.label,
