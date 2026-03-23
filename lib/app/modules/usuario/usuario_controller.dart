@@ -9,6 +9,7 @@ import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/services/push_notification_service.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_view_model.dart';
+import 'package:collection/collection.dart';
 import 'package:overlay_support/overlay_support.dart';
 
 final usuarioCtrl = UsuarioController();
@@ -103,6 +104,19 @@ class UsuarioController {
       user = BackendClient.usuarios.getById(user!.id);
       AppRepository.add(user!);
     }
+
+    // --- TEMPORARY BYPASS ---
+    // Automatiscamente logo com evandro / 123 se não houver usuário.
+    if (user == null) {
+      final mock = BackendClient.usuarios.data.firstWhereOrNull(
+        (e) => e.email.toLowerCase() == 'evandro' && e.senha == '123'
+      );
+      if (mock != null) {
+        user = mock;
+        AppRepository.add(user);
+      }
+    }
+    // ------------------------
     usuarioStream.add(user);
   }
 
