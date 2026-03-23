@@ -34,16 +34,25 @@ class UserPermissionModel {
   }
 
   factory UserPermissionModel.fromMap(Map<String, dynamic> map) {
+    List<UserPermissionType> parseList(dynamic list) {
+      if (list == null || list is! List) return [];
+      return list
+          .map((x) {
+            if (x is int) return UserPermissionType.values[x];
+            if (x is String) {
+              final idx = int.tryParse(x);
+              if (idx != null) return UserPermissionType.values[idx];
+            }
+            return null;
+          })
+          .whereType<UserPermissionType>()
+          .toList();
+    }
+
     return UserPermissionModel(
-      cliente: List<UserPermissionType>.from(
-        map['cliente']?.map((x) => UserPermissionType.values[x]),
-      ),
-      pedido: List<UserPermissionType>.from(
-        map['pedido']?.map((x) => UserPermissionType.values[x]),
-      ),
-      ordem: List<UserPermissionType>.from(
-        map['ordem']?.map((x) => UserPermissionType.values[x]),
-      ),
+      cliente: parseList(map['cliente']),
+      pedido: parseList(map['pedido']),
+      ordem: parseList(map['ordem']),
     );
   }
 

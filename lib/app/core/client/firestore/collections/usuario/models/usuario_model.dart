@@ -155,9 +155,9 @@ class UsuarioModel {
         'email': email,
         'senha': senha,
         'role': role.index,
-        'permission': permission.toMap(),
-        'steps': steps.map((x) => x.toMap()).toList(),
-        'deviceTokens': deviceTokens,
+        'permission': json.encode(permission.toMap()),
+        'steps': json.encode(steps.map((x) => x.toMap()).toList()),
+        'deviceTokens': json.encode(deviceTokens),
       };
 
   String toJson() => json.encode(toMap());
