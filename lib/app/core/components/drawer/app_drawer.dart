@@ -26,40 +26,48 @@ class AppDrawer extends StatelessWidget {
     return Drawer(
       child: StreamOut<AppModule>(
         stream: baseCtrl.moduleStream.listen,
-        builder: (_, module) => StreamOut(
-          stream: FirestoreClient.notificacoes.dataStream.listen,
-          builder: (context, value) {
-            final notificacoes = notificacaoCtrl.getNotificaoByUsuario(
-              value,
-              usuarioCtrl.usuario!,
-            );
-            return Column(
-              children: [
-                Expanded(
-                  child: ListView(
-                    children: [
-                      AppDrawerHeader(notificacoes: notificacoes),
-                      usuario.role != UsuarioRole.operador
-                          ? AppDrawerNotOperatorList(
-                              module: module,
-                              notificacoes: notificacoes,
-                            )
-                          : AppDrawerOperatorList(
-                              module: module,
-                              notificacoes: notificacoes,
-                            ),
-                    ],
+        builder: (_, module) {
+          // Use StreamBuilder directly so we can fall back to empty list
+          return StreamBuilder(
+            stream: FirestoreClient.notificacoes.dataStream.listen,
+            builder: (context, snapshot) {
+              final List<NotificacaoModel> notificacoes;
+              if (snapshot.hasData && snapshot.data != null && usuarioCtrl.usuario != null) {
+                notificacoes = notificacaoCtrl.getNotificaoByUsuario(
+                  snapshot.data!,
+                  usuarioCtrl.usuario!,
+                );
+              } else {
+                notificacoes = [];
+              }
+              return Column(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      children: [
+                        AppDrawerHeader(notificacoes: notificacoes),
+                        usuario.role != UsuarioRole.operador
+                            ? AppDrawerNotOperatorList(
+                                module: module,
+                                notificacoes: notificacoes,
+                              )
+                            : AppDrawerOperatorList(
+                                module: module,
+                                notificacoes: notificacoes,
+                              ),
+                      ],
+                    ),
                   ),
-                ),
-                ListTile(
-                  onTap: () => usuarioCtrl.clearCurrentUser(),
-                  leading: Icon(Icons.exit_to_app, color: AppColors.error),
-                  title: Text('Sair', style: TextStyle(color: AppColors.error)),
-                ),
-              ],
-            );
-          },
-        ),
+                  ListTile(
+                    onTap: () => usuarioCtrl.clearCurrentUser(),
+                    leading: Icon(Icons.exit_to_app, color: AppColors.error),
+                    title: Text('Sair', style: TextStyle(color: AppColors.error)),
+                  ),
+                ],
+              );
+            },
+          );
+        },
       ),
     );
   }
