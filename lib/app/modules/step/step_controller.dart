@@ -55,10 +55,54 @@ class StepController {
   Future<void> onConfirm(value, StepModel? step) async {
     try {
       onValid();
-      final newStep = form.toStepModel(step);
       if (form.isEdit) {
+        final response = await SupabaseService.client
+            .from('steps')
+            .update(map)
+            .eq('id', newStep.id)
+            .select();
+        
+        // Show update response
+        await showDialog(
+          context: value,
+          builder: (context) => AlertDialog(
+            title: Text('DEBUG: Resposta Banco (Update)'),
+            content: SingleChildScrollView(
+              child: Text(response.toString()),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Continuar'),
+              ),
+            ],
+          ),
+        );
+        
         await FirestoreClient.steps.update(newStep);
       } else {
+        final response = await SupabaseService.client
+            .from('steps')
+            .insert(map)
+            .select();
+            
+        // Show insert response
+        await showDialog(
+          context: value,
+          builder: (context) => AlertDialog(
+            title: Text('DEBUG: Resposta Banco (Insert)'),
+            content: SingleChildScrollView(
+              child: Text(response.toString()),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Continuar'),
+              ),
+            ],
+          ),
+        );
+        
         await FirestoreClient.steps.add(newStep);
       }
       if (newStep.isDefault) {
