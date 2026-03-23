@@ -37,21 +37,25 @@ class LoadingStreamOut extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.maxFinite,
-      height: double.maxFinite,
-      child: Center(
-        child: SizedBox(
-          width: size,
-          height: size,
-          child: CircularProgressIndicator(
-            strokeWidth: width,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              color ?? AppColors.primaryMain,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SizedBox(
+          width: constraints.hasBoundedWidth ? constraints.maxWidth : size * 2,
+          height: constraints.hasBoundedHeight ? constraints.maxHeight : size * 2,
+          child: Center(
+            child: SizedBox(
+              width: size,
+              height: size,
+              child: CircularProgressIndicator(
+                strokeWidth: width,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  color ?? AppColors.primaryMain,
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
