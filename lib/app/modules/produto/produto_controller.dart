@@ -65,6 +65,7 @@ class ProdutoController {
       } else {
         await FirestoreClient.produtos.add(form.toProdutoModel());
       }
+      await FirestoreClient.produtos.fetch();
       pop(value);
       NotificationService.showPositive(
         'Produto ${form.isEdit ? 'Editado' : 'Adicionado'}',
@@ -104,15 +105,18 @@ class ProdutoController {
   );
 
   void onValid(ProdutoModel? produto) {
-    if (form.nome.text.length < 2) {
+    String nomeForm = form.nome.text.trim();
+    if (nomeForm.length < 2) {
       throw Exception('Nome deve conter no mínimo 3 caracteres');
     }
     if (form.isEdit) {
-      if (FirestoreClient.produtos.data.any((e) => e.nome == form.nome.text && e.id != form.id)) {
+      if (FirestoreClient.produtos.data.any((e) =>
+          e.nome.trim().toLowerCase() == nomeForm.toLowerCase() &&
+          e.id.toString().trim() != form.id.toString().trim())) {
         throw Exception('Já existe um produto com esse nome');
       }
     } else {
-      if (FirestoreClient.produtos.data.any((e) => e.nome == form.nome.text)) {
+      if (FirestoreClient.produtos.data.any((e) => e.nome.trim().toLowerCase() == nomeForm.toLowerCase())) {
         throw Exception('Já existe um produto com esse nome');
       }
     }

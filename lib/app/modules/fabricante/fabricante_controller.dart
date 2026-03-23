@@ -65,6 +65,7 @@ class FabricanteController {
       } else {
         await FirestoreClient.fabricantes.add(form.toFabricanteModel());
       }
+      await FirestoreClient.fabricantes.fetch();
       pop(value);
       NotificationService.showPositive(
         'Fabricante ${form.isEdit ? 'Editado' : 'Adicionado'}',
@@ -104,19 +105,18 @@ class FabricanteController {
   );
 
   void onValid(FabricanteModel? fabricante) {
-    if (form.nome.text.length < 2) {
+    String nomeForm = form.nome.text.trim();
+    if (nomeForm.length < 2) {
       throw Exception('Nome deve conter no mínimo 3 caracteres');
     }
     if (form.isEdit) {
-      if (FirestoreClient.fabricantes.data.any(
-        (e) => e.nome == form.nome.text && e.id != form.id,
-      )) {
+      if (FirestoreClient.fabricantes.data.any((e) =>
+          e.nome.trim().toLowerCase() == nomeForm.toLowerCase() &&
+          e.id.toString().trim() != form.id.toString().trim())) {
         throw Exception('Já existe um fabricante com esse nome');
       }
     } else {
-      if (FirestoreClient.fabricantes.data.any(
-        (e) => e.nome == form.nome.text,
-      )) {
+      if (FirestoreClient.fabricantes.data.any((e) => e.nome.trim().toLowerCase() == nomeForm.toLowerCase())) {
         throw Exception('Já existe um fabricante com esse nome');
       }
     }

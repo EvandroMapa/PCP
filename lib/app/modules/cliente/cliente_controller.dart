@@ -66,6 +66,7 @@ class ClienteController {
       } else {
         await FirestoreClient.clientes.add(form.toClienteModel());
       }
+      await FirestoreClient.clientes.fetch();
       if (isFromOrder) {
         Navigator.pop(value, form.isEdit ? cliente : null);
       } else {
@@ -109,26 +110,29 @@ class ClienteController {
   );
 
   void onValid(ClienteModel? cliente) {
+    String nomeForm = form.nome.text.trim();
+    String cpfForm = form.cpf.text.trim();
     if (form.isEdit) {
-      if (FirestoreClient.clientes.data.any(
-        (e) => e.nome == form.nome.text && e.id != form.id,
-      )) {
+      if (FirestoreClient.clientes.data.any((e) =>
+          e.nome.trim().toLowerCase() == nomeForm.toLowerCase() &&
+          e.id.toString().trim() != form.id.toString().trim())) {
         throw Exception('Já existe um cliente com esse nome');
       }
-      if (form.cpf.text.isNotEmpty &&
-          FirestoreClient.clientes.data.any((e) => e.cpf == form.cpf.text && e.id != form.id)) {
+      if (cpfForm.isNotEmpty &&
+          FirestoreClient.clientes.data.any((e) =>
+              e.cpf.trim() == cpfForm && e.id.toString().trim() != form.id.toString().trim())) {
         throw Exception('Já existe um cliente com esse CPF/CNPJ');
       }
     } else {
-      if (FirestoreClient.clientes.data.any((e) => e.nome == form.nome.text)) {
+      if (FirestoreClient.clientes.data.any((e) => e.nome.trim().toLowerCase() == nomeForm.toLowerCase())) {
         throw Exception('Já existe um cliente com esse nome');
       }
-      if (form.cpf.text.isNotEmpty &&
-          FirestoreClient.clientes.data.any((e) => e.cpf == form.cpf.text)) {
+      if (cpfForm.isNotEmpty &&
+          FirestoreClient.clientes.data.any((e) => e.cpf.trim() == cpfForm)) {
         throw Exception('Já existe um cliente com esse CPF/CNPJ');
       }
     }
-    if (form.nome.text.length < 2) {
+    if (nomeForm.length < 2) {
       throw Exception('Nome deve conter no mínimo 3 caracteres');
     }
   }

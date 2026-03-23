@@ -107,6 +107,7 @@ class MateriaPrimaController {
           );
         }
       }
+      await FirestoreClient.materiaPrimas.fetch();
       await FirestoreClient.ordens.fetch();
       pop(value);
       NotificationService.showPositive(
@@ -141,9 +142,22 @@ class MateriaPrimaController {
     if (form.produtoModel == null) {
       throw Exception('Produto é obrigatório');
     }
+    String corridaForm = form.corridaLote.text.trim();
     if (usuario.isNotOperador) {
-      if (form.corridaLote.text.length < 2) {
+      if (corridaForm.length < 2) {
         throw Exception('Corrida deve conter no mínimo 3 caracteres');
+      }
+      if (form.isEdit) {
+        if (FirestoreClient.materiaPrimas.data.any((e) =>
+            e.corridaLote.trim().toLowerCase() == corridaForm.toLowerCase() &&
+            e.id.toString().trim() != form.id.toString().trim())) {
+          throw Exception('Já existe uma matéria prima com essa corrida/lote');
+        }
+      } else {
+        if (FirestoreClient.materiaPrimas.data.any(
+            (e) => e.corridaLote.trim().toLowerCase() == corridaForm.toLowerCase())) {
+          throw Exception('Já existe uma matéria prima com essa corrida/lote');
+        }
       }
     }
   }
