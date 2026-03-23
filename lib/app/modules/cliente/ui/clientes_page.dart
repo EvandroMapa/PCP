@@ -87,7 +87,7 @@ class _ClientesPageState extends State<ClientesPage> {
 
   ListTile _itemClienteWidget(ClienteModel usuario) {
     return ListTile(
-      onTap: () => push(ClienteCreatePage(cliente: usuario)),
+      onTap: () => push(context, ClienteCreatePage(cliente: usuario)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       title: Text(usuario.nome, style: AppCss.mediumBold),
       subtitle: Column(

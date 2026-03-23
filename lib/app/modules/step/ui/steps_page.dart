@@ -104,7 +104,7 @@ class _StepsPageState extends State<StepsPage> {
           border: Border(bottom: BorderSide(color: AppColors.neutralLight)),
         ),
         child: InkWell(
-          onTap: () => push(StepCreatePage(step: step)),
+          onTap: () => push(context, StepCreatePage(step: step)),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(

@@ -85,7 +85,7 @@ class _ProdutosPageState extends State<ProdutosPage> {
 
   ListTile _itemProdutoWidget(ProdutoModel produto) {
     return ListTile(
-      onTap: () => push(ProdutoCreatePage(produto: produto)),
+      onTap: () => push(context, ProdutoCreatePage(produto: produto)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       title: Text(produto.nome, style: AppCss.mediumBold),
       subtitle: Text(produto.descricao),

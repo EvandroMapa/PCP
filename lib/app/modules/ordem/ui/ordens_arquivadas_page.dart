@@ -131,7 +131,7 @@ class _OrdensArquivadasPageState extends State<OrdensArquivadasPage> {
   Widget _itemOrdemWidget(OrdemModel ordem) {
     return InkWell(
       key: ValueKey(ordem.id),
-      onTap: () => push(OrdemPage(ordem.id)),
+      onTap: () => push(context, OrdemPage(ordem.id)),
       child: Container(
         decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: Colors.grey[200]!)),

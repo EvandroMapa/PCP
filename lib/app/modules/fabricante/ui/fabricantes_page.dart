@@ -85,7 +85,7 @@ class _FabricantesPageState extends State<FabricantesPage> {
 
   ListTile _itemFabricanteWidget(FabricanteModel usuario) {
     return ListTile(
-      onTap: () => push(FabricanteCreatePage(fabricante: usuario)),
+      onTap: () => push(context, FabricanteCreatePage(fabricante: usuario)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       title: Text(usuario.nome, style: AppCss.mediumBold),
       // subtitle: Column(

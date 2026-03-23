@@ -84,7 +84,7 @@ class _TagsPageState extends State<TagsPage> {
 
   ListTile _itemTagWidget(TagModel tag) {
     return ListTile(
-      onTap: () => push(TagCreatePage(tag: tag)),
+      onTap: () => push(context, TagCreatePage(tag: tag)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       title: Text(tag.nome, style: AppCss.mediumBold),
       subtitle: tag.descricao.isNotEmpty

@@ -87,7 +87,7 @@ class _ChecklistsPageState extends State<ChecklistsPage> {
 
   ListTile _itemChecklistWidget(ChecklistModel checklist) {
     return ListTile(
-      onTap: () => push(ChecklistCreatePage(checklist: checklist)),
+      onTap: () => push(context, ChecklistCreatePage(checklist: checklist)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       title: Text(checklist.nome, style: AppCss.mediumBold),
       trailing: Icon(

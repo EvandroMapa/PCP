@@ -86,7 +86,7 @@ class _UsuariosPageState extends State<UsuariosPage> {
 
   ListTile _itemUsuarioWidget(UsuarioModel usuario) {
     return ListTile(
-      onTap: () => push(UsuarioCreatePage(usuario: usuario)),
+      onTap: () => push(context, UsuarioCreatePage(usuario: usuario)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       title: Text(usuario.nome, style: AppCss.mediumBold),
       subtitle: Text(usuario.role.label ?? ''),

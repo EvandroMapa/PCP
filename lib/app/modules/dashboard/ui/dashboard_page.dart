@@ -559,7 +559,7 @@ class DashboardPageState extends State<DashboardPage> {
     BuildContext context,
     OrdemModel ordem,
   ) => InkWell(
-    onTap: () => push(OrdemPage(ordem.id)),
+    onTap: () => push(context, OrdemPage(ordem.id)),
     child: Container(
       decoration: BoxDecoration(
         color: const Color(0xFFF8FCFC),
