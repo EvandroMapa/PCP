@@ -55,6 +55,9 @@ class StepController {
   Future<void> onConfirm(value, StepModel? step) async {
     try {
       onValid();
+      final newStep = form.toStepModel(step);
+      final map = newStep.toSupabaseMap();
+      
       if (form.isEdit) {
         final response = await SupabaseService.client
             .from('steps')
