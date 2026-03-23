@@ -75,7 +75,27 @@ class StepController {
       );
 
       if (form.isEdit) {
-        await FirestoreClient.steps.update(newStep);
+        final response = await SupabaseService.client
+            .from('steps')
+            .update(map)
+            .eq('id', newStep.id)
+            .select();
+        
+        await showDialog(
+          context: value,
+          builder: (context) => AlertDialog(
+            title: Text('DEBUG: Resposta do Supabase (Update)'),
+            content: SingleChildScrollView(
+              child: Text(response.toString()),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('OK'),
+              ),
+            ],
+          ),
+        );
       } else {
         await FirestoreClient.steps.add(newStep);
       }
