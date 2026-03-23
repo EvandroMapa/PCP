@@ -83,9 +83,10 @@ class UsuarioController {
 
   Future<void> onDelete(value, UsuarioModel usuario) async {
     await BackendClient.usuarios.delete(usuario);
+    await BackendClient.usuarios.fetch();
     pop(value);
     NotificationService.showPositive(
-      'Usuario Excluida',
+      'Usuario Excluido',
       'Operação realizada com sucesso',
       position: NotificationPosition.bottom,
     );

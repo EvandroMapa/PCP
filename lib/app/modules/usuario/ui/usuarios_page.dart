@@ -25,6 +25,7 @@ class _UsuariosPageState extends State<UsuariosPage> {
   @override
   void initState() {
     setWebTitle('Usuários');
+    FirestoreClient.usuarios.fetch();
     super.initState();
   }
 
