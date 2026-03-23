@@ -27,6 +27,10 @@ class UserPermissionModel {
 
   Map<String, dynamic> toMap() {
     return {
+      'clientes': cliente.map((x) => x.index).toList(),
+      'pedidos': pedido.map((x) => x.index).toList(),
+      'ordens': ordem.map((x) => x.index).toList(),
+      // Keep singular for legacy support
       'cliente': cliente.map((x) => x.index).toList(),
       'pedido': pedido.map((x) => x.index).toList(),
       'ordem': ordem.map((x) => x.index).toList(),
@@ -50,9 +54,9 @@ class UserPermissionModel {
     }
 
     return UserPermissionModel(
-      cliente: parseList(map['cliente']),
-      pedido: parseList(map['pedido']),
-      ordem: parseList(map['ordem']),
+      cliente: parseList(map['cliente'] ?? map['clientes']),
+      pedido: parseList(map['pedido'] ?? map['pedidos']),
+      ordem: parseList(map['ordem'] ?? map['ordens']),
     );
   }
 
