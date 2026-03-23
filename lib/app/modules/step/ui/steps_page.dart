@@ -32,20 +32,26 @@ class _StepsPageState extends State<StepsPage> {
   void initState() {
     setWebTitle('Etapas');
     stepCtrl.onInit();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      baseCtrl.appBarActionsStream.add([
-        IconButton(
-          onPressed: () => push(context, const StepCreatePage()),
-          icon: const Icon(Icons.add, color: Colors.white),
-        ),
-      ]);
-    });
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamOut<List<StepModel>>(
+    return AppScaffold(
+      appBar: AppBar(
+        title: Text(
+          'Etapas',
+          style: AppCss.largeBold.setColor(AppColors.white),
+        ),
+        actions: [
+          IconButton(
+            onPressed: () => push(context, const StepCreatePage()),
+            icon: const Icon(Icons.add, color: Colors.white),
+          ),
+        ],
+        backgroundColor: AppColors.primaryMain,
+      ),
+      body: StreamOut<List<StepModel>>(
         stream: FirestoreClient.steps.dataStream.listen,
         builder: (_, __) => StreamOut<StepUtils>(
           stream: stepCtrl.utilsStream.listen,
@@ -92,7 +98,8 @@ class _StepsPageState extends State<StepsPage> {
             );
           },
         ),
-      );
+      ),
+    );
   }
 
   Widget _itemStepWidget(StepModel step) {
