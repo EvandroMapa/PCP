@@ -29,7 +29,7 @@ class ProdutoController {
 
   void onInit() {
     utilsStream.add(ProdutoUtils());
-    FirestoreClient.produtos.fetch();
+    FirestoreClient.produtos.listen();
   }
 
   final AppStream<ProdutoCreateModel> formStream =
@@ -108,6 +108,10 @@ class ProdutoController {
       throw Exception('Nome deve conter no mínimo 3 caracteres');
     }
     if (form.isEdit) {
+      if (FirestoreClient.produtos.data.any((e) => e.nome == form.nome.text && e.id != form.id)) {
+        throw Exception('Já existe um produto com esse nome');
+      }
+    } else {
       if (FirestoreClient.produtos.data.any((e) => e.nome == form.nome.text)) {
         throw Exception('Já existe um produto com esse nome');
       }
