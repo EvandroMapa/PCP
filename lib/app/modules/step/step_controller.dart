@@ -5,6 +5,7 @@ import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/step/step_view_model.dart';
+import 'package:flutter/material.dart';
 import 'package:overlay_support/overlay_support.dart';
 
 final stepCtrl = StepController();
@@ -60,14 +61,14 @@ class StepController {
       await showDialog(
         context: value,
         builder: (context) => AlertDialog(
-          title: const Text('DEBUG: Enviando para Supabase'),
+          title: Text('DEBUG: Enviando para Supabase'),
           content: SingleChildScrollView(
             child: Text(map.toString()),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Continuar'),
+              child: Text('Continuar'),
             ),
           ],
         ),
