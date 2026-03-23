@@ -14,7 +14,7 @@ class AppStream<T> {
   void add(e) => controller.sink.add(e);
   Stream<T> get listen => controller.stream;
   T get value => controller.stream.value;
-  T? get valueOrNull => controller.stream.valueOrNull;
-  bool get hasValue => controller.stream.hasValue;
+  T? get valueOrNull => controller.valueOrNull;
+  bool get hasValue => controller.hasValue;
   void update() => controller.sink.add(controller.value);
 }
