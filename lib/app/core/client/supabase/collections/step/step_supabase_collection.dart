@@ -36,7 +36,11 @@ class StepSupabaseCollection extends StepCollection {
           .from(tableName)
           .select()
           .order('index', ascending: true);
-      final steps = List<Map<String, dynamic>>.from(response)
+      final rows = List<Map<String, dynamic>>.from(response);
+      if (rows.isNotEmpty) {
+        print('DEBUG: Step table columns: ${rows.first.keys.toList()}');
+      }
+      final steps = rows
           .map((e) => StepModel.fromSupabaseMap(e))
           .toList();
       dataStream.add(steps);

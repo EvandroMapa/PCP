@@ -190,26 +190,34 @@ class StepModel {
       name: map['nome'] ?? map['name'] ?? map['nome_etapa'] ?? '',
       index: map['index'] ?? map['ordem'] ?? 0,
       color: Color(map['cor'] ?? map['color'] ?? map['cor_hex'] ?? Colors.tealAccent.value),
-      fromStepsIds: _parseList(map['de_etapas'] ?? map['fromStepsIds'] ?? map['from_steps_ids']),
-      moveRoles: _parseRoles(map['perfis_movimentacao'] ?? map['moveRoles'] ?? map['move_roles']),
+      fromStepsIds: _parseList(map['de_etapas'] ?? map['fromStepsIds'] ?? map['from_steps_ids'] ?? map['origem'] ?? map['fontes']),
+      moveRoles: _parseRoles(map['perfis_movimentacao'] ?? map['moveRoles'] ?? map['move_roles'] ?? map['perfis']),
       createdAt: map['criado_em'] != null || map['created_at'] != null
           ? DateTime.tryParse((map['criado_em'] ?? map['created_at']).toString()) ?? DateTime.now()
           : DateTime.now(),
-      isDefault: map['is_padrao'] ?? map['isDefault'] ?? map['is_default'] ?? false,
-      isShipping: map['is_entrega'] ?? map['isShipping'] ?? map['is_shipping'] ?? false,
-      shipping: _parseShipping(map['dados_entrega'] ?? map['shipping'] ?? map['entrega']),
-      isArchivedAvailable: map['is_arquivado_disponivel'] ?? map['isArchivedAvailable'] ?? map['is_archived_available'] ?? false,
-      isPermiteProducao: map['is_permite_producao'] ?? map['isPermiteProducao'] ?? map['permite_producao'] ?? false,
+      isDefault: map['is_padrao'] ?? map['isDefault'] ?? map['is_default'] ?? map['padrao'] ?? false,
+      isShipping: map['is_entrega'] ?? map['isShipping'] ?? map['is_shipping'] ?? map['entrega'] ?? map['acompanhamento'] ?? false,
+      shipping: _parseShipping(map['dados_entrega'] ?? map['shipping'] ?? map['entrega_dados']),
+      isArchivedAvailable: map['is_arquivado_disponivel'] ?? map['isArchivedAvailable'] ?? map['is_archived_available'] ?? map['arquivamento'] ?? false,
+      isPermiteProducao: map['is_permite_producao'] ?? map['isPermiteProducao'] ?? map['permite_producao'] ?? map['producao'] ?? false,
       considerarConsumoRelatorioPedidos: map['considerar_consumo_relatorio_pedidos'] ??
           map['considerarConsumoRelatorioPedidos'] ??
           map['relatorio_pedidos'] ??
+          map['consumo_relatorio'] ??
+          map['relatorio'] ??
           true,
     );
   }
 
   static List<String> _parseList(dynamic val) {
     if (val == null) return [];
-    if (val is String) return List<String>.from(json.decode(val));
+    if (val is String) {
+       try {
+         return List<String>.from(json.decode(val));
+       } catch(_) {
+         return [];
+       }
+    }
     return List<String>.from(val);
   }
 
@@ -243,26 +251,37 @@ class StepModel {
       'de_etapas': fromStepsIds,
       'fromStepsIds': fromStepsIds,
       'from_steps_ids': fromStepsIds,
+      'origem': fromStepsIds,
       'perfis_movimentacao': roles,
       'moveRoles': roles,
       'move_roles': roles,
+      'perfis': roles,
       'criado_em': createdAt.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'is_padrao': isDefault,
       'isDefault': isDefault,
       'is_default': isDefault,
+      'padrao': isDefault,
       'is_entrega': isShipping,
       'isShipping': isShipping,
       'is_shipping': isShipping,
+      'entrega': isShipping,
+      'acompanhamento': isShipping,
       'dados_entrega': ship,
       'shipping': ship,
       'is_arquivado_disponivel': isArchivedAvailable,
       'isArchivedAvailable': isArchivedAvailable,
       'is_archived_available': isArchivedAvailable,
+      'arquivamento': isArchivedAvailable,
       'is_permite_producao': isPermiteProducao,
       'isPermiteProducao': isPermiteProducao,
+      'permite_producao': isPermiteProducao,
+      'producao': isPermiteProducao,
       'considerar_consumo_relatorio_pedidos': considerarConsumoRelatorioPedidos,
       'considerarConsumoRelatorioPedidos': considerarConsumoRelatorioPedidos,
+      'relatorio_pedidos': considerarConsumoRelatorioPedidos,
+      'consumo_relatorio': considerarConsumoRelatorioPedidos,
+      'relatorio': considerarConsumoRelatorioPedidos,
     };
   }
 
