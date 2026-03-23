@@ -42,10 +42,7 @@ class _BasePageState extends State<BasePage> {
             : null,
         appBar: module.appBar(context) ??
             AppBar(
-              leading: IconButton(
-                icon: const Icon(Icons.menu, color: Colors.white),
-                onPressed: _openDrawer,
-              ),
+              iconTheme: const IconThemeData(color: Colors.white),
               title: Text(
                 module.label,
                 style: const TextStyle(color: Colors.white),
