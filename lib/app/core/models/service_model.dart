@@ -20,9 +20,8 @@ abstract class Service {
   static Future<void> initAplicationServices() async {
     if (!isInitialized) {
       isInitialized = true;
-      for (Service service in _applicationServices) {
-        await service.initialize();
-      }
+      // Initialize all services in parallel
+      await Future.wait(_applicationServices.map((service) => service.initialize()));
     }
   }
 }

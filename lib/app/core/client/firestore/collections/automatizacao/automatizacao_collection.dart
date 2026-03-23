@@ -14,7 +14,8 @@ class AutomatizacaoCollection {
   factory AutomatizacaoCollection() => _instance;
   String name = 'automatizacao';
 
-  AppStream<AutomatizacaoModel> dataStream = AppStream<AutomatizacaoModel>();
+  AppStream<AutomatizacaoModel> dataStream =
+      AppStream<AutomatizacaoModel>.seed(AutomatizacaoModel.empty);
   AutomatizacaoModel get data => dataStream.value;
 
   CollectionReference<Map<String, dynamic>> get collection =>

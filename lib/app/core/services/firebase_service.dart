@@ -9,11 +9,16 @@ import 'package:flutter/services.dart';
 class FirebaseService implements Service {
   @override
   Future<void> initialize() async {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    await FirestoreClient.init();
-    initFirebaseMessaging();
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      await FirestoreClient.init();
+      initFirebaseMessaging();
+      print('Firebase: Initialized successfully.');
+    } catch (e) {
+      print('Firebase: Error during initialization: $e');
+    }
   }
 
   static Future<String> uploadFile({

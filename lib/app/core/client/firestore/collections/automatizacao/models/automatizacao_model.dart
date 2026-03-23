@@ -143,4 +143,43 @@ class AutomatizacaoModel {
         naoMostrarNoCalendario.hashCode ^
         removerListaPrioridade.hashCode;
   }
+
+  static AutomatizacaoModel get empty => AutomatizacaoModel(
+        criacaoPedido: AutomatizacaoItemModel(
+          type: AutomatizacaoItemType.CRIACAO_PEDIDO,
+          step: null,
+        ),
+        produtoPedidoSeparado: AutomatizacaoItemModel(
+          type: AutomatizacaoItemType.PRODUTO_PEDIDO_SEPARADO,
+          step: null,
+        ),
+        produzindoCDPedido: AutomatizacaoItemModel(
+          type: AutomatizacaoItemType.PRODUZINDO_CD_PEDIDO,
+          step: null,
+        ),
+        prontoCDPedido: AutomatizacaoItemModel(
+          type: AutomatizacaoItemType.PRONTO_CD_PEDIDO,
+          step: null,
+        ),
+        aguardandoArmacaoPedido: AutomatizacaoItemModel(
+          type: AutomatizacaoItemType.AGUARDANDO_ARMACAO_PEDIDO,
+          step: null,
+        ),
+        produzindoArmacaoPedido: AutomatizacaoItemModel(
+          type: AutomatizacaoItemType.PRODUZINDO_ARMACAO_PEDIDO,
+          step: null,
+        ),
+        prontoArmacaoPedido: AutomatizacaoItemModel(
+          type: AutomatizacaoItemType.PRONTO_ARMACAO_PEDIDO,
+          step: null,
+        ),
+        naoMostrarNoCalendario: AutomatizacaoItemModel(
+          type: AutomatizacaoItemType.NAO_MOSTRAR_NO_CALENDARIO,
+          step: null,
+        ),
+        removerListaPrioridade: AutomatizacaoItemModel(
+          type: AutomatizacaoItemType.REMOVER_LISTA_PRIORIDADE,
+          step: null,
+        ),
+      );
 }

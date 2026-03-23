@@ -56,11 +56,12 @@ class _KanbanPageState extends State<KanbanPage> {
     return StreamOut(
       loading: const KanbanBodyShimmerWidget(),
       stream: kanbanCtrl.utilsStream.listen,
-      builder: (context, utils) => StreamOut<AutomatizacaoModel>(
-        loading: const KanbanBodyShimmerWidget(),
+      builder: (context, utils) => StreamBuilder<AutomatizacaoModel>(
         stream: FirestoreClient.automatizacao.dataStream.listen,
-        builder: (context, automatizacao) =>
-            KanbanBodyWidget(utils, automatizacao),
+        builder: (context, snapshot) {
+          final automatizacao = snapshot.data ?? AutomatizacaoModel.empty;
+          return KanbanBodyWidget(utils, automatizacao);
+        },
       ),
     );
   }
