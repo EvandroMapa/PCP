@@ -1,0 +1,36 @@
+{
+  "dart.flutterSdkPath": ".fvm/versions/3.32.0",
+  "dart.flutterSdkPaths": [
+    "~/fvm/versions"
+  ],
+  "workbench.iconTheme": "material-icon-theme",
+  "workbench.startupEditor": "none",
+  "terminal.integrated.defaultProfile.windows": "Git Bash",
+  "files.autoSave": "afterDelay",
+  "dart.debugExternalPackageLibraries": false,
+  "dart.debugSdkLibraries": false,
+  "security.workspace.trust.untrustedFiles": "open",
+  "explorer.confirmDelete": false,
+  "dart.flutterHotReloadOnSave": "manualIfDirty",
+  "explorer.confirmDragAndDrop": false,
+  "workbench.settings.applyToAllProfiles": [],
+  "editor.indentSize": "tabSize",
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "always",
+    "source.organizeImports": "always"
+  },
+  "editor.formatOnSave": true,
+  "editor.formatOnType": true,
+  "editor.rulers": [
+    80
+  ],
+  "editor.wordWrap": "on",
+  "editor.wrappingIndent": "indent",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "explorer.confirmPasteNative": false,
+  "git.enableSmartCommit": true,
+  "json.schemas": [],
+  "github.copilot.editor.enableAutoCompletions": true,
+  "cmake.sourceDirectory": "C:/Users/Paulo/Documents/workspace/freelancers/evandro/aco_plus/windows"
+}

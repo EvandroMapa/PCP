@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "210867609065",
+    "project_id": "aco-plus-fa455",
+    "storage_bucket": "aco-plus-fa455.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:210867609065:android:03f05879d26ed31cbc3f78",
+        "android_client_info": {
+          "package_name": "com.m2.acoplus"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCU47wXoaBO8eabFmKUiXIhPe-Xo7sbhaw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

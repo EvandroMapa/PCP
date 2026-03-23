@@ -1,0 +1,32 @@
+{
+  "pins" : [
+    {
+      "identity" : "apple-swiftpackage-kochavaadnetwork",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Kochava/Apple-SwiftPackage-KochavaAdNetwork",
+      "state" : {
+        "revision" : "51bc2236b03b32ef371bd95a06bc0eb3d0cf44cf",
+        "version" : "7.4.0"
+      }
+    },
+    {
+      "identity" : "apple-swiftpackage-kochavacore",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Kochava/Apple-SwiftPackage-KochavaCore",
+      "state" : {
+        "revision" : "1fb5d6ca18306457574ff0f32dc50471586064a2",
+        "version" : "7.4.0"
+      }
+    },
+    {
+      "identity" : "apple-swiftpackage-kochavatracker",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Kochava/Apple-SwiftPackage-KochavaTracker",
+      "state" : {
+        "revision" : "ea13417ea0e1d5aa22c7187d1a495157bb1b247d",
+        "version" : "7.4.0"
+      }
+    }
+  ],
+  "version" : 2
+}

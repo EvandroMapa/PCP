@@ -1,0 +1,175 @@
+name: aco_plus
+description: A new Flutter project.
+
+publish_to: "none"
+
+version: 0.0.0
+
+#Flutter SDK 3.32.0
+#BANCO EM PROD: ACO-PLUS
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
+
+  #FIREBASE
+  firebase_core: ^3.6.0
+  firebase_messaging: ^15.1.3
+  firebase_crashlytics: ^4.1.3
+  cloud_firestore: ^5.4.4
+  firebase_storage: ^12.3.4
+  googleapis: ^14.0.0
+  googleapis_auth: ^2.0.0
+
+  #UI
+  overlay_support: ^2.0.1
+  material_symbols_icons: ^4.2661.1
+
+  #OUTROS
+  intl: ^0.20.2
+  rxdart: ^0.28.0
+  flutter_native_splash: ^2.2.0+1
+  shimmer: ^3.0.0
+  flutter_keyboard_visibility: ^6.0.0
+  dio: ^5.4.0
+  flutter_masked_text2: ^0.9.1
+  cpf_cnpj_validator: ^2.0.0
+  pdf: ^3.10.7
+  shared_preferences: ^2.2.3
+  url_launcher: ^6.2.6
+  file_picker: ^10.0.0
+  web: ^1.1.0
+  flutter_colorpicker: ^1.1.0
+  flutter_typeahead: ^5.2.0
+  pdfx:
+    git: https://github.com/pauloalvesdesenv/pdfx
+  mime: ^2.0.0
+  cached_network_image: ^3.3.1
+  collection: any
+  separated_column: ^3.0.3
+  separated_row: ^3.0.3
+  table_calendar: ^3.1.1
+  flutter_mentions: ^2.0.1
+  flutter_local_notifications: ^19.0.0
+  popover: ^0.3.0+1
+  syncfusion_flutter_charts: ^29.1.35
+  go_router: ^15.1.1
+  share_plus: ^11.0.0
+  printing: ^5.13.1
+  info_popup:
+    git: https://github.com/pauloalvesdesenv/info_popup
+  gap: ^3.0.1
+  http: any
+  image_picker: ^1.1.2
+  timeline_tile: ^2.0.0
+  mobile_scanner: ^7.0.1
+  validators: ^3.0.0
+  supabase_flutter: ^2.8.1
+
+  # f pub run flutter_launcher_icons && dart run flutter_native_splash:create
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/launcher/launcher.png"
+  adaptive_icon_background: "assets/launcher/background.png"
+  adaptive_icon_foreground: "assets/launcher/foreground.png"
+  web:
+    generate: true
+    image_path: "assets/images/logo.png"
+    background_color: "#FFFFFF"
+    theme_color: "#FFFFFF"
+
+flutter_native_splash:
+  android: true
+  ios: true
+  color: "#FFFFFF"
+  image: assets/launcher/splash.png
+  android_12:
+    image: assets/launcher/splash.png
+    icon_background_color: "#FFFFFF"
+
+flutter:
+  generate: true
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/launcher/
+    - assets/google_service_account.json
+
+  fonts:
+    - family: WorkSans
+      fonts:
+        - asset: assets/fonts/work_sans/WorkSans-Black.ttf
+          weight: 900
+
+        - asset: assets/fonts/work_sans/WorkSans-BlackItalic.ttf
+          weight: 900
+          style: italic
+
+        - asset: assets/fonts/work_sans/WorkSans-ExtraBold.ttf
+          weight: 800
+
+        - asset: assets/fonts/work_sans/WorkSans-ExtraBoldItalic.ttf
+          weight: 800
+          style: italic
+
+        - asset: assets/fonts/work_sans/WorkSans-Bold.ttf
+          weight: 700
+
+        - asset: assets/fonts/work_sans/WorkSans-BoldItalic.ttf
+          weight: 700
+          style: italic
+
+        - asset: assets/fonts/work_sans/WorkSans-SemiBold.ttf
+          weight: 600
+
+        - asset: assets/fonts/work_sans/WorkSans-SemiBoldItalic.ttf
+          weight: 600
+          style: italic
+
+        - asset: assets/fonts/work_sans/WorkSans-Medium.ttf
+          weight: 500
+
+        - asset: assets/fonts/work_sans/WorkSans-MediumItalic.ttf
+          weight: 500
+          style: italic
+
+        - asset: assets/fonts/work_sans/WorkSans-Regular.ttf
+          weight: 400
+
+        - asset: assets/fonts/work_sans/WorkSans-Light.ttf
+          weight: 300
+
+        - asset: assets/fonts/work_sans/WorkSans-LightItalic.ttf
+          weight: 300
+          style: italic
+
+        - asset: assets/fonts/work_sans/WorkSans-ExtraLight.ttf
+          weight: 200
+
+        - asset: assets/fonts/work_sans/WorkSans-ExtraLightItalic.ttf
+          weight: 200
+          style: italic
+
+        - asset: assets/fonts/work_sans/WorkSans-Thin.ttf
+          weight: 100
+
+        - asset: assets/fonts/work_sans/WorkSans-ThinItalic.ttf
+          weight: 100
+          style: italic

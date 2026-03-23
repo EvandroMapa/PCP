@@ -1,0 +1,995 @@
+Launching lib\main.dart on Chrome in debug mode...
+Waiting for connection from debug service on Chrome...             40,5s
+
+Flutter run key commands.
+r Hot reload. 
+R Hot restart.
+h List all available interactive commands.
+d Detach (terminate "flutter run" but leave application running).
+c Clear the screen
+q Quit (terminate the application on the device).
+
+Debug service listening on ws://127.0.0.1:57166/sYVnSv6XipA=/ws
+A Dart VM Service on Chrome is available at: http://127.0.0.1:57166/sYVnSv6XipA=
+The Flutter DevTools debugger and profiler on Chrome is available at: http://127.0.0.1:57166/sYVnSv6XipA=/devtools/?uri=ws://127.0.0.1:57166/sYVnSv6XipA=/ws
+Starting application from main method in: org-dartlang-app:/web_entrypoint.dart.
+Found an existing <meta name="viewport"> tag. Flutter Web uses its own viewport configuration for better compatibility with Flutter. This tag will be replaced.
+supabase.supabase_flutter: INFO: ***** Supabase init completed ***** 
+Supabase: Initialized successfully.
+══╡ EXCEPTION CAUGHT BY WIDGETS LIBRARY ╞═══════════════════════════════════════════════════════════
+The following StateError was thrown building Expanded(flex: 1):
+Bad state: No element
+
+The relevant error-causing widget was:
+  Expanded
+  Expanded:file:///D:/DESENVOLVIMENTO/pcp/lib/app/modules/dashboard/ui/dashboard_page.dart:208:17
+
+When the exception was thrown, this was the stack:
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3                   throw_
+dart-sdk/lib/_internal/js_dev_runtime/private/js_array.dart 355:5                             last]
+package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart 94:45  get status
+package:aco_plus/app/modules/graph/pedido_status/pedido_status_controller.dart 31:34          <fn>
+dart-sdk/lib/internal/iterable.dart 468:13                                                    moveNext
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 1279:20             next
+dart-sdk/lib/_internal/js_dev_runtime/patch/core_patch.dart 357:14                            of
+dart-sdk/lib/core/iterable.dart 517:7                                                         toList
+package:aco_plus/app/modules/graph/pedido_status/pedido_status_controller.dart 31:58          getCartesianChart
+package:aco_plus/app/modules/graph/pedido_status/pedido_status_widget.dart 30:29              initState
+package:flutter/src/widgets/framework.dart 5950:55                                            [_firstBuild]
+package:flutter/src/widgets/framework.dart 5793:5                                             mount
+...     Normal element mounting (7 frames)
+package:flutter/src/widgets/framework.dart 4587:19                                            inflateWidget
+package:flutter/src/widgets/framework.dart 7264:36                                            inflateWidget
+package:flutter/src/widgets/framework.dart 7279:32                                            mount
+...     Normal element mounting (22 frames)
+package:flutter/src/widgets/framework.dart 4587:19                                            inflateWidget
+package:flutter/src/widgets/framework.dart 7264:36                                            inflateWidget
+package:flutter/src/widgets/framework.dart 7279:32                                            mount
+...     Normal element mounting (47 frames)
+package:flutter/src/widgets/framework.dart 4587:19                                            inflateWidget
+package:flutter/src/widgets/framework.dart 4059:18                                            updateChild
+package:flutter/src/widgets/sliver.dart 1086:37                                               updateChild
+package:flutter/src/widgets/sliver.dart 1071:20                                               <fn>
+package:flutter/src/widgets/framework.dart 3101:11                                            buildScope
+package:flutter/src/widgets/sliver.dart 1061:5                                                createChild
+package:flutter/src/rendering/sliver_multi_box_adaptor.dart 368:23                            <fn>
+package:flutter/src/rendering/object.dart 2887:9                                              <fn>
+package:flutter/src/rendering/object.dart 1223:7                                              [_enableMutationsToDirtySubtrees]
+package:flutter/src/rendering/object.dart 2886:7                                              invokeLayoutCallback
+package:flutter/src/rendering/sliver_multi_box_adaptor.dart 357:5                             [_createOrObtainChild]
+package:flutter/src/rendering/sliver_multi_box_adaptor.dart 517:5                             insertAndLayoutChild
+package:flutter/src/rendering/sliver_list.dart 238:19                                         advance
+package:flutter/src/rendering/sliver_list.dart 278:12                                         performLayout
+package:flutter/src/rendering/object.dart 2768:7                                              layout
+package:flutter/src/rendering/sliver_padding.dart 133:5                                       performLayout
+package:flutter/src/rendering/sliver_padding.dart 368:11                                      performLayout
+package:flutter/src/rendering/object.dart 2768:7                                              layout
+package:flutter/src/rendering/viewport.dart 673:12                                            layoutChildSequence
+package:flutter/src/rendering/viewport.dart 1684:12                                           [_attemptLayout]
+package:flutter/src/rendering/viewport.dart 1575:20                                           performLayout
+package:flutter/src/rendering/object.dart 2616:7                                              [_layoutWithoutResize]
+package:flutter/src/rendering/object.dart 1174:17                                             flushLayout
+package:flutter/src/rendering/object.dart 1187:14                                             flushLayout
+package:flutter/src/rendering/binding.dart 629:5                                              drawFrame
+package:flutter/src/widgets/binding.dart 1304:13                                              drawFrame
+package:flutter/src/rendering/binding.dart 495:5                                              [_handlePersistentFrameCallback]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77              tear
+package:flutter/src/scheduler/binding.dart 1430:7                                             [_invokeFrameCallback]
+package:flutter/src/scheduler/binding.dart 1345:9                                             handleDrawFrame
+package:flutter/src/scheduler/binding.dart 1198:5                                             [_handleDrawFrame]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77              tear
+lib/_engine/engine/platform_dispatcher.dart 1689:5                                            invoke
+lib/_engine/engine/platform_dispatcher.dart 265:5                                             invokeOnDrawFrame
+lib/_engine/engine/frame_service.dart 209:32                                                  [_renderFrame]
+lib/_engine/engine/frame_service.dart 117:9                                                   <fn>
+dart-sdk/lib/async/zone.dart 962:54                                                           runUnary
+dart-sdk/lib/async/zone.dart 917:26                                                           <fn>
+dart-sdk/lib/_internal/js_dev_runtime/patch/js_allow_interop_patch.dart 224:27                _callDartFunctionFast1
+dart-sdk/lib/_internal/js_dev_runtime/patch/js_allow_interop_patch.dart 84:15                 ret
+
+════════════════════════════════════════════════════════════════════════════════════════════════════
+Another exception was thrown: A disposed RenderObject was mutated.
+Another exception was thrown: Bad state: No element
+Another exception was thrown: Bad state: No element
+Another exception was thrown: A disposed RenderObject was mutated.
+Another exception was thrown: Bad state: No element
+Another exception was thrown: Bad state: No element
+Another exception was thrown: A disposed RenderObject was mutated.
+Another exception was thrown: Cannot get renderObject of inactive element.
+Another exception was thrown: Bad state: No element
+Another exception was thrown: Bad state: No element
+Another exception was thrown: A disposed RenderObject was mutated.
+Another exception was thrown: Cannot get renderObject of inactive element.
+Another exception was thrown: Bad state: No element
+Another exception was thrown: Bad state: No element
+Another exception was thrown: A disposed RenderObject was mutated.
+Another exception was thrown: Cannot get renderObject of inactive element.
+Another exception was thrown: Bad state: No element
+Another exception was thrown: Bad state: No element
+Another exception was thrown: A disposed RenderObject was mutated.
+Another exception was thrown: Cannot get renderObject of inactive element.
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#017a3]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#7f868]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#a7743]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#bb49b]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  SelectionContainer
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/selection_container.dart 208:20                       getTransformTo
+package:flutter/src/widgets/selectable_region.dart 2566:51                        _compareScreenOrder
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/internal/sort.dart 77:36                                             _insertionSort
+dart-sdk/lib/internal/sort.dart 62:7                                              _doSort
+dart-sdk/lib/internal/sort.dart 33:5                                              sort
+dart-sdk/lib/_internal/js_dev_runtime/private/js_array.dart 487:12                sort]
+package:flutter/src/widgets/selectable_region.dart 2463:60                        <fn>
+package:flutter/src/widgets/selectable_region.dart 2463:60                        [_flushAdditions]
+package:flutter/src/widgets/selectable_region.dart 2457:7                         [_updateSelectables]
+package:flutter/src/widgets/selectable_region.dart 2436:9                         runScheduledTask
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#08238]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#1e05f]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#d3dfb]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#4e128]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  SelectionContainer
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/selection_container.dart 208:20                       getTransformTo
+package:flutter/src/widgets/selectable_region.dart 2566:51                        _compareScreenOrder
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/internal/sort.dart 77:36                                             _insertionSort
+dart-sdk/lib/internal/sort.dart 62:7                                              _doSort
+dart-sdk/lib/internal/sort.dart 33:5                                              sort
+dart-sdk/lib/_internal/js_dev_runtime/private/js_array.dart 487:12                sort]
+package:flutter/src/widgets/selectable_region.dart 2463:60                        <fn>
+package:flutter/src/widgets/selectable_region.dart 2463:60                        [_flushAdditions]
+package:flutter/src/widgets/selectable_region.dart 2457:7                         [_updateSelectables]
+package:flutter/src/widgets/selectable_region.dart 2436:9                         runScheduledTask
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#839fb]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#c4b82]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#6ebd0]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#d61b6]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  SelectionContainer
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/selection_container.dart 208:20                       getTransformTo
+package:flutter/src/widgets/selectable_region.dart 2566:51                        _compareScreenOrder
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/internal/sort.dart 108:16                                            _dualPivotQuicksort
+dart-sdk/lib/internal/sort.dart 64:7                                              _doSort
+dart-sdk/lib/internal/sort.dart 33:5                                              sort
+dart-sdk/lib/_internal/js_dev_runtime/private/js_array.dart 487:12                sort]
+package:flutter/src/widgets/selectable_region.dart 2463:60                        <fn>
+package:flutter/src/widgets/selectable_region.dart 2463:60                        [_flushAdditions]
+package:flutter/src/widgets/selectable_region.dart 2457:7                         [_updateSelectables]
+package:flutter/src/widgets/selectable_region.dart 2436:9                         runScheduledTask
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#35b1e]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#67ae1]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#6a3c4]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#0bbd2]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  SelectionContainer
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/selection_container.dart 208:20                       getTransformTo
+package:flutter/src/widgets/selectable_region.dart 2566:51                        _compareScreenOrder
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/internal/sort.dart 108:16                                            _dualPivotQuicksort
+dart-sdk/lib/internal/sort.dart 64:7                                              _doSort
+dart-sdk/lib/internal/sort.dart 33:5                                              sort
+dart-sdk/lib/_internal/js_dev_runtime/private/js_array.dart 487:12                sort]
+package:flutter/src/widgets/selectable_region.dart 2463:60                        <fn>
+package:flutter/src/widgets/selectable_region.dart 2463:60                        [_flushAdditions]
+package:flutter/src/widgets/selectable_region.dart 2457:7                         [_updateSelectables]
+package:flutter/src/widgets/selectable_region.dart 2436:9                         runScheduledTask
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+Another exception was thrown: Bad state: No element
+Another exception was thrown: Bad state: No element
+Another exception was thrown: A disposed RenderObject was mutated.
+Another exception was thrown: Cannot get renderObject of inactive element.
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#8d258]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#9dc76]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#ee8af]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#50006]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  SelectionContainer
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/selection_container.dart 208:20                       getTransformTo
+package:flutter/src/widgets/selectable_region.dart 2566:51                        _compareScreenOrder
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/internal/sort.dart 108:16                                            _dualPivotQuicksort
+dart-sdk/lib/internal/sort.dart 64:7                                              _doSort
+dart-sdk/lib/internal/sort.dart 33:5                                              sort
+dart-sdk/lib/_internal/js_dev_runtime/private/js_array.dart 487:12                sort]
+package:flutter/src/widgets/selectable_region.dart 2463:60                        <fn>
+package:flutter/src/widgets/selectable_region.dart 2463:60                        [_flushAdditions]
+package:flutter/src/widgets/selectable_region.dart 2457:7                         [_updateSelectables]
+package:flutter/src/widgets/selectable_region.dart 2436:9                         runScheduledTask
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+Another exception was thrown: Bad state: No element
+Another exception was thrown: Bad state: No element
+Another exception was thrown: A disposed RenderObject was mutated.
+Another exception was thrown: Cannot get renderObject of inactive element.
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#35035]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#ce665]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#75cb3]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#b8a42]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  SelectionContainer
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/selection_container.dart 208:20                       getTransformTo
+package:flutter/src/widgets/selectable_region.dart 2566:51                        _compareScreenOrder
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/internal/sort.dart 108:16                                            _dualPivotQuicksort
+dart-sdk/lib/internal/sort.dart 64:7                                              _doSort
+dart-sdk/lib/internal/sort.dart 33:5                                              sort
+dart-sdk/lib/_internal/js_dev_runtime/private/js_array.dart 487:12                sort]
+package:flutter/src/widgets/selectable_region.dart 2463:60                        <fn>
+package:flutter/src/widgets/selectable_region.dart 2463:60                        [_flushAdditions]
+package:flutter/src/widgets/selectable_region.dart 2457:7                         [_updateSelectables]
+package:flutter/src/widgets/selectable_region.dart 2436:9                         runScheduledTask
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+Another exception was thrown: Bad state: No element
+Another exception was thrown: Bad state: No element
+Another exception was thrown: A disposed RenderObject was mutated.
+Another exception was thrown: Cannot get renderObject of inactive element.
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#236e7]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#dc35a]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#fcb89]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#ccc01]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  SelectionContainer
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/selection_container.dart 208:20                       getTransformTo
+package:flutter/src/widgets/selectable_region.dart 2566:51                        _compareScreenOrder
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/internal/sort.dart 108:16                                            _dualPivotQuicksort
+dart-sdk/lib/internal/sort.dart 64:7                                              _doSort
+dart-sdk/lib/internal/sort.dart 33:5                                              sort
+dart-sdk/lib/_internal/js_dev_runtime/private/js_array.dart 487:12                sort]
+package:flutter/src/widgets/selectable_region.dart 2463:60                        <fn>
+package:flutter/src/widgets/selectable_region.dart 2463:60                        [_flushAdditions]
+package:flutter/src/widgets/selectable_region.dart 2457:7                         [_updateSelectables]
+package:flutter/src/widgets/selectable_region.dart 2436:9                         runScheduledTask
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+Another exception was thrown: Bad state: No element
+Another exception was thrown: Bad state: No element
+Another exception was thrown: A disposed RenderObject was mutated.
+Another exception was thrown: Cannot get renderObject of inactive element.
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#306d6]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#41140]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#52c0d]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  _ScrollSemantics-[GlobalKey#cd5f8]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/scrollable.dart 989:13                                [_handleScrollMetricsNotification]
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+package:flutter/src/widgets/notification_listener.dart 135:22                     onNotification
+package:flutter/src/widgets/framework.dart 3495:18                                dispatchNotification
+package:flutter/src/widgets/framework.dart 5252:24                                dispatchNotification
+package:flutter/src/widgets/notification_listener.dart 68:13                      dispatch
+package:flutter/src/widgets/scroll_position.dart 1088:26                          didUpdateScrollMetrics
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+DartError: Cannot get renderObject of inactive element.
+In order for an element to have a valid renderObject, it must be active, which means it is part of the tree.
+Instead, this element is in the _ElementLifecycle.inactive state.
+If you called this method from a State object, consider guarding it with State.mounted.
+The findRenderObject() method was called for the following element:
+  SelectionContainer
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/errors.dart 274:3       throw_
+package:flutter/src/widgets/framework.dart 4899:9                                 <fn>
+package:flutter/src/widgets/framework.dart 4911:14                                findRenderObject
+package:flutter/src/widgets/selection_container.dart 208:20                       getTransformTo
+package:flutter/src/widgets/selectable_region.dart 2566:51                        _compareScreenOrder
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/internal/sort.dart 108:16                                            _dualPivotQuicksort
+dart-sdk/lib/internal/sort.dart 64:7                                              _doSort
+dart-sdk/lib/internal/sort.dart 33:5                                              sort
+dart-sdk/lib/_internal/js_dev_runtime/private/js_array.dart 487:12                sort]
+package:flutter/src/widgets/selectable_region.dart 2463:60                        <fn>
+package:flutter/src/widgets/selectable_region.dart 2463:60                        [_flushAdditions]
+package:flutter/src/widgets/selectable_region.dart 2457:7                         [_updateSelectables]
+package:flutter/src/widgets/selectable_region.dart 2436:9                         runScheduledTask
+dart-sdk/lib/async/schedule_microtask.dart 40:34                                  _microtaskLoop
+dart-sdk/lib/async/schedule_microtask.dart 49:5                                   _startMicrotaskLoop
+dart-sdk/lib/_internal/js_dev_runtime/private/ddc_runtime/operations.dart 118:77  tear
+dart-sdk/lib/_internal/js_dev_runtime/patch/async_patch.dart 188:69               <fn>
+Another exception was thrown: Bad state: No element
+Another exception was thrown: Bad state: No element
+Another exception was thrown: A disposed RenderObject was mutated.
+Another exception was thrown: Cannot get renderObject of inactive element.
+Deseja finalizar o arquivo em lotes (S/N)? 
