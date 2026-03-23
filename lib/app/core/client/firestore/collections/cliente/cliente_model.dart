@@ -134,11 +134,21 @@ class ObraModel {
     return ObraModel(
       id: map['id'] ?? '',
       descricao: map['nome'] ?? '',
-      telefoneFixo: '',
+      telefoneFixo: map['telefone'] ?? '',
       endereco: null,
-      status: ObraStatus.emAndamento,
+      status: map['status'] != null
+          ? ObraStatus.values[map['status']]
+          : ObraStatus.emAndamento,
     );
   }
+
+  Map<String, dynamic> toSupabaseMap(String clienteId) => {
+        'id': id,
+        'nome': descricao,
+        'cliente_id': clienteId,
+        'telefone': telefoneFixo,
+        'status': status.index,
+      };
 
   String toJson() => json.encode(toMap());
 

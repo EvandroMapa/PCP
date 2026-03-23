@@ -87,6 +87,10 @@ class ClienteSupabaseCollection extends ClienteCollection {
   Future<ClienteModel?> add(ClienteModel model) async {
     try {
       await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      if (model.obras.isNotEmpty) {
+        await SupabaseService.client.from(obraTableName).insert(
+            model.obras.map((e) => e.toSupabaseMap(model.id)).toList());
+      }
       await fetch();
       return model;
     } catch (e) {
@@ -102,6 +106,14 @@ class ClienteSupabaseCollection extends ClienteCollection {
           .from(tableName)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
+      
+      // Sync obras: Delete old and insert new ones
+      await SupabaseService.client.from(obraTableName).delete().eq('cliente_id', model.id);
+      if (model.obras.isNotEmpty) {
+        await SupabaseService.client.from(obraTableName).insert(
+            model.obras.map((e) => e.toSupabaseMap(model.id)).toList());
+      }
+      
       await fetch();
       return model;
     } catch (e) {
@@ -113,6 +125,10 @@ class ClienteSupabaseCollection extends ClienteCollection {
   @override
   Future<void> delete(ClienteModel model) async {
     try {
+      await SupabaseService.client
+          .from(obraTableName)
+          .delete()
+          .eq('cliente_id', model.id);
       await SupabaseService.client.from(tableName).delete().eq('id', model.id);
       await fetch();
     } catch (e) {
