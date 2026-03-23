@@ -187,59 +187,82 @@ class StepModel {
   factory StepModel.fromSupabaseMap(Map<String, dynamic> map) {
     return StepModel(
       id: map['id'] ?? '',
-      name: map['nome'] ?? '',
-      index: map['index'] ?? 0,
-      color: map['cor'] != null ? Color(map['cor']) : Colors.tealAccent,
-      fromStepsIds: map['de_etapas'] != null
-          ? List<String>.from(map['de_etapas'] is String
-              ? json.decode(map['de_etapas'])
-              : map['de_etapas'])
-          : [],
-      moveRoles: map['perfis_movimentacao'] != null
-          ? ((map['perfis_movimentacao'] is String
-                      ? json.decode(map['perfis_movimentacao'])
-                      : map['perfis_movimentacao']) as List)
-                  .map((x) {
-                    if (x is int && x < UsuarioRole.values.length) {
-                      return UsuarioRole.values[x];
-                    }
-                    return null;
-                  })
-                  .whereType<UsuarioRole>()
-                  .toList()
-          : [],
-      createdAt: map['criado_em'] != null
-          ? DateTime.tryParse(map['criado_em']) ?? DateTime.now()
+      name: map['nome'] ?? map['name'] ?? map['nome_etapa'] ?? '',
+      index: map['index'] ?? map['ordem'] ?? 0,
+      color: Color(map['cor'] ?? map['color'] ?? map['cor_hex'] ?? Colors.tealAccent.value),
+      fromStepsIds: _parseList(map['de_etapas'] ?? map['fromStepsIds'] ?? map['from_steps_ids']),
+      moveRoles: _parseRoles(map['perfis_movimentacao'] ?? map['moveRoles'] ?? map['move_roles']),
+      createdAt: map['criado_em'] != null || map['created_at'] != null
+          ? DateTime.tryParse((map['criado_em'] ?? map['created_at']).toString()) ?? DateTime.now()
           : DateTime.now(),
-      isDefault: map['is_padrao'] ?? false,
-      isShipping: map['is_entrega'] ?? false,
-      shipping: map['dados_entrega'] != null
-          ? StepShippingModel.fromMap(map['dados_entrega'] is String
-              ? json.decode(map['dados_entrega'])
-              : map['dados_entrega'])
-          : null,
-      isArchivedAvailable: map['is_arquivado_disponivel'] ?? false,
-      isPermiteProducao: map['is_permite_producao'] ?? false,
-      considerarConsumoRelatorioPedidos:
-          map['considerar_consumo_relatorio_pedidos'] ?? true,
+      isDefault: map['is_padrao'] ?? map['isDefault'] ?? map['is_default'] ?? false,
+      isShipping: map['is_entrega'] ?? map['isShipping'] ?? map['is_shipping'] ?? false,
+      shipping: _parseShipping(map['dados_entrega'] ?? map['shipping'] ?? map['entrega']),
+      isArchivedAvailable: map['is_arquivado_disponivel'] ?? map['isArchivedAvailable'] ?? map['is_archived_available'] ?? false,
+      isPermiteProducao: map['is_permite_producao'] ?? map['isPermiteProducao'] ?? map['permite_producao'] ?? false,
+      considerarConsumoRelatorioPedidos: map['considerar_consumo_relatorio_pedidos'] ??
+          map['considerarConsumoRelatorioPedidos'] ??
+          map['relatorio_pedidos'] ??
+          true,
     );
   }
 
+  static List<String> _parseList(dynamic val) {
+    if (val == null) return [];
+    if (val is String) return List<String>.from(json.decode(val));
+    return List<String>.from(val);
+  }
+
+  static List<UsuarioRole> _parseRoles(dynamic val) {
+    if (val == null) return [];
+    final list = val is String ? json.decode(val) : val;
+    return (list as List).map((x) {
+      if (x is int && x < UsuarioRole.values.length) {
+        return UsuarioRole.values[x];
+      }
+      return null;
+    }).whereType<UsuarioRole>().toList();
+  }
+
+  static StepShippingModel? _parseShipping(dynamic val) {
+    if (val == null) return null;
+    final map = val is String ? json.decode(val) : val;
+    return StepShippingModel.fromMap(map);
+  }
+
   Map<String, dynamic> toSupabaseMap() {
+    final roles = moveRoles.map((e) => e.index).toList();
+    final ship = shipping?.toMap();
     return {
       'id': id,
       'nome': name,
+      'name': name,
       'index': index,
       'cor': color.value,
-      'de_etapas': json.encode(fromStepsIds),
-      'perfis_movimentacao': json.encode(moveRoles.map((e) => e.index).toList()),
+      'color': color.value,
+      'de_etapas': fromStepsIds,
+      'fromStepsIds': fromStepsIds,
+      'from_steps_ids': fromStepsIds,
+      'perfis_movimentacao': roles,
+      'moveRoles': roles,
+      'move_roles': roles,
       'criado_em': createdAt.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
       'is_padrao': isDefault,
+      'isDefault': isDefault,
+      'is_default': isDefault,
       'is_entrega': isShipping,
-      'dados_entrega': json.encode(shipping?.toMap()),
+      'isShipping': isShipping,
+      'is_shipping': isShipping,
+      'dados_entrega': ship,
+      'shipping': ship,
       'is_arquivado_disponivel': isArchivedAvailable,
+      'isArchivedAvailable': isArchivedAvailable,
+      'is_archived_available': isArchivedAvailable,
       'is_permite_producao': isPermiteProducao,
+      'isPermiteProducao': isPermiteProducao,
       'considerar_consumo_relatorio_pedidos': considerarConsumoRelatorioPedidos,
+      'considerarConsumoRelatorioPedidos': considerarConsumoRelatorioPedidos,
     };
   }
 
