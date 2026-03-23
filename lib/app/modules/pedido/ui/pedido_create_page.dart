@@ -77,7 +77,9 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
           icon: Icon(Icons.arrow_back, color: AppColors.white),
         ),
         title: Text(
-          _getTitle(pedidoCtrl.form),
+          pedidoCtrl.formStream.hasValue 
+            ? _getTitle(pedidoCtrl.form) 
+            : 'Adicionar Pedido',
           style: AppCss.largeBold.setColor(AppColors.white),
         ),
         actions: [
