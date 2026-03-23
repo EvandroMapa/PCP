@@ -241,7 +241,7 @@ class StepModel {
   Map<String, dynamic> toSupabaseMap() {
     final roles = moveRoles.map((e) => e.index).toList();
     final ship = shipping?.toMap();
-    return {
+    final map = {
       'id': id,
       'nome': name,
       'name': name,
@@ -283,6 +283,8 @@ class StepModel {
       'consumo_relatorio': considerarConsumoRelatorioPedidos,
       'relatorio': considerarConsumoRelatorioPedidos,
     };
+    print('DEBUG: StepModel.toSupabaseMap generated: $map');
+    return map;
   }
 
   String toJson() => json.encode(toMap());
