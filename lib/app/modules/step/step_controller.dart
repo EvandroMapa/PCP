@@ -102,8 +102,21 @@ class StepController {
       );
 
   void onValid() {
-    if (form.name.text.isEmpty) {
+    String name = form.name.text.trim();
+    if (name.isEmpty) {
       throw Exception('Nome não pode ser vazio');
+    }
+    if (form.isEdit) {
+      if (FirestoreClient.steps.data.any((e) =>
+          e.name.toLowerCase().trim() == name.toLowerCase() &&
+          e.id.toString().trim() != form.id.toString().trim())) {
+        throw Exception('Já existe uma etapa com esse nome');
+      }
+    } else {
+      if (FirestoreClient.steps.data
+          .any((e) => e.name.toLowerCase().trim() == name.toLowerCase())) {
+        throw Exception('Já existe uma etapa com esse nome');
+      }
     }
   }
 

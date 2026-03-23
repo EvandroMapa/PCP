@@ -32,8 +32,8 @@ class StepCreateModel {
   StepCreateModel.edit(StepModel etapa) : id = etapa.id, isEdit = true {
     name.text = etapa.name;
     color = etapa.color;
-    fromSteps = etapa.fromSteps;
-    moveRoles = etapa.moveRoles;
+    fromSteps = List<StepModel>.from(etapa.fromSteps);
+    moveRoles = List<UsuarioRole>.from(etapa.moveRoles);
     createdAt = etapa.createdAt;
     isDefault = etapa.isDefault;
     isShipping = etapa.isShipping;

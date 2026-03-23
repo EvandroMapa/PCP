@@ -158,9 +158,19 @@ class StepModel {
       fromStepsIds: map['fromStepsIds'] != null
           ? List<String>.from(map['fromStepsIds'])
           : <String>[],
-      moveRoles: List<UsuarioRole>.from(
-        map['moveRoles']?.map((x) => UsuarioRole.values[x]),
-      ),
+      moveRoles: map['perfis_movimentacao'] != null
+          ? ((map['perfis_movimentacao'] is String
+                      ? json.decode(map['perfis_movimentacao'])
+                      : map['perfis_movimentacao']) as List)
+                  .map((x) {
+                    if (x is int && x < UsuarioRole.values.length) {
+                      return UsuarioRole.values[x];
+                    }
+                    return null;
+                  })
+                  .whereType<UsuarioRole>()
+                  .toList()
+          : [],
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
       isDefault: map['isDefault'] ?? false,
       isShipping: map['isShipping'] ?? false,
@@ -179,16 +189,39 @@ class StepModel {
       id: map['id'] ?? '',
       name: map['nome'] ?? '',
       index: map['index'] ?? 0,
-      color: Colors.tealAccent,
-      fromStepsIds: [],
-      moveRoles: [],
-      createdAt: DateTime.now(),
-      isDefault: false,
-      isShipping: false,
-      shipping: null,
-      isArchivedAvailable: false,
-      isPermiteProducao: false,
-      considerarConsumoRelatorioPedidos: true,
+      color: map['cor'] != null ? Color(map['cor']) : Colors.tealAccent,
+      fromStepsIds: map['de_etapas'] != null
+          ? List<String>.from(map['de_etapas'] is String
+              ? json.decode(map['de_etapas'])
+              : map['de_etapas'])
+          : [],
+      moveRoles: map['perfis_movimentacao'] != null
+          ? ((map['perfis_movimentacao'] is String
+                      ? json.decode(map['perfis_movimentacao'])
+                      : map['perfis_movimentacao']) as List)
+                  .map((x) {
+                    if (x is int && x < UsuarioRole.values.length) {
+                      return UsuarioRole.values[x];
+                    }
+                    return null;
+                  })
+                  .whereType<UsuarioRole>()
+                  .toList()
+          : [],
+      createdAt: map['criado_em'] != null
+          ? DateTime.tryParse(map['criado_em']) ?? DateTime.now()
+          : DateTime.now(),
+      isDefault: map['is_padrao'] ?? false,
+      isShipping: map['is_entrega'] ?? false,
+      shipping: map['dados_entrega'] != null
+          ? StepShippingModel.fromMap(map['dados_entrega'] is String
+              ? json.decode(map['dados_entrega'])
+              : map['dados_entrega'])
+          : null,
+      isArchivedAvailable: map['is_arquivado_disponivel'] ?? false,
+      isPermiteProducao: map['is_permite_producao'] ?? false,
+      considerarConsumoRelatorioPedidos:
+          map['considerar_consumo_relatorio_pedidos'] ?? true,
     );
   }
 
@@ -197,6 +230,16 @@ class StepModel {
       'id': id,
       'nome': name,
       'index': index,
+      'cor': color.value,
+      'de_etapas': json.encode(fromStepsIds),
+      'perfis_movimentacao': json.encode(moveRoles.map((e) => e.index).toList()),
+      'criado_em': createdAt.toIso8601String(),
+      'is_padrao': isDefault,
+      'is_entrega': isShipping,
+      'dados_entrega': json.encode(shipping?.toMap()),
+      'is_arquivado_disponivel': isArchivedAvailable,
+      'is_permite_producao': isPermiteProducao,
+      'considerar_consumo_relatorio_pedidos': considerarConsumoRelatorioPedidos,
     };
   }
 
