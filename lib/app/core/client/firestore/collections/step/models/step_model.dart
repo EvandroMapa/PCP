@@ -248,8 +248,6 @@ class StepModel {
       'nome': name,
       'index': index,
       'cor': color.value,
-      'de_etapas': fromStepsIds,
-      'perfis_movimentacao': moveRoles.map((e) => e.index).toList(),
       'criado_em': createdAt.toIso8601String(),
       'is_padrao': isDefault,
       'is_entrega': isShipping,
