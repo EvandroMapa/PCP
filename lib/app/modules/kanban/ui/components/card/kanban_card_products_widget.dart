@@ -16,9 +16,8 @@ class KanbanCardProductsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final produtosSorted = pedido.produtos.sortedBy(
-      (produto) => produto.status.status.index,
-    );
+    final produtosSorted = pedido.produtos.toList()
+      ..sort((a, b) => a.status.status.index.compareTo(b.status.status.index));
     return Padding(
       padding: EdgeInsets.only(top: produtosSorted.isEmpty ? 8 : 4),
       child: produtosSorted.isEmpty
