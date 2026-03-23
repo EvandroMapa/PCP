@@ -56,47 +56,8 @@ class StepController {
     try {
       onValid();
       final newStep = form.toStepModel(step);
-      final map = newStep.toSupabaseMap();
-
-      // Debug: Show payload on screen
-      await showDialog(
-        context: value,
-        builder: (context) => AlertDialog(
-          title: Text('DEBUG: Enviando para Supabase'),
-          content: SingleChildScrollView(
-            child: Text(map.toString()),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('Continuar'),
-            ),
-          ],
-        ),
-      );
-
       if (form.isEdit) {
-        final response = await SupabaseService.client
-            .from('steps')
-            .update(map)
-            .eq('id', newStep.id)
-            .select();
-        
-        await showDialog(
-          context: value,
-          builder: (context) => AlertDialog(
-            title: Text('DEBUG: Resposta do Supabase (Update)'),
-            content: SingleChildScrollView(
-              child: Text(response.toString()),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('OK'),
-              ),
-            ],
-          ),
-        );
+        await FirestoreClient.steps.update(newStep);
       } else {
         await FirestoreClient.steps.add(newStep);
       }
