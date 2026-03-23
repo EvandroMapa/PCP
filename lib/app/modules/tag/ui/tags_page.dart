@@ -31,20 +31,26 @@ class _TagsPageState extends State<TagsPage> {
   void initState() {
     setWebTitle('Etiquetas');
     tagCtrl.onInit();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      baseCtrl.appBarActionsStream.add([
-        IconButton(
-          onPressed: () => push(context, const TagCreatePage()),
-          icon: const Icon(Icons.add, color: Colors.white),
-        ),
-      ]);
-    });
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamOut<List<TagModel>>(
+    return AppScaffold(
+      appBar: AppBar(
+        title: Text(
+          'Etiquetas',
+          style: AppCss.largeBold.setColor(AppColors.white),
+        ),
+        actions: [
+          IconButton(
+            onPressed: () => push(context, const TagCreatePage()),
+            icon: const Icon(Icons.add, color: Colors.white),
+          ),
+        ],
+        backgroundColor: AppColors.primaryMain,
+      ),
+      body: StreamOut<List<TagModel>>(
         stream: FirestoreClient.tags.dataStream.listen,
         builder: (_, __) => StreamOut<TagUtils>(
           stream: tagCtrl.utilsStream.listen,
@@ -79,7 +85,8 @@ class _TagsPageState extends State<TagsPage> {
             );
           },
         ),
-      );
+      ),
+    );
   }
 
   ListTile _itemTagWidget(TagModel tag) {
