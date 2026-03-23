@@ -11,7 +11,7 @@ class ChecklistCollection {
   String name = 'checklist';
 
   AppStream<List<ChecklistModel>> dataStream =
-      AppStream<List<ChecklistModel>>();
+      AppStream<List<ChecklistModel>>.seed([]);
   List<ChecklistModel> get data => dataStream.value;
 
   CollectionReference<Map<String, dynamic>> get collection =>

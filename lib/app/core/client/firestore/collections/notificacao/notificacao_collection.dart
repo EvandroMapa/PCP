@@ -13,7 +13,7 @@ class NotificacaoCollection {
   String name = 'notificacoes';
 
   AppStream<List<NotificacaoModel>> dataStream =
-      AppStream<List<NotificacaoModel>>();
+      AppStream<List<NotificacaoModel>>.seed([]);
   List<NotificacaoModel> get data =>
       dataStream.value.where((e) => e.userId == usuario.id).toList();
 

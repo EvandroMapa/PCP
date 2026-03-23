@@ -10,7 +10,7 @@ class TagCollection {
   factory TagCollection() => _instance;
   String name = 'tags';
 
-  AppStream<List<TagModel>> dataStream = AppStream<List<TagModel>>();
+  AppStream<List<TagModel>> dataStream = AppStream<List<TagModel>>.seed([]);
   List<TagModel> get data => dataStream.value;
 
   TagModel get cd =>
