@@ -36,7 +36,26 @@ class _BasePageState extends State<BasePage> {
       stream: baseCtrl.moduleStream.listen,
       builder: (context, module) => Scaffold(
         key: _scaffoldKey,
-        drawer: const AppDrawer(),
+        drawer: Drawer(
+          child: ListView(
+            children: [
+              const DrawerHeader(
+                decoration: BoxDecoration(color: Colors.blue),
+                child: Text('Menu Test', style: TextStyle(color: Colors.white, fontSize: 24)),
+              ),
+              ListTile(
+                leading: const Icon(Icons.home),
+                title: const Text('Dashboard'),
+                onTap: () => Navigator.pop(context),
+              ),
+              ListTile(
+                leading: const Icon(Icons.settings),
+                title: const Text('Configurações'),
+                onTap: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        ),
         bottomNavigationBar: usuario.role == UsuarioRole.operador
             ? const AppBottomNav()
             : null,
