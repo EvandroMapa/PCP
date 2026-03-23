@@ -68,7 +68,7 @@ class PedidoCreateModel {
     : id = HashService.get,
       isEdit = false,
       step = FirestoreClient.steps.data.firstWhereOrNull(
-        (e) => e.id == FirestoreClient.automatizacao.data.criacaoPedido.step!.id,
+        (e) => e.id == FirestoreClient.automatizacao.data.criacaoPedido.step?.id,
       ),
       pai = pai?.id;
 
