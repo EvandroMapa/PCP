@@ -8,7 +8,7 @@ version: 0.0.0
 #Flutter SDK 3.32.0
 #BANCO EM PROD: ACO-PLUS
 environment:
-  sdk: ">=3.8.0 <4.0.0"
+  sdk: ">=3.2.0 <4.0.0"
 
 dependencies:
   flutter:
