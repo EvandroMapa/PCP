@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/enums/automatizacao_enum.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/models/automatizacao_item_model.dart';
 
 class AutomatizacaoModel {
