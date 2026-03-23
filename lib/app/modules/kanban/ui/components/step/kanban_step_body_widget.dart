@@ -45,30 +45,18 @@ class KanbanStepBodyWidget extends StatelessWidget {
           cacheExtent: 200,
           children: [
             _dragTargetWidget(step, pedidos, 0),
-            Builder(
-              builder: (context) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 8,
-                  ),
-                  child: SeparatedColumn(
-                    separatorBuilder: (_, i) =>
-                        utils.isPedidoVisibleFiltered(pedidos[i])
-                        ? _dragTargetWidget(step, pedidos, i + 1)
-                        : const SizedBox(),
-                    children: pedidos
-                        .map(
-                          (e) => utils.isPedidoVisibleFiltered(e)
-                              ? KanbanCardDraggableWidget(e)
-                              : const SizedBox(),
-                        )
-                        .toList(),
-                  ),
-                );
-              },
-            ),
-            _dragTargetWidget(step, pedidos, pedidos.length, isLast: true),
+            const SizedBox(height: 8),
+            for (int i = 0; i < pedidos.length; i++)
+              if (utils.isPedidoVisibleFiltered(pedidos[i])) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: KanbanCardDraggableWidget(pedidos[i]),
+                ),
+                _dragTargetWidget(step, pedidos, i + 1, isLast: i == pedidos.length - 1),
+              ],
+            if (pedidos.isEmpty)
+              _dragTargetWidget(step, pedidos, pedidos.length, isLast: true),
+            const SizedBox(height: 8),
           ],
         ),
       ),
