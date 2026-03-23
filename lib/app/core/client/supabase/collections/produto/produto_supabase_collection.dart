@@ -74,4 +74,31 @@ class ProdutoSupabaseCollection extends ProdutoCollection {
       print('Supabase Error (Produto.delete): $e');
     }
   }
+
+  bool _isListen = false;
+  @override
+  Future<void> listen({
+    Object? field,
+    Object? isEqualTo,
+    Object? isNotEqualTo,
+    Object? isLessThan,
+    Object? isLessThanOrEqualTo,
+    Object? isGreaterThan,
+    Object? isGreaterThanOrEqualTo,
+    Object? arrayContains,
+    Iterable<Object?>? arrayContainsAny,
+    Iterable<Object?>? whereIn,
+    Iterable<Object?>? whereNotIn,
+    bool? isNull,
+  }) async {
+    if (_isListen) return;
+    _isListen = true;
+    SupabaseService.client
+        .from(tableName)
+        .stream(primaryKey: ['id'])
+        .listen((List<Map<String, dynamic>> data) {
+          final produtos = data.map((e) => ProdutoModel.fromSupabaseMap(e)).toList();
+          dataStream.add(produtos);
+        });
+  }
 }
