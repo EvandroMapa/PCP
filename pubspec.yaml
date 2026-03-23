@@ -110,7 +110,6 @@ flutter:
   assets:
     - assets/images/
     - assets/launcher/
-    - assets/google_service_account.json
 
   fonts:
     - family: WorkSans
