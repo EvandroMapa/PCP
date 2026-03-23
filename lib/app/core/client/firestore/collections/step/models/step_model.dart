@@ -248,7 +248,6 @@ class StepModel {
       'nome': name,
       'index': index,
       'cor': color.value,
-      'criado_em': createdAt.toIso8601String(),
       'is_padrao': isDefault,
       'is_entrega': isShipping,
       'dados_entrega': shipping?.toMap(),
