@@ -76,6 +76,7 @@ class StepSupabaseCollection extends StepCollection {
   Future<StepModel?> add(StepModel model) async {
     try {
       await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      await fetch();
       return model;
     } catch (e) {
       print('Supabase Error (Step.add): $e');
@@ -90,6 +91,7 @@ class StepSupabaseCollection extends StepCollection {
           .from(tableName)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
+      await fetch();
       return model;
     } catch (e) {
       print('Supabase Error (Step.update): $e');
@@ -101,6 +103,7 @@ class StepSupabaseCollection extends StepCollection {
   Future<void> delete(StepModel model) async {
     try {
       await SupabaseService.client.from(tableName).delete().eq('id', model.id);
+      await fetch();
     } catch (e) {
       print('Supabase Error (Step.delete): $e');
     }

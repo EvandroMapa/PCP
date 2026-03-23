@@ -76,6 +76,7 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
   Future<UsuarioModel?> add(UsuarioModel model) async {
     try {
       await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      await fetch();
       return model;
     } catch (e) {
       print('Supabase Error (Usuario.add): $e');
@@ -90,6 +91,7 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
           .from(tableName)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
+      await fetch();
       return model;
     } catch (e) {
       print('Supabase Error (Usuario.update): $e');
@@ -101,6 +103,7 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
   Future<void> delete(UsuarioModel model) async {
     try {
       await SupabaseService.client.from(tableName).delete().eq('id', model.id);
+      await fetch();
     } catch (e) {
       print('Supabase Error (Usuario.delete): $e');
     }

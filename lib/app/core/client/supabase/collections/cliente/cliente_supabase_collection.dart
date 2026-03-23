@@ -87,6 +87,7 @@ class ClienteSupabaseCollection extends ClienteCollection {
   Future<ClienteModel?> add(ClienteModel model) async {
     try {
       await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      await fetch();
       return model;
     } catch (e) {
       print('Supabase Error (Cliente.add): $e');
@@ -101,6 +102,7 @@ class ClienteSupabaseCollection extends ClienteCollection {
           .from(tableName)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
+      await fetch();
       return model;
     } catch (e) {
       print('Supabase Error (Cliente.update): $e');
@@ -112,6 +114,7 @@ class ClienteSupabaseCollection extends ClienteCollection {
   Future<void> delete(ClienteModel model) async {
     try {
       await SupabaseService.client.from(tableName).delete().eq('id', model.id);
+      await fetch();
     } catch (e) {
       print('Supabase Error (Cliente.delete): $e');
     }

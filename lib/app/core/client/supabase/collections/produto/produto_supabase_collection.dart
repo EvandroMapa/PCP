@@ -45,6 +45,7 @@ class ProdutoSupabaseCollection extends ProdutoCollection {
   Future<ProdutoModel?> add(ProdutoModel model) async {
     try {
       await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      await fetch();
       return model;
     } catch (e) {
       print('Supabase Error (Produto.add): $e');
@@ -59,6 +60,7 @@ class ProdutoSupabaseCollection extends ProdutoCollection {
           .from(tableName)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
+      await fetch();
       return model;
     } catch (e) {
       print('Supabase Error (Produto.update): $e');
@@ -70,6 +72,7 @@ class ProdutoSupabaseCollection extends ProdutoCollection {
   Future<void> delete(ProdutoModel model) async {
     try {
       await SupabaseService.client.from(tableName).delete().eq('id', model.id);
+      await fetch();
     } catch (e) {
       print('Supabase Error (Produto.delete): $e');
     }

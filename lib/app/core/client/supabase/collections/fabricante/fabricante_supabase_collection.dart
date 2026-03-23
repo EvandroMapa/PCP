@@ -45,6 +45,7 @@ class FabricanteSupabaseCollection extends FabricanteCollection {
   Future<FabricanteModel?> add(FabricanteModel model) async {
     try {
       await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      await fetch();
       return model;
     } catch (e) {
       print('Supabase Error (Fabricante.add): $e');
@@ -59,6 +60,7 @@ class FabricanteSupabaseCollection extends FabricanteCollection {
           .from(tableName)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
+      await fetch();
       return model;
     } catch (e) {
       print('Supabase Error (Fabricante.update): $e');
@@ -70,6 +72,7 @@ class FabricanteSupabaseCollection extends FabricanteCollection {
   Future<void> delete(FabricanteModel model) async {
     try {
       await SupabaseService.client.from(tableName).delete().eq('id', model.id);
+      await fetch();
     } catch (e) {
       print('Supabase Error (Fabricante.delete): $e');
     }
