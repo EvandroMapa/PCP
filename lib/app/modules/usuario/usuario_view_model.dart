@@ -52,9 +52,9 @@ class UsuarioPermissionCreateModel {
   UsuarioPermissionCreateModel.edit(UsuarioModel user)
     : id = user.id,
       isEdit = true {
-    cliente = user.permission.cliente;
-    pedido = user.permission.pedido;
-    ordem = user.permission.ordem;
+    cliente = List<UserPermissionType>.from(user.permission.cliente);
+    pedido = List<UserPermissionType>.from(user.permission.pedido);
+    ordem = List<UserPermissionType>.from(user.permission.ordem);
   }
 
   UserPermissionModel toUserPermissionModel() =>

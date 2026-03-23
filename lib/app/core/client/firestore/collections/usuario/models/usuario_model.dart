@@ -116,9 +116,23 @@ class UsuarioModel {
       email: map['email'] ?? '',
       senha: map['senha'] ?? '',
       role: _parseRole(map['role']),
-      permission: UserPermissionModel.all(),
-      steps: [],
-      deviceTokens: [],
+      permission: map['permission'] != null
+          ? UserPermissionModel.fromMap(map['permission'] is String
+              ? json.decode(map['permission'])
+              : map['permission'])
+          : UserPermissionModel.all(),
+      steps: map['steps'] != null
+          ? List<Map<String, dynamic>>.from(map['steps'] is String
+                  ? json.decode(map['steps'])
+                  : map['steps'])
+              .map((e) => StepModel.fromMap(e))
+              .toList()
+          : [],
+      deviceTokens: map['deviceTokens'] != null
+          ? List<String>.from(map['deviceTokens'] is String
+              ? json.decode(map['deviceTokens'])
+              : map['deviceTokens'])
+          : [],
     );
   }
 
@@ -136,12 +150,15 @@ class UsuarioModel {
   }
 
   Map<String, dynamic> toSupabaseMap() => {
-    'id': id,
-    'nome': nome,
-    'email': email,
-    'senha': senha,
-    'role': role.index.toString(),
-  };
+        'id': id,
+        'nome': nome,
+        'email': email,
+        'senha': senha,
+        'role': role.index,
+        'permission': permission.toMap(),
+        'steps': steps.map((x) => x.toMap()).toList(),
+        'deviceTokens': deviceTokens,
+      };
 
   String toJson() => json.encode(toMap());
 

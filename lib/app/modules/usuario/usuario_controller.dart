@@ -92,8 +92,25 @@ class UsuarioController {
   }
 
   void onValid() {
-    if (form.nome.text.length < 2) {
+    String nomeForm = form.nome.text.trim();
+    String emailForm = form.email.text.trim().toLowerCase();
+    if (nomeForm.length < 2) {
       throw Exception('Nome deve conter no mínimo 3 caracteres');
+    }
+    if (emailForm.isEmpty || !emailForm.contains('@')) {
+      throw Exception('E-mail inválido');
+    }
+    if (form.isEdit) {
+      if (BackendClient.usuarios.data.any((e) =>
+          e.email.toLowerCase().trim() == emailForm &&
+          e.id.toString().trim() != form.id.toString().trim())) {
+        throw Exception('Já existe um usuário com esse e-mail');
+      }
+    } else {
+      if (BackendClient.usuarios.data.any(
+          (e) => e.email.toLowerCase().trim() == emailForm)) {
+        throw Exception('Já existe um usuário com esse e-mail');
+      }
     }
   }
 
