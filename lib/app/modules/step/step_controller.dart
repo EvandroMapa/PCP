@@ -54,6 +54,25 @@ class StepController {
     try {
       onValid();
       final newStep = form.toStepModel(step);
+      final map = newStep.toSupabaseMap();
+
+      // Debug: Show payload on screen
+      await showDialog(
+        context: value,
+        builder: (context) => AlertDialog(
+          title: const Text('DEBUG: Enviando para Supabase'),
+          content: SingleChildScrollView(
+            child: Text(map.toString()),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Continuar'),
+            ),
+          ],
+        ),
+      );
+
       if (form.isEdit) {
         await FirestoreClient.steps.update(newStep);
       } else {
