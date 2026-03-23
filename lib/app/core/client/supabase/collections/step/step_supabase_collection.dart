@@ -71,4 +71,38 @@ class StepSupabaseCollection extends StepCollection {
 
   StepModel getById(String id) =>
       data.firstWhere((e) => e.id == id, orElse: () => StepModel.notFound);
+
+  @override
+  Future<StepModel?> add(StepModel model) async {
+    try {
+      await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      return model;
+    } catch (e) {
+      print('Supabase Error (Step.add): $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<StepModel?> update(StepModel model) async {
+    try {
+      await SupabaseService.client
+          .from(tableName)
+          .update(model.toSupabaseMap())
+          .eq('id', model.id);
+      return model;
+    } catch (e) {
+      print('Supabase Error (Step.update): $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> delete(StepModel model) async {
+    try {
+      await SupabaseService.client.from(tableName).delete().eq('id', model.id);
+    } catch (e) {
+      print('Supabase Error (Step.delete): $e');
+    }
+  }
 }

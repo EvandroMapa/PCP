@@ -82,4 +82,38 @@ class ClienteSupabaseCollection extends ClienteCollection {
 
   ClienteModel getById(String id) =>
       data.firstWhere((e) => e.id == id, orElse: () => ClienteModel.empty());
+
+  @override
+  Future<ClienteModel?> add(ClienteModel model) async {
+    try {
+      await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      return model;
+    } catch (e) {
+      print('Supabase Error (Cliente.add): $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<ClienteModel?> update(ClienteModel model) async {
+    try {
+      await SupabaseService.client
+          .from(tableName)
+          .update(model.toSupabaseMap())
+          .eq('id', model.id);
+      return model;
+    } catch (e) {
+      print('Supabase Error (Cliente.update): $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> delete(ClienteModel model) async {
+    try {
+      await SupabaseService.client.from(tableName).delete().eq('id', model.id);
+    } catch (e) {
+      print('Supabase Error (Cliente.delete): $e');
+    }
+  }
 }

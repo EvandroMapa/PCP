@@ -40,4 +40,38 @@ class ProdutoSupabaseCollection extends ProdutoCollection {
     await start(lock: false, options: options);
     _isStarted = true;
   }
+
+  @override
+  Future<ProdutoModel?> add(ProdutoModel model) async {
+    try {
+      await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      return model;
+    } catch (e) {
+      print('Supabase Error (Produto.add): $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<ProdutoModel?> update(ProdutoModel model) async {
+    try {
+      await SupabaseService.client
+          .from(tableName)
+          .update(model.toSupabaseMap())
+          .eq('id', model.id);
+      return model;
+    } catch (e) {
+      print('Supabase Error (Produto.update): $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> delete(ProdutoModel model) async {
+    try {
+      await SupabaseService.client.from(tableName).delete().eq('id', model.id);
+    } catch (e) {
+      print('Supabase Error (Produto.delete): $e');
+    }
+  }
 }

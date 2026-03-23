@@ -71,4 +71,38 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
 
   UsuarioModel getById(String id) =>
       data.firstWhere((e) => e.id == id, orElse: () => UsuarioModel.empty());
+
+  @override
+  Future<UsuarioModel?> add(UsuarioModel model) async {
+    try {
+      await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      return model;
+    } catch (e) {
+      print('Supabase Error (Usuario.add): $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<UsuarioModel?> update(UsuarioModel model) async {
+    try {
+      await SupabaseService.client
+          .from(tableName)
+          .update(model.toSupabaseMap())
+          .eq('id', model.id);
+      return model;
+    } catch (e) {
+      print('Supabase Error (Usuario.update): $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> delete(UsuarioModel model) async {
+    try {
+      await SupabaseService.client.from(tableName).delete().eq('id', model.id);
+    } catch (e) {
+      print('Supabase Error (Usuario.delete): $e');
+    }
+  }
 }

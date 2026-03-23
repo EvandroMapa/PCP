@@ -40,4 +40,38 @@ class MateriaPrimaSupabaseCollection extends MateriaPrimaCollection {
     await start(lock: false, options: options);
     _isStarted = true;
   }
+
+  @override
+  Future<MateriaPrimaModel?> add(MateriaPrimaModel model) async {
+    try {
+      await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      return model;
+    } catch (e) {
+      print('Supabase Error (MateriaPrima.add): $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<MateriaPrimaModel?> update(MateriaPrimaModel model) async {
+    try {
+      await SupabaseService.client
+          .from(tableName)
+          .update(model.toSupabaseMap())
+          .eq('id', model.id);
+      return model;
+    } catch (e) {
+      print('Supabase Error (MateriaPrima.update): $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> delete(MateriaPrimaModel model) async {
+    try {
+      await SupabaseService.client.from(tableName).delete().eq('id', model.id);
+    } catch (e) {
+      print('Supabase Error (MateriaPrima.delete): $e');
+    }
+  }
 }

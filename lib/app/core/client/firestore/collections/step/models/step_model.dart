@@ -192,6 +192,14 @@ class StepModel {
     );
   }
 
+  Map<String, dynamic> toSupabaseMap() {
+    return {
+      'id': id,
+      'nome': name,
+      'index': index,
+    };
+  }
+
   String toJson() => json.encode(toMap());
 
   factory StepModel.fromJson(String source) =>

@@ -40,4 +40,38 @@ class FabricanteSupabaseCollection extends FabricanteCollection {
     await start(lock: false, options: options);
     _isStarted = true;
   }
+
+  @override
+  Future<FabricanteModel?> add(FabricanteModel model) async {
+    try {
+      await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      return model;
+    } catch (e) {
+      print('Supabase Error (Fabricante.add): $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<FabricanteModel?> update(FabricanteModel model) async {
+    try {
+      await SupabaseService.client
+          .from(tableName)
+          .update(model.toSupabaseMap())
+          .eq('id', model.id);
+      return model;
+    } catch (e) {
+      print('Supabase Error (Fabricante.update): $e');
+      return null;
+    }
+  }
+
+  @override
+  Future<void> delete(FabricanteModel model) async {
+    try {
+      await SupabaseService.client.from(tableName).delete().eq('id', model.id);
+    } catch (e) {
+      print('Supabase Error (Fabricante.delete): $e');
+    }
+  }
 }
