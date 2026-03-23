@@ -14,16 +14,16 @@ dynamic push([a, b]) async {
   if (a != null) {
     if (a is Widget) {
       widget = a;
+    } else if (a is BuildContext) {
+      context = a;
     }
-  } else {
-    context = a;
   }
   if (b != null) {
     if (b is Widget) {
       widget = b;
+    } else if (b is BuildContext) {
+      context = b;
     }
-  } else {
-    context = b;
   }
   var result = await Navigator.push(
     context ?? contextGlobal,
