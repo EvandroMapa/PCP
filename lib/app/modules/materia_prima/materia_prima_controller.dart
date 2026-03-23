@@ -34,7 +34,7 @@ class MateriaPrimaController {
 
   void onInit() {
     utilsStream.add(MateriaPrimaUtils());
-    FirestoreClient.materiaPrimas.fetch();
+    FirestoreClient.materiaPrimas.listen();
   }
 
   final AppStream<MateriaPrimaCreateModel> formStream =

@@ -30,7 +30,7 @@ class ClienteController {
 
   void onInit() {
     utilsStream.add(ClienteUtils());
-    FirestoreClient.clientes.fetch();
+    FirestoreClient.clientes.listen();
   }
 
   final AppStream<ClienteCreateModel> formStream =
@@ -110,18 +110,14 @@ class ClienteController {
 
   void onValid(ClienteModel? cliente) {
     if (form.isEdit) {
-      if (cliente!.nome != form.nome.text) {
-        if (FirestoreClient.clientes.data.any(
-          (e) => e.nome == form.nome.text,
-        )) {
-          throw Exception('Já existe um cliente com esse nome');
-        }
+      if (FirestoreClient.clientes.data.any(
+        (e) => e.nome == form.nome.text && e.id != form.id,
+      )) {
+        throw Exception('Já existe um cliente com esse nome');
       }
-      if (cliente.cpf != form.cpf.text) {
-        if (form.cpf.text.isNotEmpty &&
-            FirestoreClient.clientes.data.any((e) => e.cpf == form.cpf.text)) {
-          throw Exception('Já existe um cliente com esse CPF/CNPJ');
-        }
+      if (form.cpf.text.isNotEmpty &&
+          FirestoreClient.clientes.data.any((e) => e.cpf == form.cpf.text && e.id != form.id)) {
+        throw Exception('Já existe um cliente com esse CPF/CNPJ');
       }
     } else {
       if (FirestoreClient.clientes.data.any((e) => e.nome == form.nome.text)) {

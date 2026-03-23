@@ -27,7 +27,7 @@ class FabricanteController {
 
   void onInit() {
     utilsStream.add(FabricanteUtils());
-    FirestoreClient.fabricantes.fetch();
+    FirestoreClient.fabricantes.listen();
   }
 
   final AppStream<FabricanteCreateModel> formStream =
@@ -108,6 +108,12 @@ class FabricanteController {
       throw Exception('Nome deve conter no mínimo 3 caracteres');
     }
     if (form.isEdit) {
+      if (FirestoreClient.fabricantes.data.any(
+        (e) => e.nome == form.nome.text && e.id != form.id,
+      )) {
+        throw Exception('Já existe um fabricante com esse nome');
+      }
+    } else {
       if (FirestoreClient.fabricantes.data.any(
         (e) => e.nome == form.nome.text,
       )) {
