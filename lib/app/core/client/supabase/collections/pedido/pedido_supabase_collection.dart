@@ -78,7 +78,6 @@ class PedidoSupabaseCollection extends PedidoCollection {
       final tagsRaw = results[3];
 
       final pedidos = pedidosRaw.map((pMap) {
-      final pedidos = pedidosRaw.map((pMap) {
         final String pId = pMap['id'].toString().trim();
         
         final pProdutos = produtosRaw
