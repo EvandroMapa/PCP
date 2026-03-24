@@ -261,30 +261,21 @@ class PedidoSupabaseCollection extends PedidoCollection {
         print('Supabase (Sync): O pedido ${model.id} NÃO POSSUI produtos para sincronizar.');
       }
     } catch (e) {
-      print('Supabase ERROR (Sync Produtos): $e');
-      syncErrors.add('Erro na sincronia de Produtos: $e');
+      syncErrors.add('Erro Produtos: $e');
     }
 
-    try {
-      // Status History
-      if (model.statusess.isNotEmpty) {
-        log('Supabase (Sync): Inserting ${model.statusess.length} status history items...');
-        await SupabaseService.client.from('pedido_status_history').insert(
-            model.statusess.map((s) => s.toSupabaseMap(model.id)).toList());
-      }
     } catch (e) {
-      syncErrors.add('Erro na sincronia de Histórico de Status: $e');
+      syncErrors.add('Erro Status: $e');
     }
 
     try {
       // Steps History
       if (model.steps.isNotEmpty) {
-        log('Supabase (Sync): Inserting ${model.steps.length} step history items...');
         await SupabaseService.client.from('pedido_steps_history').insert(
             model.steps.map((st) => st.toSupabaseMap(model.id)).toList());
       }
     } catch (e) {
-      syncErrors.add('Erro na sincronia de Histórico de Etapas: $e');
+      syncErrors.add('Erro Etapas: $e');
     }
 
     try {
