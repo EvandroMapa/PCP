@@ -147,9 +147,9 @@ class PedidoSupabaseCollection extends PedidoCollection {
   @override
   Future<PedidoModel?> add(PedidoModel model) async {
     try {
-      log('Supabase (Pedido.add): Sending main record...');
-      await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
-      log('Supabase (Pedido.add): Main record saved. Syncing relationships...');
+      log('Supabase (Pedido.add): Sending record (upsert)...');
+      await SupabaseService.client.from(tableName).upsert(model.toSupabaseMap());
+      log('Supabase (Pedido.add): Record saved. Syncing relationships...');
       await _syncRelationships(model);
       log('Supabase (Pedido.add): Relationships synced. Fetching data...');
       await fetch();
