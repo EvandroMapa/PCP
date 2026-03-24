@@ -58,24 +58,17 @@ class PedidoSupabaseCollection extends PedidoCollection {
       Future<List<Map<String, dynamic>>> safeFetch(String table) async {
         try {
           final res = await SupabaseService.client.from(table).select();
-          if (res == null) {
-             print('Supabase (fetch $table): Retornou NULL');
-             return [];
-          }
+          if (res == null) return [];
           final list = res as List;
-          print('Supabase (fetch $table): Encontrou ${list.length} registros brutos.');
           return list.map((item) {
             try {
               if (item is Map) {
                 return item.map((key, value) => MapEntry(key.toString(), value));
               }
-            } catch (e) {
-              print('Erro convertendo item da tabela $table: $e');
-            }
+            } catch (_) {}
             return <String, dynamic>{};
           }).toList();
-        } catch (e) {
-          print('Supabase CRITICAL FAIL (fetch $table): $e');
+        } catch (_) {
           return [];
         }
       }
@@ -101,12 +94,6 @@ class PedidoSupabaseCollection extends PedidoCollection {
               return pedidoId == pId;
             })
             .toList();
-        
-        if (pProdutos.isNotEmpty) {
-          print('Supabase (Pedido.start): ID $pId encontrou ${pProdutos.length} produtos. Dados do primeiro: ${pProdutos.first}');
-        } else {
-          print('Supabase (Pedido.start): ID $pId NÃO ENCONTROU produtos.');
-        }
         
         final pedido = PedidoModel.fromSupabaseMap(
           pMap,
