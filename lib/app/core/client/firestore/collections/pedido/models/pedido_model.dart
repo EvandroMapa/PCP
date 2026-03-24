@@ -505,7 +505,7 @@ class PedidoModel {
         isFilho: false,
         romaneio: null);
     
-    log('Supabase (Pedido.fromSupabaseMap): ${pedido.id} - ${pedido.localizador} - peso: ${pedido.getQtdeTotal()}');
+    print('Supabase (Pedido.fromSupabaseMap): ${pedido.id} - ${pedido.localizador} - produtos: ${pedido.produtos.length} - peso: ${pedido.getQtdeTotal()}');
     return pedido;
   }
 
