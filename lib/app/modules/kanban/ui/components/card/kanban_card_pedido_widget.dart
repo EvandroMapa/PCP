@@ -16,6 +16,7 @@ import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_tags_
 import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_users_widget.dart';
 import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_vinculados_widget.dart';
 import 'package:aco_plus/app/modules/notificacao/notificacao_controller.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 
