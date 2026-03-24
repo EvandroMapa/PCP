@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:developer';
 
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
@@ -465,12 +466,12 @@ class PedidoModel {
             ? produtosRaw.map((p) => PedidoProdutoModel.fromSupabaseMap(p)).toList()
             : [],
         tipo: PedidoTipo.values.firstWhere(
-            (e) => e.name == (map['tipo'] ?? 'normal'),
-            orElse: () => PedidoTipo.normal),
+            (e) => e.name == (map['tipo'] ?? 'cd'),
+            orElse: () => PedidoTipo.cd),
         statusess: statusRaw != null
             ? statusRaw.map((s) => PedidoStatusModel.fromMap(s)).toList()
             : [
-                PedidoStatusModel.create(PedidoStatus.provisionamento),
+                PedidoStatusModel.create(PedidoStatus.aguardandoProducaoCD),
               ],
         steps: stepsRaw != null
             ? stepsRaw.map((e) => PedidoStepModel.fromSupabaseMap(e)).toList()
