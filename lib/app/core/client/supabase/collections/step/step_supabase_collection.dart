@@ -73,8 +73,10 @@ class StepSupabaseCollection extends StepCollection {
 
       dataStream.add(steps);
       log('Supabase (Step.start): Found ${steps.length} steps.');
+      NotificationService.showPositive('Carga Supabase', 'Etapas carregadas: ${steps.length}');
     } catch (e) {
       log('Supabase Error (Step.start): $e');
+      NotificationService.showNegative('Erro ao Carregar Etapas', e.toString());
     }
   }
 
