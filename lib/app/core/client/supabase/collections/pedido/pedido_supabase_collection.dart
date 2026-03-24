@@ -1,3 +1,5 @@
+import 'dart:developer';
+import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
@@ -145,35 +147,44 @@ class PedidoSupabaseCollection extends PedidoCollection {
   @override
   Future<PedidoModel?> add(PedidoModel model) async {
     try {
+      log('Supabase (Pedido.add): Sending main record...');
       await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      log('Supabase (Pedido.add): Main record saved. Syncing relationships...');
       await _syncRelationships(model);
+      log('Supabase (Pedido.add): Relationships synced. Fetching data...');
       await fetch();
       return model;
     } catch (e) {
-      print('Supabase Error (Pedido.add): $e');
-      return null;
+      log('Supabase Error (Pedido.add): $e');
+      NotificationService.showNegative('Erro ao Salvar Pedido', e.toString());
+      rethrow;
     }
   }
 
   @override
   Future<PedidoModel?> update(PedidoModel model) async {
     try {
+      log('Supabase (Pedido.update): Updating main record...');
       await SupabaseService.client
           .from(tableName)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
+      log('Supabase (Pedido.update): Main record updated. Syncing relationships...');
       await _syncRelationships(model);
+      log('Supabase (Pedido.update): Relationships synced. Fetching data...');
       await fetch();
       return model;
     } catch (e) {
-      print('Supabase Error (Pedido.update): $e');
-      return null;
+      log('Supabase Error (Pedido.update): $e');
+      NotificationService.showNegative('Erro ao Atualizar Pedido', e.toString());
+      rethrow;
     }
   }
 
   Future<void> _syncRelationships(PedidoModel model) async {
     try {
       // 1. Delete existing for update
+      log('Supabase (Sync): Cleaning old relationships...');
       await Future.wait([
         SupabaseService.client
             .from('pedido_produtos')
@@ -198,24 +209,28 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
       // Products
       if (model.produtos.isNotEmpty) {
+        log('Supabase (Sync): Inserting ${model.produtos.length} products...');
         insertions.add(SupabaseService.client.from('pedido_produtos').insert(
             model.produtos.map((p) => p.toSupabaseMap(model.id)).toList()));
       }
 
       // Status History
       if (model.statusess.isNotEmpty) {
+        log('Supabase (Sync): Inserting ${model.statusess.length} status history items...');
         insertions.add(SupabaseService.client.from('pedido_status_history').insert(
             model.statusess.map((s) => s.toSupabaseMap(model.id)).toList()));
       }
 
       // Steps History
       if (model.steps.isNotEmpty) {
+        log('Supabase (Sync): Inserting ${model.steps.length} step history items...');
         insertions.add(SupabaseService.client.from('pedido_steps_history').insert(
             model.steps.map((st) => st.toSupabaseMap(model.id)).toList()));
       }
 
       // Tags
       if (model.tags.isNotEmpty) {
+        log('Supabase (Sync): Inserting ${model.tags.length} tags...');
         insertions.add(SupabaseService.client.from('pedido_tags').insert(model.tags
             .map((t) => {'pedido_id': model.id, 'tag_id': t.id})
             .toList()));
@@ -224,8 +239,11 @@ class PedidoSupabaseCollection extends PedidoCollection {
       if (insertions.isNotEmpty) {
         await Future.wait(insertions);
       }
+      log('Supabase (Sync): All relationships synced successfully.');
     } catch (e) {
-      print('Supabase Error (Pedido._syncRelationships): $e');
+      log('Supabase Error (Pedido._syncRelationships): $e');
+      NotificationService.showNegative('Erro ao Sincronizar Relações', e.toString());
+      rethrow;
     }
   }
 
