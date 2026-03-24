@@ -78,20 +78,28 @@ class PedidoSupabaseCollection extends PedidoCollection {
       final tagsRaw = results[3];
 
       final pedidos = pedidosRaw.map((pMap) {
-        final pId = pMap['id'].toString();
+        final String pId = pMap['id'].toString().trim().toLowerCase();
+        
         final pProdutos = produtosRaw
-            .where((r) => r['pedido_id'].toString() == pId)
+            .where((r) {
+              final String pedidoId = (r['pedido_id'] ?? '').toString().trim().toLowerCase();
+              return pedidoId == pId;
+            })
             .toList();
         
-        log('Supabase (Pedido.start): ID $pId encontrou ${pProdutos.length} produtos.');
+        if (pProdutos.isNotEmpty) {
+          log('Supabase (Pedido.start): ID $pId encontrou ${pProdutos.length} produtos. Primeiro peso: ${pProdutos.first['quantidade']}');
+        } else {
+          log('Supabase (Pedido.start): ID $pId NÃO ENCONTROU produtos.');
+        }
         
         final pedido = PedidoModel.fromSupabaseMap(
           pMap,
           produtosRaw: pProdutos,
-          statusRaw: statusRaw.where((r) => r['pedido_id'].toString() == pId).toList(),
-          stepsRaw: stepsRaw.where((r) => r['pedido_id'].toString() == pId).toList(),
+          statusRaw: statusRaw.where((r) => r['pedido_id'].toString().trim().toLowerCase() == pId).toList(),
+          stepsRaw: stepsRaw.where((r) => r['pedido_id'].toString().trim().toLowerCase() == pId).toList(),
           tagsIds: tagsRaw
-              .where((r) => r['pedido_id'].toString() == pId)
+              .where((r) => r['pedido_id'].toString().trim().toLowerCase() == pId)
               .map((r) => r['tag_id'].toString())
               .toList(),
         );
