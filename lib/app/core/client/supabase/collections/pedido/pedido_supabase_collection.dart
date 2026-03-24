@@ -58,7 +58,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
       Future<List<Map<String, dynamic>>> safeFetch(String table) async {
         try {
           final res = await SupabaseService.client.from(table).select();
-          return List<Map<String, dynamic>>.from(res);
+          return (res as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
         } catch (e) {
           print('Supabase Warning (fetch $table): $e');
           return [];
@@ -88,9 +88,9 @@ class PedidoSupabaseCollection extends PedidoCollection {
             .toList();
         
         if (pProdutos.isNotEmpty) {
-          log('Supabase (Pedido.start): ID $pId encontrou ${pProdutos.length} produtos. Primeiro peso: ${pProdutos.first['quantidade']}');
+          print('Supabase (Pedido.start): ID $pId encontrou ${pProdutos.length} produtos. Dados do primeiro: ${pProdutos.first}');
         } else {
-          log('Supabase (Pedido.start): ID $pId NÃO ENCONTROU produtos.');
+          print('Supabase (Pedido.start): ID $pId NÃO ENCONTROU produtos.');
         }
         
         final pedido = PedidoModel.fromSupabaseMap(
