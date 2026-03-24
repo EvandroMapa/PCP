@@ -105,7 +105,7 @@ class PedidoModel {
   void addStep(step) => steps.add(PedidoStepModel.create(step));
 
   bool isAguardandoEntradaProducao() {
-    if (step.index >= automatizacaoConfig.produtoPedidoSeparado.step!.index) {
+    if (step.index >= (automatizacaoConfig.produtoPedidoSeparado.step?.index ?? 0)) {
       return false;
     }
     return true;
