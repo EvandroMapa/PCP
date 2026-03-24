@@ -175,9 +175,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
       errorLogs.addAll(syncErrors);
 
       if (errorLogs.isNotEmpty) {
-        final alert = '--- ERROS DE SINCRONIZAÇÃO (PODE COPIAR) ---\n${errorLogs.join("\n")}\n------------------------------------------';
-        log(alert);
-        NotificationService.showNegative('Pedido Salvo com Alertas', 'Alguns itens não foram sincronizados. Erros detalhados no console.');
+        NotificationService.showNegative('Pedido Salvo com Alertas', 'Erros: ${errorLogs.join(", ")}');
       }
 
       log('Supabase (Pedido.add): Fetching updated data...');
