@@ -58,7 +58,14 @@ class PedidoSupabaseCollection extends PedidoCollection {
       Future<List<Map<String, dynamic>>> safeFetch(String table) async {
         try {
           final res = await SupabaseService.client.from(table).select();
-          return (res as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          if (res == null) return [];
+          final list = res as List;
+          return list.map((item) {
+            if (item is Map) {
+              return item.map((key, value) => MapEntry(key.toString(), value));
+            }
+            return <String, dynamic>{};
+          }).toList();
         } catch (e) {
           print('Supabase Warning (fetch $table): $e');
           return [];
