@@ -46,20 +46,34 @@ class PedidoSupabaseCollection extends PedidoCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     try {
-      // 1. Fetch all tables in parallel
+      // 1. Fetch main table first (critical)
+      final pedidosRaw = await SupabaseService.client
+          .from(tableName)
+          .select()
+          .eq('is_archived', false);
+
+      // 2. Fetch auxiliary tables with individual error handling
+      Future<List<Map<String, dynamic>>> safeFetch(String table) async {
+        try {
+          final res = await SupabaseService.client.from(table).select();
+          return List<Map<String, dynamic>>.from(res);
+        } catch (e) {
+          print('Supabase Warning (fetch $table): $e');
+          return [];
+        }
+      }
+
       final results = await Future.wait([
-        SupabaseService.client.from(tableName).select().eq('is_archived', false),
-        SupabaseService.client.from('pedido_produtos').select(),
-        SupabaseService.client.from('pedido_status_history').select(),
-        SupabaseService.client.from('pedido_steps_history').select(),
-        SupabaseService.client.from('pedido_tags').select(),
+        safeFetch('pedido_produtos'),
+        safeFetch('pedido_status_history'),
+        safeFetch('pedido_steps_history'),
+        safeFetch('pedido_tags'),
       ]);
 
-      final pedidosRaw = List<Map<String, dynamic>>.from(results[0]);
-      final produtosRaw = List<Map<String, dynamic>>.from(results[1]);
-      final statusRaw = List<Map<String, dynamic>>.from(results[2]);
-      final stepsRaw = List<Map<String, dynamic>>.from(results[3]);
-      final tagsRaw = List<Map<String, dynamic>>.from(results[4]);
+      final produtosRaw = results[0];
+      final statusRaw = results[1];
+      final stepsRaw = results[2];
+      final tagsRaw = results[3];
 
       final pedidos = pedidosRaw.map((pMap) {
         final pId = pMap['id'];
