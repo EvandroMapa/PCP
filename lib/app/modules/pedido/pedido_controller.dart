@@ -61,7 +61,7 @@ class PedidoController {
   }
 
   void _listenChecklists() {
-    BackendClient.checklists.dataStream.listen((checklists) {
+    BackendClient.checklists.dataStream.listen.listen((checklists) {
       if (formStream.hasValue && form.checklist == null) {
         form.checklist = checklists.firstWhereOrNull(
           (e) =>
@@ -284,7 +284,7 @@ class PedidoController {
   void onChangePedidoStatus(PedidoModel pedido) async {
     final status = await showPedidoStatusBottom(pedido);
     if (status == null) return;
-    if (pedido.status.status == status) return;
+    if (pedido.status == status) return;
 
     pedido.statusess.add(PedidoStatusModel.create(status));
     await automatizacaoCtrl.onSetStepByPedidoStatus([pedido]);

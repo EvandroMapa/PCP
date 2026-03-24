@@ -22,7 +22,7 @@ class PedidoStatusModel {
   factory PedidoStatusModel.empty() => PedidoStatusModel(
     id: '',
     createdAt: DateTime.now(),
-    status: PedidoStatus.aguardandoProducao,
+    status: PedidoStatus.aguardandoProducaoCD,
   );
 
   Map<String, dynamic> toMap() {
