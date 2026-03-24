@@ -15,6 +15,5 @@ void main() async {
   RouteConfig.setConfig();
   await initializeDateFormatting('pt_BR');
   await Service.initAplicationServices();
-  usuarioCtrl.usuarioStream.add(UsuarioModel.system);
   runApp(const App());
 }

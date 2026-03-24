@@ -54,7 +54,7 @@ class HomePage extends StatelessWidget {
     return StreamOutNull<UsuarioModel?>(
       stream: usuarioCtrl.usuarioStream.listen,
       loading: const Center(child: CircularProgressIndicator()),
-      child: (_, data) => const BasePage(),
+      child: (_, data) => data != null ? const BasePage() : const SignUpPage(),
     );
   }
 }

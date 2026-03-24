@@ -123,17 +123,6 @@ class UsuarioController {
       AppRepository.add(user!);
     }
 
-    // --- TEMPORARY BYPASS ---
-    // Automatiscamente logo com evandro / 123 se não houver usuário.
-    if (user == null) {
-      final mock = BackendClient.usuarios.data.firstWhereOrNull(
-        (e) => e.email.toLowerCase() == 'evandro' && e.senha == '123'
-      );
-      if (mock != null) {
-        user = mock;
-        AppRepository.add(user);
-      }
-    }
     // ------------------------
     usuarioStream.add(user);
   }
