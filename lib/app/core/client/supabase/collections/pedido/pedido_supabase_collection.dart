@@ -78,17 +78,24 @@ class PedidoSupabaseCollection extends PedidoCollection {
       final tagsRaw = results[3];
 
       final pedidos = pedidosRaw.map((pMap) {
-        final pId = pMap['id'];
-        return PedidoModel.fromSupabaseMap(
+        final pId = pMap['id'].toString();
+        final pProdutos = produtosRaw
+            .where((r) => r['pedido_id'].toString() == pId)
+            .toList();
+        
+        log('Supabase (Pedido.start): ID $pId encontrou ${pProdutos.length} produtos.');
+        
+        final pedido = PedidoModel.fromSupabaseMap(
           pMap,
-          produtosRaw: produtosRaw.where((r) => r['pedido_id'] == pId).toList(),
-          statusRaw: statusRaw.where((r) => r['pedido_id'] == pId).toList(),
-          stepsRaw: stepsRaw.where((r) => r['pedido_id'] == pId).toList(),
+          produtosRaw: pProdutos,
+          statusRaw: statusRaw.where((r) => r['pedido_id'].toString() == pId).toList(),
+          stepsRaw: stepsRaw.where((r) => r['pedido_id'].toString() == pId).toList(),
           tagsIds: tagsRaw
-              .where((r) => r['pedido_id'] == pId)
+              .where((r) => r['pedido_id'].toString() == pId)
               .map((r) => r['tag_id'].toString())
               .toList(),
         );
+        return pedido;
       }).toList();
 
       dataStream.add(pedidos);

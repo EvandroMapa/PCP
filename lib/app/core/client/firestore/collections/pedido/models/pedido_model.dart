@@ -453,7 +453,11 @@ class PedidoModel {
       step = StepModel.notFound;
     }
 
-    return PedidoModel(
+    final produtos = produtosRaw != null
+        ? produtosRaw.map((p) => PedidoProdutoModel.fromSupabaseMap(p)).toList()
+        : <PedidoProdutoModel>[];
+
+    final pedido = PedidoModel(
         id: (map['id'] ?? '').toString(),
         localizador: (map['localizador'] ?? '').toString(),
         descricao: (map['descricao'] ?? '').toString(),
@@ -461,9 +465,7 @@ class PedidoModel {
         deliveryAt: map['delivery_at'] != null ? _parseDate(map['delivery_at']) : null,
         cliente: cliente,
         obra: obra,
-        produtos: produtosRaw != null
-            ? produtosRaw.map((p) => PedidoProdutoModel.fromSupabaseMap(p)).toList()
-            : [],
+        produtos: produtos,
         tipo: PedidoTipo.values.firstWhere(
             (e) => e.name == (map['tipo'] ?? 'cd'),
             orElse: () => PedidoTipo.cd),
@@ -486,19 +488,11 @@ class PedidoModel {
         users: [],
         index: int.tryParse((map['index'] ?? '0').toString()) ?? 0,
         histories: [],
-        isArchived: map['is_archived'] == true,
-        archives: [],
-        checklistId: map['checklist_id']?.toString(),
-        planilhamento: map['planilhamento']?.toString() ?? '',
-        pedidoFinanceiro: map['pedido_financeiro']?.toString() ?? '',
-        instrucoesEntrega: map['instrucoes_entrega']?.toString() ?? '',
-        instrucoesFinanceiras: map['instrucoes_financeiras']?.toString() ?? '',
-        prioridade: null,
-        pedidosVinculados: [],
-        pedidosFilhos: [],
-        pai: null,
         isFilho: false,
         romaneio: null);
+    
+    log('Supabase (Pedido.fromSupabaseMap): ${pedido.id} - ${pedido.localizador} - peso: ${pedido.getQtdeTotal()}');
+    return pedido;
   }
 
   static DateTime _parseDate(dynamic val) {
