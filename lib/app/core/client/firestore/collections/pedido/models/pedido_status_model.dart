@@ -41,6 +41,28 @@ class PedidoStatusModel {
     );
   }
 
+  Map<String, dynamic> toSupabaseMap(String pedidoId) {
+    return {
+      'id': id,
+      'pedido_id': pedidoId,
+      'status': status.name,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+
+  factory PedidoStatusModel.fromSupabaseMap(Map<String, dynamic> map) {
+    return PedidoStatusModel(
+      id: map['id'] ?? '',
+      status: PedidoStatus.values.firstWhere(
+        (e) => e.name == map['status'],
+        orElse: () => PedidoStatus.aguardandoProducaoCD,
+      ),
+      createdAt: map['created_at'] != null 
+          ? DateTime.parse(map['created_at']) 
+          : DateTime.now(),
+    );
+  }
+
   String toJson() => json.encode(toMap());
 
   factory PedidoStatusModel.fromJson(String source) =>

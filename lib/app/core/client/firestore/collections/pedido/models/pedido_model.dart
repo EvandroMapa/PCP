@@ -425,7 +425,13 @@ class PedidoModel {
 
   /// Build a PedidoModel from a flat Supabase/PostgreSQL row.
   /// cliente and obra are looked up from BackendClient at parse time.
-  factory PedidoModel.fromSupabaseMap(Map<String, dynamic> map) {
+  factory PedidoModel.fromSupabaseMap(
+    Map<String, dynamic> map, {
+    List<Map<String, dynamic>>? statusRaw,
+    List<Map<String, dynamic>>? stepsRaw,
+    List<Map<String, dynamic>>? produtosRaw,
+    List<String>? tagsIds,
+  }) {
     // Resolve cliente and step via the BackendClient (already loaded)
     late ClienteModel cliente;
     late ObraModel obra;
@@ -435,52 +441,64 @@ class PedidoModel {
       final obraId = map['obra_id'] as String? ?? '';
       final stepId = map['step_id'] as String? ?? '';
       cliente = FirestoreClient.clientes.getById(clienteId);
-      obra = cliente.obras.firstWhereOrNull((e) => e.id == obraId) ?? ObraModel.empty();
+      obra = cliente.obras.firstWhereOrNull((e) => e.id == obraId) ??
+          ObraModel.empty();
       step = FirestoreClient.steps.getById(stepId);
-      if (step == StepModel.notFound) {
-        step = FirestoreClient.steps.data.firstOrNull ?? StepModel.notFound;
+      if (step == StepModel.notFound && FirestoreClient.steps.data.isNotEmpty) {
+        step = FirestoreClient.steps.data.first;
       }
     } catch (_) {
       cliente = ClienteModel.empty();
       obra = ObraModel.empty();
-      step = FirestoreClient.steps.data.firstOrNull ?? StepModel.notFound;
+      step = StepModel.notFound;
     }
 
     return PedidoModel(
-      id: map['id'] ?? '',
-      localizador: map['localizador'] ?? '',
-      descricao: map['descricao'] ?? '',
-      createdAt: _parseDate(map['created_at']),
-      deliveryAt: map['delivery_at'] != null ? _parseDate(map['delivery_at']) : null,
-      cliente: cliente,
-      obra: obra,
-      produtos: [],
-      tipo: PedidoTipo.values.firstWhere(
-        (e) => e.name == (map['tipo'] ?? ''),
-        orElse: () => PedidoTipo.cda,
-      ),
-      statusess: [],
-      steps: [PedidoStepModel(id: map['id'] ?? '', step: step, createdAt: DateTime.now())],
-      tags: [],
-      checks: [],
-      comments: [],
-      users: [],
-      index: map['index'] ?? 0,
-      histories: [],
-      isArchived: map['is_archived'] ?? false,
-      archives: [],
-      checklistId: null,
-      planilhamento: map['planilhamento'] ?? '',
-      pedidoFinanceiro: map['pedido_financeiro'] ?? '',
-      instrucoesEntrega: map['instrucoes_entrega'] ?? '',
-      instrucoesFinanceiras: map['instrucoes_financeiras'] ?? '',
-      prioridade: null,
-      pedidosVinculados: [],
-      pedidosFilhos: [],
-      pai: null,
-      isFilho: false,
-      romaneio: null,
-    );
+        id: map['id'] ?? '',
+        localizador: map['localizador'] ?? '',
+        descricao: map['descricao'] ?? '',
+        createdAt: _parseDate(map['created_at']),
+        deliveryAt:
+            map['delivery_at'] != null ? _parseDate(map['delivery_at']) : null,
+        cliente: cliente,
+        obra: obra,
+        produtos: produtosRaw != null
+            ? produtosRaw.map((e) => PedidoProdutoModel.fromSupabaseMap(e)).toList()
+            : [],
+        tipo: PedidoTipo.values.firstWhere(
+          (e) => e.name == (map['tipo'] ?? ''),
+          orElse: () => PedidoTipo.cda,
+        ),
+        statusess: statusRaw != null
+            ? statusRaw.map((e) => PedidoStatusModel.fromSupabaseMap(e)).toList()
+            : [],
+        steps: stepsRaw != null
+            ? stepsRaw.map((e) => PedidoStepModel.fromSupabaseMap(e)).toList()
+            : [
+                PedidoStepModel(
+                    id: map['id'] ?? '', step: step, createdAt: DateTime.now())
+              ],
+        tags: tagsIds != null
+            ? tagsIds.map((id) => FirestoreClient.tags.getById(id)).toList()
+            : [],
+        checks: [], // TODO: Implement checklist persistence
+        comments: [], // TODO: Implement comment persistence
+        users: [],
+        index: map['index'] ?? 0,
+        histories: [],
+        isArchived: map['is_archived'] ?? false,
+        archives: [],
+        checklistId: map['checklist_id'],
+        planilhamento: map['planilhamento'] ?? '',
+        pedidoFinanceiro: map['pedido_financeiro'] ?? '',
+        instrucoesEntrega: map['instrucoes_entrega'] ?? '',
+        instrucoesFinanceiras: map['instrucoes_financeiras'] ?? '',
+        prioridade: null,
+        pedidosVinculados: [],
+        pedidosFilhos: [],
+        pai: null,
+        isFilho: false,
+        romaneio: null);
   }
 
   static DateTime _parseDate(dynamic val) {
@@ -499,6 +517,7 @@ class PedidoModel {
     'step_id': steps.isNotEmpty ? steps.last.step.id : null,
     'status': statusess.isNotEmpty ? statusess.last.status.name : null,
     'is_archived': isArchived,
+    'checklist_id': checklistId,
     'planilhamento': planilhamento,
     'pedido_financeiro': pedidoFinanceiro,
     'instrucoes_entrega': instrucoesEntrega,

@@ -43,6 +43,25 @@ class PedidoStepModel {
     );
   }
 
+  Map<String, dynamic> toSupabaseMap(String pedidoId) {
+    return {
+      'id': id,
+      'pedido_id': pedidoId,
+      'step_id': step.id,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+
+  factory PedidoStepModel.fromSupabaseMap(Map<String, dynamic> map) {
+    return PedidoStepModel(
+      id: map['id'] ?? '',
+      step: FirestoreClient.steps.getById(map['step_id'] ?? ''),
+      createdAt: map['created_at'] != null 
+          ? DateTime.parse(map['created_at']) 
+          : DateTime.now(),
+    );
+  }
+
   String toJson() => json.encode(toMap());
 
   factory PedidoStepModel.fromJson(String source) =>

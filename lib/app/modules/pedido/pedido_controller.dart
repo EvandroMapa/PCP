@@ -82,6 +82,13 @@ class PedidoController {
     formStream.add(
       pedido != null ? PedidoCreateModel.edit(pedido) : PedidoCreateModel(pai),
     );
+    if (!form.isEdit && form.checklist == null) {
+      form.checklist = BackendClient.checklists.data.firstWhereOrNull(
+        (e) =>
+            e.nome.toUpperCase().contains('PADRAO') ||
+            e.nome.toUpperCase().contains('PADRÃO'),
+      );
+    }
     if (pai != null) {
       _preencherValoresPedidoPai(pai);
     }

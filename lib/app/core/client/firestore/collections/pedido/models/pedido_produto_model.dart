@@ -312,6 +312,29 @@ class PedidoProdutoModel {
   factory PedidoProdutoModel.fromJson(String source) =>
       PedidoProdutoModel.fromMap(json.decode(source));
 
+  Map<String, dynamic> toSupabaseMap(String pedidoId) {
+    return {
+      'id': id,
+      'id_id': id,
+      'pedido_id': pedidoId,
+      'quantidade': quantidade,
+      'produto_raw': produto.toMap(),
+      'materia_prima_raw': materiaPrima?.toMap(),
+    };
+  }
+
+  factory PedidoProdutoModel.fromSupabaseMap(Map<String, dynamic> map) {
+    return PedidoProdutoModel(
+      id: map['id'] ?? map['id_id'] ?? '',
+      quantidade: map['quantidade']?.toDouble() ?? 0.0,
+      produto: ProdutoModel.fromMap(map['produto_raw']),
+      materiaPrima: map['materia_prima_raw'] != null 
+          ? MateriaPrimaModel.fromMap(map['materia_prima_raw']) 
+          : null,
+      pedidoId: map['pedido_id'] ?? '',
+    );
+  }
+
   PedidoProdutoModel copyWith({
     String? id,
     String? pedidoId,
