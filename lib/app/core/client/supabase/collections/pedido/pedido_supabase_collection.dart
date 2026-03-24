@@ -247,16 +247,17 @@ class PedidoSupabaseCollection extends PedidoCollection {
     try {
       // Products
       if (model.produtos.isNotEmpty) {
-        print('Supabase (Sync): Tentando inserir ${model.produtos.length} produtos para o pedido ${model.id}...');
+        print('Supabase DEBUG (Sync): Tentando inserir ${model.produtos.length} produtos para o pedido ${model.id}...');
         final payload = model.produtos.map((p) => p.toSupabaseMap(model.id)).toList();
-        print('Supabase (Sync): Payload de Produtos: $payload');
+        print('Supabase DEBUG (Sync): Payload de Produtos: ${jsonEncode(payload)}');
         
         final response = await SupabaseService.client.from('pedido_produtos').insert(payload).select();
-        print('Supabase (Sync): Resposta da inserção de produtos: $response');
+        print('Supabase DEBUG (Sync): SUCESSO na inserção de produtos! Resposta: $response');
       } else {
-        print('Supabase (Sync): O pedido ${model.id} NÃO POSSUI produtos para sincronizar.');
+        print('Supabase DEBUG (Sync): O pedido ${model.id} possui ZERO produtos no model. Nada para sincronizar.');
       }
     } catch (e) {
+      print('Supabase DEBUG (Sync ERROR): Falha ao inserir produtos: $e');
       syncErrors.add('Erro Produtos: $e');
     }
 
