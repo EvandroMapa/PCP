@@ -317,7 +317,7 @@ class PedidoProdutoModel {
       'id': id,
       'id_id': id,
       'pedido_id': pedidoId,
-      'quantidade': quantidade,
+      'quantidade': qtde,
       'produto_raw': produto.toMap(),
       'materia_prima_raw': materiaPrima?.toMap(),
     };
@@ -326,7 +326,7 @@ class PedidoProdutoModel {
   factory PedidoProdutoModel.fromSupabaseMap(Map<String, dynamic> map) {
     return PedidoProdutoModel(
       id: map['id'] ?? map['id_id'] ?? '',
-      quantidade: map['quantidade']?.toDouble() ?? 0.0,
+      qtde: map['quantidade']?.toDouble() ?? 0.0,
       produto: ProdutoModel.fromMap(map['produto_raw']),
       materiaPrima: map['materia_prima_raw'] != null 
           ? MateriaPrimaModel.fromMap(map['materia_prima_raw']) 
