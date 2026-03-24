@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'dart:developer';
 
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
