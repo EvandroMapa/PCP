@@ -120,7 +120,8 @@ class PedidoModel {
               e.status == PedidoStatus.aguardandoProducaoCD,
         )
         .toList()
-        .first;
+        .firstOrNull;
+    if (status == null) return statusessFiltered;
     for (var status in statusess) {
       if (status.status != PedidoStatus.produzindoCD &&
           status.status != PedidoStatus.aguardandoProducaoCD) {
@@ -359,7 +360,7 @@ class PedidoModel {
           : [
               PedidoStepModel(
                 id: HashService.get,
-                step: FirestoreClient.steps.data.first,
+                step: FirestoreClient.steps.data.firstOrNull ?? StepModel.notFound,
                 createdAt: DateTime.now(),
               ),
             ],
@@ -438,12 +439,13 @@ class PedidoModel {
         orElse: () => ObraModel.empty(),
       );
       step = FirestoreClient.steps.getById(stepId);
-    } catch (_) {
-      cliente = ClienteModel.empty();
-      obra = ObraModel.empty();
       step = FirestoreClient.steps.data.isNotEmpty
           ? FirestoreClient.steps.data.first
           : StepModel.notFound;
+    } catch (_) {
+      cliente = ClienteModel.empty();
+      obra = ObraModel.empty();
+      step = FirestoreClient.steps.data.firstOrNull ?? StepModel.notFound;
     }
 
     return PedidoModel(

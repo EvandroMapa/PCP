@@ -423,7 +423,7 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
             ClienteModel? cliente = await showClienteCreateSimplifyBottom();
             assert(cliente != null);
             form.cliente = cliente;
-            form.obra = form.cliente!.obras.first;
+            form.obra = form.cliente?.obras.firstOrNull;
             pedidoCtrl.formStream.update();
             return null;
           },

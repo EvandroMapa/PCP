@@ -205,9 +205,10 @@ class PedidoCollection {
   }) async {
     final pedido = getById(produto.pedidoId);
 
-    final pedidoProduto = pedido.produtos.firstWhere(
+    final pedidoProduto = pedido.produtos.firstWhereOrNull(
       (element) => element.id == produto.id,
     );
+    if (pedidoProduto == null) return;
 
     if (clear) {
       pedidoProduto.statusess.clear();

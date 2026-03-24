@@ -78,7 +78,7 @@ class PedidoController {
     form.tipo = pai.tipo;
     form.descricao.text = pai.descricao;
     form.cliente = BackendClient.clientes.getById(pai.cliente.id);
-    form.obra = BackendClient.clientes.getById(pai.cliente.id).obras.first;
+    form.obra = BackendClient.clientes.getById(pai.cliente.id).obras.firstOrNull;
     form.step = BackendClient.steps.getById(pai.step.id);
     if (pai.checklistId != null) {
       form.checklist = BackendClient.checklists.getById(pai.checklistId!);

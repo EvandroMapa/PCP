@@ -68,7 +68,7 @@ class OrdemModel {
 
   double qtdeProduzindo() {
     var where = produtos
-        .where((e) => e.statusess.last.status == PedidoProdutoStatus.produzindo)
+        .where((e) => e.status.status == PedidoProdutoStatus.produzindo)
         .toList();
     return where.isEmpty
         ? 0
@@ -80,7 +80,7 @@ class OrdemModel {
 
   double qtdePronto() {
     var where = produtos
-        .where((e) => e.statusess.last.status == PedidoProdutoStatus.pronto)
+        .where((e) => e.status.status == PedidoProdutoStatus.pronto)
         .toList();
     return where.isEmpty
         ? 0

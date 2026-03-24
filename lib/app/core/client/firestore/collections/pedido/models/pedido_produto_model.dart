@@ -294,9 +294,11 @@ class PedidoProdutoModel {
       clienteId: map['clienteId'] ?? '',
       obraId: map['obraId'] ?? '',
       produto: ProdutoModel.fromMap(map['produto']),
-      statusess: List<PedidoProdutoStatusModel>.from(
-        map['statusess']?.map((x) => PedidoProdutoStatusModel.fromMap(x)),
-      ),
+      statusess: map['statusess'] != null
+          ? List<PedidoProdutoStatusModel>.from(
+              map['statusess']?.map((x) => PedidoProdutoStatusModel.fromMap(x)),
+            )
+          : [PedidoProdutoStatusModel.empty()],
       qtde: map['qtde'] != null ? double.parse(map['qtde'].toString()) : 0.0,
       materiaPrima: map['materiaPrima'] != null
           ? MateriaPrimaModel.fromMap(map['materiaPrima'])

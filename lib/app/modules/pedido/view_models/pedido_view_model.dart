@@ -67,9 +67,13 @@ class PedidoCreateModel {
   PedidoCreateModel(PedidoModel? pai)
     : id = HashService.get,
       isEdit = false,
-      step = FirestoreClient.steps.data.firstWhereOrNull(
-        (e) => e.id == FirestoreClient.automatizacao.data.criacaoPedido.step?.id,
-      ),
+      step = (FirestoreClient.steps.data.firstWhereOrNull((e) => e.isDefault) ??
+          FirestoreClient.steps.data.firstWhereOrNull(
+            (e) => e.id == FirestoreClient.automatizacao.data.criacaoPedido.step?.id,
+          ) ??
+          FirestoreClient.steps.data.firstOrNull),
+      checklist = FirestoreClient.checklists.data.firstOrNull,
+      tipo = PedidoTipo.cd,
       pai = pai?.id;
 
   String getDetails() {

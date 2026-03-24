@@ -193,10 +193,13 @@ class StepController {
     _onUpdatePedidosIndex(step.id, index);
   }
 
-  PedidoModel _onRemovePedidoFromStep(String stepId, String pedidoId) {
-    final key = utils.kanban.keys.firstWhere((e) => e.id == stepId);
-    final pedido = utils.kanban[key]!.firstWhere((e) => e.id == pedidoId);
-    utils.kanban[key]!.remove(pedido);
+  PedidoModel? _onRemovePedidoFromStep(String stepId, String pedidoId) {
+    final key = utils.kanban.keys.firstWhereOrNull((e) => e.id == stepId);
+    if (key == null) return null;
+    final pedido = utils.kanban[key]?.firstWhereOrNull((e) => e.id == pedidoId);
+    if (pedido != null) {
+      utils.kanban[key]!.remove(pedido);
+    }
     return pedido;
   }
 
@@ -205,13 +208,15 @@ class StepController {
     int index, {
     required PedidoModel pedido,
   }) {
-    final key = utils.kanban.keys.firstWhere((e) => e.id == stepId);
+    final key = utils.kanban.keys.firstWhereOrNull((e) => e.id == stepId);
+    if (key == null) return;
     utils.kanban[key]!.insert(index, pedido);
     pedido.addStep(key);
   }
 
   void _onUpdatePedidosIndex(String stepId, int index) async {
-    final key = utils.kanban.keys.firstWhere((e) => e.id == stepId);
+    final key = utils.kanban.keys.firstWhereOrNull((e) => e.id == stepId);
+    if (key == null) return;
     List<PedidoModel> pedidos = utils.kanban[key]!;
     for (int i = 0; i < pedidos.length; i++) {
       pedidos[i].index = i;
@@ -308,6 +313,7 @@ class StepController {
   }
 
   void onUndoStep(PedidoModel pedido) async {
+    if (pedido.steps.length < 2) return;
     final step = pedido.steps[pedido.steps.length - 2].step;
     if (!await showConfirmDialog(
       'Deseja voltar para etapa anterior?',
