@@ -146,23 +146,34 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
   @override
   Future<PedidoModel?> add(PedidoModel model) async {
+    final List<String> errorLogs = [];
     try {
       log('Supabase (Pedido.add): Sending record (upsert)...');
       await SupabaseService.client.from(tableName).upsert(model.toSupabaseMap());
       log('Supabase (Pedido.add): Record saved. Syncing relationships...');
-      await _syncRelationships(model);
-      log('Supabase (Pedido.add): Relationships synced. Fetching data...');
+      
+      final syncErrors = await _syncRelationships(model);
+      errorLogs.addAll(syncErrors);
+
+      if (errorLogs.isNotEmpty) {
+        final alert = '--- ERROS DE SINCRONIZAÇÃO (PODE COPIAR) ---\n${errorLogs.join("\n")}\n------------------------------------------';
+        log(alert);
+        NotificationService.showNegative('Pedido Salvo com Alertas', 'Alguns itens não foram sincronizados. Erros detalhados no console.');
+      }
+
+      log('Supabase (Pedido.add): Fetching updated data...');
       await fetch();
       return model;
     } catch (e) {
-      log('Supabase Error (Pedido.add): $e');
-      NotificationService.showNegative('Erro ao Salvar Pedido', e.toString());
-      rethrow;
+      log('Supabase CRITICAL ERROR (Pedido.add): $e');
+      NotificationService.showNegative('Erro Crítico ao Salvar Pedido', e.toString());
+      return null;
     }
   }
 
   @override
   Future<PedidoModel?> update(PedidoModel model) async {
+    final List<String> errorLogs = [];
     try {
       log('Supabase (Pedido.update): Updating main record...');
       await SupabaseService.client
@@ -170,18 +181,28 @@ class PedidoSupabaseCollection extends PedidoCollection {
           .update(model.toSupabaseMap())
           .eq('id', model.id);
       log('Supabase (Pedido.update): Main record updated. Syncing relationships...');
-      await _syncRelationships(model);
-      log('Supabase (Pedido.update): Relationships synced. Fetching data...');
+      
+      final syncErrors = await _syncRelationships(model);
+      errorLogs.addAll(syncErrors);
+
+      if (errorLogs.isNotEmpty) {
+        final alert = '--- ERROS DE SINCRONIZAÇÃO (PODE COPIAR) ---\n${errorLogs.join("\n")}\n------------------------------------------';
+        log(alert);
+        NotificationService.showNegative('Pedido Atualizado com Alertas', 'Alguns itens não foram sincronizados. Erros detalhados no console.');
+      }
+
+      log('Supabase (Pedido.update): Fetching updated data...');
       await fetch();
       return model;
     } catch (e) {
-      log('Supabase Error (Pedido.update): $e');
-      NotificationService.showNegative('Erro ao Atualizar Pedido', e.toString());
-      rethrow;
+      log('Supabase CRITICAL ERROR (Pedido.update): $e');
+      NotificationService.showNegative('Erro Crítico ao Atualizar Pedido', e.toString());
+      return null;
     }
   }
 
-  Future<void> _syncRelationships(PedidoModel model) async {
+  Future<List<String>> _syncRelationships(PedidoModel model) async {
+    final List<String> syncErrors = [];
     try {
       // 1. Delete existing for update
       log('Supabase (Sync): Cleaning old relationships...');
@@ -203,48 +224,57 @@ class PedidoSupabaseCollection extends PedidoCollection {
             .delete()
             .eq('pedido_id', model.id),
       ]);
+    } catch (e) {
+      syncErrors.add('Erro ao limpar relações antigas: $e');
+    }
 
-      // 2. Insert new relationships
-      final List<Future> insertions = [];
-
+    // 2. Insert new relationships (Granular)
+    try {
       // Products
       if (model.produtos.isNotEmpty) {
         log('Supabase (Sync): Inserting ${model.produtos.length} products...');
-        insertions.add(SupabaseService.client.from('pedido_produtos').insert(
-            model.produtos.map((p) => p.toSupabaseMap(model.id)).toList()));
+        await SupabaseService.client.from('pedido_produtos').insert(
+            model.produtos.map((p) => p.toSupabaseMap(model.id)).toList());
       }
+    } catch (e) {
+      syncErrors.add('Erro na sincronia de Produtos: $e');
+    }
 
+    try {
       // Status History
       if (model.statusess.isNotEmpty) {
         log('Supabase (Sync): Inserting ${model.statusess.length} status history items...');
-        insertions.add(SupabaseService.client.from('pedido_status_history').insert(
-            model.statusess.map((s) => s.toSupabaseMap(model.id)).toList()));
+        await SupabaseService.client.from('pedido_status_history').insert(
+            model.statusess.map((s) => s.toSupabaseMap(model.id)).toList());
       }
+    } catch (e) {
+      syncErrors.add('Erro na sincronia de Histórico de Status: $e');
+    }
 
+    try {
       // Steps History
       if (model.steps.isNotEmpty) {
         log('Supabase (Sync): Inserting ${model.steps.length} step history items...');
-        insertions.add(SupabaseService.client.from('pedido_steps_history').insert(
-            model.steps.map((st) => st.toSupabaseMap(model.id)).toList()));
+        await SupabaseService.client.from('pedido_steps_history').insert(
+            model.steps.map((st) => st.toSupabaseMap(model.id)).toList());
       }
+    } catch (e) {
+      syncErrors.add('Erro na sincronia de Histórico de Etapas: $e');
+    }
 
+    try {
       // Tags
       if (model.tags.isNotEmpty) {
         log('Supabase (Sync): Inserting ${model.tags.length} tags...');
-        insertions.add(SupabaseService.client.from('pedido_tags').insert(model.tags
+        await SupabaseService.client.from('pedido_tags').insert(model.tags
             .map((t) => {'pedido_id': model.id, 'tag_id': t.id})
-            .toList()));
+            .toList());
       }
-
-      if (insertions.isNotEmpty) {
-        await Future.wait(insertions);
-      }
-      log('Supabase (Sync): All relationships synced successfully.');
     } catch (e) {
-      log('Supabase Error (Pedido._syncRelationships): $e');
-      NotificationService.showNegative('Erro ao Sincronizar Relações', e.toString());
-      rethrow;
+      syncErrors.add('Erro na sincronia de Tags: $e');
     }
+
+    return syncErrors;
   }
 
   @override
