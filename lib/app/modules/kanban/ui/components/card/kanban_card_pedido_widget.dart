@@ -61,6 +61,8 @@ class KanbanCardPedidoWidget extends StatelessWidget {
                 children: [
                   Row(
                     children: [
+                      _tipoTagWidget(pedido.tipo),
+                      const W(4),
                       if (pedido.prioridade != null) ...[
                         Container(
                           margin: const EdgeInsets.only(right: 4),
@@ -84,7 +86,7 @@ class KanbanCardPedidoWidget extends StatelessWidget {
                         ),
                       ],
                       if (pedido.comments.any((e) => e.isFixed)) ...[
-                        Icon(Icons.warning, color: Colors.orange),
+                        Icon(Icons.warning, color: Colors.orange, size: 16),
                         const W(4),
                       ],
                       if (pedido.tags.isNotEmpty) ...[
@@ -94,21 +96,28 @@ class KanbanCardPedidoWidget extends StatelessWidget {
                             viewMode: viewMode,
                           ),
                         ),
+                      ] else
+                        const Spacer(),
+                      const W(8),
+                      if (pedido.pedidosVinculados.isNotEmpty) ...[
+                        Icon(Icons.link, color: Colors.grey[700], size: 16),
                         const W(8),
-                        if (pedido.pedidosVinculados.isNotEmpty) ...[
-                          Icon(Icons.link, color: Colors.grey[700], size: 16),
-                          const W(8),
-                        ],
-                        Text(pedido.getQtdeTotal().toKg()),
-                        if (notificacoes.isNotEmpty) ...[
-                          const W(8),
-                          KanbanCardNotificacaoWidget(),
-                        ],
+                      ],
+                      Text(
+                        pedido.getQtdeTotal().toKg(),
+                        style: AppCss.minimumBold.setSize(14),
+                      ),
+                      if (notificacoes.isNotEmpty) ...[
+                        const W(8),
+                        KanbanCardNotificacaoWidget(),
                       ],
                     ],
                   ),
                   const H(8),
-                  Text(pedido.localizador),
+                  Text(
+                    pedido.localizador,
+                    style: AppCss.mediumBold.setSize(16),
+                  ),
                   const H(8),
                   Row(
                     children: [
@@ -120,9 +129,8 @@ class KanbanCardPedidoWidget extends StatelessWidget {
                     KanbanCardProductsWidget(pedido: pedido),
                     Builder(
                       builder: (context) {
-                        final comments = pedido.comments
-                            .where((e) => e.isFixed)
-                            .toList();
+                        final comments =
+                            pedido.comments.where((e) => e.isFixed).toList();
                         if (comments.isEmpty) return const SizedBox();
                         return KanbanCardCommentsWidget(comments: comments);
                       },
@@ -134,6 +142,20 @@ class KanbanCardPedidoWidget extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _tipoTagWidget(PedidoTipo tipo) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: tipo == PedidoTipo.cd ? Colors.red : Colors.green,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        tipo.name.toUpperCase(),
+        style: AppCss.minimumBold.setColor(Colors.white).setSize(12),
       ),
     );
   }
