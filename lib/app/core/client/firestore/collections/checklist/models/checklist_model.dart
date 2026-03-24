@@ -14,6 +14,13 @@ class ChecklistModel {
     required this.checklist,
     required this.createdAt,
   });
+  
+  factory ChecklistModel.empty() => ChecklistModel(
+    id: '',
+    nome: '',
+    checklist: [],
+    createdAt: DateTime.now(),
+  );
 
   ChecklistModel copyWith({
     String? id,

@@ -3,6 +3,7 @@ import 'dart:convert';
 class VersionModel {
   final double number;
   VersionModel({required this.number});
+  static VersionModel get empty => VersionModel(number: 0.0);
 
   VersionModel copyWith({double? number}) {
     return VersionModel(number: number ?? this.number);

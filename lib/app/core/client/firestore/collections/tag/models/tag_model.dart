@@ -16,6 +16,14 @@ class TagModel {
     required this.createdAt,
   });
 
+  factory TagModel.empty() => TagModel(
+    id: '',
+    nome: '',
+    descricao: '',
+    color: Colors.transparent,
+    createdAt: DateTime.now(),
+  );
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,

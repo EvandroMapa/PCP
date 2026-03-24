@@ -78,7 +78,8 @@ class ChecklistCollection {
         });
   }
 
-  ChecklistModel getById(String id) => data.singleWhere((e) => e.id == id);
+  ChecklistModel getById(String id) =>
+      data.firstWhere((e) => e.id == id, orElse: () => ChecklistModel.empty());
 
   Future<ChecklistModel?> add(ChecklistModel model) async {
     await collection.doc(model.id).set(model.toMap());

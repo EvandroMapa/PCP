@@ -147,7 +147,6 @@ class ObraModel {
         'nome': descricao,
         'cliente_id': clienteId,
         'telefone': telefoneFixo,
-        'status': status.index,
       };
 
   String toJson() => json.encode(toMap());

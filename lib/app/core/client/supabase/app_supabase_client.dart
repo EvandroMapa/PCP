@@ -6,6 +6,8 @@ import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_supa
 import 'package:aco_plus/app/core/client/supabase/collections/produto/produto_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/step/step_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/usuario/usuario_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/version/version_collection.dart';
 
 class AppSupabaseClient {
   static OrdemSupabaseCollection ordens = OrdemSupabaseCollection();
@@ -27,6 +29,11 @@ class AppSupabaseClient {
       produtos.start(),
       fabricantes.start(),
       materiaPrima.start(),
+      BackendClient.tags.start(),
+      BackendClient.checklists.start(),
+      BackendClient.automatizacao.start(),
+      BackendClient.notificacoes.start(),
+      VersionCollection().start(),
     ]);
 
     // Pedidos depends on clientes/steps for mapping, so start it after
@@ -39,5 +46,10 @@ class AppSupabaseClient {
     pedidos.listen();
     ordens.listen();
     materiaPrima.listen();
+    BackendClient.tags.listen();
+    BackendClient.checklists.listen();
+    BackendClient.automatizacao.listen();
+    BackendClient.notificacoes.listen();
+    VersionCollection().listen();
   }
 }

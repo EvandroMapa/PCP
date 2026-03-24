@@ -101,7 +101,10 @@ class PedidoCreateModel {
         .map((e) => PedidoProdutoCreateModel.edit(e))
         .toList();
     deliveryAt = pedido.deliveryAt;
-    step = FirestoreClient.steps.getById(pedido.steps.first.step.id);
+    final firstStep = pedido.steps.firstOrNull;
+    step = firstStep != null 
+        ? FirestoreClient.steps.getById(firstStep.step.id) 
+        : null;
     if (pedido.checklistId != null) {
       checklist = FirestoreClient.checklists.getById(pedido.checklistId!);
       if (checklist != null) {
@@ -133,11 +136,11 @@ class PedidoCreateModel {
     final pedidoStatusModel = PedidoStatusModel(
       id: HashService.get,
       status: PedidoStatus.produzindoCD,
-      createdAt: pedido?.statusess.first.createdAt ?? DateTime.now(),
+      createdAt: pedido?.statusess.firstOrNull?.createdAt ?? DateTime.now(),
     );
     final pedidoStepModel = PedidoStepModel(
       id: id,
-      step: step!,
+      step: step ?? StepModel.notFound,
       createdAt: DateTime.now(),
     );
     return PedidoModel(

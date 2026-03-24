@@ -12,7 +12,8 @@ class VersionCollection {
   factory VersionCollection() => _instance;
   String name = 'version';
 
-  AppStream<VersionModel> dataStream = AppStream<VersionModel>();
+  AppStream<VersionModel> dataStream =
+      AppStream<VersionModel>.seed(VersionModel.empty);
   VersionModel get data => dataStream.value;
 
   CollectionReference<Map<String, dynamic>> get collection =>
@@ -29,8 +30,11 @@ class VersionCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     final data = await FirebaseFirestore.instance.collection(name).get();
-    final version = VersionModel.fromMap(data.docs.first.data());
-    dataStream.add(version);
+    final first = data.docs.firstOrNull;
+    if (first != null) {
+      final version = VersionModel.fromMap(first.data());
+      dataStream.add(version);
+    }
   }
 
   bool _isListen = false;
@@ -68,9 +72,12 @@ class VersionCollection {
             : collection)
         .snapshots()
         .listen((e) async {
-          final version = VersionModel.fromMap(e.docs.first.data());
-          dataStream.add(version);
-          _checkVersion(version);
+          final first = e.docs.firstOrNull;
+          if (first != null) {
+            final version = VersionModel.fromMap(first.data());
+            dataStream.add(version);
+            _checkVersion(version);
+          }
         });
   }
 

@@ -80,7 +80,8 @@ class TagCollection {
         });
   }
 
-  TagModel getById(String id) => data.singleWhere((e) => e.id == id);
+  TagModel getById(String id) =>
+      data.firstWhere((e) => e.id == id, orElse: () => TagModel.empty());
 
   Future<TagModel?> add(TagModel model) async {
     await collection.doc(model.id).set(model.toMap());
