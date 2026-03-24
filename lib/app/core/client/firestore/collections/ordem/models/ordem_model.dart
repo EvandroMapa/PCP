@@ -212,6 +212,16 @@ class OrdemModel {
     );
   }
 
+  factory OrdemModel.empty() => OrdemModel(
+        id: '',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        produto: ProdutoModel.empty(),
+        produtos: [],
+        freezed: OrdemFreezedModel.static(),
+        history: [],
+      );
+
   factory OrdemModel.fromSupabaseMap(Map<String, dynamic> map) {
     return OrdemModel(
       id: map['id'] ?? '',
