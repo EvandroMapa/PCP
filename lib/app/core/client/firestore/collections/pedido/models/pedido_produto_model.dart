@@ -323,7 +323,7 @@ class PedidoProdutoModel {
       'quantidade': qtde,
       'qtde': qtde, // Suporte para a coluna NOT NULL encontrada
       'produto_id': produto.id, // Suporte para a coluna NOT NULL encontrada
-      'unidade': produto.unidade,
+      'unidade': '', // O ProdutoModel não tem unidade, enviando vazio para evitar NOT NULL
       'status': statusess.isNotEmpty ? statusess.last.status.name : 'separado',
       'produto_raw': produto.toMap(),
       'materia_prima_raw': materiaPrima?.toMap(),
