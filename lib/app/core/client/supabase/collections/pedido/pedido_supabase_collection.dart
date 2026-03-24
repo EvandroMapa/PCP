@@ -262,6 +262,12 @@ class PedidoSupabaseCollection extends PedidoCollection {
       syncErrors.add('Erro Produtos: $e');
     }
 
+    try {
+      // Status History
+      if (model.statusess.isNotEmpty) {
+        await SupabaseService.client.from('pedido_status_history').insert(
+            model.statusess.map((s) => s.toSupabaseMap(model.id)).toList());
+      }
     } catch (e) {
       syncErrors.add('Erro Status: $e');
     }
