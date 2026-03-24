@@ -58,16 +58,24 @@ class PedidoSupabaseCollection extends PedidoCollection {
       Future<List<Map<String, dynamic>>> safeFetch(String table) async {
         try {
           final res = await SupabaseService.client.from(table).select();
-          if (res == null) return [];
+          if (res == null) {
+             print('Supabase (fetch $table): Retornou NULL');
+             return [];
+          }
           final list = res as List;
+          print('Supabase (fetch $table): Encontrou ${list.length} registros brutos.');
           return list.map((item) {
-            if (item is Map) {
-              return item.map((key, value) => MapEntry(key.toString(), value));
+            try {
+              if (item is Map) {
+                return item.map((key, value) => MapEntry(key.toString(), value));
+              }
+            } catch (e) {
+              print('Erro convertendo item da tabela $table: $e');
             }
             return <String, dynamic>{};
           }).toList();
         } catch (e) {
-          print('Supabase Warning (fetch $table): $e');
+          print('Supabase CRITICAL FAIL (fetch $table): $e');
           return [];
         }
       }
