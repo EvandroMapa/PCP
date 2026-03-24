@@ -78,11 +78,12 @@ class PedidoSupabaseCollection extends PedidoCollection {
       final tagsRaw = results[3];
 
       final pedidos = pedidosRaw.map((pMap) {
-        final String pId = pMap['id'].toString().trim().toLowerCase();
+      final pedidos = pedidosRaw.map((pMap) {
+        final String pId = pMap['id'].toString().trim();
         
         final pProdutos = produtosRaw
             .where((r) {
-              final String pedidoId = (r['pedido_id'] ?? '').toString().trim().toLowerCase();
+              final String pedidoId = (r['pedido_id'] ?? '').toString().trim();
               return pedidoId == pId;
             })
             .toList();
@@ -96,10 +97,10 @@ class PedidoSupabaseCollection extends PedidoCollection {
         final pedido = PedidoModel.fromSupabaseMap(
           pMap,
           produtosRaw: pProdutos,
-          statusRaw: statusRaw.where((r) => r['pedido_id'].toString().trim().toLowerCase() == pId).toList(),
-          stepsRaw: stepsRaw.where((r) => r['pedido_id'].toString().trim().toLowerCase() == pId).toList(),
+          statusRaw: statusRaw.where((r) => r['pedido_id'].toString().trim() == pId).toList(),
+          stepsRaw: stepsRaw.where((r) => r['pedido_id'].toString().trim() == pId).toList(),
           tagsIds: tagsRaw
-              .where((r) => r['pedido_id'].toString().trim().toLowerCase() == pId)
+              .where((r) => r['pedido_id'].toString().trim() == pId)
               .map((r) => r['tag_id'].toString())
               .toList(),
         );

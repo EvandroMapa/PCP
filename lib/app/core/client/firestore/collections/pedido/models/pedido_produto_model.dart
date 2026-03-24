@@ -348,7 +348,7 @@ class PedidoProdutoModel {
             : [PedidoProdutoStatusModel.empty()],
       );
     } catch (e) {
-      log('Error parsing PedidoProdutoModel from Supabase: $e');
+      print('Error parsing PedidoProdutoModel from Supabase: $e');
       return PedidoProdutoModel(
         id: (map['id'] ?? '').toString(),
         pedidoId: (map['pedido_id'] ?? '').toString(),
