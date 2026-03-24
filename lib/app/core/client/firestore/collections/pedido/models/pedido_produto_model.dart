@@ -321,6 +321,10 @@ class PedidoProdutoModel {
       'cliente_id': clienteId,
       'obra_id': obraId,
       'quantidade': qtde,
+      'qtde': qtde, // Suporte para a coluna NOT NULL encontrada
+      'produto_id': produto.id, // Suporte para a coluna NOT NULL encontrada
+      'unidade': produto.unidade,
+      'status': statusess.isNotEmpty ? statusess.last.status.name : 'separado',
       'produto_raw': produto.toMap(),
       'materia_prima_raw': materiaPrima?.toMap(),
       'statusess_raw': statusess.map((e) => e.toMap()).toList(),
