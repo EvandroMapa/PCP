@@ -327,20 +327,37 @@ class PedidoProdutoModel {
   }
 
   factory PedidoProdutoModel.fromSupabaseMap(Map<String, dynamic> map) {
-    return PedidoProdutoModel(
-      id: map['id'] ?? map['id_id'] ?? '',
-      qtde: map['quantidade']?.toDouble() ?? 0.0,
-      produto: ProdutoModel.fromMap(map['produto_raw']),
-      materiaPrima: map['materia_prima_raw'] != null 
-          ? MateriaPrimaModel.fromMap(map['materia_prima_raw']) 
-          : null,
-      pedidoId: map['pedido_id'] ?? '',
-      clienteId: map['cliente_id'] ?? '',
-      obraId: map['obra_id'] ?? '',
-      statusess: map['statusess_raw'] != null
-          ? (map['statusess_raw'] as List).map((e) => PedidoProdutoStatusModel.fromMap(e)).toList()
-          : [PedidoProdutoStatusModel.empty()],
-    );
+    try {
+      return PedidoProdutoModel(
+        id: (map['id'] ?? map['id_id'] ?? '').toString(),
+        qtde: double.tryParse((map['quantidade'] ?? map['qtde'] ?? '0').toString()) ?? 0.0,
+        produto: map['produto_raw'] != null 
+            ? ProdutoModel.fromMap(map['produto_raw'] is String ? json.decode(map['produto_raw']) : map['produto_raw']) 
+            : ProdutoModel.empty(),
+        materiaPrima: map['materia_prima_raw'] != null 
+            ? MateriaPrimaModel.fromMap(map['materia_prima_raw'] is String ? json.decode(map['materia_prima_raw']) : map['materia_prima_raw']) 
+            : null,
+        pedidoId: (map['pedido_id'] ?? '').toString(),
+        clienteId: (map['cliente_id'] ?? '').toString(),
+        obraId: (map['obra_id'] ?? '').toString(),
+        statusess: map['statusess_raw'] != null
+            ? (map['statusess_raw'] is String ? json.decode(map['statusess_raw']) : map['statusess_raw'] as List)
+                .map((e) => PedidoProdutoStatusModel.fromMap(e))
+                .toList()
+            : [PedidoProdutoStatusModel.empty()],
+      );
+    } catch (e) {
+      log('Error parsing PedidoProdutoModel from Supabase: $e');
+      return PedidoProdutoModel(
+        id: (map['id'] ?? '').toString(),
+        pedidoId: (map['pedido_id'] ?? '').toString(),
+        clienteId: '',
+        obraId: '',
+        produto: ProdutoModel.empty(),
+        statusess: [PedidoProdutoStatusModel.empty()],
+        qtde: 0,
+      );
+    }
   }
 
   PedidoProdutoModel copyWith({

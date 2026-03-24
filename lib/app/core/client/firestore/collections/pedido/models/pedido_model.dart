@@ -437,9 +437,9 @@ class PedidoModel {
     late ObraModel obra;
     late StepModel step;
     try {
-      final clienteId = map['cliente_id'] as String? ?? '';
-      final obraId = map['obra_id'] as String? ?? '';
-      final stepId = map['step_id'] as String? ?? '';
+      final clienteId = (map['cliente_id'] ?? '').toString();
+      final obraId = (map['obra_id'] ?? '').toString();
+      final stepId = (map['step_id'] ?? '').toString();
       cliente = FirestoreClient.clientes.getById(clienteId);
       obra = cliente.obras.firstWhereOrNull((e) => e.id == obraId) ??
           ObraModel.empty();
@@ -454,45 +454,45 @@ class PedidoModel {
     }
 
     return PedidoModel(
-        id: map['id'] ?? '',
-        localizador: map['localizador'] ?? '',
-        descricao: map['descricao'] ?? '',
+        id: (map['id'] ?? '').toString(),
+        localizador: (map['localizador'] ?? '').toString(),
+        descricao: (map['descricao'] ?? '').toString(),
         createdAt: _parseDate(map['created_at']),
-        deliveryAt:
-            map['delivery_at'] != null ? _parseDate(map['delivery_at']) : null,
+        deliveryAt: map['delivery_at'] != null ? _parseDate(map['delivery_at']) : null,
         cliente: cliente,
         obra: obra,
         produtos: produtosRaw != null
-            ? produtosRaw.map((e) => PedidoProdutoModel.fromSupabaseMap(e)).toList()
+            ? produtosRaw.map((p) => PedidoProdutoModel.fromSupabaseMap(p)).toList()
             : [],
         tipo: PedidoTipo.values.firstWhere(
-          (e) => e.name == (map['tipo'] ?? ''),
-          orElse: () => PedidoTipo.cda,
-        ),
+            (e) => e.name == (map['tipo'] ?? 'normal'),
+            orElse: () => PedidoTipo.normal),
         statusess: statusRaw != null
-            ? statusRaw.map((e) => PedidoStatusModel.fromSupabaseMap(e)).toList()
-            : [],
+            ? statusRaw.map((s) => PedidoStatusModel.fromMap(s)).toList()
+            : [
+                PedidoStatusModel.create(PedidoStatus.provisionamento),
+              ],
         steps: stepsRaw != null
             ? stepsRaw.map((e) => PedidoStepModel.fromSupabaseMap(e)).toList()
             : [
                 PedidoStepModel(
-                    id: map['id'] ?? '', step: step, createdAt: DateTime.now())
+                    id: (map['id'] ?? '').toString(), step: step, createdAt: DateTime.now())
               ],
         tags: tagsIds != null
-            ? tagsIds.map((id) => FirestoreClient.tags.getById(id)).toList()
+            ? tagsIds.map((tid) => FirestoreClient.tags.getById(tid)).toList()
             : [],
         checks: [], // TODO: Implement checklist persistence
         comments: [], // TODO: Implement comment persistence
         users: [],
-        index: map['index'] ?? 0,
+        index: int.tryParse((map['index'] ?? '0').toString()) ?? 0,
         histories: [],
-        isArchived: map['is_archived'] ?? false,
+        isArchived: map['is_archived'] == true,
         archives: [],
-        checklistId: map['checklist_id'],
-        planilhamento: map['planilhamento'] ?? '',
-        pedidoFinanceiro: map['pedido_financeiro'] ?? '',
-        instrucoesEntrega: map['instrucoes_entrega'] ?? '',
-        instrucoesFinanceiras: map['instrucoes_financeiras'] ?? '',
+        checklistId: map['checklist_id']?.toString(),
+        planilhamento: map['planilhamento']?.toString() ?? '',
+        pedidoFinanceiro: map['pedido_financeiro']?.toString() ?? '',
+        instrucoesEntrega: map['instrucoes_entrega']?.toString() ?? '',
+        instrucoesFinanceiras: map['instrucoes_financeiras']?.toString() ?? '',
         prioridade: null,
         pedidosVinculados: [],
         pedidosFilhos: [],
