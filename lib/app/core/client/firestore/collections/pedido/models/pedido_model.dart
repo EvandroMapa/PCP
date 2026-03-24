@@ -175,6 +175,11 @@ class PedidoModel {
     required this.romaneio,
   });
 
+  PedidoStatusModel get status =>
+      statusess.isNotEmpty ? statusess.last : PedidoStatusModel.empty();
+  PedidoStepModel get step =>
+      steps.isNotEmpty ? steps.last : PedidoStepModel.empty();
+
   double getQtdeDirecionada(PedidoProdutoModel produto) {
     double qtde = 0.0;
     for (final filho in getPedidosFilhos()) {

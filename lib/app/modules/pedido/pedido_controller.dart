@@ -57,7 +57,22 @@ class PedidoController {
   void onInit() {
     utilsStream.add(PedidoUtils());
     BackendClient.pedidos.fetch();
+    _listenChecklists();
   }
+
+  void _listenChecklists() {
+    BackendClient.checklists.dataStream.listen((checklists) {
+      if (formStream.hasValue && form.checklist == null) {
+        form.checklist = checklists.firstWhereOrNull(
+          (e) =>
+              e.nome.toUpperCase().contains('PADRAO') ||
+              e.nome.toUpperCase().contains('PADRÃO'),
+        );
+        formStream.update();
+      }
+    });
+  }
+
 
   final AppStream<PedidoCreateModel> formStream =
       AppStream<PedidoCreateModel>();
@@ -225,12 +240,13 @@ class PedidoController {
   );
 
   void onValid() {
-    if (form.cliente == null) {
+    if (form.localizador.text.isEmpty) {
       throw Exception('Localizador não pode ser vazio');
     }
     if (form.cliente == null) {
       throw Exception('Selecione o cliente do pedido');
     }
+
     if (form.tipo == null) {
       throw Exception('Selecione o tipo do pedido');
     }
@@ -268,7 +284,8 @@ class PedidoController {
   void onChangePedidoStatus(PedidoModel pedido) async {
     final status = await showPedidoStatusBottom(pedido);
     if (status == null) return;
-    if (pedido.statusess.last.status == status) return;
+    if (pedido.status.status == status) return;
+
     pedido.statusess.add(PedidoStatusModel.create(status));
     await automatizacaoCtrl.onSetStepByPedidoStatus([pedido]);
     pedidoStream.update();
@@ -278,7 +295,8 @@ class PedidoController {
   void onChangePedidoStep(PedidoModel pedido) async {
     final step = await showPedidoStepBottom(pedido);
     if (step == null) return;
-    if (pedido.steps.last.step.id == step.id) return;
+    if (pedido.step.id == step.id) return;
+
     kanbanCtrl.onAccept(step, pedido, 0);
     pedidoStream.update();
   }

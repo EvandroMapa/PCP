@@ -14,9 +14,15 @@ class TagCollection {
   List<TagModel> get data => dataStream.value;
 
   TagModel get cd =>
-      data.firstWhere((e) => e.nome.replaceAll(' ', '').toLowerCase() == 'cd');
+      data.firstWhereOrNull(
+        (e) => e.nome.replaceAll(' ', '').toLowerCase() == 'cd',
+      ) ??
+      TagModel.empty();
   TagModel get cda =>
-      data.firstWhere((e) => e.nome.replaceAll(' ', '').toLowerCase() == 'cda');
+      data.firstWhereOrNull(
+        (e) => e.nome.replaceAll(' ', '').toLowerCase() == 'cda',
+      ) ??
+      TagModel.empty();
 
   CollectionReference<Map<String, dynamic>> get collection =>
       FirebaseFirestore.instance.collection(name);

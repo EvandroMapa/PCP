@@ -19,6 +19,12 @@ class PedidoStatusModel {
     status: status,
   );
 
+  factory PedidoStatusModel.empty() => PedidoStatusModel(
+    id: '',
+    createdAt: DateTime.now(),
+    status: PedidoStatus.aguardandoProducao,
+  );
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,

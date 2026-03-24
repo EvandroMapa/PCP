@@ -21,6 +21,12 @@ class PedidoStepModel {
     createdAt: DateTime.now(),
   );
 
+  factory PedidoStepModel.empty() => PedidoStepModel(
+    id: '',
+    step: StepModel.notFound,
+    createdAt: DateTime.now(),
+  );
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
