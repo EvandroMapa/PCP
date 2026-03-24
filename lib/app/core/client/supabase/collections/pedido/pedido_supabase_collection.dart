@@ -109,8 +109,6 @@ class PedidoSupabaseCollection extends PedidoCollection {
       }).toList();
 
       dataStream.add(pedidos);
-      log('Supabase (Pedido.start): Found ${pedidos.length} orders.');
-      NotificationService.showPositive('Carga Supabase', 'Pedidos carregados: ${pedidos.length}');
       pedidosUnarchivedsStream.add(pedidos.where((e) => !e.isArchived).toList());
       pedidosPrioridadeStream
           .add(pedidos.where((e) => e.prioridade != null).toList());
