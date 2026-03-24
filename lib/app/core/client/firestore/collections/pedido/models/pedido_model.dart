@@ -488,6 +488,17 @@ class PedidoModel {
         users: [],
         index: int.tryParse((map['index'] ?? '0').toString()) ?? 0,
         histories: [],
+        isArchived: map['is_archived'] == true,
+        archives: [],
+        checklistId: map['checklist_id']?.toString(),
+        planilhamento: map['planilhamento']?.toString() ?? '',
+        pedidoFinanceiro: map['pedido_financeiro']?.toString() ?? '',
+        instrucoesEntrega: map['instrucoes_entrega']?.toString() ?? '',
+        instrucoesFinanceiras: map['instrucoes_financeiras']?.toString() ?? '',
+        prioridade: null,
+        pedidosVinculados: [],
+        pedidosFilhos: [],
+        pai: null,
         isFilho: false,
         romaneio: null);
     
