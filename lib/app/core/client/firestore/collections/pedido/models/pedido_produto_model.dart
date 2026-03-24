@@ -317,9 +317,12 @@ class PedidoProdutoModel {
       'id': id,
       'id_id': id,
       'pedido_id': pedidoId,
+      'cliente_id': clienteId,
+      'obra_id': obraId,
       'quantidade': qtde,
       'produto_raw': produto.toMap(),
       'materia_prima_raw': materiaPrima?.toMap(),
+      'statusess_raw': statusess.map((e) => e.toMap()).toList(),
     };
   }
 
@@ -332,6 +335,11 @@ class PedidoProdutoModel {
           ? MateriaPrimaModel.fromMap(map['materia_prima_raw']) 
           : null,
       pedidoId: map['pedido_id'] ?? '',
+      clienteId: map['cliente_id'] ?? '',
+      obraId: map['obra_id'] ?? '',
+      statusess: map['statusess_raw'] != null
+          ? (map['statusess_raw'] as List).map((e) => PedidoProdutoStatusModel.fromMap(e)).toList()
+          : [PedidoProdutoStatusModel.empty()],
     );
   }
 
