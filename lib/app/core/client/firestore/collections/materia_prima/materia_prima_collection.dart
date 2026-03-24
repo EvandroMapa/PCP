@@ -13,7 +13,7 @@ class MateriaPrimaCollection {
   String name = 'materias_primas';
 
   AppStream<List<MateriaPrimaModel>> dataStream =
-      AppStream<List<MateriaPrimaModel>>();
+      AppStream<List<MateriaPrimaModel>>.seed([]);
   List<MateriaPrimaModel> get data => dataStream.value;
 
   CollectionReference<Map<String, dynamic>> get collection =>

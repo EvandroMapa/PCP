@@ -32,8 +32,11 @@ class AutomatizacaoCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     final data = await FirebaseFirestore.instance.collection(name).get();
-    final automatizacao = AutomatizacaoModel.fromMap(data.docs.first.data());
-    dataStream.add(automatizacao);
+    final first = data.docs.firstOrNull;
+    if (first != null) {
+      final automatizacao = AutomatizacaoModel.fromMap(first.data());
+      dataStream.add(automatizacao);
+    }
   }
 
   bool _isListen = false;
@@ -71,8 +74,11 @@ class AutomatizacaoCollection {
             : collection)
         .snapshots()
         .listen((e) async {
-          final automatizacao = AutomatizacaoModel.fromMap(e.docs.first.data());
-          dataStream.add(automatizacao);
+          final first = e.docs.firstOrNull;
+          if (first != null) {
+            final automatizacao = AutomatizacaoModel.fromMap(first.data());
+            dataStream.add(automatizacao);
+          }
         });
   }
 

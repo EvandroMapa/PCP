@@ -12,7 +12,8 @@ class StepCollection {
   factory StepCollection() => _instance;
   String name = 'steps';
 
-  AppStream<List<StepModel>> dataStream = AppStream<List<StepModel>>();
+  AppStream<List<StepModel>> dataStream =
+      AppStream<List<StepModel>>.seed([]);
   List<StepModel> get data => dataStream.value;
 
   CollectionReference<Map<String, dynamic>> get collection =>

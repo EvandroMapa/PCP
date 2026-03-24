@@ -14,15 +14,16 @@ class OrdemCollection {
   factory OrdemCollection() => _instance;
   String name = 'ordens';
 
-  AppStream<List<OrdemModel>> dataStream = AppStream<List<OrdemModel>>();
+  AppStream<List<OrdemModel>> dataStream =
+      AppStream<List<OrdemModel>>.seed([]);
   List<OrdemModel> get data => dataStream.value;
 
   AppStream<List<OrdemModel>> ordensNaoArquivadasStream =
-      AppStream<List<OrdemModel>>();
+      AppStream<List<OrdemModel>>.seed([]);
   List<OrdemModel> get ordensNaoArquivadas => ordensNaoArquivadasStream.value;
 
   AppStream<List<OrdemModel>> ordensArquivadasStream =
-      AppStream<List<OrdemModel>>();
+      AppStream<List<OrdemModel>>.seed([]);
   List<OrdemModel> get ordensArquivadas => ordensArquivadasStream.value;
 
   List<OrdemModel> get ordensNaoCongeladas =>
@@ -182,8 +183,8 @@ class OrdemCollection {
         .map((doc) => OrdemModel.fromMap(doc.data()!));
   }
 
-  OrdemModel getById(String id) =>
-      ([...data, ...ordensArquivadas]).firstWhere((e) => e.id == id);
+  OrdemModel getById(String id) => ([...data, ...ordensArquivadas])
+      .firstWhere((e) => e.id == id, orElse: () => OrdemModel.empty());
 
   Future<OrdemModel?> add(OrdemModel model) async {
     await collection.doc(model.id).set(model.toMap());

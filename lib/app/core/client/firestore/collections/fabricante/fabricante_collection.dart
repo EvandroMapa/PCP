@@ -13,7 +13,7 @@ class FabricanteCollection {
   String name = 'fabricantes';
 
   AppStream<List<FabricanteModel>> dataStream =
-      AppStream<List<FabricanteModel>>();
+      AppStream<List<FabricanteModel>>.seed([]);
   List<FabricanteModel> get data => dataStream.value;
 
   CollectionReference<Map<String, dynamic>> get collection =>

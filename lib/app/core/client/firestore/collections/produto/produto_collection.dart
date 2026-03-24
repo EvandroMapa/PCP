@@ -11,7 +11,8 @@ class ProdutoCollection {
   factory ProdutoCollection() => _instance;
   String name = 'produtos';
 
-  AppStream<List<ProdutoModel>> dataStream = AppStream<List<ProdutoModel>>();
+  AppStream<List<ProdutoModel>> dataStream =
+      AppStream<List<ProdutoModel>>.seed([]);
   List<ProdutoModel> get data => dataStream.value;
 
   CollectionReference<Map<String, dynamic>> get collection =>
@@ -78,7 +79,8 @@ class ProdutoCollection {
         });
   }
 
-  ProdutoModel getById(String id) => data.singleWhere((e) => e.id == id);
+  ProdutoModel getById(String id) =>
+      data.firstWhere((e) => e.id == id, orElse: () => ProdutoModel.empty());
 
   Future<ProdutoModel?> add(ProdutoModel model) async {
     await collection.doc(model.id).set(model.toMap());
