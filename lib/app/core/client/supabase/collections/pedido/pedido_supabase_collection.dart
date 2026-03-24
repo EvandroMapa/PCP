@@ -79,10 +79,10 @@ class PedidoSupabaseCollection extends PedidoCollection {
         safeFetch('pedido_tags'),
       ]);
 
-      final produtosRaw = results[0];
-      final statusRaw = results[1];
-      final stepsRaw = results[2];
-      final tagsRaw = results[3];
+      final List<Map<String, dynamic>> produtosRaw = results[0];
+      final List<Map<String, dynamic>> statusRaw = results[1];
+      final List<Map<String, dynamic>> stepsRaw = results[2];
+      final List<Map<String, dynamic>> tagsRaw = results[3];
 
       final pedidos = pedidosRaw.map((pMap) {
         final String pId = pMap['id'].toString().trim();
