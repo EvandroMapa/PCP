@@ -3,14 +3,17 @@ name: Flutter Web Deploy
 on:
   push:
     branches:
-      - main # ou a branch que você usa
+      - main
+
+permissions:
+  contents: write
 
 jobs:
   build:
     name: Build and Deploy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
@@ -21,8 +24,11 @@ jobs:
       - name: Build Web
         run: flutter build web --web-renderer html --release
 
+      - name: Check build directory
+        run: ls -R build/web
+
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
