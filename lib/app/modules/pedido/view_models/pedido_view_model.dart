@@ -1,4 +1,5 @@
 import 'package:aco_plus/app/core/client/firestore/collections/checklist/models/checklist_model.dart';
+import 'package:collection/collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:collection/collection.dart';
 
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
@@ -185,12 +186,15 @@ class StepController {
   }
 
   void _onMovePedido(PedidoModel pedido, StepModel step, int index) {
-    _onAddPedidoFromStep(
-      step.id,
-      index,
-      pedido: _onRemovePedidoFromStep(pedido.step.id, pedido.id),
-    );
-    _onUpdatePedidosIndex(step.id, index);
+    final removedPedido = _onRemovePedidoFromStep(pedido.step.id, pedido.id);
+    if (removedPedido != null) {
+      _onAddPedidoFromStep(
+        step.id,
+        index,
+        pedido: removedPedido,
+      );
+      _onUpdatePedidosIndex(step.id, index);
+    }
   }
 
   PedidoModel? _onRemovePedidoFromStep(String stepId, String pedidoId) {
