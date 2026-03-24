@@ -309,8 +309,13 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
   Future<void> updateAll(List<PedidoModel> pedidos) async {
     try {
-      final maps = pedidos.map((e) => e.toSupabaseMap()).toList();
-      await SupabaseService.client.from(tableName).upsert(maps);
+      final maps = pedidos
+          .where((e) => e != null)
+          .map((e) => e.toSupabaseMap())
+          .toList();
+      if (maps.isNotEmpty) {
+        await SupabaseService.client.from(tableName).upsert(maps);
+      }
     } catch (e) {
       print('Supabase Error (Pedido.updateAll): $e');
     }
