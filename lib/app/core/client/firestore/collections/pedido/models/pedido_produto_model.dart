@@ -236,7 +236,7 @@ class PedidoProdutoModel {
   );
   PedidoModel get pedido => FirestoreClient.pedidos.getById(pedidoId);
   bool get isAvailableToChanges => status.status.index < 2;
-  bool get hasOrder => statusess.last.status == PedidoProdutoStatus.separado;
+  bool get hasOrder => status.status == PedidoProdutoStatus.separado;
 
   ClienteModel get cliente => FirestoreClient.clientes.getById(clienteId);
   ObraModel get obra =>

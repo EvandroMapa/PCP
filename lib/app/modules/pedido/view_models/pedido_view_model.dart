@@ -73,7 +73,12 @@ class PedidoCreateModel {
             (e) => e.id == FirestoreClient.automatizacao.data.criacaoPedido.step?.id,
           ) ??
           FirestoreClient.steps.data.firstOrNull),
-      checklist = FirestoreClient.checklists.data.firstOrNull,
+      checklist = (FirestoreClient.checklists.data.firstWhereOrNull(
+            (e) =>
+                e.nome.toUpperCase().contains('PADRAO') ||
+                e.nome.toUpperCase().contains('PADRÃO'),
+          ) ??
+          FirestoreClient.checklists.data.firstOrNull),
       tipo = PedidoTipo.cd,
       pai = pai?.id;
 

@@ -193,17 +193,17 @@ class PedidoModel {
       (e) => e.produto.id == produto.produto.id,
     );
     if (produtos.every(
-      (e) => e.statusess.last.status == PedidoProdutoStatus.aguardandoProducao,
+      (e) => e.status.status == PedidoProdutoStatus.aguardandoProducao,
     )) {
       status = PedidoProdutoStatus.aguardandoProducao;
     }
     if (produtos.any(
-      (e) => e.statusess.last.status == PedidoProdutoStatus.produzindo,
+      (e) => e.status.status == PedidoProdutoStatus.produzindo,
     )) {
       status = PedidoProdutoStatus.produzindo;
     }
     if (produtos.every(
-      (e) => e.statusess.last.status == PedidoProdutoStatus.pronto,
+      (e) => e.status.status == PedidoProdutoStatus.pronto,
     )) {
       return status;
     }
@@ -235,7 +235,7 @@ class PedidoModel {
   List<PedidoProdutoStatus> get getStatusess {
     List<PedidoProdutoStatus> statusess = [];
     for (var element in produtos) {
-      statusess.add(element.statusess.last.status);
+      statusess.add(element.status.status);
     }
     return statusess.toSet().toList();
   }
@@ -434,14 +434,11 @@ class PedidoModel {
       final obraId = map['obra_id'] as String? ?? '';
       final stepId = map['step_id'] as String? ?? '';
       cliente = FirestoreClient.clientes.getById(clienteId);
-      obra = cliente.obras.firstWhere(
-        (e) => e.id == obraId,
-        orElse: () => ObraModel.empty(),
-      );
+      obra = cliente.obras.firstWhereOrNull((e) => e.id == obraId) ?? ObraModel.empty();
       step = FirestoreClient.steps.getById(stepId);
-      step = FirestoreClient.steps.data.isNotEmpty
-          ? FirestoreClient.steps.data.first
-          : StepModel.notFound;
+      if (step == StepModel.notFound) {
+        step = FirestoreClient.steps.data.firstOrNull ?? StepModel.notFound;
+      }
     } catch (_) {
       cliente = ClienteModel.empty();
       obra = ObraModel.empty();
