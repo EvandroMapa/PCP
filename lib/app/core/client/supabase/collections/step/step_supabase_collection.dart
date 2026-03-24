@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
@@ -71,8 +72,9 @@ class StepSupabaseCollection extends StepCollection {
       }).toList();
 
       dataStream.add(steps);
+      log('Supabase (Step.start): Found ${steps.length} steps.');
     } catch (e) {
-      print('Supabase Error (Step.start): $e');
+      log('Supabase Error (Step.start): $e');
     }
   }
 
