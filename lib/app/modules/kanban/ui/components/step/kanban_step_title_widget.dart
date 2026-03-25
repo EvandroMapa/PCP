@@ -20,31 +20,56 @@ class KanbanStepTitleWidget extends StatelessWidget {
       minTileHeight: 30,
       tilePadding: const EdgeInsets.only(left: 8),
       childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
-      trailing: PopupMenuButton<SortStepType?>(
-        style: ButtonStyle(
-          padding: WidgetStateProperty.all(EdgeInsets.zero),
-          fixedSize: WidgetStateProperty.all(const Size(10, 10)),
-        ),
-        padding: EdgeInsets.zero,
-        surfaceTintColor: Colors.white,
-        color: Colors.white,
-        onSelected: (e) => kanbanCtrl.onOrderPedidos(e, pedidos),
-        itemBuilder: (context) => [
-          PopupMenuItem(
-            child: Row(
-              children: [
-                Expanded(
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            onPressed: () {
+              // TODO: Abrir diálogo de importação de PDF
+              NotificationService.showPositive('Importar', 'Função de importação de PDF em desenvolvimento.');
+            },
+            icon: const Icon(Icons.add, color: Colors.blue, size: 20),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            tooltip: 'Importar Pedidos (PDF)',
+          ),
+          PopupMenuButton<SortStepType?>(
+            style: ButtonStyle(
+              padding: WidgetStateProperty.all(EdgeInsets.zero),
+              fixedSize: WidgetStateProperty.all(const Size(24, 24)),
+              minimumSize: WidgetStateProperty.all(const Size(24, 24)),
+            ),
+            padding: EdgeInsets.zero,
+            icon: const Icon(Icons.more_vert, size: 18),
+            surfaceTintColor: Colors.white,
+            color: Colors.white,
+            onSelected: (e) => kanbanCtrl.onOrderPedidos(e, pedidos),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                height: 32,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Ordenação',
+                        style: AppCss.minimumBold.setSize(14),
+                      ),
+                    ),
+                    const Icon(Icons.close, color: Colors.black, size: 14),
+                  ],
+                ),
+              ),
+              ...SortStepType.values.map(
+                (e) => PopupMenuItem(
+                  height: 32,
+                  value: e,
                   child: Text(
-                    'Ordenação',
-                    style: AppCss.minimumBold.setSize(16),
+                    e.label,
+                    style: AppCss.minimumRegular.setSize(12),
                   ),
                 ),
-                const Icon(Icons.close, color: Colors.black, size: 16),
-              ],
-            ),
-          ),
-          ...SortStepType.values.map(
-            (e) => PopupMenuItem(value: e, child: Text(e.label)),
+              ),
+            ],
           ),
         ],
       ),
