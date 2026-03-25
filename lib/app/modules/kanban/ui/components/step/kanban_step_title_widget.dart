@@ -55,13 +55,7 @@ class KanbanStepTitleWidget extends StatelessWidget {
             ],
             onSelected: (value) async {
               if (value == 1) {
-                final files = await showPedidoImportPdfDialog();
-                if (files != null && files.isNotEmpty) {
-                  NotificationService.showPositive(
-                    'Sucesso',
-                    '${files.length} arquivo(s) selecionado(s) para importação.',
-                  );
-                }
+                await showPedidoImportPdfDialog();
               }
             },
           ),
