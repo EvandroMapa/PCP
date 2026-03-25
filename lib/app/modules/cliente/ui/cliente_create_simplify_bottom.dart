@@ -13,16 +13,28 @@ import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 
-Future<ClienteModel?> showClienteCreateSimplifyBottom() async =>
+Future<ClienteModel?> showClienteCreateSimplifyBottom({
+  String? initialNome,
+  String? initialObra,
+}) async =>
     showModalBottomSheet(
       backgroundColor: AppColors.white,
       context: contextGlobal,
       isScrollControlled: true,
-      builder: (_) => const ClienteCreateSimplifyBottom(),
+      builder: (_) => ClienteCreateSimplifyBottom(
+        initialNome: initialNome,
+        initialObra: initialObra,
+      ),
     );
 
 class ClienteCreateSimplifyBottom extends StatefulWidget {
-  const ClienteCreateSimplifyBottom({super.key});
+  final String? initialNome;
+  final String? initialObra;
+  const ClienteCreateSimplifyBottom({
+    super.key,
+    this.initialNome,
+    this.initialObra,
+  });
 
   @override
   State<ClienteCreateSimplifyBottom> createState() =>
@@ -33,6 +45,13 @@ class _ClienteCreateSimplifyBottomState
     extends State<ClienteCreateSimplifyBottom> {
   final TextController cliente = TextController();
   final TextController obra = TextController();
+
+  @override
+  void initState() {
+    super.initState();
+    cliente.text = widget.initialNome ?? '';
+    obra.text = widget.initialObra ?? '';
+  }
 
   @override
   void dispose() {

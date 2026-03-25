@@ -26,7 +26,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:collection/collection.dart';
-import 'package:aco_plus/app/core/models/endereco_model.dart';
+import 'package:aco_plus/app/core/extensions/double_ext.dart';
+import 'package:aco_plus/app/modules/cliente/ui/cliente_create_simplify_bottom.dart';
+import 'package:flutter_masked_text2/flutter_masked_text2.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 Future<void> showPedidoImportPdfDialog({StepModel? initialStep}) async {
@@ -57,10 +59,10 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   final TextEditingController obraCtrl = TextEditingController();
   final TextEditingController planilhamentoCtrl = TextEditingController();
   final TextEditingController romaneioCtrl = TextEditingController();
-  final TextEditingController subtotalCtrl = TextEditingController(text: '0,00');
-  final TextEditingController taxasCtrl = TextEditingController(text: '0,00');
-  final TextEditingController descontoCtrl = TextEditingController(text: '0,00');
-  final TextEditingController totalFinalCtrl = TextEditingController(text: '0,00');
+  final MoneyMaskedTextController subtotalCtrl = MoneyMaskedTextController(leftSymbol: 'R$ ');
+  final MoneyMaskedTextController taxasCtrl = MoneyMaskedTextController(leftSymbol: 'R$ ');
+  final MoneyMaskedTextController descontoCtrl = MoneyMaskedTextController(leftSymbol: 'R$ ');
+  final MoneyMaskedTextController totalFinalCtrl = MoneyMaskedTextController(leftSymbol: 'R$ ');
   
   DateTime deliveryDate = DateTime.now().add(const Duration(days: 7));
   ClienteModel? selectedCliente;
@@ -75,11 +77,11 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   }
 
   void _calculateTotal() {
-    final sub = double.tryParse(subtotalCtrl.text.replaceAll(',', '.')) ?? 0;
-    final tax = double.tryParse(taxasCtrl.text.replaceAll(',', '.')) ?? 0;
-    final desc = double.tryParse(descontoCtrl.text.replaceAll(',', '.')) ?? 0;
+    final sub = subtotalCtrl.numberValue;
+    final tax = taxasCtrl.numberValue;
+    final desc = descontoCtrl.numberValue;
     final total = (sub + tax) - desc;
-    totalFinalCtrl.text = total.toStringAsFixed(2).replaceAll('.', ',');
+    totalFinalCtrl.updateValue(total);
   }
 
   Future<void> _pickFile() async {
@@ -129,10 +131,10 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
           );
         extractedProducts = List<Map<String, dynamic>>.from(parsedData['produtos']);
         
-        subtotalCtrl.text = parsedData['subtotal'].toStringAsFixed(2).replaceAll('.', ',');
-        taxasCtrl.text = parsedData['taxas'].toStringAsFixed(2).replaceAll('.', ',');
-        descontoCtrl.text = parsedData['desconto'].toStringAsFixed(2).replaceAll('.', ',');
-        totalFinalCtrl.text = parsedData['total'].toStringAsFixed(2).replaceAll('.', ',');
+        subtotalCtrl.updateValue(parsedData['subtotal']);
+        taxasCtrl.updateValue(parsedData['taxas']);
+        descontoCtrl.updateValue(parsedData['desconto']);
+        totalFinalCtrl.updateValue(parsedData['total']);
         
         _calculateTotal();
         currentStep = 1;
@@ -177,19 +179,16 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
     setState(() => isUploading = true);
 
     try {
-      // LÓGICA DE CLIENTE: Verificar se já existe, senão cadastrar
-      String finalClienteId = selectedCliente?.id ?? '';
-      ClienteModel finalCliente = selectedCliente ?? ClienteModel.empty();
-
-      if (finalClienteId.isNotEmpty) {
-        final existing = BackendClient.clientes.getById(finalClienteId);
-        if (existing.id == 'NOTFOUND' || existing.id == 'step-not-found') {
-          // Cadastrar novo cliente
-          await BackendClient.clientes.add(finalCliente);
-        } else {
-          finalCliente = existing;
-        }
+      // LÓGICA DE CLIENTE: Verificar se já existe no banco
+      final clienteNoBanco = BackendClient.clientes.data.firstWhereOrNull((e) => e.id == selectedCliente?.id);
+      
+      if (clienteNoBanco == null) {
+        NotificationService.showNegative('Atenção', 'O cliente extraído do PDF (${selectedCliente?.id}) não está cadastrado no sistema. Por favor, use o botão "Cadastrar Cliente" antes de gerar o cartão.');
+        return;
       }
+
+      final ClienteModel finalCliente = clienteNoBanco;
+      final String finalClienteId = finalCliente.id;
 
       final List<String> missingProducts = [];
       final List<PedidoProdutoModel> produtosMapped = [];
@@ -243,10 +242,10 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         return;
       }
 
-      final double vSubtotal = double.tryParse(subtotalCtrl.text.replaceAll(',', '.')) ?? 0;
-      final double vTaxas = double.tryParse(taxasCtrl.text.replaceAll(',', '.')) ?? 0;
-      final double vDesconto = double.tryParse(descontoCtrl.text.replaceAll(',', '.')) ?? 0;
-      final double vTotal = double.tryParse(totalFinalCtrl.text.replaceAll(',', '.')) ?? 0;
+      final double vSubtotal = subtotalCtrl.numberValue;
+      final double vTaxas = taxasCtrl.numberValue;
+      final double vDesconto = descontoCtrl.numberValue;
+      final double vTotal = totalFinalCtrl.numberValue;
 
       final pedido = PedidoModel.empty().copyWith(
         id: HashService.get,
@@ -493,7 +492,39 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
             ],
           ),
           const H(12),
-          _buildField('Cliente', TextEditingController(text: '${selectedCliente?.id} - ${selectedCliente?.nome}')),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: _buildField(
+                  'Cliente', 
+                  TextEditingController(text: '${selectedCliente?.id} - ${selectedCliente?.nome}'),
+                  readOnly: true,
+                )
+              ),
+              const W(8),
+              if (!BackendClient.clientes.data.any((e) => e.id == selectedCliente?.id))
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: AppTextButton.outlined(
+                    label: 'Cadastrar Cliente', 
+                    width: 150,
+                    height: 38,
+                    onPressed: () async {
+                      final novo = await showClienteCreateSimplifyBottom(
+                        initialNome: selectedCliente?.nome,
+                        initialObra: obraCtrl.text,
+                      );
+                      if (novo != null) {
+                        setState(() {
+                          selectedCliente = novo;
+                        });
+                      }
+                    }
+                  ),
+                ),
+            ],
+          ),
           const H(12),
           Row(
             children: [
@@ -565,7 +596,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                 return ListTile(
                   leading: Icon(Icons.shopping_basket_outlined, color: exists ? Colors.green : Colors.red),
                   title: Text('${p['codigo']} - ${p['descricao']}', style: TextStyle(color: exists ? Colors.black : Colors.red, fontWeight: FontWeight.bold)),
-                  subtitle: Text('Qtde: ${p['qtde']} | V.Unit: ${p['unitario']} | Total: ${p['total']}'),
+                  subtitle: Text('Qtde: ${p['qtde']} | V.Unit: ${(p['unitario'] as double).toMoney()} | Total: ${(p['total'] as double).toMoney()}'),
                 );
               },
             ),
