@@ -244,10 +244,7 @@ class PedidoModel {
   double getQtdeTotal() {
     return getProdutos().fold(
       0.0,
-      (previousValue, element) =>
-          previousValue +
-          (element.qtde *
-              (element.produto.massaFinal > 0 ? element.produto.massaFinal : 1.0)),
+      (previousValue, element) => previousValue + element.qtde,
     );
   }
 
