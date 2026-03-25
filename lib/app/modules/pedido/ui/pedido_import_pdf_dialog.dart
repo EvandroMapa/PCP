@@ -51,6 +51,8 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   final TextEditingController financeiroCtrl = TextEditingController();
   final TextEditingController descricaoCtrl = TextEditingController();
   final TextEditingController obraCtrl = TextEditingController();
+  final TextEditingController planilhamentoCtrl = TextEditingController();
+  final TextEditingController romaneioCtrl = TextEditingController();
   final TextEditingController subtotalCtrl = TextEditingController(text: '0,00');
   final TextEditingController taxasCtrl = TextEditingController(text: '0,00');
   final TextEditingController descontoCtrl = TextEditingController(text: '0,00');
@@ -107,6 +109,9 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       setState(() {
         extractedTextDebug = extractedText;
         financeiroCtrl.text = parsedData['pedidoFinanceiro'];
+        planilhamentoCtrl.text = parsedData['planilhamento'] ?? '';
+        romaneioCtrl.text = parsedData['romaneio'] ?? '';
+        
         final clienteId = parsedData['clienteCodigo'];
         selectedCliente = FirestoreClient.clientes.data.firstWhereOrNull(
           (e) => e.id == clienteId,
@@ -125,7 +130,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         descontoCtrl.text = parsedData['desconto'].toStringAsFixed(2).replaceAll('.', ',');
         totalFinalCtrl.text = parsedData['total'].toStringAsFixed(2).replaceAll('.', ',');
         
-        _calculateTotal(); // Recalcular para garantir consistência
+        _calculateTotal();
         currentStep = 1;
       });
     } catch (e) {
@@ -136,6 +141,12 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   }
 
   Future<void> _generateCard() async {
+    // VALIDAÇÃO OBRIGATÓRIA
+    if (localizadorCtrl.text.trim().isEmpty) {
+      NotificationService.showNegative('Atenção', 'O campo Localizador é obrigatório.');
+      return;
+    }
+    
     if (selectedStep == null) {
       NotificationService.showNegative('Erro', 'Selecione uma etapa para o pedido.');
       return;
@@ -144,6 +155,22 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
     setState(() => isUploading = true);
 
     try {
+      // LÓGICA DE CLIENTE: Verificar se já existe, senão cadastrar
+      String finalClienteId = selectedCliente?.id ?? '';
+      ClienteModel finalCliente = selectedCliente ?? ClienteModel.empty();
+
+      if (finalClienteId.isNotEmpty) {
+        final existing = FirestoreClient.clientes.getById(finalClienteId);
+        if (existing.id == 'NOTFOUND' || existing.id == 'step-not-found') { // step-not-found é retornado pelo FirestoreClient.clientes.getById dependendo da impl
+          // Cadastrar novo cliente
+          await AppSupabaseClient.clientes.add(finalCliente);
+          // O FirestoreClient deve atualizar via socket ou precisamos forçar? 
+          // Como é uma operação async, garantimos que foi pro banco.
+        } else {
+          finalCliente = existing;
+        }
+      }
+
       final List<String> missingProducts = [];
       final List<PedidoProdutoModel> produtosMapped = [];
       
@@ -158,7 +185,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
           produtosMapped.add(PedidoProdutoModel(
             id: HashService.get,
             pedidoId: '', 
-            clienteId: '', 
+            clienteId: finalCliente.id, 
             obraId: '',
             produto: produtoBase,
             statusess: [PedidoProdutoStatusModel.empty()],
@@ -196,13 +223,6 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         return;
       }
 
-      if (selectedCliente != null) {
-        final existing = FirestoreClient.clientes.getById(selectedCliente!.id);
-        if (existing.id == 'NOTFOUND') {
-          await AppSupabaseClient.clientes.add(selectedCliente!);
-        }
-      }
-
       final double vSubtotal = double.tryParse(subtotalCtrl.text.replaceAll(',', '.')) ?? 0;
       final double vTaxas = double.tryParse(taxasCtrl.text.replaceAll(',', '.')) ?? 0;
       final double vDesconto = double.tryParse(descontoCtrl.text.replaceAll(',', '.')) ?? 0;
@@ -212,9 +232,11 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         id: HashService.get,
         localizador: localizadorCtrl.text,
         pedidoFinanceiro: financeiroCtrl.text,
+        planilhamento: planilhamentoCtrl.text,
+        romaneio: romaneioCtrl.text,
         descricao: descricaoCtrl.text,
         deliveryAt: deliveryDate,
-        cliente: selectedCliente ?? ClienteModel.empty(),
+        cliente: finalCliente,
         tipo: selectedTipo,
         statusess: [PedidoStatusModel.create(PedidoStatus.aguardandoProducaoCDA)],
         steps: [PedidoStepModel.create(selectedStep!)],
@@ -331,49 +353,31 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // SELETOR DE ETAPA (NOVO)
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: AppCss.radius8,
-              border: Border.all(color: Colors.blue.shade200),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.view_column, color: Colors.blue),
-                const W(12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('ETAPA DESTINO (KANKAN)', style: AppCss.minimumBold.setSize(11).setColor(Colors.blue.shade900)),
-                      DropdownButton<StepModel>(
-                        value: selectedStep,
-                        isExpanded: true,
-                        underline: const SizedBox(),
-                        onChanged: (e) => setState(() => selectedStep = e),
-                        items: FirestoreClient.steps.data.map((e) => DropdownMenuItem(
-                          value: e, 
-                          child: Text(e.name, style: AppCss.minimumBold.setSize(14))
-                        )).toList(),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const H(16),
           Row(
             children: [
-              Expanded(child: _buildField('Localizador', localizadorCtrl)),
+              Expanded(child: _buildStepSelector()),
               const W(12),
-              Expanded(child: _buildField('Pedido Financeiro', financeiroCtrl)),
+              Expanded(child: _buildField('Localizador (*)', localizadorCtrl, color: Colors.blue.shade900)),
             ],
           ),
           const H(12),
           Row(
+            children: [
+              Expanded(child: _buildField('Pedido Financeiro', financeiroCtrl)),
+              const W(12),
+              Expanded(child: _buildField('Tipo', null, dropdown: _buildTipoDropdown())),
+            ],
+          ),
+          const H(12),
+          Row(
+            children: [
+              Expanded(child: _buildField('Planilhamento', planilhamentoCtrl)),
+              const W(12),
+              Expanded(child: _buildField('Romaneio', romaneioCtrl)),
+            ],
+          ),
+          const H(12),
+           Row(
             children: [
                Expanded(
                 child: Column(
@@ -407,24 +411,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                 ),
               ),
               const W(12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Tipo', style: AppCss.minimumBold.setSize(12)),
-                    const H(4),
-                    DropdownButtonFormField<PedidoTipo>(
-                      value: selectedTipo,
-                      decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                        border: OutlineInputBorder(borderRadius: AppCss.radius8),
-                      ),
-                      onChanged: (e) => setState(() => selectedTipo = e!),
-                      items: PedidoTipo.values.map((e) => DropdownMenuItem(value: e, child: Text(e.name.toUpperCase()))).toList(),
-                    ),
-                  ],
-                ),
-              ),
+              const Spacer(),
             ],
           ),
           const H(12),
@@ -510,13 +497,54 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
     );
   }
 
-  Widget _buildField(String label, TextEditingController ctrl, {Color? color, bool readOnly = false, Function(String)? onChanged}) {
+  Widget _buildStepSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Etapa Destino', style: AppCss.minimumBold.setSize(12)),
+        const H(4),
+        DropdownButtonFormField<StepModel>(
+          value: selectedStep,
+          isExpanded: true,
+          decoration: InputDecoration(
+            isDense: true,
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+            border: OutlineInputBorder(borderRadius: AppCss.radius8),
+          ),
+          onChanged: (e) => setState(() => selectedStep = e),
+          items: FirestoreClient.steps.data.map((e) => DropdownMenuItem(
+            value: e, 
+            child: Text(e.name, style: AppCss.minimumBold.setSize(14))
+          )).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTipoDropdown() {
+    return DropdownButtonFormField<PedidoTipo>(
+      value: selectedTipo,
+      decoration: InputDecoration(
+        isDense: true,
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+        border: OutlineInputBorder(borderRadius: AppCss.radius8),
+      ),
+      onChanged: (e) => setState(() => selectedTipo = e!),
+      items: PedidoTipo.values.map((e) => DropdownMenuItem(value: e, child: Text(e.name.toUpperCase()))).toList(),
+    );
+  }
+
+  Widget _buildField(String label, TextEditingController? ctrl, {Color? color, bool readOnly = false, Function(String)? onChanged, Widget? dropdown}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: AppCss.minimumBold.setSize(12)),
         const H(4),
-        TextField(
+        dropdown ?? TextField(
           controller: ctrl,
           readOnly: readOnly,
           onChanged: onChanged,

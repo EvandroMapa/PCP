@@ -20,6 +20,8 @@ class PedidoPdfParser {
       'taxas': 0.0,
       'desconto': 0.0,
       'total': 0.0,
+      'planilhamento': '',
+      'romaneio': '',
       'rawText': text,
     };
 
@@ -44,7 +46,11 @@ class PedidoPdfParser {
     data['desconto'] = _extractValue(text, r'Desconto\s*[:\-]?\s*([\d,.]+)');
     data['total'] = _extractValue(text, r'Total\s*(?:Geral|Líquido)?\s*[:\-]?\s*([\d,.]+)');
 
-    // 4. Extrair Produtos da Tabela
+    // 4. Extrair Planilhamento e Romaneio (Novo)
+    data['planilhamento'] = _extractString(text, r'(?:Planilhamento|Plan\.)\s*[:\-]?\s*([^\n\r]+)');
+    data['romaneio'] = _extractString(text, r'(?:Romaneio|Rom\.)\s*[:\-]?\s*([^\n\r]+)');
+
+    // 5. Extrair Produtos da Tabela
     // IMPORTANTE: Só busca produtos APÓS a palavra "Código" ou "Descrição" para evitar pegar o cabeçalho
     int tableStartIndex = text.toLowerCase().indexOf('código');
     if (tableStartIndex == -1) tableStartIndex = text.toLowerCase().indexOf('descrição');
@@ -102,6 +108,17 @@ class PedidoPdfParser {
       }
     } catch (_) {}
     return 0.0;
+  }
+
+  static String _extractString(String text, String pattern) {
+    try {
+      final regExp = RegExp(pattern, caseSensitive: false);
+      final match = regExp.firstMatch(text);
+      if (match != null) {
+        return (match.group(1) ?? '').trim();
+      }
+    } catch (_) {}
+    return '';
   }
 
   static double _parseDecimal(String value) {
