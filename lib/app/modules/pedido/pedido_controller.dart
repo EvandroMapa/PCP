@@ -181,7 +181,6 @@ class PedidoController {
       }
       if (form.isEdit) {
         final edit = form.toPedidoModel(pedido);
-        print('Supabase DEBUG (Controller.onConfirm): Editando pedido ${edit.id}. Produtos no model: ${edit.produtos.length}');
         verificarTags(edit);
         final update = await BackendClient.pedidos.update(edit);
         if (update != null) {
@@ -190,7 +189,6 @@ class PedidoController {
         }
       } else {
         PedidoModel pedidoModel = form.toPedidoModel(pedido);
-        print('Supabase DEBUG (Controller.onConfirm): Criando novo pedido ${pedidoModel.id}. Produtos no model: ${pedidoModel.produtos.length}');
         await BackendClient.pedidos.add(pedidoModel);
         if (form.pai != null) {
           final pai = BackendClient.pedidos.getById(form.pai!);
@@ -477,7 +475,6 @@ class PedidoController {
         relatorio.tipo,
         relatorio.produtos,
       );
-
       relatorio.relatorio = model;
 
       relatorioCtrl.pedidoViewModelStream.add(relatorio);
