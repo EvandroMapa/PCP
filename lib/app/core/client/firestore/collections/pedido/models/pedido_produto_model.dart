@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/models/materia_prima_model.dart';
@@ -16,47 +15,6 @@ import 'package:aco_plus/app/core/enums/obra_status.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:collection/collection.dart';
 
-class PedidoProdutoTurno {
-  final String produtoId;
-  final String pedidoId;
-  final String pedidoProdutoId;
-  final String ordemId;
-  final Duration duration;
-  final PedidoProdutoHistory start;
-  final PedidoProdutoHistory? end;
-
-  PedidoProdutoTurno({
-    required this.produtoId,
-    required this.pedidoId,
-    required this.pedidoProdutoId,
-    required this.ordemId,
-    required this.start,
-    required this.duration,
-    this.end,
-  });
-}
-
-enum PedidoProdutoHistoryType {
-  pause,
-  unpause;
-
-  String get label {
-    switch (this) {
-      case PedidoProdutoHistoryType.pause:
-        return 'Iniciado ás';
-      case PedidoProdutoHistoryType.unpause:
-        return 'Finalizado ás';
-    }
-  }
-}
-
-class PedidoProdutoHistory {
-  final PedidoProdutoHistoryType type;
-  final DateTime date;
-
-  PedidoProdutoHistory({required this.type, required this.date});
-}
-
 class PedidoProdutoModel {
   final String id;
   final String pedidoId;
@@ -65,165 +23,12 @@ class PedidoProdutoModel {
   final ProdutoModel produto;
   final List<PedidoProdutoStatusModel> statusess;
   final double qtde;
+  final double valorUnitario;
+  final double valorTotal;
   bool isSelected = true;
   bool isAvailable = true;
   bool isPaused = false;
   MateriaPrimaModel? materiaPrima;
-
-  List<PedidoProdutoTurno> getTurnos(OrdemModel ordem) {
-    final turnos = <PedidoProdutoTurno>[];
-
-    final alteracoesStatus =
-        ordem.history
-            .where(
-              (e) =>
-                  e.type == OrdemHistoryTypeEnum.statusProdutoAlterada ||
-                  e.type == OrdemHistoryTypeEnum.pausada ||
-                  e.type == OrdemHistoryTypeEnum.despausada,
-            )
-            .where((e) {
-              switch (e.type) {
-                case OrdemHistoryTypeEnum.statusProdutoAlterada:
-                  final data = e.data as OrdemHistoryTypeStatusProdutoModel;
-                  return data.statusProdutos.produtos.any((e) => e.id == id);
-                case OrdemHistoryTypeEnum.pausada:
-                  final data = e.data as OrdemHistoryTypePausadaModel;
-                  return data.pedidoProdutoId == id;
-                case OrdemHistoryTypeEnum.despausada:
-                  final data = e.data as OrdemHistoryTypeDespausadaModel;
-                  return data.pedidoProdutoId == id;
-                default:
-                  return false;
-              }
-            })
-            .toList()
-          ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
-
-    // Variáveis para controlar o estado atual
-    DateTime? inicioTurnoAtual;
-    bool estaProduzindo = false;
-    bool estaPausado = false;
-
-    for (final evento in alteracoesStatus) {
-      switch (evento.type) {
-        case OrdemHistoryTypeEnum.statusProdutoAlterada:
-          final data = evento.data as OrdemHistoryTypeStatusProdutoModel;
-          final novoStatus = data.statusProdutos.status;
-
-          // Verifica se o produto está começando a produzir
-          if (novoStatus == PedidoProdutoStatus.produzindo && !estaProduzindo) {
-            // Início de novo turno
-            inicioTurnoAtual = evento.createdAt;
-            estaProduzindo = true;
-            estaPausado = false;
-          }
-          // Verifica se o produto ficou pronto
-          else if (novoStatus == PedidoProdutoStatus.pronto && estaProduzindo) {
-            // Fim do turno atual
-            if (inicioTurnoAtual != null) {
-              final duracao = evento.createdAt.difference(inicioTurnoAtual);
-
-              turnos.add(
-                PedidoProdutoTurno(
-                  duration: duracao,
-                  start: PedidoProdutoHistory(
-                    type: PedidoProdutoHistoryType.pause,
-                    date: inicioTurnoAtual,
-                  ),
-                  end: PedidoProdutoHistory(
-                    type: PedidoProdutoHistoryType.unpause,
-                    date: evento.createdAt,
-                  ),
-                  produtoId: produto.id,
-                  pedidoId: pedidoId,
-                  pedidoProdutoId: id,
-                  ordemId: ordem.id,
-                ),
-              );
-            }
-
-            // Reset do estado
-            inicioTurnoAtual = null;
-            estaProduzindo = false;
-            estaPausado = false;
-          }
-          // Verifica se saiu do status produzindo para outro status que não seja pronto
-          else if (estaProduzindo &&
-              novoStatus != PedidoProdutoStatus.produzindo &&
-              novoStatus != PedidoProdutoStatus.pronto) {
-            // Produto saiu de produzindo sem ficar pronto - interrompe o turno atual
-            estaProduzindo = false;
-            inicioTurnoAtual = null;
-            estaPausado = false;
-          }
-
-          break;
-
-        case OrdemHistoryTypeEnum.pausada:
-          if (estaProduzindo && !estaPausado) {
-            // Pausa durante a produção - finaliza o turno atual
-            if (inicioTurnoAtual != null) {
-              final duracao = evento.createdAt.difference(inicioTurnoAtual);
-
-              turnos.add(
-                PedidoProdutoTurno(
-                  duration: duracao,
-                  start: PedidoProdutoHistory(
-                    type: PedidoProdutoHistoryType.pause,
-                    date: inicioTurnoAtual,
-                  ),
-                  end: PedidoProdutoHistory(
-                    type: PedidoProdutoHistoryType.unpause,
-                    date: evento.createdAt,
-                  ),
-                  produtoId: produto.id,
-                  pedidoId: pedidoId,
-                  pedidoProdutoId: id,
-                  ordemId: ordem.id,
-                ),
-              );
-            }
-
-            estaPausado = true;
-            inicioTurnoAtual = null;
-          }
-          break;
-
-        case OrdemHistoryTypeEnum.despausada:
-          if (estaProduzindo && estaPausado) {
-            // Despausa durante a produção - inicia novo turno
-            inicioTurnoAtual = evento.createdAt;
-            estaPausado = false;
-          }
-          break;
-
-        default:
-          break;
-      }
-    }
-
-    // Se ainda está produzindo, adiciona o turno em andamento
-    if (estaProduzindo && inicioTurnoAtual != null && !estaPausado) {
-      final duracao = DateTime.now().difference(inicioTurnoAtual);
-
-      turnos.add(
-        PedidoProdutoTurno(
-          duration: duracao,
-          start: PedidoProdutoHistory(
-            type: PedidoProdutoHistoryType.pause,
-            date: inicioTurnoAtual,
-          ),
-          // end é null para indicar que ainda está em andamento
-          produtoId: produto.id,
-          pedidoId: pedidoId,
-          pedidoProdutoId: id,
-          ordemId: ordem.id,
-        ),
-      );
-    }
-
-    return turnos;
-  }
 
   factory PedidoProdutoModel.empty(PedidoModel pedido) => PedidoProdutoModel(
     id: HashService.get,
@@ -233,8 +38,11 @@ class PedidoProdutoModel {
     produto: ProdutoModel.empty(),
     statusess: [PedidoProdutoStatusModel.empty()],
     qtde: 0,
+    valorUnitario: 0,
+    valorTotal: 0,
     isPaused: false,
   );
+
   PedidoModel get pedido => FirestoreClient.pedidos.getById(pedidoId);
   bool get isAvailableToChanges => status.status.index < 2;
   bool get hasOrder => status.status == PedidoProdutoStatus.separado;
@@ -268,6 +76,8 @@ class PedidoProdutoModel {
     required this.produto,
     required this.statusess,
     required this.qtde,
+    this.valorUnitario = 0,
+    this.valorTotal = 0,
     this.isAvailable = true,
     this.isSelected = true,
     this.materiaPrima,
@@ -283,6 +93,8 @@ class PedidoProdutoModel {
       'produto': produto.toMap(),
       'statusess': statusess.map((x) => x.toMap()).toList(),
       'qtde': qtde,
+      'valorUnitario': valorUnitario,
+      'valorTotal': valorTotal,
       'materiaPrima': materiaPrima?.toMap(),
       'isPaused': isPaused,
     };
@@ -301,6 +113,8 @@ class PedidoProdutoModel {
             )
           : [PedidoProdutoStatusModel.empty()],
       qtde: map['qtde'] != null ? double.parse(map['qtde'].toString()) : 0.0,
+      valorUnitario: map['valorUnitario'] != null ? double.parse(map['valorUnitario'].toString()) : 0.0,
+      valorTotal: map['valorTotal'] != null ? double.parse(map['valorTotal'].toString()) : 0.0,
       materiaPrima: map['materiaPrima'] != null
           ? MateriaPrimaModel.fromMap(map['materiaPrima'])
           : null,
@@ -321,9 +135,11 @@ class PedidoProdutoModel {
       'cliente_id': clienteId,
       'obra_id': obraId,
       'quantidade': qtde,
-      'qtde': qtde, // Suporte para a coluna NOT NULL encontrada
-      'produto_id': produto.id, // Suporte para a coluna NOT NULL encontrada
-      'unidade': '', // O ProdutoModel não tem unidade, enviando vazio para evitar NOT NULL
+      'qtde': qtde,
+      'valor_unitario': valorUnitario,
+      'valor_total': valorTotal,
+      'produto_id': produto.id,
+      'unidade': '',
       'status': statusess.isNotEmpty ? statusess.last.status.name : 'separado',
       'produto_raw': produto.toMap(),
       'materia_prima_raw': materiaPrima?.toMap(),
@@ -336,6 +152,8 @@ class PedidoProdutoModel {
       return PedidoProdutoModel(
         id: (map['id'] ?? map['id_id'] ?? '').toString(),
         qtde: double.tryParse((map['quantidade'] ?? map['qtde'] ?? '0').toString()) ?? 0.0,
+        valorUnitario: double.tryParse((map['valor_unitario'] ?? '0').toString()) ?? 0.0,
+        valorTotal: double.tryParse((map['valor_total'] ?? '0').toString()) ?? 0.0,
         produto: map['produto_raw'] != null 
             ? ProdutoModel.fromMap(map['produto_raw'] is String ? json.decode(map['produto_raw']) : map['produto_raw']) 
             : ProdutoModel.empty(),
@@ -373,6 +191,8 @@ class PedidoProdutoModel {
     ProdutoModel? produto,
     List<PedidoProdutoStatusModel>? statusess,
     double? qtde,
+    double? valorUnitario,
+    double? valorTotal,
     bool? isAvailable,
     bool? isSelected,
     MateriaPrimaModel? materiaPrima,
@@ -386,6 +206,8 @@ class PedidoProdutoModel {
       produto: produto ?? this.produto,
       statusess: statusess ?? this.statusess,
       qtde: qtde ?? this.qtde,
+      valorUnitario: valorUnitario ?? this.valorUnitario,
+      valorTotal: valorTotal ?? this.valorTotal,
       isAvailable: isAvailable ?? this.isAvailable,
       isSelected: isSelected ?? this.isSelected,
       materiaPrima: materiaPrima ?? this.materiaPrima,
