@@ -521,10 +521,21 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
               separatorBuilder: (context, index) => Divider(height: 1, color: AppColors.neutralLight),
               itemBuilder: (context, index) {
                 final p = extractedProducts[index];
-                final exists = FirestoreClient.produtos.data.any((e) => e.codigoFinanceiro == p['codigo']);
+                final produtoBase = FirestoreClient.produtos.data.firstWhereOrNull(
+                  (e) => e.codigoFinanceiro == p['codigo'],
+                );
+                final bool exists = produtoBase != null;
+                
                 return ListTile(
                   leading: Icon(Icons.shopping_basket_outlined, color: exists ? Colors.green : Colors.red),
-                  title: Text('${p['codigo']} - ${p['descricao']}', style: TextStyle(color: exists ? Colors.black : Colors.red, fontWeight: FontWeight.bold)),
+                  title: Text(
+                    exists ? '${p['codigo']} - ${produtoBase.descricao}' : '${p['codigo']} - ITEM NÃO CADASTRADO NA BASE DE DADOS',
+                    style: TextStyle(
+                      color: exists ? Colors.black : Colors.red, 
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    )
+                  ),
                   subtitle: Text('Qtde: ${p['qtde']} | V.Unit: ${p['unitario']} | Total: ${p['total']}'),
                 );
               },
