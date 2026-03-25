@@ -522,14 +522,14 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
               itemBuilder: (context, index) {
                 final p = extractedProducts[index];
                 final produtoBase = FirestoreClient.produtos.data.firstWhereOrNull(
-                  (e) => e.codigoFinanceiro == p['codigo'],
+                  (e) => e.codigoFinanceiro.trim().toLowerCase() == p['codigo'].toString().trim().toLowerCase(),
                 );
                 final bool exists = produtoBase != null;
                 
                 return ListTile(
                   leading: Icon(Icons.shopping_basket_outlined, color: exists ? Colors.green : Colors.red),
                   title: Text(
-                    exists ? '${p['codigo']} - ${produtoBase.descricao}' : '${p['codigo']} - ITEM NÃO CADASTRADO NA BASE DE DADOS',
+                    exists ? '${p['codigo']} - ${produtoBase.nome} - ${produtoBase.descricao}' : '${p['codigo']} - ITEM NÃO CADASTRADO NA BASE DE DADOS',
                     style: TextStyle(
                       color: exists ? Colors.black : Colors.red, 
                       fontWeight: FontWeight.bold,
