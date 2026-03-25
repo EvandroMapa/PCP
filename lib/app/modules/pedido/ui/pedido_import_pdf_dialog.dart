@@ -124,6 +124,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
           (e) => e.id == clienteId,
         ) ?? ClienteModel(
             id: clienteId,
+            codigo: 0,
             nome: parsedData['clienteNome'],
             telefone: '',
             cpf: '',
