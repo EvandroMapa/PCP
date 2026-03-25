@@ -93,6 +93,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       3544 - Gabriel Wagner Santos Teixeira
       109501 VERGALHAO 5,0 MM PA CD CDA 12.FAT2-CD KG 271,62 7,50 2.037,15
       109499 VERGALHAO 10,0 MM 3/8 PA CD CDA 12.FAT2-CD KG 672,77 6,30 4.238,45
+      109500 TRELICA TR 08644 PA CD CDA 12.FAT2-CD UNID 10,00 15,50 155,00
       
       Subtotal : 8.562,82
       Taxas: 0,00
