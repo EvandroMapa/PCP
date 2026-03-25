@@ -215,36 +215,58 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       }
 
       if (missingProducts.isNotEmpty) {
-        if (mounted) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Bloqueio de Importação'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                   const Text('O PDF não pode ser importado pois os seguintes produtos não possuem vínculo financeiro:'),
-                  const H(12),
-                  ...missingProducts.map((e) => Text('• $e', style: AppCss.minimumBold.setSize(12).setColor(Colors.red))),
-                  const H(12),
-                  const Text('Dica: Cadastre o código financeiro no cadastro de produtos.'),
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar')),
+        final bool? proceed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Produtos não Cadastrados'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Os itens destacados em vermelho não existem na base de dados.'),
+                const H(12),
+                Text('Deseja criar o pedido desconsiderando estes itens?', style: AppCss.minimumBold),
+                const H(16),
+                Text('Itens que serão ignorados:', style: AppCss.minimumRegular.setSize(11)),
+                const H(4),
+                ...missingProducts.take(5).map((e) => Text('• $e', style: AppCss.minimumBold.setSize(11).setColor(Colors.red))),
+                if (missingProducts.length > 5) Text('... e mais ${missingProducts.length - 5} itens.', style: AppCss.minimumRegular.setSize(11)),
               ],
             ),
-          );
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false), 
+                child: Text('CANCELAR', style: AppCss.minimumRegular.setColor(AppColors.neutralDark)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true), 
+                child: Text('SIM, CRIAR SEM ESTES ITENS', style: AppCss.minimumBold.setColor(AppColors.primaryDark)),
+              ),
+            ],
+          ),
+        );
+
+        if (proceed != true) {
+          setState(() => isUploading = false);
+          return;
         }
-        setState(() => isUploading = false);
-        return;
+
+        if (produtosMapped.isEmpty) {
+          NotificationService.showNegative('Erro', 'Não é possível criar um pedido sem nenhum item válido.');
+          setState(() => isUploading = false);
+          return;
+        }
       }
 
-      final double vSubtotal = double.tryParse(subtotalCtrl.text.replaceAll(',', '.')) ?? 0;
+      // Cálculo de totais baseado nos itens que serão realmente salvos
+      double vSubtotal = 0;
+      for (var pm in produtosMapped) {
+        vSubtotal += pm.valorTotal;
+      }
+
       final double vTaxas = double.tryParse(taxasCtrl.text.replaceAll(',', '.')) ?? 0;
       final double vDesconto = double.tryParse(descontoCtrl.text.replaceAll(',', '.')) ?? 0;
-      final double vTotal = double.tryParse(totalFinalCtrl.text.replaceAll(',', '.')) ?? 0;
+      final double vTotal = vSubtotal + vTaxas - vDesconto;
 
       final pedido = PedidoModel.empty().copyWith(
         id: HashService.get,
@@ -548,7 +570,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                       if (pdfName.isNotEmpty)
                         Text(
                           ' ($pdfName)',
-                          style: AppCss.minimumRegular.setSize(11).setColor(AppColors.neutralDark.withValues(alpha: 0.6)),
+                          style: AppCss.minimumRegular.setSize(11).setColor(Colors.black),
                         ),
                     ],
                   ),

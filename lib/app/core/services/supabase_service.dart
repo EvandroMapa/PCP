@@ -6,7 +6,7 @@ class SupabaseService implements Service {
   @override
   Future<void> initialize() async {
     const url = String.fromEnvironment('SUPABASE_URL', defaultValue: 'https://aumfedyfrxuwgkdhwrel.supabase.co');
-    const anonKey = String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: 'sb_publishable_LTDMyNF9VJdSEpkLDC7t0w_L4HDr7C-');
+    const anonKey = String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1bWZlZHlmcnh1d2drZGh3cmVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MzI1NjUsImV4cCI6MjA4OTUwODU2NX0.egxt22BJdXhZndMKsAjNMIvZNBY807JGr5hqn9Gk3A8');
 
     try {
       await sf.Supabase.initialize(
