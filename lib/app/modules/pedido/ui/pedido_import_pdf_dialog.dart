@@ -1,14 +1,18 @@
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_create_by_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
-import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
-import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
+import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
+import 'package:aco_plus/app/modules/automatizacao/automatizacao_controller.dart';
 import 'package:aco_plus/app/core/components/app_text_button.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/w.dart';
@@ -140,6 +144,24 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
     }
   }
 
+  Future<void> _handleReimport() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar Reimportação'),
+        content: const Text('Deseja importar um novo PDF? Os dados preenchidos até agora nesta janela serão perdidos.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sim, trocar PDF', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+
+    if (ok == true) {
+      _pickFile();
+    }
+  }
+
   Future<void> _generateCard() async {
     // VALIDAÇÃO OBRIGATÓRIA
     if (localizadorCtrl.text.trim().isEmpty) {
@@ -160,12 +182,10 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       ClienteModel finalCliente = selectedCliente ?? ClienteModel.empty();
 
       if (finalClienteId.isNotEmpty) {
-        final existing = FirestoreClient.clientes.getById(finalClienteId);
-        if (existing.id == 'NOTFOUND' || existing.id == 'step-not-found') { // step-not-found é retornado pelo FirestoreClient.clientes.getById dependendo da impl
+        final existing = BackendClient.clientes.getById(finalClienteId);
+        if (existing.id == 'NOTFOUND' || existing.id == 'step-not-found') {
           // Cadastrar novo cliente
-          await AppSupabaseClient.clientes.add(finalCliente);
-          // O FirestoreClient deve atualizar via socket ou precisamos forçar? 
-          // Como é uma operação async, garantimos que foi pro banco.
+          await BackendClient.clientes.add(finalCliente);
         } else {
           finalCliente = existing;
         }
@@ -175,7 +195,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       final List<PedidoProdutoModel> produtosMapped = [];
       
       for (final p in extractedProducts) {
-        final produtoBase = FirestoreClient.produtos.data.firstWhereOrNull(
+        final produtoBase = BackendClient.produtos.data.firstWhereOrNull(
           (e) => e.codigoFinanceiro == p['codigo'],
         );
 
@@ -230,23 +250,45 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
 
       final pedido = PedidoModel.empty().copyWith(
         id: HashService.get,
-        localizador: localizadorCtrl.text,
-        pedidoFinanceiro: financeiroCtrl.text,
-        planilhamento: planilhamentoCtrl.text,
-        romaneio: romaneioCtrl.text,
-        descricao: descricaoCtrl.text,
+        localizador: localizadorCtrl.text.trim(),
+        pedidoFinanceiro: financeiroCtrl.text.trim(),
+        planilhamento: planilhamentoCtrl.text.trim(),
+        romaneio: romaneioCtrl.text.trim(),
+        descricao: descricaoCtrl.text.trim(),
         deliveryAt: deliveryDate,
         cliente: finalCliente,
         tipo: selectedTipo,
-        statusess: [PedidoStatusModel.create(PedidoStatus.aguardandoProducaoCDA)],
+        statusess: [PedidoStatusModel.create(_getStatusByStep(selectedStep!))],
         steps: [PedidoStepModel.create(selectedStep!)],
+        tags: [selectedTipo.tag],
         valorSubtotal: vSubtotal,
         valorTaxas: vTaxas,
         valorDesconto: vDesconto,
         valorTotal: vTotal,
+        histories: [
+          PedidoHistoryModel(
+            action: PedidoHistoryAction.create,
+            createdAt: DateTime.now(),
+            id: HashService.get,
+            type: PedidoHistoryType.create,
+            usuario: usuarioCtrl.usuario!,
+            data: PedidoCreateByModel(
+              name: usuarioCtrl.usuario?.nome ?? 'Nome Indisponível',
+              date: DateTime.now(),
+            ),
+          ),
+          PedidoHistoryModel(
+            action: PedidoHistoryAction.update,
+            createdAt: DateTime.now().add(const Duration(milliseconds: 100)),
+            id: HashService.get,
+            type: PedidoHistoryType.step,
+            usuario: usuarioCtrl.usuario!,
+            data: selectedStep!,
+          ),
+        ],
       );
 
-      await AppSupabaseClient.pedidos.add(pedido);
+      await BackendClient.pedidos.add(pedido);
       
       for (final p in produtosMapped) {
         final finalProd = p.copyWith(
@@ -254,7 +296,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
           clienteId: pedido.cliente.id,
           obraId: pedido.obra.id,
         );
-        await AppSupabaseClient.pedidoProdutos.add(finalProd);
+        await BackendClient.pedidoProdutos.add(finalProd);
       }
 
       if (mounted) {
@@ -266,6 +308,22 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
     } finally {
       setState(() => isUploading = false);
     }
+  }
+
+  PedidoStatus _getStatusByStep(StepModel step) {
+    if (step.isShipping) return PedidoStatus.finalizado;
+    
+    // Tenta pegar da automatização
+    final config = FirestoreClient.automatizacao.data;
+    if (config.produtoPedidoSeparado.step?.id == step.id) return PedidoStatus.aguardandoProducaoCD;
+    if (config.produzindoCDPedido.step?.id == step.id) return PedidoStatus.produzindoCD;
+    if (config.aguardandoArmacaoPedido.step?.id == step.id) return PedidoStatus.aguardandoProducaoCDA;
+    if (config.produzindoArmacaoPedido.step?.id == step.id) return PedidoStatus.produzindoCDA;
+    if (config.prontoCDPedido.step?.id == step.id) return PedidoStatus.pronto;
+    if (config.prontoArmacaoPedido.step?.id == step.id) return PedidoStatus.pronto;
+
+    // Fallback baseado no tipo
+    return selectedTipo == PedidoTipo.cda ? PedidoStatus.aguardandoProducaoCDA : PedidoStatus.aguardandoProducaoCD;
   }
 
   @override
@@ -302,6 +360,26 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
             currentStep == 0 ? 'IMPORTAR PEDIDO (PDF)' : 'CONFERÊNCIA DE DADOS',
             style: AppCss.mediumBold.setColor(Colors.white),
           ),
+          if (currentStep == 1 && !isUploading) ...[
+            const W(16),
+            InkWell(
+              onTap: _handleReimport,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
+                  borderRadius: AppCss.radius4,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.refresh, color: Colors.white, size: 14),
+                    const W(4),
+                    Text('IMPORTAR NOVO PDF', style: AppCss.minimumBold.setSize(10).setColor(Colors.white)),
+                  ],
+                ),
+              ),
+            ),
+          ],
           const Spacer(),
           if (!isUploading)
             IconButton(
@@ -483,7 +561,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
               separatorBuilder: (context, index) => Divider(height: 1, color: AppColors.neutralLight),
               itemBuilder: (context, index) {
                 final p = extractedProducts[index];
-                final exists = FirestoreClient.produtos.data.any((e) => e.codigoFinanceiro == p['codigo']);
+                final exists = BackendClient.produtos.data.any((e) => e.codigoFinanceiro == p['codigo']);
                 return ListTile(
                   leading: Icon(Icons.shopping_basket_outlined, color: exists ? Colors.green : Colors.red),
                   title: Text('${p['codigo']} - ${p['descricao']}', style: TextStyle(color: exists ? Colors.black : Colors.red, fontWeight: FontWeight.bold)),
@@ -514,7 +592,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
             border: OutlineInputBorder(borderRadius: AppCss.radius8),
           ),
           onChanged: (e) => setState(() => selectedStep = e),
-          items: FirestoreClient.steps.data.map((e) => DropdownMenuItem(
+          items: BackendClient.steps.data.map((e) => DropdownMenuItem(
             value: e, 
             child: Text(e.name, style: AppCss.minimumBold.setSize(14))
           )).toList(),

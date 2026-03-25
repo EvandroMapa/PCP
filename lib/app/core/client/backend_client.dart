@@ -39,6 +39,8 @@ class BackendClient {
       ? PedidoCollection() 
       : AppSupabaseClient.pedidos;
 
+  static PedidoProdutoSupabaseCollection get pedidoProdutos => AppSupabaseClient.pedidoProdutos;
+
   static TagCollection get tags => TagCollection(); // Still firestore for now
 
   static ProdutoCollection get produtos => type == BackendType.firestore
