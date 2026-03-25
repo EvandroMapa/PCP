@@ -55,12 +55,6 @@ class PedidoModel {
   bool isFilho = false;
   String? romaneio;
 
-  // New financial fields
-  final double valorSubtotal;
-  final double valorTaxas;
-  final double valorDesconto;
-  final double valorTotal;
-
   factory PedidoModel.empty() => PedidoModel(
     id: HashService.get,
     localizador: 'NOTFOUND${HashService.get}',
@@ -92,10 +86,6 @@ class PedidoModel {
     pai: null,
     isFilho: false,
     romaneio: null,
-    valorSubtotal: 0.0,
-    valorTaxas: 0.0,
-    valorDesconto: 0.0,
-    valorTotal: 0.0,
   );
 
   String get filtro => localizador + pedidoFinanceiro;
@@ -183,10 +173,6 @@ class PedidoModel {
     required this.pai,
     required this.isFilho,
     required this.romaneio,
-    this.valorSubtotal = 0.0,
-    this.valorTaxas = 0.0,
-    this.valorDesconto = 0.0,
-    this.valorTotal = 0.0,
   });
 
 
@@ -217,6 +203,11 @@ class PedidoModel {
     )) {
       status = PedidoProdutoStatus.produzindo;
     }
+    if (produtos.every(
+      (e) => e.status.status == PedidoProdutoStatus.pronto,
+    )) {
+      return status;
+    }
     return status;
   }
 
@@ -231,6 +222,9 @@ class PedidoModel {
     return pedidosVinculados
         .map<PedidoModel>((e) => FirestoreClient.pedidos.getById(e))
         .toList();
+    // return FirestoreClient.pedidos.data
+    //     .where((e) => pedidosVinculados.contains(e.id))
+    //     .toList();
   }
 
   List<PedidoModel> getPedidosFilhos() {
@@ -329,10 +323,6 @@ class PedidoModel {
       'pai': pai,
       'isFilho': isFilho,
       'romaneio': romaneio,
-      'valor_subtotal': valorSubtotal,
-      'valor_taxas': valorTaxas,
-      'valor_desconto': valorDesconto,
-      'valor_total': valorTotal,
     };
   }
 
@@ -404,10 +394,6 @@ class PedidoModel {
       pai: map['pai'],
       isFilho: map['isFilho'] ?? false,
       romaneio: map['romaneio'],
-      valorSubtotal: (map['valor_subtotal'] ?? 0.0).toDouble(),
-      valorTaxas: (map['valor_taxas'] ?? 0.0).toDouble(),
-      valorDesconto: (map['valor_desconto'] ?? 0.0).toDouble(),
-      valorTotal: (map['valor_total'] ?? 0.0).toDouble(),
     );
   }
 
@@ -437,6 +423,8 @@ class PedidoModel {
   factory PedidoModel.fromJson(String source) =>
       PedidoModel.fromMap(json.decode(source));
 
+  /// Build a PedidoModel from a flat Supabase/PostgreSQL row.
+  /// cliente and obra are looked up from BackendClient at parse time.
   factory PedidoModel.fromSupabaseMap(
     Map<String, dynamic> map, {
     List<Map<String, dynamic>>? statusRaw,
@@ -444,6 +432,7 @@ class PedidoModel {
     List<Map<String, dynamic>>? produtosRaw,
     List<String>? tagsIds,
   }) {
+    // Resolve cliente and step via the BackendClient (already loaded)
     late ClienteModel cliente;
     late ObraModel obra;
     late StepModel step;
@@ -494,8 +483,8 @@ class PedidoModel {
         tags: tagsIds != null
             ? tagsIds.map((tid) => FirestoreClient.tags.getById(tid)).toList()
             : [],
-        checks: [],
-        comments: [],
+        checks: [], // TODO: Implement checklist persistence
+        comments: [], // TODO: Implement comment persistence
         users: [],
         index: int.tryParse((map['index'] ?? '0').toString()) ?? 0,
         histories: [],
@@ -511,12 +500,7 @@ class PedidoModel {
         pedidosFilhos: [],
         pai: null,
         isFilho: false,
-        romaneio: null,
-        valorSubtotal: (map['valor_subtotal'] ?? 0.0).toDouble(),
-        valorTaxas: (map['valor_taxas'] ?? 0.0).toDouble(),
-        valorDesconto: (map['valor_desconto'] ?? 0.0).toDouble(),
-        valorTotal: (map['valor_total'] ?? 0.0).toDouble(),
-    );
+        romaneio: null);
     
     return pedido;
   }
@@ -545,10 +529,6 @@ class PedidoModel {
     'delivery_at': deliveryAt?.toIso8601String(),
     'created_at': createdAt.toIso8601String(),
     'index': index,
-    'valor_subtotal': valorSubtotal,
-    'valor_taxas': valorTaxas,
-    'valor_desconto': valorDesconto,
-    'valor_total': valorTotal,
   };
 
   PedidoModel copyWith({
@@ -582,10 +562,6 @@ class PedidoModel {
     String? pai,
     bool? isFilho,
     String? romaneio,
-    double? valorSubtotal,
-    double? valorTaxas,
-    double? valorDesconto,
-    double? valorTotal,
   }) {
     return PedidoModel(
       id: id ?? this.id,
@@ -619,15 +595,11 @@ class PedidoModel {
       pai: pai ?? this.pai,
       isFilho: isFilho ?? this.isFilho,
       romaneio: romaneio ?? this.romaneio,
-      valorSubtotal: valorSubtotal ?? this.valorSubtotal,
-      valorTaxas: valorTaxas ?? this.valorTaxas,
-      valorDesconto: valorDesconto ?? this.valorDesconto,
-      valorTotal: valorTotal ?? this.valorTotal,
     );
   }
 
   @override
   String toString() {
-    return 'PedidoModel(id: $id, localizador: $localizador, descricao: $descricao, valorTotal: $valorTotal)';
+    return 'PedidoModel(id: id, localizador: $localizador, descricao: $descricao, createdAt: $createdAt, deliveryAt: $deliveryAt, cliente: $cliente, obra: $obra, produtos: $produtos, tipo: $tipo, statusess: $statusess, steps: $steps, pedidosVinculados: $pedidosVinculados)';
   }
 }

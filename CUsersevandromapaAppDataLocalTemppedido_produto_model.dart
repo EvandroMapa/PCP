@@ -70,10 +70,6 @@ class PedidoProdutoModel {
   bool isPaused = false;
   MateriaPrimaModel? materiaPrima;
 
-  // New financial fields
-  final double valorUnitario;
-  final double valorTotal;
-
   List<PedidoProdutoTurno> getTurnos(OrdemModel ordem) {
     final turnos = <PedidoProdutoTurno>[];
 
@@ -103,6 +99,7 @@ class PedidoProdutoModel {
             .toList()
           ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
+    // Variáveis para controlar o estado atual
     DateTime? inicioTurnoAtual;
     bool estaProduzindo = false;
     bool estaPausado = false;
@@ -113,14 +110,19 @@ class PedidoProdutoModel {
           final data = evento.data as OrdemHistoryTypeStatusProdutoModel;
           final novoStatus = data.statusProdutos.status;
 
+          // Verifica se o produto está começando a produzir
           if (novoStatus == PedidoProdutoStatus.produzindo && !estaProduzindo) {
+            // Início de novo turno
             inicioTurnoAtual = evento.createdAt;
             estaProduzindo = true;
             estaPausado = false;
           }
+          // Verifica se o produto ficou pronto
           else if (novoStatus == PedidoProdutoStatus.pronto && estaProduzindo) {
+            // Fim do turno atual
             if (inicioTurnoAtual != null) {
               final duracao = evento.createdAt.difference(inicioTurnoAtual);
+
               turnos.add(
                 PedidoProdutoTurno(
                   duration: duracao,
@@ -139,23 +141,30 @@ class PedidoProdutoModel {
                 ),
               );
             }
+
+            // Reset do estado
             inicioTurnoAtual = null;
             estaProduzindo = false;
             estaPausado = false;
           }
+          // Verifica se saiu do status produzindo para outro status que não seja pronto
           else if (estaProduzindo &&
               novoStatus != PedidoProdutoStatus.produzindo &&
               novoStatus != PedidoProdutoStatus.pronto) {
+            // Produto saiu de produzindo sem ficar pronto - interrompe o turno atual
             estaProduzindo = false;
             inicioTurnoAtual = null;
             estaPausado = false;
           }
+
           break;
 
         case OrdemHistoryTypeEnum.pausada:
           if (estaProduzindo && !estaPausado) {
+            // Pausa durante a produção - finaliza o turno atual
             if (inicioTurnoAtual != null) {
               final duracao = evento.createdAt.difference(inicioTurnoAtual);
+
               turnos.add(
                 PedidoProdutoTurno(
                   duration: duracao,
@@ -174,6 +183,7 @@ class PedidoProdutoModel {
                 ),
               );
             }
+
             estaPausado = true;
             inicioTurnoAtual = null;
           }
@@ -181,6 +191,7 @@ class PedidoProdutoModel {
 
         case OrdemHistoryTypeEnum.despausada:
           if (estaProduzindo && estaPausado) {
+            // Despausa durante a produção - inicia novo turno
             inicioTurnoAtual = evento.createdAt;
             estaPausado = false;
           }
@@ -191,8 +202,10 @@ class PedidoProdutoModel {
       }
     }
 
+    // Se ainda está produzindo, adiciona o turno em andamento
     if (estaProduzindo && inicioTurnoAtual != null && !estaPausado) {
       final duracao = DateTime.now().difference(inicioTurnoAtual);
+
       turnos.add(
         PedidoProdutoTurno(
           duration: duracao,
@@ -200,6 +213,7 @@ class PedidoProdutoModel {
             type: PedidoProdutoHistoryType.pause,
             date: inicioTurnoAtual,
           ),
+          // end é null para indicar que ainda está em andamento
           produtoId: produto.id,
           pedidoId: pedidoId,
           pedidoProdutoId: id,
@@ -207,6 +221,7 @@ class PedidoProdutoModel {
         ),
       );
     }
+
     return turnos;
   }
 
@@ -219,8 +234,6 @@ class PedidoProdutoModel {
     statusess: [PedidoProdutoStatusModel.empty()],
     qtde: 0,
     isPaused: false,
-    valorUnitario: 0.0,
-    valorTotal: 0.0,
   );
   PedidoModel get pedido => FirestoreClient.pedidos.getById(pedidoId);
   bool get isAvailableToChanges => status.status.index < 2;
@@ -259,8 +272,6 @@ class PedidoProdutoModel {
     this.isSelected = true,
     this.materiaPrima,
     this.isPaused = false,
-    this.valorUnitario = 0.0,
-    this.valorTotal = 0.0,
   });
 
   Map<String, dynamic> toMap() {
@@ -274,8 +285,6 @@ class PedidoProdutoModel {
       'qtde': qtde,
       'materiaPrima': materiaPrima?.toMap(),
       'isPaused': isPaused,
-      'valor_unitario': valorUnitario,
-      'valor_total': valorTotal,
     };
   }
 
@@ -296,8 +305,6 @@ class PedidoProdutoModel {
           ? MateriaPrimaModel.fromMap(map['materiaPrima'])
           : null,
       isPaused: map['isPaused'] ?? false,
-      valorUnitario: (map['valor_unitario'] ?? 0.0).toDouble(),
-      valorTotal: (map['valor_total'] ?? 0.0).toDouble(),
     );
   }
 
@@ -314,15 +321,13 @@ class PedidoProdutoModel {
       'cliente_id': clienteId,
       'obra_id': obraId,
       'quantidade': qtde,
-      'qtde': qtde,
-      'produto_id': produto.id,
-      'unidade': '',
+      'qtde': qtde, // Suporte para a coluna NOT NULL encontrada
+      'produto_id': produto.id, // Suporte para a coluna NOT NULL encontrada
+      'unidade': '', // O ProdutoModel não tem unidade, enviando vazio para evitar NOT NULL
       'status': statusess.isNotEmpty ? statusess.last.status.name : 'separado',
       'produto_raw': produto.toMap(),
       'materia_prima_raw': materiaPrima?.toMap(),
       'statusess_raw': statusess.map((e) => e.toMap()).toList(),
-      'valor_unitario': valorUnitario,
-      'valor_total': valorTotal,
     };
   }
 
@@ -345,11 +350,9 @@ class PedidoProdutoModel {
                 .map((e) => PedidoProdutoStatusModel.fromMap(e))
                 .toList()
             : [PedidoProdutoStatusModel.empty()],
-        valorUnitario: (map['valor_unitario'] ?? 0.0).toDouble(),
-        valorTotal: (map['valor_total'] ?? 0.0).toDouble(),
       );
     } catch (e) {
-      log('Error parsing PedidoProdutoModel from Supabase: $e');
+      print('Error parsing PedidoProdutoModel from Supabase: $e');
       return PedidoProdutoModel(
         id: (map['id'] ?? '').toString(),
         pedidoId: (map['pedido_id'] ?? '').toString(),
@@ -374,8 +377,6 @@ class PedidoProdutoModel {
     bool? isSelected,
     MateriaPrimaModel? materiaPrima,
     bool? isPaused,
-    double? valorUnitario,
-    double? valorTotal,
   }) {
     return PedidoProdutoModel(
       id: id ?? this.id,
@@ -389,8 +390,6 @@ class PedidoProdutoModel {
       isSelected: isSelected ?? this.isSelected,
       materiaPrima: materiaPrima ?? this.materiaPrima,
       isPaused: isPaused ?? this.isPaused,
-      valorUnitario: valorUnitario ?? this.valorUnitario,
-      valorTotal: valorTotal ?? this.valorTotal,
     );
   }
 }

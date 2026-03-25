@@ -3,6 +3,7 @@ import 'package:aco_plus/app/core/client/supabase/collections/fabricante/fabrica
 import 'package:aco_plus/app/core/client/supabase/collections/materia_prima/materia_prima_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/ordem/ordem_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_produto_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_arquivo_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/produto/produto_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/step/step_supabase_collection.dart';
@@ -13,6 +14,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/version/version_c
 class AppSupabaseClient {
   static OrdemSupabaseCollection ordens = OrdemSupabaseCollection();
   static PedidoSupabaseCollection pedidos = PedidoSupabaseCollection();
+  static PedidoProdutoSupabaseCollection pedidoProdutos = PedidoProdutoSupabaseCollection();
   static PedidoArquivoSupabaseCollection pedidoArquivos = PedidoArquivoSupabaseCollection();
   static UsuarioSupabaseCollection usuarios = UsuarioSupabaseCollection();
   static ClienteSupabaseCollection clientes = ClienteSupabaseCollection();
@@ -32,6 +34,7 @@ class AppSupabaseClient {
       fabricantes.start(),
       materiaPrima.start(),
       pedidoArquivos.start(),
+      pedidoProdutos.start(),
       BackendClient.tags.start(),
       BackendClient.checklists.start(),
       BackendClient.automatizacao.start(),
@@ -50,6 +53,7 @@ class AppSupabaseClient {
     ordens.listen();
     materiaPrima.listen();
     pedidoArquivos.listen();
+    pedidoProdutos.listen();
     BackendClient.tags.listen();
     BackendClient.checklists.listen();
     BackendClient.automatizacao.listen();
