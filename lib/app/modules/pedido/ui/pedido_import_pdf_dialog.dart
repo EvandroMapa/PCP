@@ -22,6 +22,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:collection/collection.dart';
 import 'package:aco_plus/app/core/models/endereco_model.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 Future<void> showPedidoImportPdfDialog() async {
   await showDialog(
@@ -82,26 +83,16 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   }
 
   Future<void> _processFile() async {
-    if (selectedFile == null) return;
+    if (selectedFile == null || selectedFile!.bytes == null) return;
     
     setState(() => isUploading = true);
 
     try {
-      String simulatedText = """
-      Pedido : 25799
-      Cliente:
-      3544 - Gabriel Wagner Santos Teixeira
-      109501 VERGALHAO 5,0 MM PA CD CDA 12.FAT2-CD KG 271,62 7,50 2.037,15
-      109499 VERGALHAO 10,0 MM 3/8 PA CD CDA 12.FAT2-CD KG 672,77 6,30 4.238,45
-      109500 TRELICA TR 08644 PA CD CDA 12.FAT2-CD UNID 10,00 15,50 155,00
-      
-      Subtotal : 8.562,82
-      Taxas: 0,00
-      Desconto : 182,82
-      Total : 8.380,00
-      """;
+      final PdfDocument document = PdfDocument(inputBytes: selectedFile!.bytes);
+      final String extractedText = PdfTextExtractor(document).extractText();
+      document.dispose();
 
-      final parsedData = PedidoPdfParser.parse(simulatedText);
+      final parsedData = PedidoPdfParser.parse(extractedText);
 
       setState(() {
         financeiroCtrl.text = parsedData['pedidoFinanceiro'];
@@ -126,7 +117,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         currentStep = 1;
       });
     } catch (e) {
-      NotificationService.showNegative('Erro', 'Falha ao processar PDF: $e');
+      NotificationService.showNegative('Erro', 'Falha ao processar PDF real: $e');
     } finally {
       setState(() => isUploading = false);
     }
@@ -201,6 +192,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       final double vTotal = double.tryParse(totalFinalCtrl.text.replaceAll(',', '.')) ?? 0;
 
       final pedido = PedidoModel.empty().copyWith(
+        id: HashService.get,
         localizador: localizadorCtrl.text,
         pedidoFinanceiro: financeiroCtrl.text,
         descricao: descricaoCtrl.text,
