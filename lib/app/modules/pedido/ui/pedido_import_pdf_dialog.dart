@@ -526,17 +526,33 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                 );
                 final bool exists = produtoBase != null;
                 
+                final String pdfName = p['descricao'] ?? '';
+                final double vUnit = p['unitario'] ?? 0;
+                final double vTotal = p['total'] ?? 0;
+                final String fUnit = NumberFormat.simpleCurrency(locale: 'pt_BR').format(vUnit);
+                final String fTotal = NumberFormat.simpleCurrency(locale: 'pt_BR').format(vTotal);
+                
                 return ListTile(
                   leading: Icon(Icons.shopping_basket_outlined, color: exists ? Colors.green : Colors.red),
-                  title: Text(
-                    exists ? '${p['codigo']} - ${produtoBase.nome}' : '${p['codigo']} - ITEM NÃO CADASTRADO NA BASE DE DADOS',
-                    style: TextStyle(
-                      color: exists ? Colors.black : Colors.red, 
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    )
+                  title: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        exists ? '${p['codigo']} - ${produtoBase.nome}' : '${p['codigo']} - ITEM NÃO CADASTRADO NA BASE DE DADOS',
+                        style: TextStyle(
+                          color: exists ? Colors.black : Colors.red, 
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        )
+                      ),
+                      if (pdfName.isNotEmpty)
+                        Text(
+                          ' ($pdfName)',
+                          style: AppCss.minimumRegular.setSize(11).setColor(AppColors.neutralDark.withValues(alpha: 0.6)),
+                        ),
+                    ],
                   ),
-                  subtitle: Text('Qtde: ${p['qtde']} | V.Unit: ${p['unitario']} | Total: ${p['total']}'),
+                  subtitle: Text('Qtde: ${p['qtde']} | V.Unit: $fUnit | Total: $fTotal'),
                 );
               },
             ),
@@ -588,14 +604,20 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   }
 
   Widget _buildField(String label, TextEditingController? ctrl, {Color? color, bool readOnly = false, Function(String)? onChanged, Widget? dropdown}) {
+    String? val;
+    if (ctrl != null && (label.toLowerCase().contains('total') || label.toLowerCase().contains('subtotal') || label.toLowerCase().contains('taxas') || label.toLowerCase().contains('desconto'))) {
+      final double num = double.tryParse(ctrl.text.replaceAll(',', '.')) ?? 0;
+      val = NumberFormat.simpleCurrency(locale: 'pt_BR').format(num);
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: AppCss.minimumBold.setSize(12)),
         const H(4),
         dropdown ?? TextField(
-          controller: ctrl,
-          readOnly: readOnly,
+          controller: val != null ? TextEditingController(text: val) : ctrl,
+          readOnly: readOnly || val != null, // Campos financeiros formatados ficam somente leitura ou precisam de máscara real
           onChanged: onChanged,
           style: TextStyle(color: color, fontWeight: color != null ? FontWeight.bold : null),
           decoration: InputDecoration(
