@@ -29,6 +29,11 @@ class KanbanStepTitleWidget extends StatelessWidget {
         children: [
           PopupMenuButton<int>(
             tooltip: 'Criar Cartão',
+            style: ButtonStyle(
+              padding: WidgetStateProperty.all(EdgeInsets.zero),
+              fixedSize: WidgetStateProperty.all(const Size(24, 24)),
+              minimumSize: WidgetStateProperty.all(const Size(24, 24)),
+            ),
             icon: const Icon(Icons.add, color: Colors.blue, size: 20),
             padding: EdgeInsets.zero,
             offset: const Offset(0, 40),
@@ -60,6 +65,7 @@ class KanbanStepTitleWidget extends StatelessWidget {
               }
             },
           ),
+          const W(2),
           PopupMenuButton<SortStepType?>(
             style: ButtonStyle(
               padding: WidgetStateProperty.all(EdgeInsets.zero),

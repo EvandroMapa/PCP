@@ -8,12 +8,14 @@ class ProdutoModel {
   final String nome;
   final String descricao;
   final double massaFinal;
+  final String codigoFinanceiro;
 
   factory ProdutoModel.empty() => ProdutoModel(
     id: HashService.get,
     nome: 'Produto não encontrado',
     descricao: 'Este produto não foi encontrado no sistema',
     massaFinal: 0.0,
+    codigoFinanceiro: '',
   );
 
   String get descricaoReplaced =>
@@ -27,6 +29,7 @@ class ProdutoModel {
     required this.nome,
     required this.descricao,
     required this.massaFinal,
+    this.codigoFinanceiro = '',
   });
 
   String get label => '$nome - $descricao - $massaFinal';
@@ -39,6 +42,7 @@ class ProdutoModel {
       'nome': nome,
       'descricao': descricao,
       'massaFinal': massaFinal,
+      'codigoFinanceiro': codigoFinanceiro,
     };
   }
 
@@ -48,6 +52,7 @@ class ProdutoModel {
       nome: map['nome'] ?? '',
       descricao: map['descricao'] ?? '',
       massaFinal: double.tryParse(map['massa_final'].toString()) ?? 0.0,
+      codigoFinanceiro: map['codigo_financeiro']?.toString() ?? '',
     );
   }
 
@@ -57,6 +62,7 @@ class ProdutoModel {
       'nome': nome,
       'descricao': descricao,
       'massa_final': massaFinal,
+      'codigo_financeiro': codigoFinanceiro,
     };
   }
 
@@ -66,6 +72,7 @@ class ProdutoModel {
       nome: map['nome'] ?? '',
       descricao: map['descricao'] ?? '',
       massaFinal: double.tryParse(map['massaFinal']?.toString() ?? '0') ?? 0.0,
+      codigoFinanceiro: map['codigoFinanceiro']?.toString() ?? '',
     );
   }
 
@@ -80,12 +87,14 @@ class ProdutoModel {
     String? descricao,
     FabricanteModel? fabricante,
     double? massaFinal,
+    String? codigoFinanceiro,
   }) {
     return ProdutoModel(
       id: id ?? this.id,
       nome: nome ?? this.nome,
       descricao: descricao ?? this.descricao,
       massaFinal: massaFinal ?? this.massaFinal,
+      codigoFinanceiro: codigoFinanceiro ?? this.codigoFinanceiro,
     );
   }
 }
