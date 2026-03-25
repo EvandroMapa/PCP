@@ -23,14 +23,14 @@ class PedidoPdfParser {
       'rawText': text,
     };
 
-    // 1. Extrair Pedido Financeiro (Busca flexível: pula qualquer texto entre a label e o número)
+    // 1. Extrair Pedido Financeiro (Pega o primeiro número após "Pedido")
     final pedidoRegExp = RegExp(r'Pedido\s*[:\-]?[\s\S]*?(\d+)', caseSensitive: false);
     final pedidoMatch = pedidoRegExp.firstMatch(text);
     if (pedidoMatch != null) {
       data['pedidoFinanceiro'] = pedidoMatch.group(1) ?? '';
     }
 
-    // 2. Extrair Cliente (Busca "Cliente:", pula ruídos como "Telefone:", e pega ID - NOME)
+    // 2. Extrair Cliente
     final clienteRegExp = RegExp(r'Cliente\s*[:\-]?[\s\S]*?(\d+)\s*[-]\s*([^\n\r]+)', caseSensitive: false);
     final clienteMatch = clienteRegExp.firstMatch(text);
     if (clienteMatch != null) {
@@ -38,22 +38,32 @@ class PedidoPdfParser {
       data['clienteNome'] = (clienteMatch.group(2) ?? '').trim();
     }
 
-    // 3. Extrair Totais Financeiros (Busca o valor que segue a label, permitindo quebras de linha)
+    // 3. Extrair Totais Financeiros
     data['subtotal'] = _extractValue(text, r'Subtotal\s*[:\-]?\s*([\d,.]+)');
     data['taxas'] = _extractValue(text, r'Taxas\s*[:\-]?\s*([\d,.]+)');
     data['desconto'] = _extractValue(text, r'Desconto\s*[:\-]?\s*([\d,.]+)');
     data['total'] = _extractValue(text, r'Total\s*(?:Geral|Líquido)?\s*[:\-]?\s*([\d,.]+)');
 
-    // 4. Extrair Produtos (Âncoras de unidade com suporte a prefixo de sequência opcional)
+    // 4. Extrair Produtos da Tabela
+    // IMPORTANTE: Só busca produtos APÓS a palavra "Código" ou "Descrição" para evitar pegar o cabeçalho
+    int tableStartIndex = text.toLowerCase().indexOf('código');
+    if (tableStartIndex == -1) tableStartIndex = text.toLowerCase().indexOf('descrição');
+    if (tableStartIndex == -1) tableStartIndex = 0;
+
+    final productSection = text.substring(tableStartIndex);
+    
     final units = ['KG', 'UN', 'PC', 'MT', 'PÇ', 'BAR', 'PCT', 'M2', 'CJ', 'UNID', 'Pç', 'FL', 'RL'];
     final unitsPattern = units.join('|');
     
+    // Regex aprimorado:
+    // - Descrição não pode conter a palavra "Pedido" ou "Cliente" (evita vazamento do cabeçalho)
+    // - Usa limites de palavra para o código
     final productRegExp = RegExp(
-      '(\\d{4,7})\\s+([\\s\\S]+?)\\s+(?:\\d+\\s+)?($unitsPattern)\\s+([\\d,.]+)\\s+([\\d,.]+)\\s+([\\d,.]+)',
+      '(\\d{3,7})\\s+([\\s\\S]+?)\\s+(?:\\d+\\s+)?($unitsPattern)\\s+([\\d,.]+)\\s+([\\d,.]+)\\s+([\\d,.]+)',
       caseSensitive: false,
     );
 
-    final matches = productRegExp.allMatches(text);
+    final matches = productRegExp.allMatches(productSection);
     for (final match in matches) {
       final codigo = match.group(1) ?? '';
       String descricao = (match.group(2) ?? '').trim();
@@ -62,8 +72,12 @@ class PedidoPdfParser {
       final val2 = _parseDecimal(match.group(5) ?? '0');
       final val3 = _parseDecimal(match.group(6) ?? '0');
 
+      // Limpeza agressiva da descrição para remover lixos e quebras de linha excessivas
       descricao = descricao.replaceAll(RegExp(r'[\r\n]+'), ' ').replaceAll(RegExp(r'\s+'), ' ');
       
+      // Se a descrição for muito longa (> 200 caracteres), provavelmente pegou coisa errada
+      if (descricao.length > 200) continue;
+
       if (val1 > 0 && val3 > 0) {
         data['produtos'].add({
           'codigo': codigo,
