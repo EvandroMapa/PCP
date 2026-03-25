@@ -26,6 +26,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:collection/collection.dart';
+import 'package:aco_plus/app/core/models/endereco_model.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:aco_plus/app/modules/cliente/ui/cliente_create_simplify_bottom.dart';
 import 'package:flutter_masked_text2/flutter_masked_text2.dart';
@@ -59,10 +60,10 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   final TextEditingController obraCtrl = TextEditingController();
   final TextEditingController planilhamentoCtrl = TextEditingController();
   final TextEditingController romaneioCtrl = TextEditingController();
-  final MoneyMaskedTextController subtotalCtrl = MoneyMaskedTextController(leftSymbol: 'R$ ');
-  final MoneyMaskedTextController taxasCtrl = MoneyMaskedTextController(leftSymbol: 'R$ ');
-  final MoneyMaskedTextController descontoCtrl = MoneyMaskedTextController(leftSymbol: 'R$ ');
-  final MoneyMaskedTextController totalFinalCtrl = MoneyMaskedTextController(leftSymbol: 'R$ ');
+  final MoneyMaskedTextController subtotalCtrl = MoneyMaskedTextController(leftSymbol: 'R\$ ');
+  final MoneyMaskedTextController taxasCtrl = MoneyMaskedTextController(leftSymbol: 'R\$ ');
+  final MoneyMaskedTextController descontoCtrl = MoneyMaskedTextController(leftSymbol: 'R\$ ');
+  final MoneyMaskedTextController totalFinalCtrl = MoneyMaskedTextController(leftSymbol: 'R\$ ');
   
   DateTime deliveryDate = DateTime.now().add(const Duration(days: 7));
   ClienteModel? selectedCliente;
@@ -506,21 +507,23 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
               if (!BackendClient.clientes.data.any((e) => e.id == selectedCliente?.id))
                 Padding(
                   padding: const EdgeInsets.only(bottom: 2),
-                  child: AppTextButton.outlined(
-                    label: 'Cadastrar Cliente', 
+                  child: SizedBox(
                     width: 150,
                     height: 38,
-                    onPressed: () async {
-                      final novo = await showClienteCreateSimplifyBottom(
-                        initialNome: selectedCliente?.nome,
-                        initialObra: obraCtrl.text,
-                      );
-                      if (novo != null) {
-                        setState(() {
-                          selectedCliente = novo;
-                        });
+                    child: AppTextButton.outlined(
+                      label: 'Cadastrar Cliente', 
+                      onPressed: () async {
+                        final novo = await showClienteCreateSimplifyBottom(
+                          initialNome: selectedCliente?.nome,
+                          initialObra: obraCtrl.text,
+                        );
+                        if (novo != null) {
+                          setState(() {
+                            selectedCliente = novo;
+                          });
+                        }
                       }
-                    }
+                    ),
                   ),
                 ),
             ],
