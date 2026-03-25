@@ -10,6 +10,10 @@ class PedidoPdfParser {
       'clienteCodigo': '',
       'clienteNome': '',
       'produtos': <Map<String, dynamic>>[],
+      'subtotal': 0.0,
+      'taxas': 0.0,
+      'desconto': 0.0,
+      'total': 0.0,
     };
 
     // 1. Extrair Pedido Financeiro
@@ -20,7 +24,6 @@ class PedidoPdfParser {
     }
 
     // 2. Extrair Cliente (Código e Nome)
-    // Ex: 3544 - Gabriel Wagner Santos Teixeira
     final clienteRegExp = RegExp(r'Cliente:\s*(\d+)\s*-\s*(.*)');
     final clienteMatch = clienteRegExp.firstMatch(text);
     if (clienteMatch != null) {
@@ -28,9 +31,13 @@ class PedidoPdfParser {
       data['clienteNome'] = (clienteMatch.group(2) ?? '').trim();
     }
 
-    // 3. Extrair Produtos da Tabela
-    // Padrão: Código Descrição ... Unidade Qtde Unitário Total
-    // Ex: 109501 VERGALHAO 5,0 MM PA CD CDA 12.FAT2-CD KG 271,62 7,50 2.037,15
+    // 3. Extrair Totais Financeiros
+    data['subtotal'] = _extractValue(text, r'Subtotal\s*:\s*([\d,.]+)');
+    data['taxas'] = _extractValue(text, r'Taxas\s*:\s*([\d,.]+)');
+    data['desconto'] = _extractValue(text, r'Desconto\s*:\s*([\d,.]+)');
+    data['total'] = _extractValue(text, r'Total\s*:\s*([\d,.]+)');
+
+    // 4. Extrair Produtos da Tabela
     final lines = text.split('\n');
     for (final line in lines) {
       final productRegExp = RegExp(
@@ -56,8 +63,16 @@ class PedidoPdfParser {
     return data;
   }
 
+  static double _extractValue(String text, String pattern) {
+    final regExp = RegExp(pattern);
+    final match = regExp.firstMatch(text);
+    if (match != null) {
+      return _parseDecimal(match.group(1) ?? '0');
+    }
+    return 0.0;
+  }
+
   static double _parseDecimal(String value) {
-    // Converte "2.037,15" para "2037.15"
     final clean = value.replaceAll('.', '').replaceAll(',', '.');
     return double.tryParse(clean) ?? 0.0;
   }

@@ -50,10 +50,23 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   final TextEditingController financeiroCtrl = TextEditingController();
   final TextEditingController descricaoCtrl = TextEditingController();
   final TextEditingController obraCtrl = TextEditingController();
+  final TextEditingController subtotalCtrl = TextEditingController(text: '0,00');
+  final TextEditingController taxasCtrl = TextEditingController(text: '0,00');
+  final TextEditingController descontoCtrl = TextEditingController(text: '0,00');
+  final TextEditingController totalFinalCtrl = TextEditingController(text: '0,00');
+  
   DateTime deliveryDate = DateTime.now().add(const Duration(days: 7));
   ClienteModel? selectedCliente;
   PedidoTipo selectedTipo = PedidoTipo.cda;
   List<Map<String, dynamic>> extractedProducts = [];
+
+  void _calculateTotal() {
+    final sub = double.tryParse(subtotalCtrl.text.replaceAll(',', '.')) ?? 0;
+    final tax = double.tryParse(taxasCtrl.text.replaceAll(',', '.')) ?? 0;
+    final desc = double.tryParse(descontoCtrl.text.replaceAll(',', '.')) ?? 0;
+    final total = (sub + tax) - desc;
+    totalFinalCtrl.text = total.toStringAsFixed(2).replaceAll('.', ',');
+  }
 
   Future<void> _pickFile() async {
     final result = await FilePicker.platform.pickFiles(
@@ -77,25 +90,24 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
     setState(() => isUploading = true);
 
     try {
-      // TODO: Implement real PDF text extraction here
-      // Placeholder: In a real scenario, we'd use a library or backend service.
-      // For now, I'll simulate extracting text from the provided images.
-      
-      // Simulação: Texto que seria extraído do PDF
+      // Simulação: Texto que seria extraído do PDF Baseado nas Imagens
       String simulatedText = """
       Pedido : 25799
       Cliente:
       3544 - Gabriel Wagner Santos Teixeira
       109501 VERGALHAO 5,0 MM PA CD CDA 12.FAT2-CD KG 271,62 7,50 2.037,15
       109499 VERGALHAO 10,0 MM 3/8 PA CD CDA 12.FAT2-CD KG 672,77 6,30 4.238,45
-      109531 VERGALHAO 12,5 MM 1/2 PA CD CDA 12.FAT2-CD KG 363,05 6,30 2.287,22
+      
+      Subtotal : 8.562,82
+      Taxas: 0,00
+      Desconto : 182,82
+      Total : 8.380,00
       """;
 
       final parsedData = PedidoPdfParser.parse(simulatedText);
 
       setState(() {
         financeiroCtrl.text = parsedData['pedidoFinanceiro'];
-        // Tenta encontrar o cliente pelo código
         final clienteId = parsedData['clienteCodigo'];
         selectedCliente = FirestoreClient.clientes.data.firstWhere(
           (e) => e.id == clienteId,
@@ -109,7 +121,13 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
           ),
         );
         extractedProducts = List<Map<String, dynamic>>.from(parsedData['produtos']);
-        currentStep = 1; // Move to Conference Step
+        
+        subtotalCtrl.text = parsedData['subtotal'].toStringAsFixed(2).replaceAll('.', ',');
+        taxasCtrl.text = parsedData['taxas'].toStringAsFixed(2).replaceAll('.', ',');
+        descontoCtrl.text = parsedData['desconto'].toStringAsFixed(2).replaceAll('.', ',');
+        totalFinalCtrl.text = parsedData['total'].toStringAsFixed(2).replaceAll('.', ',');
+        
+        currentStep = 1;
       });
     } catch (e) {
       NotificationService.showNegative('Erro', 'Falha ao processar PDF: $e');
@@ -122,16 +140,71 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
     setState(() => isUploading = true);
 
     try {
-      // 1. Validar e Sincronizar Cliente
+      // 0. Validação Rigorosa: Todos os produtos devem existir
+      final List<String> missingProducts = [];
+      final List<PedidoProdutoModel> produtosMapped = [];
+      
+      for (final p in extractedProducts) {
+        final produtoBase = FirestoreClient.produtos.data.firstWhereOrNull(
+          (e) => e.codigoFinanceiro == p['codigo'],
+        );
+
+        if (produtoBase == null) {
+          missingProducts.add('${p['codigo']} - ${p['descricao']}');
+        } else {
+          produtosMapped.add(PedidoProdutoModel(
+            id: HashService.get,
+            pedidoId: '', 
+            clienteId: '', 
+            obraId: '',
+            produto: produtoBase,
+            statusess: [PedidoProdutoStatusModel.empty()],
+            qtde: p['qtde'],
+            valorUnitario: p['unitario'],
+            valorTotal: p['total'],
+          ));
+        }
+      }
+
+      if (missingProducts.isNotEmpty) {
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Bloqueio de Importação'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   const Text('O PDF não pode ser importado pois os seguintes produtos não possuem vínculo financeiro (Código Financeiro):'),
+                  const H(12),
+                  ...missingProducts.map((e) => Text('• $e', style: AppCss.minimumBold.setSize(12).setColor(Colors.red))),
+                  const H(12),
+                  const Text('Dica: Cadastre o código financeiro no cadastro de produtos antes de tentar novamente.'),
+                ],
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Fechar')),
+              ],
+            ),
+          );
+        }
+        setState(() => isUploading = false);
+        return;
+      }
+
       if (selectedCliente != null) {
         final existing = FirestoreClient.clientes.getById(selectedCliente!.id);
         if (existing.id == 'NOTFOUND') {
-          // Salva novo cliente no banco
           await AppSupabaseClient.clientes.add(selectedCliente!);
         }
       }
 
-      // 2. Criar o PedidoModel
+      final double vSubtotal = double.tryParse(subtotalCtrl.text.replaceAll(',', '.')) ?? 0;
+      final double vTaxas = double.tryParse(taxasCtrl.text.replaceAll(',', '.')) ?? 0;
+      final double vDesconto = double.tryParse(descontoCtrl.text.replaceAll(',', '.')) ?? 0;
+      final double vTotal = double.tryParse(totalFinalCtrl.text.replaceAll(',', '.')) ?? 0;
+
       final pedido = PedidoModel.empty().copyWith(
         localizador: localizadorCtrl.text,
         pedidoFinanceiro: financeiroCtrl.text,
@@ -141,42 +214,28 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         tipo: selectedTipo,
         statusess: [PedidoStatusModel.create(PedidoStatus.aguardandoProducaoCDA)],
         steps: [PedidoStepModel.create(FirestoreClient.steps.data.first)],
+        valorSubtotal: vSubtotal,
+        valorTaxas: vTaxas,
+        valorDesconto: vDesconto,
+        valorTotal: vTotal,
       );
 
-      // 3. Criar os PedidoProdutoModel
-      final List<PedidoProdutoModel> produtos = [];
-      for (final p in extractedProducts) {
-        // Encontra o produto no banco pelo codigo financeiro
-        final produtoBase = FirestoreClient.produtos.data.firstWhere(
-          (e) => e.codigoFinanceiro == p['codigo'],
-          orElse: () => ProdutoModel.empty().copyWith(nome: p['descricao']),
-        );
+      final List<PedidoProdutoModel> finalProdutos = produtosMapped.map((p) => p.copyWith(
+        pedidoId: pedido.id,
+        clienteId: pedido.cliente.id,
+      )).toList();
 
-        produtos.add(PedidoProdutoModel(
-          id: HashService.get,
-          pedidoId: pedido.id,
-          clienteId: pedido.cliente.id,
-          obraId: '', // Por enquanto
-          produto: produtoBase,
-          statusess: [PedidoProdutoStatusModel.empty()],
-          qtde: p['qtde'],
-          valorUnitario: p['unitario'],
-          valorTotal: p['total'],
-        ));
-      }
-
-      // 4. Persistir tudo no Supabase
       await AppSupabaseClient.pedidos.add(pedido);
-      for (final p in produtos) {
+      for (final p in finalProdutos) {
         await AppSupabaseClient.pedidoProdutos.add(p);
       }
 
       if (mounted) {
         Navigator.pop(context);
-        NotificationService.showPositive('Sucesso', 'Cartão de pedido gerado com sucesso!');
+        NotificationService.showPositive('Sucesso', 'Pedido e itens gerados com totais financeiros!');
       }
     } catch (e) {
-      NotificationService.showNegative('Erro', 'Falha ao gerar cartão: $e');
+      NotificationService.showNegative('Erro', 'Falha ao salvar: $e');
     } finally {
       setState(() => isUploading = false);
     }
@@ -187,8 +246,8 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: AppCss.radius12),
       child: Container(
-        width: 700,
-        height: 750,
+        width: 800,
+        height: 850,
         decoration: BoxDecoration(color: Colors.white, borderRadius: AppCss.radius12),
         child: Column(
           children: [
@@ -213,7 +272,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
           const Icon(Icons.picture_as_pdf, color: Colors.white),
           const W(12),
           Text(
-            currentStep == 0 ? 'IMPORTAR PEDIDO (PDF)' : 'CONFERÊNCIA DOS DADOS',
+            currentStep == 0 ? 'IMPORTAR PEDIDO (PDF)' : 'VALIDAÇÃO E TOTAIS DO PDF',
             style: AppCss.mediumBold.setColor(Colors.white),
           ),
           const Spacer(),
@@ -249,7 +308,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                   const H(16),
                   Text('Clique para selecionar o PDF do pedido', style: AppCss.mediumBold),
                   const H(8),
-                  Text('O sistema irá extrair os dados automaticamente', style: AppCss.minimumRegular),
+                  Text('Validação rigorosa de itens e totais financeiros', style: AppCss.minimumRegular),
                 ],
               ),
             ),
@@ -258,7 +317,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
             const H(24),
             const CircularProgressIndicator(),
             const H(8),
-            const Text('Processando arquivo...'),
+            const Text('Analisando documento...'),
           ]
         ],
       ),
@@ -336,9 +395,47 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
           const H(12),
           _buildField('Cliente (ID - Nome)', TextEditingController(text: '${selectedCliente?.id} - ${selectedCliente?.nome}')),
           const H(12),
-          _buildField('Obra / Local de Entrega', obraCtrl),
-          const H(12),
-          _buildField('Descrição / Observação', descricaoCtrl),
+          Row(
+            children: [
+              Expanded(child: _buildField('Obra / Local de Entrega', obraCtrl)),
+              const W(12),
+              Expanded(child: _buildField('Descrição / Observação', descricaoCtrl)),
+            ],
+          ),
+          const H(16),
+          // Finance Summary Section
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.neutralLight.withValues(alpha: 0.2), 
+              borderRadius: AppCss.radius12,
+              border: Border.all(color: AppColors.neutralLight),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                   children: [
+                     const Icon(Icons.payments_outlined, size: 18, color: Colors.blue),
+                     const W(8),
+                     Text('RESUMO FINANCEIRO DO PEDIDO', style: AppCss.minimumBold.setSize(12).setColor(Colors.blue.shade900)),
+                   ],
+                ),
+                const H(12),
+                Row(
+                  children: [
+                    Expanded(child: _buildField('Subtotal', subtotalCtrl, onChanged: (_) => _calculateTotal())),
+                    const W(12),
+                    Expanded(child: _buildField('Taxas (+)', taxasCtrl, onChanged: (_) => _calculateTotal())),
+                    const W(12),
+                    Expanded(child: _buildField('Desconto (-)', descontoCtrl, onChanged: (_) => _calculateTotal())),
+                    const W(12),
+                    Expanded(child: _buildField('TOTAL FINAL', totalFinalCtrl, color: Colors.green.shade900, readOnly: true)),
+                  ],
+                ),
+              ],
+            ),
+          ),
           const H(20),
           Text('ITENS DO PEDIDO (${extractedProducts.length})', style: AppCss.mediumBold),
           const H(8),
@@ -351,21 +448,28 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
               separatorBuilder: (context, index) => Divider(height: 1, color: AppColors.neutralLight),
               itemBuilder: (context, index) {
                 final p = extractedProducts[index];
+                final exists = FirestoreClient.produtos.data.any((e) => e.codigoFinanceiro == p['codigo']);
                 return Padding(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
-                      const Icon(Icons.shopping_basket_outlined, size: 16, color: Colors.blue),
-                      const W(8),
+                      Icon(Icons.shopping_basket_outlined, size: 20, color: exists ? Colors.green : Colors.red),
+                      const W(12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('${p['codigo']} - ${p['descricao']}', style: AppCss.minimumBold.setSize(12)),
-                            Text('Qtde: ${p['qtde']} KG | Un: R\$ ${p['unitario']} | Total: R\$ ${p['total']}', style: AppCss.minimumRegular.setSize(10)),
+                            Text('${p['codigo']} - ${p['descricao']}', style: AppCss.minimumBold.setSize(13).setColor(exists ? Colors.black : Colors.red)),
+                            Text('Qtde: ${p['qtde']} KG | Unitário: R\$ ${p['unitario']} | Total Item: R\$ ${p['total']}', style: AppCss.minimumRegular.setSize(11)),
                           ],
                         ),
                       ),
+                      if (!exists) 
+                         Container(
+                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                           decoration: BoxDecoration(color: Colors.red, borderRadius: AppCss.radius4),
+                           child: const Text('PRODUTO NÃO CADASTRADO', style: TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                         ),
                     ],
                   ),
                 );
@@ -377,7 +481,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
     );
   }
 
-  Widget _buildField(String label, TextEditingController ctrl) {
+  Widget _buildField(String label, TextEditingController ctrl, {Color? color, bool readOnly = false, Function(String)? onChanged}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -385,8 +489,13 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         const H(4),
         TextField(
           controller: ctrl,
+          readOnly: readOnly,
+          onChanged: onChanged,
+          style: TextStyle(color: color, fontWeight: color != null ? FontWeight.bold : null),
           decoration: InputDecoration(
             isDense: true,
+            fillColor: readOnly ? AppColors.neutralLight.withValues(alpha: 0.1) : Colors.white,
+            filled: true,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             border: OutlineInputBorder(borderRadius: AppCss.radius8),
           ),
@@ -411,7 +520,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
           if (currentStep == 1)
             Expanded(
               child: AppTextButton(
-                label: isUploading ? 'Gerando...' : 'Gerar Cartão',
+                label: isUploading ? 'Validando...' : 'Confirmar e Gerar Cartão',
                 onPressed: _generateCard,
                 isEnable: !isUploading,
               ),

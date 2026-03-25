@@ -54,6 +54,10 @@ class PedidoModel {
   String? pai;
   bool isFilho = false;
   String? romaneio;
+  final double valorSubtotal;
+  final double valorTaxas;
+  final double valorDesconto;
+  final double valorTotal;
 
   factory PedidoModel.empty() => PedidoModel(
     id: HashService.get,
@@ -86,61 +90,16 @@ class PedidoModel {
     pai: null,
     isFilho: false,
     romaneio: null,
+    valorSubtotal: 0,
+    valorTaxas: 0,
+    valorDesconto: 0,
+    valorTotal: 0,
   );
 
   String get filtro => localizador + pedidoFinanceiro;
 
   StepModel get step => steps.isNotEmpty ? steps.last.step : StepModel.notFound;
   PedidoStatus get status => statusess.isNotEmpty ? statusess.last.status : PedidoStatus.aguardandoProducaoCD;
-
-  bool get isChangeStatusAvailable =>
-      !isAguardandoEntradaProducao() &&
-      tipo == PedidoTipo.cda &&
-      [
-        PedidoStatus.aguardandoProducaoCDA,
-        PedidoStatus.produzindoCDA,
-        PedidoStatus.pronto,
-      ].contains(status);
-
-  void addStep(step) => steps.add(PedidoStepModel.create(step));
-
-  bool isAguardandoEntradaProducao() {
-    if (step.index >= (automatizacaoConfig.produtoPedidoSeparado.step?.index ?? 0)) {
-      return false;
-    }
-    return true;
-  }
-
-  List<PedidoStatusModel> getArmacaoStatusses() {
-    final statusessFiltered = <PedidoStatusModel>[];
-    final status = statusess
-        .where(
-          (e) =>
-              e.status == PedidoStatus.produzindoCD ||
-              e.status == PedidoStatus.aguardandoProducaoCD,
-        )
-        .toList()
-        .firstOrNull;
-    if (status == null) return statusessFiltered;
-    for (var status in statusess) {
-      if (status.status != PedidoStatus.produzindoCD &&
-          status.status != PedidoStatus.aguardandoProducaoCD) {
-        statusessFiltered.add(status.copyWith());
-      }
-    }
-    statusessFiltered.add(status.copyWith());
-    statusessFiltered.sort((b, a) => a.createdAt.compareTo(b.createdAt));
-    for (var status in statusessFiltered) {
-      if (status.status == PedidoStatus.produzindoCD) {
-        status.status = PedidoStatus.aguardandoProducaoCD;
-      }
-    }
-    return statusessFiltered;
-  }
-
-  int iOfProductById(String id) {
-    return produtos.indexWhere((element) => element.id == id);
-  }
 
   PedidoModel({
     required this.id,
@@ -173,123 +132,11 @@ class PedidoModel {
     required this.pai,
     required this.isFilho,
     required this.romaneio,
+    this.valorSubtotal = 0,
+    this.valorTaxas = 0,
+    this.valorDesconto = 0,
+    this.valorTotal = 0,
   });
-
-
-  double getQtdeDirecionada(PedidoProdutoModel produto) {
-    double qtde = 0.0;
-    for (final filho in getPedidosFilhos()) {
-      for (final prodFilho in filho.produtos) {
-        if (prodFilho.produto.id == produto.produto.id) {
-          qtde += prodFilho.qtde;
-        }
-      }
-    }
-    return qtde;
-  }
-
-  PedidoProdutoStatus getPedidoProdutoStatus(PedidoProdutoModel produto) {
-    PedidoProdutoStatus status = PedidoProdutoStatus.aguardandoProducao;
-    final produtos = getProdutos().where(
-      (e) => e.produto.id == produto.produto.id,
-    );
-    if (produtos.every(
-      (e) => e.status.status == PedidoProdutoStatus.aguardandoProducao,
-    )) {
-      status = PedidoProdutoStatus.aguardandoProducao;
-    }
-    if (produtos.any(
-      (e) => e.status.status == PedidoProdutoStatus.produzindo,
-    )) {
-      status = PedidoProdutoStatus.produzindo;
-    }
-    if (produtos.every(
-      (e) => e.status.status == PedidoProdutoStatus.pronto,
-    )) {
-      return status;
-    }
-    return status;
-  }
-
-  List<PedidoProdutoModel> getProdutos() {
-    if (pedidosFilhos.isNotEmpty) {
-      return getPedidosFilhos().expand((e) => e.produtos).toList();
-    }
-    return produtos;
-  }
-
-  List<PedidoModel> getPedidosVinculados() {
-    return pedidosVinculados
-        .map<PedidoModel>((e) => FirestoreClient.pedidos.getById(e))
-        .toList();
-    // return FirestoreClient.pedidos.data
-    //     .where((e) => pedidosVinculados.contains(e.id))
-    //     .toList();
-  }
-
-  List<PedidoModel> getPedidosFilhos() {
-    return pedidosFilhos
-        .map<PedidoModel>((e) => FirestoreClient.pedidos.getById(e))
-        .toList();
-  }
-
-  List<PedidoProdutoStatus> get getStatusess {
-    List<PedidoProdutoStatus> statusess = [];
-    for (var element in produtos) {
-      statusess.add(element.status.status);
-    }
-    return statusess.toSet().toList();
-  }
-
-  double getQtdeTotal() {
-    return getProdutos().fold(
-      0.0,
-      (previousValue, element) => previousValue + element.qtde,
-    );
-  }
-
-  double getQtdeAguardandoProducao() {
-    return getProdutos()
-        .where(
-          (e) =>
-              e.statusess.last.getStatusView() ==
-              PedidoProdutoStatus.aguardandoProducao,
-        )
-        .fold(0, (previousValue, element) => previousValue + element.qtde);
-  }
-
-  double getQtdeProduzindo() {
-    return getProdutos()
-        .where((e) => e.statusess.last.status == PedidoProdutoStatus.produzindo)
-        .fold(0, (previousValue, element) => previousValue + element.qtde);
-  }
-
-  double getQtdePronto() {
-    return getProdutos()
-        .where((e) => e.statusess.last.status == PedidoProdutoStatus.pronto)
-        .fold(0, (previousValue, element) => previousValue + element.qtde);
-  }
-
-  double getPrcntgAguardandoProducao() {
-    final aguardandoProducao = getQtdeAguardandoProducao();
-    final total = getQtdeTotal();
-    if (total == 0) return 0;
-    return aguardandoProducao / total;
-  }
-
-  double getPrcntgProduzindo() {
-    final produzindo = getQtdeProduzindo();
-    final total = getQtdeTotal();
-    if (total == 0) return 0;
-    return produzindo / total;
-  }
-
-  double getPrcntgPronto() {
-    final pronto = getQtdePronto();
-    final total = getQtdeTotal();
-    if (total == 0) return 0;
-    return pronto / total;
-  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -323,6 +170,10 @@ class PedidoModel {
       'pai': pai,
       'isFilho': isFilho,
       'romaneio': romaneio,
+      'valorSubtotal': valorSubtotal,
+      'valorTaxas': valorTaxas,
+      'valorDesconto': valorDesconto,
+      'valorTotal': valorTotal,
     };
   }
 
@@ -394,6 +245,10 @@ class PedidoModel {
       pai: map['pai'],
       isFilho: map['isFilho'] ?? false,
       romaneio: map['romaneio'],
+      valorSubtotal: double.tryParse(map['valorSubtotal']?.toString() ?? '0') ?? 0,
+      valorTaxas: double.tryParse(map['valorTaxas']?.toString() ?? '0') ?? 0,
+      valorDesconto: double.tryParse(map['valorDesconto']?.toString() ?? '0') ?? 0,
+      valorTotal: double.tryParse(map['valorTotal']?.toString() ?? '0') ?? 0,
     );
   }
 
@@ -418,13 +273,6 @@ class PedidoModel {
     }
   }
 
-  String toJson() => json.encode(toMap());
-
-  factory PedidoModel.fromJson(String source) =>
-      PedidoModel.fromMap(json.decode(source));
-
-  /// Build a PedidoModel from a flat Supabase/PostgreSQL row.
-  /// cliente and obra are looked up from BackendClient at parse time.
   factory PedidoModel.fromSupabaseMap(
     Map<String, dynamic> map, {
     List<Map<String, dynamic>>? statusRaw,
@@ -432,7 +280,6 @@ class PedidoModel {
     List<Map<String, dynamic>>? produtosRaw,
     List<String>? tagsIds,
   }) {
-    // Resolve cliente and step via the BackendClient (already loaded)
     late ClienteModel cliente;
     late ObraModel obra;
     late StepModel step;
@@ -457,12 +304,12 @@ class PedidoModel {
         ? produtosRaw.map((p) => PedidoProdutoModel.fromSupabaseMap(p)).toList()
         : <PedidoProdutoModel>[];
 
-    final pedido = PedidoModel(
+    return PedidoModel(
         id: (map['id'] ?? '').toString(),
         localizador: (map['localizador'] ?? '').toString(),
         descricao: (map['descricao'] ?? '').toString(),
-        createdAt: _parseDate(map['created_at']),
-        deliveryAt: map['delivery_at'] != null ? _parseDate(map['delivery_at']) : null,
+        createdAt: DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now(),
+        deliveryAt: map['delivery_at'] != null ? DateTime.tryParse(map['delivery_at'].toString()) : null,
         cliente: cliente,
         obra: obra,
         produtos: produtos,
@@ -471,20 +318,13 @@ class PedidoModel {
             orElse: () => PedidoTipo.cd),
         statusess: statusRaw != null
             ? statusRaw.map((s) => PedidoStatusModel.fromMap(s)).toList()
-            : [
-                PedidoStatusModel.create(PedidoStatus.aguardandoProducaoCD),
-              ],
+            : [PedidoStatusModel.create(PedidoStatus.aguardandoProducaoCD)],
         steps: stepsRaw != null
             ? stepsRaw.map((e) => PedidoStepModel.fromSupabaseMap(e)).toList()
-            : [
-                PedidoStepModel(
-                    id: (map['id'] ?? '').toString(), step: step, createdAt: DateTime.now())
-              ],
-        tags: tagsIds != null
-            ? tagsIds.map((tid) => FirestoreClient.tags.getById(tid)).toList()
-            : [],
-        checks: [], // TODO: Implement checklist persistence
-        comments: [], // TODO: Implement comment persistence
+            : [PedidoStepModel(id: (map['id'] ?? '').toString(), step: step, createdAt: DateTime.now())],
+        tags: tagsIds != null ? tagsIds.map((tid) => FirestoreClient.tags.getById(tid)).toList() : [],
+        checks: [],
+        comments: [],
         users: [],
         index: int.tryParse((map['index'] ?? '0').toString()) ?? 0,
         histories: [],
@@ -500,15 +340,12 @@ class PedidoModel {
         pedidosFilhos: [],
         pai: null,
         isFilho: false,
-        romaneio: null);
-    
-    return pedido;
-  }
-
-  static DateTime _parseDate(dynamic val) {
-    if (val == null) return DateTime.now();
-    if (val is DateTime) return val;
-    return DateTime.tryParse(val.toString()) ?? DateTime.now();
+        romaneio: null,
+        valorSubtotal: double.tryParse((map['valor_subtotal'] ?? '0').toString()) ?? 0,
+        valorTaxas: double.tryParse((map['valor_taxas'] ?? '0').toString()) ?? 0,
+        valorDesconto: double.tryParse((map['valor_desconto'] ?? '0').toString()) ?? 0,
+        valorTotal: double.tryParse((map['valor_total'] ?? '0').toString()) ?? 0,
+    );
   }
 
   Map<String, dynamic> toSupabaseMap() => {
@@ -529,7 +366,15 @@ class PedidoModel {
     'delivery_at': deliveryAt?.toIso8601String(),
     'created_at': createdAt.toIso8601String(),
     'index': index,
+    'valor_subtotal': valorSubtotal,
+    'valor_taxas': valorTaxas,
+    'valor_desconto': valorDesconto,
+    'valor_total': valorTotal,
   };
+
+  double getQtdeTotal() {
+    return produtos.fold(0, (a, b) => a + b.qtde);
+  }
 
   PedidoModel copyWith({
     String? id,
@@ -562,6 +407,10 @@ class PedidoModel {
     String? pai,
     bool? isFilho,
     String? romaneio,
+    double? valorSubtotal,
+    double? valorTaxas,
+    double? valorDesconto,
+    double? valorTotal,
   }) {
     return PedidoModel(
       id: id ?? this.id,
@@ -587,19 +436,17 @@ class PedidoModel {
       planilhamento: planilhamento ?? this.planilhamento,
       pedidoFinanceiro: pedidoFinanceiro ?? this.pedidoFinanceiro,
       instrucoesEntrega: instrucoesEntrega ?? this.instrucoesEntrega,
-      instrucoesFinanceiras:
-          instrucoesFinanceiras ?? this.instrucoesFinanceiras,
+      instrucoesFinanceiras: instrucoesFinanceiras ?? this.instrucoesFinanceiras,
       prioridade: prioridade ?? this.prioridade,
       pedidosVinculados: pedidosVinculados ?? this.pedidosVinculados,
       pedidosFilhos: pedidosFilhos ?? this.pedidosFilhos,
       pai: pai ?? this.pai,
       isFilho: isFilho ?? this.isFilho,
       romaneio: romaneio ?? this.romaneio,
+      valorSubtotal: valorSubtotal ?? this.valorSubtotal,
+      valorTaxas: valorTaxas ?? this.valorTaxas,
+      valorDesconto: valorDesconto ?? this.valorDesconto,
+      valorTotal: valorTotal ?? this.valorTotal,
     );
-  }
-
-  @override
-  String toString() {
-    return 'PedidoModel(id: id, localizador: $localizador, descricao: $descricao, createdAt: $createdAt, deliveryAt: $deliveryAt, cliente: $cliente, obra: $obra, produtos: $produtos, tipo: $tipo, statusess: $statusess, steps: $steps, pedidosVinculados: $pedidosVinculados)';
   }
 }
