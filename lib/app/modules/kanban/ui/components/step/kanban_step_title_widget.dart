@@ -4,20 +4,38 @@ import 'package:flutter/material.dart';
 
 class KanbanStepTitleWidget extends StatelessWidget {
 ...
-          IconButton(
-            onPressed: () async {
-              final files = await showPedidoImportPdfDialog();
-              if (files != null && files.isNotEmpty) {
-                NotificationService.showPositive(
-                  'Sucesso',
-                  '${files.length} arquivo(s) selecionado(s) para importação.',
-                );
-              }
-            },
+          PopupMenuButton<int>(
+            tooltip: 'Criar Cartão',
             icon: const Icon(Icons.add, color: Colors.blue, size: 20),
             padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            tooltip: 'Importar Pedidos (PDF)',
+            offset: const Offset(0, 40),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 1,
+                height: 32,
+                child: Row(
+                  children: [
+                    const Icon(Icons.picture_as_pdf, size: 16, color: Colors.blue),
+                    const W(8),
+                    Text(
+                      'Criar cartão baseado em pedido',
+                      style: AppCss.minimumRegular.setSize(12),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            onSelected: (value) async {
+              if (value == 1) {
+                final files = await showPedidoImportPdfDialog();
+                if (files != null && files.isNotEmpty) {
+                  NotificationService.showPositive(
+                    'Sucesso',
+                    '${files.length} arquivo(s) selecionado(s) para importação.',
+                  );
+                }
+              }
+            },
           ),
           PopupMenuButton<SortStepType?>(
             style: ButtonStyle(
