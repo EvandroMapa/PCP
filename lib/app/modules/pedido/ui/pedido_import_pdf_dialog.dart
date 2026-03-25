@@ -269,14 +269,15 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                   Expanded(
                     child: AppTextButton.outlined(
                       label: 'Cancelar',
-                      onPressed: isUploading ? null : () => Navigator.pop(context),
+                      onPressed: () => Navigator.pop(context),
+                      isEnable: !isUploading,
                     ),
                   ),
                   const W(12),
                   Expanded(
                     child: AppTextButton(
                       label: isUploading ? 'Importando...' : 'Importar (${selectedFiles.length})',
-                      onPressed: selectedFiles.isEmpty || isUploading ? null : _uploadFiles,
+                      onPressed: _uploadFiles,
                       isEnable: selectedFiles.isNotEmpty && !isUploading,
                     ),
                   ),
