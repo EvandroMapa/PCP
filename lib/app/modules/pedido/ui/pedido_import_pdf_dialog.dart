@@ -1,18 +1,14 @@
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_create_by_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
-import 'package:aco_plus/app/core/client/backend_client.dart';
-import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
-import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
-import 'package:aco_plus/app/modules/automatizacao/automatizacao_controller.dart';
+import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/components/app_text_button.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/w.dart';
@@ -27,9 +23,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:collection/collection.dart';
 import 'package:aco_plus/app/core/models/endereco_model.dart';
-import 'package:aco_plus/app/core/extensions/double_ext.dart';
-import 'package:aco_plus/app/modules/cliente/ui/cliente_create_simplify_bottom.dart';
-import 'package:flutter_masked_text2/flutter_masked_text2.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 Future<void> showPedidoImportPdfDialog({StepModel? initialStep}) async {
@@ -60,10 +53,10 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   final TextEditingController obraCtrl = TextEditingController();
   final TextEditingController planilhamentoCtrl = TextEditingController();
   final TextEditingController romaneioCtrl = TextEditingController();
-  final MoneyMaskedTextController subtotalCtrl = MoneyMaskedTextController(leftSymbol: 'R\$ ');
-  final MoneyMaskedTextController taxasCtrl = MoneyMaskedTextController(leftSymbol: 'R\$ ');
-  final MoneyMaskedTextController descontoCtrl = MoneyMaskedTextController(leftSymbol: 'R\$ ');
-  final MoneyMaskedTextController totalFinalCtrl = MoneyMaskedTextController(leftSymbol: 'R\$ ');
+  final TextEditingController subtotalCtrl = TextEditingController(text: '0,00');
+  final TextEditingController taxasCtrl = TextEditingController(text: '0,00');
+  final TextEditingController descontoCtrl = TextEditingController(text: '0,00');
+  final TextEditingController totalFinalCtrl = TextEditingController(text: '0,00');
   
   DateTime deliveryDate = DateTime.now().add(const Duration(days: 7));
   ClienteModel? selectedCliente;
@@ -74,15 +67,15 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   @override
   void initState() {
     super.initState();
-    selectedStep = widget.initialStep ?? BackendClient.steps.data.firstOrNull;
+    selectedStep = widget.initialStep ?? FirestoreClient.steps.data.firstOrNull;
   }
 
   void _calculateTotal() {
-    final sub = subtotalCtrl.numberValue;
-    final tax = taxasCtrl.numberValue;
-    final desc = descontoCtrl.numberValue;
+    final sub = double.tryParse(subtotalCtrl.text.replaceAll(',', '.')) ?? 0;
+    final tax = double.tryParse(taxasCtrl.text.replaceAll(',', '.')) ?? 0;
+    final desc = double.tryParse(descontoCtrl.text.replaceAll(',', '.')) ?? 0;
     final total = (sub + tax) - desc;
-    totalFinalCtrl.updateValue(total);
+    totalFinalCtrl.text = total.toStringAsFixed(2).replaceAll('.', ',');
   }
 
   Future<void> _pickFile() async {
@@ -119,12 +112,13 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         planilhamentoCtrl.text = parsedData['planilhamento'] ?? '';
         romaneioCtrl.text = parsedData['romaneio'] ?? '';
         
-        final clienteId = parsedData['clienteCodigo'];
-        selectedCliente = BackendClient.clientes.data.firstWhereOrNull(
-          (e) => e.id == clienteId,
+        // BUSCA POR CÓDIGO (NOVO)
+        final int code = int.tryParse(parsedData['clienteCodigo']) ?? 0;
+        selectedCliente = FirestoreClient.clientes.data.firstWhereOrNull(
+          (e) => e.codigo == code,
         ) ?? ClienteModel(
-            id: clienteId,
-            codigo: 0,
+            id: HashService.get, // Novo UUID se não existir
+            codigo: code,
             nome: parsedData['clienteNome'],
             telefone: '',
             cpf: '',
@@ -133,10 +127,10 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
           );
         extractedProducts = List<Map<String, dynamic>>.from(parsedData['produtos']);
         
-        subtotalCtrl.updateValue(parsedData['subtotal']);
-        taxasCtrl.updateValue(parsedData['taxas']);
-        descontoCtrl.updateValue(parsedData['desconto']);
-        totalFinalCtrl.updateValue(parsedData['total']);
+        subtotalCtrl.text = parsedData['subtotal'].toStringAsFixed(2).replaceAll('.', ',');
+        taxasCtrl.text = parsedData['taxas'].toStringAsFixed(2).replaceAll('.', ',');
+        descontoCtrl.text = parsedData['desconto'].toStringAsFixed(2).replaceAll('.', ',');
+        totalFinalCtrl.text = parsedData['total'].toStringAsFixed(2).replaceAll('.', ',');
         
         _calculateTotal();
         currentStep = 1;
@@ -167,7 +161,6 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   }
 
   Future<void> _generateCard() async {
-    // VALIDAÇÃO OBRIGATÓRIA
     if (localizadorCtrl.text.trim().isEmpty) {
       NotificationService.showNegative('Atenção', 'O campo Localizador é obrigatório.');
       return;
@@ -181,22 +174,26 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
     setState(() => isUploading = true);
 
     try {
-      // LÓGICA DE CLIENTE: Verificar se já existe no banco
-      final clienteNoBanco = BackendClient.clientes.data.firstWhereOrNull((e) => e.id == selectedCliente?.id);
-      
-      if (clienteNoBanco == null) {
-        NotificationService.showNegative('Atenção', 'O cliente "${selectedCliente?.nome}" não está cadastrado no sistema. Por favor, use o botão "Cadastrar Cliente" antes de gerar o cartão.');
-        return;
-      }
+      // LÓGICA DE CLIENTE: Verificar se já existe pelo código
+      ClienteModel finalCliente = selectedCliente ?? ClienteModel.empty();
 
-      final ClienteModel finalCliente = clienteNoBanco;
-      final String finalClienteId = finalCliente.id;
+      // Busca atualizada na base de dados para garantir
+      final existing = FirestoreClient.clientes.data.firstWhereOrNull(
+        (e) => e.codigo == finalCliente.codigo && finalCliente.codigo > 0,
+      );
+
+      if (existing == null && finalCliente.codigo > 0) {
+        // Cadastrar novo cliente
+        await AppSupabaseClient.clientes.add(finalCliente);
+      } else if (existing != null) {
+        finalCliente = existing;
+      }
 
       final List<String> missingProducts = [];
       final List<PedidoProdutoModel> produtosMapped = [];
       
       for (final p in extractedProducts) {
-        final produtoBase = BackendClient.produtos.data.firstWhereOrNull(
+        final produtoBase = FirestoreClient.produtos.data.firstWhereOrNull(
           (e) => e.codigoFinanceiro == p['codigo'],
         );
 
@@ -244,52 +241,30 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         return;
       }
 
-      final double vSubtotal = subtotalCtrl.numberValue;
-      final double vTaxas = taxasCtrl.numberValue;
-      final double vDesconto = descontoCtrl.numberValue;
-      final double vTotal = totalFinalCtrl.numberValue;
+      final double vSubtotal = double.tryParse(subtotalCtrl.text.replaceAll(',', '.')) ?? 0;
+      final double vTaxas = double.tryParse(taxasCtrl.text.replaceAll(',', '.')) ?? 0;
+      final double vDesconto = double.tryParse(descontoCtrl.text.replaceAll(',', '.')) ?? 0;
+      final double vTotal = double.tryParse(totalFinalCtrl.text.replaceAll(',', '.')) ?? 0;
 
       final pedido = PedidoModel.empty().copyWith(
         id: HashService.get,
-        localizador: localizadorCtrl.text.trim(),
-        pedidoFinanceiro: financeiroCtrl.text.trim(),
-        planilhamento: planilhamentoCtrl.text.trim(),
-        romaneio: romaneioCtrl.text.trim(),
-        descricao: descricaoCtrl.text.trim(),
+        localizador: localizadorCtrl.text,
+        pedidoFinanceiro: financeiroCtrl.text,
+        planilhamento: planilhamentoCtrl.text,
+        romaneio: romaneioCtrl.text,
+        descricao: descricaoCtrl.text,
         deliveryAt: deliveryDate,
         cliente: finalCliente,
         tipo: selectedTipo,
-        statusess: [PedidoStatusModel.create(_getStatusByStep(selectedStep!))],
+        statusess: [PedidoStatusModel.create(PedidoStatus.aguardandoProducaoCDA)],
         steps: [PedidoStepModel.create(selectedStep!)],
-        tags: [selectedTipo.tag],
         valorSubtotal: vSubtotal,
         valorTaxas: vTaxas,
         valorDesconto: vDesconto,
         valorTotal: vTotal,
-        histories: [
-          PedidoHistoryModel(
-            action: PedidoHistoryAction.create,
-            createdAt: DateTime.now(),
-            id: HashService.get,
-            type: PedidoHistoryType.create,
-            usuario: usuarioCtrl.usuario!,
-            data: PedidoCreateByModel(
-              name: usuarioCtrl.usuario?.nome ?? 'Nome Indisponível',
-              date: DateTime.now(),
-            ),
-          ),
-          PedidoHistoryModel(
-            action: PedidoHistoryAction.update,
-            createdAt: DateTime.now().add(const Duration(milliseconds: 100)),
-            id: HashService.get,
-            type: PedidoHistoryType.step,
-            usuario: usuarioCtrl.usuario!,
-            data: selectedStep!,
-          ),
-        ],
       );
 
-      await BackendClient.pedidos.add(pedido);
+      await AppSupabaseClient.pedidos.add(pedido);
       
       for (final p in produtosMapped) {
         final finalProd = p.copyWith(
@@ -297,7 +272,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
           clienteId: pedido.cliente.id,
           obraId: pedido.obra.id,
         );
-        await BackendClient.pedidoProdutos.add(finalProd);
+        await AppSupabaseClient.pedidoProdutos.add(finalProd);
       }
 
       if (mounted) {
@@ -309,22 +284,6 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
     } finally {
       setState(() => isUploading = false);
     }
-  }
-
-  PedidoStatus _getStatusByStep(StepModel step) {
-    if (step.isShipping) return PedidoStatus.pronto;
-    
-    // Tenta pegar da automatização
-    final config = BackendClient.automatizacao.data;
-    if (config.produtoPedidoSeparado.step?.id == step.id) return PedidoStatus.aguardandoProducaoCD;
-    if (config.produzindoCDPedido.step?.id == step.id) return PedidoStatus.produzindoCD;
-    if (config.aguardandoArmacaoPedido.step?.id == step.id) return PedidoStatus.aguardandoProducaoCDA;
-    if (config.produzindoArmacaoPedido.step?.id == step.id) return PedidoStatus.produzindoCDA;
-    if (config.prontoCDPedido.step?.id == step.id) return PedidoStatus.pronto;
-    if (config.prontoArmacaoPedido.step?.id == step.id) return PedidoStatus.pronto;
-
-    // Fallback baseado no tipo
-    return selectedTipo == PedidoTipo.cda ? PedidoStatus.aguardandoProducaoCDA : PedidoStatus.aguardandoProducaoCD;
   }
 
   @override
@@ -494,41 +453,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
             ],
           ),
           const H(12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: _buildField(
-                  'Cliente', 
-                  TextEditingController(text: '${selectedCliente?.codigo == 0 ? '' : selectedCliente?.codigo} - ${selectedCliente?.nome}'),
-                  readOnly: true,
-                )
-              ),
-              const W(8),
-              if (!BackendClient.clientes.data.any((e) => e.id == selectedCliente?.id))
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: SizedBox(
-                    width: 150,
-                    height: 38,
-                    child: AppTextButton.outlined(
-                      label: 'Cadastrar Cliente', 
-                      onPressed: () async {
-                        final novo = await showClienteCreateSimplifyBottom(
-                          initialNome: selectedCliente?.nome,
-                          initialObra: obraCtrl.text,
-                        );
-                        if (novo != null) {
-                          setState(() {
-                            selectedCliente = novo;
-                          });
-                        }
-                      }
-                    ),
-                  ),
-                ),
-            ],
-          ),
+          _buildField('Cliente', TextEditingController(text: '${selectedCliente?.codigo} - ${selectedCliente?.nome}')),
           const H(12),
           Row(
             children: [
@@ -596,11 +521,11 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
               separatorBuilder: (context, index) => Divider(height: 1, color: AppColors.neutralLight),
               itemBuilder: (context, index) {
                 final p = extractedProducts[index];
-                final exists = BackendClient.produtos.data.any((e) => e.codigoFinanceiro == p['codigo']);
+                final exists = FirestoreClient.produtos.data.any((e) => e.codigoFinanceiro == p['codigo']);
                 return ListTile(
                   leading: Icon(Icons.shopping_basket_outlined, color: exists ? Colors.green : Colors.red),
                   title: Text('${p['codigo']} - ${p['descricao']}', style: TextStyle(color: exists ? Colors.black : Colors.red, fontWeight: FontWeight.bold)),
-                  subtitle: Text('Qtde: ${p['qtde']} | V.Unit: ${(p['unitario'] as double).toMoney()} | Total: ${(p['total'] as double).toMoney()}'),
+                  subtitle: Text('Qtde: ${p['qtde']} | V.Unit: ${p['unitario']} | Total: ${p['total']}'),
                 );
               },
             ),
@@ -627,7 +552,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
             border: OutlineInputBorder(borderRadius: AppCss.radius8),
           ),
           onChanged: (e) => setState(() => selectedStep = e),
-          items: BackendClient.steps.data.map((e) => DropdownMenuItem(
+          items: FirestoreClient.steps.data.map((e) => DropdownMenuItem(
             value: e, 
             child: Text(e.name, style: AppCss.minimumBold.setSize(14))
           )).toList(),
