@@ -71,7 +71,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   @override
   void initState() {
     super.initState();
-    selectedStep = widget.initialStep ?? FirestoreClient.steps.data.firstOrNull;
+    selectedStep = widget.initialStep ?? BackendClient.steps.data.firstOrNull;
   }
 
   void _calculateTotal() {
@@ -117,7 +117,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         romaneioCtrl.text = parsedData['romaneio'] ?? '';
         
         final clienteId = parsedData['clienteCodigo'];
-        selectedCliente = FirestoreClient.clientes.data.firstWhereOrNull(
+        selectedCliente = BackendClient.clientes.data.firstWhereOrNull(
           (e) => e.id == clienteId,
         ) ?? ClienteModel(
             id: clienteId,
@@ -311,10 +311,10 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   }
 
   PedidoStatus _getStatusByStep(StepModel step) {
-    if (step.isShipping) return PedidoStatus.finalizado;
+    if (step.isShipping) return PedidoStatus.pronto;
     
     // Tenta pegar da automatização
-    final config = FirestoreClient.automatizacao.data;
+    final config = BackendClient.automatizacao.data;
     if (config.produtoPedidoSeparado.step?.id == step.id) return PedidoStatus.aguardandoProducaoCD;
     if (config.produzindoCDPedido.step?.id == step.id) return PedidoStatus.produzindoCD;
     if (config.aguardandoArmacaoPedido.step?.id == step.id) return PedidoStatus.aguardandoProducaoCDA;

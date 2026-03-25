@@ -1,6 +1,7 @@
 import 'package:aco_plus/app/core/client/supabase/collections/cliente/cliente_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/step/step_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_produto_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/usuario/usuario_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 
