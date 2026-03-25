@@ -6,6 +6,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/components/app_text_button.dart';
@@ -24,16 +25,17 @@ import 'package:collection/collection.dart';
 import 'package:aco_plus/app/core/models/endereco_model.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
-Future<void> showPedidoImportPdfDialog() async {
+Future<void> showPedidoImportPdfDialog({StepModel? initialStep}) async {
   await showDialog(
     context: contextGlobal,
     barrierDismissible: false,
-    builder: (context) => const PedidoImportPdfDialog(),
+    builder: (context) => PedidoImportPdfDialog(initialStep: initialStep),
   );
 }
 
 class PedidoImportPdfDialog extends StatefulWidget {
-  const PedidoImportPdfDialog({super.key});
+  final StepModel? initialStep;
+  const PedidoImportPdfDialog({super.key, this.initialStep});
 
   @override
   State<PedidoImportPdfDialog> createState() => _PedidoImportPdfDialogState();
@@ -57,7 +59,14 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   DateTime deliveryDate = DateTime.now().add(const Duration(days: 7));
   ClienteModel? selectedCliente;
   PedidoTipo selectedTipo = PedidoTipo.cda;
+  StepModel? selectedStep;
   List<Map<String, dynamic>> extractedProducts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    selectedStep = widget.initialStep ?? FirestoreClient.steps.data.firstOrNull;
+  }
 
   void _calculateTotal() {
     final sub = double.tryParse(subtotalCtrl.text.replaceAll(',', '.')) ?? 0;
@@ -120,13 +129,18 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         currentStep = 1;
       });
     } catch (e) {
-      NotificationService.showNegative('Erro', 'Falha ao processar PDF real: $e');
+      NotificationService.showNegative('Erro', 'Falha ao processar PDF: $e');
     } finally {
       setState(() => isUploading = false);
     }
   }
 
   Future<void> _generateCard() async {
+    if (selectedStep == null) {
+      NotificationService.showNegative('Erro', 'Selecione uma etapa para o pedido.');
+      return;
+    }
+
     setState(() => isUploading = true);
 
     try {
@@ -203,7 +217,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         cliente: selectedCliente ?? ClienteModel.empty(),
         tipo: selectedTipo,
         statusess: [PedidoStatusModel.create(PedidoStatus.aguardandoProducaoCDA)],
-        steps: [PedidoStepModel.create(FirestoreClient.steps.data.first)],
+        steps: [PedidoStepModel.create(selectedStep!)],
         valorSubtotal: vSubtotal,
         valorTaxas: vTaxas,
         valorDesconto: vDesconto,
@@ -317,6 +331,40 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // SELETOR DE ETAPA (NOVO)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: AppCss.radius8,
+              border: Border.all(color: Colors.blue.shade200),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.view_column, color: Colors.blue),
+                const W(12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('ETAPA DESTINO (KANKAN)', style: AppCss.minimumBold.setSize(11).setColor(Colors.blue.shade900)),
+                      DropdownButton<StepModel>(
+                        value: selectedStep,
+                        isExpanded: true,
+                        underline: const SizedBox(),
+                        onChanged: (e) => setState(() => selectedStep = e),
+                        items: FirestoreClient.steps.data.map((e) => DropdownMenuItem(
+                          value: e, 
+                          child: Text(e.name, style: AppCss.minimumBold.setSize(14))
+                        )).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const H(16),
           Row(
             children: [
               Expanded(child: _buildField('Localizador', localizadorCtrl)),

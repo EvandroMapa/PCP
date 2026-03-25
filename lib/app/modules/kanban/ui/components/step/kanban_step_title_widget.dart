@@ -55,7 +55,7 @@ class KanbanStepTitleWidget extends StatelessWidget {
             ],
             onSelected: (value) async {
               if (value == 1) {
-                await showPedidoImportPdfDialog();
+                await showPedidoImportPdfDialog(initialStep: step);
               }
             },
           ),
