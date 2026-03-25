@@ -90,6 +90,14 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        if (form.isEdit) ...[
+          AppField(
+            label: 'Código',
+            controller: TextEditingController(text: form.codigo.toString()),
+            readOnly: true,
+          ),
+          const H(16),
+        ],
         AppField(
           label: 'Nome',
           controller: form.nome,

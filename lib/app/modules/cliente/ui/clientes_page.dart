@@ -89,7 +89,7 @@ class _ClientesPageState extends State<ClientesPage> {
     return ListTile(
       onTap: () => push(context, ClienteCreatePage(cliente: usuario)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      title: Text(usuario.nome, style: AppCss.mediumBold),
+      title: Text('${usuario.codigo} - ${usuario.nome}', style: AppCss.mediumBold),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

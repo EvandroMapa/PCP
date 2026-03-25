@@ -11,6 +11,7 @@ class ClienteUtils {
 
 class ClienteCreateModel {
   final String id;
+  int codigo = 0;
   TextController nome = TextController();
   TextController telefone = TextController.phone();
   TextController cpf = TextController(mask: '00000000000000000');
@@ -23,6 +24,7 @@ class ClienteCreateModel {
   ClienteCreateModel.edit(ClienteModel cliente)
     : id = cliente.id,
       isEdit = true {
+    codigo = cliente.codigo;
     nome.text = cliente.nome;
     telefone.text = cliente.telefone;
     cpf.text = cliente.cpf;
@@ -38,6 +40,7 @@ class ClienteCreateModel {
 
   ClienteModel toClienteModel() => ClienteModel(
     id: id,
+    codigo: codigo,
     nome: nome.text,
     telefone: telefone.text,
     cpf: cpf.text,

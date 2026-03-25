@@ -184,7 +184,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       final clienteNoBanco = BackendClient.clientes.data.firstWhereOrNull((e) => e.id == selectedCliente?.id);
       
       if (clienteNoBanco == null) {
-        NotificationService.showNegative('Atenção', 'O cliente extraído do PDF (${selectedCliente?.id}) não está cadastrado no sistema. Por favor, use o botão "Cadastrar Cliente" antes de gerar o cartão.');
+        NotificationService.showNegative('Atenção', 'O cliente "${selectedCliente?.nome}" não está cadastrado no sistema. Por favor, use o botão "Cadastrar Cliente" antes de gerar o cartão.');
         return;
       }
 
@@ -499,7 +499,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
               Expanded(
                 child: _buildField(
                   'Cliente', 
-                  TextEditingController(text: '${selectedCliente?.id} - ${selectedCliente?.nome}'),
+                  TextEditingController(text: '${selectedCliente?.codigo == 0 ? '' : selectedCliente?.codigo} - ${selectedCliente?.nome}'),
                   readOnly: true,
                 )
               ),

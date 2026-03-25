@@ -147,8 +147,10 @@ class _ClienteCreateSimplifyBottomState
   }
 
   Future<void> onConfirm(BuildContext context) async {
+    final int nextCodigo = (FirestoreClient.clientes.data.map((e) => e.codigo).toList()..sort()).lastOrNull ?? 0;
     final ClienteModel clienteModel = ClienteModel(
       id: HashService.get,
+      codigo: nextCodigo + 1,
       telefone: '',
       cpf: '',
       endereco: EnderecoModel.empty(),

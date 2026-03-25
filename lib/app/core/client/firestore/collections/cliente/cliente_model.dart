@@ -6,6 +6,7 @@ import 'package:aco_plus/app/core/services/hash_service.dart';
 
 class ClienteModel {
   final String id;
+  final int codigo;
   final String nome;
   final String telefone;
   final String cpf;
@@ -13,6 +14,7 @@ class ClienteModel {
   final List<ObraModel> obras;
   ClienteModel({
     required this.id,
+    required this.codigo,
     required this.nome,
     required this.telefone,
     required this.cpf,
@@ -22,6 +24,7 @@ class ClienteModel {
 
   factory ClienteModel.empty() => ClienteModel(
     id: HashService.get,
+    codigo: 0,
     nome: 'name',
     telefone: 'fone',
     cpf: 'cpf',
@@ -32,6 +35,7 @@ class ClienteModel {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'codigo': codigo,
       'nome': nome,
       'telefone': telefone,
       'cpf': cpf,
@@ -43,6 +47,7 @@ class ClienteModel {
   factory ClienteModel.fromMap(Map<String, dynamic> map) {
     return ClienteModel(
       id: map['id'] ?? '',
+      codigo: int.tryParse(map['codigo']?.toString() ?? '0') ?? 0,
       nome: map['nome'] ?? '',
       telefone: map['telefone'] ?? '',
       cpf: map['cpf'] ?? '',
@@ -59,6 +64,7 @@ class ClienteModel {
   ) {
     return ClienteModel(
       id: map['id'] ?? '',
+      codigo: int.tryParse(map['codigo']?.toString() ?? '0') ?? 0,
       nome: map['nome'] ?? '',
       telefone: map['telefone'] ?? '',
       cpf: map['cnpj'] ?? '',
@@ -69,6 +75,7 @@ class ClienteModel {
 
   Map<String, dynamic> toSupabaseMap() => {
     'id': id,
+    'codigo': codigo,
     'nome': nome,
     'telefone': telefone,
     'cnpj': cpf,
@@ -82,6 +89,26 @@ class ClienteModel {
   @override
   String toString() {
     return 'ClienteModel(id: $id, nome: $nome, telefone: $telefone, cpf: $cpf, endereco: $endereco, obras: $obras)';
+  }
+
+  ClienteModel copyWith({
+    String? id,
+    int? codigo,
+    String? nome,
+    String? telefone,
+    String? cpf,
+    EnderecoModel? endereco,
+    List<ObraModel>? obras,
+  }) {
+    return ClienteModel(
+      id: id ?? this.id,
+      codigo: codigo ?? this.codigo,
+      nome: nome ?? this.nome,
+      telefone: telefone ?? this.telefone,
+      cpf: cpf ?? this.cpf,
+      endereco: endereco ?? this.endereco,
+      obras: obras ?? this.obras,
+    );
   }
 }
 
@@ -172,6 +199,7 @@ class ClienteAdd extends ClienteModel {
   ClienteAdd()
     : super(
         id: 'add',
+        codigo: 0,
         nome: 'ADICIONAR CLIENTE',
         telefone: '',
         cpf: '',

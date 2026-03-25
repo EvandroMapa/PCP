@@ -31,6 +31,21 @@ class ClienteController {
   void onInit() {
     utilsStream.add(ClienteUtils());
     FirestoreClient.clientes.listen();
+    _checkMissingCodigos();
+  }
+
+  Future<void> _checkMissingCodigos() async {
+    // Aguarda carregar os dados
+    await Future.delayed(const Duration(seconds: 3));
+    final clients = FirestoreClient.clientes.data.where((e) => e.codigo == 0).toList();
+    if (clients.isNotEmpty) {
+      int nextCodigo = (FirestoreClient.clientes.data.map((e) => e.codigo).toList()..sort()).lastOrNull ?? 0;
+      for (final c in clients) {
+        nextCodigo++;
+        await FirestoreClient.clientes.update(c.copyWith(codigo: nextCodigo));
+      }
+      await FirestoreClient.clientes.fetch();
+    }
   }
 
   final AppStream<ClienteCreateModel> formStream =
@@ -64,6 +79,8 @@ class ClienteController {
         final edit = form.toClienteModel();
         await FirestoreClient.clientes.update(edit);
       } else {
+        int nextCodigo = (FirestoreClient.clientes.data.map((e) => e.codigo).toList()..sort()).lastOrNull ?? 0;
+        form.codigo = nextCodigo + 1;
         await FirestoreClient.clientes.add(form.toClienteModel());
       }
       await FirestoreClient.clientes.fetch();
