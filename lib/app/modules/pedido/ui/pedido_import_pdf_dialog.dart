@@ -43,6 +43,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   int currentStep = 0;
   bool isUploading = false;
   PlatformFile? selectedFile;
+  String extractedTextDebug = '';
 
   final TextEditingController localizadorCtrl = TextEditingController();
   final TextEditingController financeiroCtrl = TextEditingController();
@@ -95,6 +96,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       final parsedData = PedidoPdfParser.parse(extractedText);
 
       setState(() {
+        extractedTextDebug = extractedText;
         financeiroCtrl.text = parsedData['pedidoFinanceiro'];
         final clienteId = parsedData['clienteCodigo'];
         selectedCliente = FirestoreClient.clientes.data.firstWhereOrNull(
@@ -114,6 +116,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         descontoCtrl.text = parsedData['desconto'].toStringAsFixed(2).replaceAll('.', ',');
         totalFinalCtrl.text = parsedData['total'].toStringAsFixed(2).replaceAll('.', ',');
         
+        _calculateTotal(); // Recalcular para garantir consistência
         currentStep = 1;
       });
     } catch (e) {
@@ -406,11 +409,39 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
             ),
           ),
           const H(20),
-          Text('ITENS (${extractedProducts.length})', style: AppCss.mediumBold),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('ITENS (${extractedProducts.length})', style: AppCss.mediumBold),
+              if (extractedProducts.isEmpty)
+                Text('Nenhum produto detectado!', style: AppCss.minimumBold.setColor(Colors.red)),
+            ],
+          ),
           const H(8),
-          Container(
-            decoration: BoxDecoration(border: Border.all(color: AppColors.neutralLight), borderRadius: AppCss.radius8),
-            child: ListView.separated(
+          if (extractedProducts.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                border: Border.all(color: Colors.amber),
+                borderRadius: AppCss.radius8,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('O robô não conseguiu ler os produtos automaticamente. Por favor, copie o texto abaixo e envie para o suporte:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  const H(8),
+                  SelectableText(
+                    extractedTextDebug,
+                    style: const TextStyle(fontSize: 9, fontFamily: 'monospace'),
+                  ),
+                ],
+              ),
+            )
+          else
+            Container(
+              decoration: BoxDecoration(border: Border.all(color: AppColors.neutralLight), borderRadius: AppCss.radius8),
+              child: ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: extractedProducts.length,
