@@ -1,6 +1,10 @@
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_arquivo_model.dart';
+import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/components/app_text_button.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/w.dart';
+import 'package:aco_plus/app/core/services/notification_service.dart';
+import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
@@ -30,6 +34,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       type: FileType.custom,
       allowedExtensions: ['pdf'],
       allowMultiple: true,
+      withData: true, // Necessário para Web
     );
 
     if (result != null) {
@@ -43,6 +48,66 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
     setState(() {
       selectedFiles.removeAt(index);
     });
+  }
+
+  Future<void> _uploadFiles() async {
+    if (selectedFiles.isEmpty) return;
+
+    setState(() {
+      isUploading = true;
+    });
+
+    try {
+      for (final file in selectedFiles) {
+        if (file.bytes == null) continue;
+
+        final fileName = '${DateTime.now().millisecondsSinceEpoch}_${file.name}';
+        final path = 'arquivos/$fileName';
+
+        // Upload binário para o Storage
+        await SupabaseService.client.storage.from('pedidos').uploadBinary(
+              path,
+              file.bytes!,
+            );
+
+        // Obter URL pública
+        final url = SupabaseService.client.storage.from('pedidos').getPublicUrl(path);
+
+        // Criar modelo de metadados
+        final model = PedidoArquivoModel(
+          id: '', // Supabase gera
+          nome: file.name,
+          url: url,
+          tamanho: file.size,
+          tipo: 'application/pdf',
+          extensao: 'pdf',
+          criadoEm: DateTime.now(),
+          isProcessed: false,
+        );
+
+        // Salvar metadados na tabela
+        await AppSupabaseClient.pedidoArquivos.add(model);
+      }
+
+      if (mounted) {
+        Navigator.pop(context, selectedFiles);
+        NotificationService.showPositive(
+          'Sucesso',
+          '${selectedFiles.length} arquivo(s) importado(s) com sucesso. Já estão no banco para uso futuro.',
+        );
+      }
+    } catch (e) {
+      print('Erro ao importar PDF: $e');
+      if (mounted) {
+        NotificationService.showNegative('Erro', 'Falha ao fazer upload do(s) arquivo(s). Verifique se o bucket "pedidos" foi criado no Supabase.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isUploading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -78,10 +143,11 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                       style: AppCss.mediumBold.setColor(Colors.white),
                     ),
                   ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: Colors.white),
-                  ),
+                  if (!isUploading)
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close, color: Colors.white),
+                    ),
                 ],
               ),
             ),
@@ -94,36 +160,37 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Drop/Pick Area
-                    InkWell(
-                      onTap: _pickFiles,
-                      child: Container(
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryMain.withValues(alpha: 0.05),
-                          borderRadius: AppCss.radius12,
-                          border: Border.all(
-                            color: AppColors.primaryMain.withValues(alpha: 0.3),
-                            style: BorderStyle.solid,
+                    if (!isUploading)
+                      InkWell(
+                        onTap: _pickFiles,
+                        child: Container(
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryMain.withValues(alpha: 0.05),
+                            borderRadius: AppCss.radius12,
+                            border: Border.all(
+                              color: AppColors.primaryMain.withValues(alpha: 0.3),
+                              style: BorderStyle.solid,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.cloud_upload_outlined,
+                                  size: 40, color: AppColors.primaryMain),
+                              const H(8),
+                              Text(
+                                'Clique para selecionar os PDFs',
+                                style: AppCss.minimumBold.setColor(AppColors.primaryMain),
+                              ),
+                              Text(
+                                'Selecione um ou mais arquivos de pedido',
+                                style: AppCss.minimumRegular.setSize(12),
+                              ),
+                            ],
                           ),
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.cloud_upload_outlined,
-                                size: 40, color: AppColors.primaryMain),
-                            const H(8),
-                            Text(
-                              'Clique para selecionar os PDFs',
-                              style: AppCss.minimumBold.setColor(AppColors.primaryMain),
-                            ),
-                            Text(
-                              'Selecione um ou mais arquivos de pedido',
-                              style: AppCss.minimumRegular.setSize(12),
-                            ),
-                          ],
-                        ),
                       ),
-                    ),
                     const H(16),
 
                     // Files List
@@ -168,17 +235,27 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                                           ],
                                         ),
                                       ),
-                                      IconButton(
-                                        onPressed: () => _removeFile(index),
-                                        icon: const Icon(Icons.delete_outline,
-                                            color: Colors.red, size: 20),
-                                      ),
+                                      if (!isUploading)
+                                        IconButton(
+                                          onPressed: () => _removeFile(index),
+                                          icon: const Icon(Icons.delete_outline,
+                                              color: Colors.red, size: 20),
+                                        ),
                                     ],
                                   ),
                                 );
                               },
                             ),
                     ),
+                    if (isUploading)
+                      const Column(
+                        children: [
+                          H(16),
+                          CircularProgressIndicator(),
+                          H(8),
+                          Text('Fazendo upload dos arquivos...'),
+                        ],
+                      ),
                   ],
                 ),
               ),
@@ -192,19 +269,14 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                   Expanded(
                     child: AppTextButton.outlined(
                       label: 'Cancelar',
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: isUploading ? null : () => Navigator.pop(context),
                     ),
                   ),
                   const W(12),
                   Expanded(
                     child: AppTextButton(
-                      label: 'Importar (${selectedFiles.length})',
-                      onPressed: selectedFiles.isEmpty
-                          ? null
-                          : () {
-                              // TODO: Lógica de upload e processamento
-                              Navigator.pop(context, selectedFiles);
-                            },
+                      label: isUploading ? 'Importando...' : 'Importar (${selectedFiles.length})',
+                      onPressed: selectedFiles.isEmpty || isUploading ? null : _uploadFiles,
                       isEnable: selectedFiles.isNotEmpty && !isUploading,
                     ),
                   ),
