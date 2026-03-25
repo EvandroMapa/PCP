@@ -93,7 +93,7 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
         if (form.isEdit) ...[
           AppField(
             label: 'Código',
-            controller: TextEditingController(text: form.codigo.toString()),
+            controllerObj: TextEditingController(text: form.codigo.toString()),
             isDisable: true,
           ),
           const H(16),
