@@ -529,7 +529,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                 return ListTile(
                   leading: Icon(Icons.shopping_basket_outlined, color: exists ? Colors.green : Colors.red),
                   title: Text(
-                    exists ? '${p['codigo']} - ${produtoBase.nome} - ${produtoBase.descricao}' : '${p['codigo']} - ITEM NÃO CADASTRADO NA BASE DE DADOS',
+                    exists ? '${p['codigo']} - ${produtoBase.nome}' : '${p['codigo']} - ITEM NÃO CADASTRADO NA BASE DE DADOS',
                     style: TextStyle(
                       color: exists ? Colors.black : Colors.red, 
                       fontWeight: FontWeight.bold,
