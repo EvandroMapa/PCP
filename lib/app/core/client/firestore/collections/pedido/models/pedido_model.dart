@@ -481,7 +481,7 @@ class PedidoModel {
             (e) => e.name == (map['tipo'] ?? 'cd'),
             orElse: () => PedidoTipo.cd),
         statusess: statusRaw != null
-            ? statusRaw.map((s) => PedidoStatusModel.fromMap(s)).toList()
+            ? statusRaw.map((s) => PedidoStatusModel.fromSupabaseMap(s)).toList()
             : [
                 PedidoStatusModel.create(PedidoStatus.aguardandoProducaoCD),
               ],
