@@ -328,12 +328,34 @@ class PedidoProdutoModel {
 
   factory PedidoProdutoModel.fromSupabaseMap(Map<String, dynamic> map) {
     try {
+      // qtde pode vir como double, int ou String dependendo do ambiente
+      final qtdeRaw = map['quantidade'] ?? map['qtde'] ?? 0;
+      final double qtde = qtdeRaw is num 
+          ? qtdeRaw.toDouble() 
+          : double.tryParse(qtdeRaw.toString()) ?? 0.0;
+
+      // produto_raw é prioritário; se não existir, busca pelo produto_id no cache local
+      ProdutoModel produto;
+      if (map['produto_raw'] != null) {
+        produto = ProdutoModel.fromMap(
+          map['produto_raw'] is String 
+              ? json.decode(map['produto_raw']) 
+              : map['produto_raw']
+        );
+      } else {
+        final produtoId = (map['produto_id'] ?? '').toString();
+        produto = produtoId.isNotEmpty
+            ? FirestoreClient.produtos.data.firstWhere(
+                (e) => e.id == produtoId,
+                orElse: () => ProdutoModel.empty(),
+              )
+            : ProdutoModel.empty();
+      }
+
       return PedidoProdutoModel(
         id: (map['id'] ?? map['id_id'] ?? '').toString(),
-        qtde: double.tryParse((map['quantidade'] ?? map['qtde'] ?? '0').toString()) ?? 0.0,
-        produto: map['produto_raw'] != null 
-            ? ProdutoModel.fromMap(map['produto_raw'] is String ? json.decode(map['produto_raw']) : map['produto_raw']) 
-            : ProdutoModel.empty(),
+        qtde: qtde,
+        produto: produto,
         materiaPrima: map['materia_prima_raw'] != null 
             ? MateriaPrimaModel.fromMap(map['materia_prima_raw'] is String ? json.decode(map['materia_prima_raw']) : map['materia_prima_raw']) 
             : null,
