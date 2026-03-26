@@ -13,9 +13,9 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/tag/models/tag_model.dart';
+import 'package:aco_plus/app/core/components/archive/archive_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
-import 'package:aco_plus/app/core/components/archive/archive_model.dart';
 import 'package:aco_plus/app/core/components/checklist/check_item_model.dart';
 import 'package:aco_plus/app/core/components/comment/comment_model.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
@@ -445,6 +445,7 @@ class PedidoModel {
     List<Map<String, dynamic>>? stepsRaw,
     List<Map<String, dynamic>>? produtosRaw,
     List<String>? tagsIds,
+    List<Map<String, dynamic>>? archivesRaw,
   }) {
     late ClienteModel cliente;
     late ObraModel obra;
@@ -502,7 +503,9 @@ class PedidoModel {
         index: int.tryParse((map['index'] ?? '0').toString()) ?? 0,
         histories: [],
         isArchived: map['is_archived'] == true,
-        archives: [],
+        archives: archivesRaw != null
+            ? archivesRaw.map((a) => ArchiveModel.fromSupabaseMap(a)).toList()
+            : [],
         checklistId: map['checklist_id']?.toString(),
         planilhamento: map['planilhamento']?.toString() ?? '',
         pedidoFinanceiro: map['pedido_financeiro']?.toString() ?? '',
