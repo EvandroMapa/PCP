@@ -13,14 +13,22 @@ class KanbanCardDraggableWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LongPressDraggable<PedidoModel>(
+      onDragStarted: () {
+        kanbanCtrl.startDrag();
+      },
       onDragUpdate: (details) {
         kanbanCtrl.onListenerSrollEnd(context, details.localPosition);
       },
       onDragEnd: (details) {
         kanbanCtrl.utils.cancelTimer();
+        kanbanCtrl.endDrag();
       },
       onDragCompleted: () {
         kanbanCtrl.utils.cancelTimer();
+        kanbanCtrl.endDrag();
+      },
+      onDraggableCanceled: (_, __) {
+        kanbanCtrl.endDrag();
       },
       delay: const Duration(milliseconds: 180),
       data: pedido,

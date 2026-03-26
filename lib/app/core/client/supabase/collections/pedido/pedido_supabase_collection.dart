@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'dart:developer';
 import 'package:aco_plus/app/core/services/notification_service.dart';
@@ -10,6 +11,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
 
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/pedido_collection.dart';
+import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 
 class PedidoSupabaseCollection extends PedidoCollection {
   static final PedidoSupabaseCollection _instance = PedidoSupabaseCollection._();
@@ -122,11 +124,13 @@ class PedidoSupabaseCollection extends PedidoCollection {
   Timer? _streamDebounce;
 
   void _updateStreams(List<Map<String, dynamic>> raw) {
-    // Debounce: cancela o timer anterior e agenda um novo fetch
-    // Evita rebuild durante o drag (que grava no banco e dispara o stream)
+    // Em debug mode (local), rebuilds automaticos da stream causam freeze no drag
+    // pois o Flutter debug mode e muito mais lento. Fetches explicitos sao suficientes.
+    if (kDebugMode) return;
+
     _streamDebounce?.cancel();
-    _streamDebounce = Timer(const Duration(seconds: 2), () {
-      start(lock: false);
+    _streamDebounce = Timer(const Duration(seconds: 5), () {
+      if (!kanbanCtrl.isDragging) start(lock: false);
     });
   }
 
@@ -200,7 +204,8 @@ class PedidoSupabaseCollection extends PedidoCollection {
       
       await _syncRelationships(model);
 
-      await fetch();
+      // Nao chama fetch() aqui -- o stream debounce (2s) cuidara do refresh.
+      // Chamar fetch() aqui causava rebuild do Kanban no meio do drag (freeze).
       return model;
     } catch (e) {
       log('Supabase CRITICAL ERROR (Pedido.update): $e');

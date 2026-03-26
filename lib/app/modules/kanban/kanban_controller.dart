@@ -32,6 +32,15 @@ class StepController {
   final AppStream<KanbanUtils> utilsStream = AppStream<KanbanUtils>();
   KanbanUtils get utils => utilsStream.value;
 
+  /// Bloqueia rebuilds do stream durante o arrasto de cartoes
+  bool isDragging = false;
+  void startDrag() => isDragging = true;
+  void endDrag() {
+    isDragging = false;
+    // Dispara um fetch apos o drag terminar para sincronizar
+    BackendClient.pedidos.fetch();
+  }
+
   Future<void> onInit() async {
     await BackendClient.pedidos.fetch();
     final kanban = mountKanban();
