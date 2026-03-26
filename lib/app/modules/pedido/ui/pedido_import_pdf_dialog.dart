@@ -284,18 +284,12 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         valorTaxas: vTaxas,
         valorDesconto: vDesconto,
         valorTotal: vTotal,
+        produtos: produtosMapped.map((p) => p.copyWith(
+          pedidoId: '', // Será preenchido pelo syncRelationships se necessário, mas passar model.id lá é o padrão
+        )).toList(),
       );
 
       await AppSupabaseClient.pedidos.add(pedido);
-      
-      for (final p in produtosMapped) {
-        final finalProd = p.copyWith(
-          pedidoId: pedido.id,
-          clienteId: pedido.cliente.id,
-          obraId: pedido.obra.id,
-        );
-        await AppSupabaseClient.pedidoProdutos.add(finalProd);
-      }
 
       if (mounted) {
         Navigator.pop(context);
