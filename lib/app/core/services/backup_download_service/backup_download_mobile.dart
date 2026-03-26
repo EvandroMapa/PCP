@@ -1,11 +1,11 @@
 import 'dart:typed_data';
 
-import 'package:aco_plus/app/core/services/firebase_service.dart';
+import 'package:aco_plus/app/core/services/supabase_storage_service.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 Future<bool> backupDownload(String name, String path, Uint8List bytes) async {
   try {
-    final result = await FirebaseService.uploadFile(
+    final result = await SupabaseStorageService.uploadFile(
       name: name,
       bytes: bytes,
       mimeType: 'application/json',

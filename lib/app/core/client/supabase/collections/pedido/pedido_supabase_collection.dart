@@ -80,14 +80,12 @@ class PedidoSupabaseCollection extends PedidoCollection {
         safeFetch('pedido_status_history'),
         safeFetch('pedido_steps_history'),
         safeFetch('pedido_tags'),
-        safeFetch('pedido_archives'),
       ]);
 
       final List<Map<String, dynamic>> produtosRaw = results[0];
       final List<Map<String, dynamic>> statusRaw = results[1];
       final List<Map<String, dynamic>> stepsRaw = results[2];
       final List<Map<String, dynamic>> tagsRaw = results[3];
-      final List<Map<String, dynamic>> archivesRaw = results[4];
 
       final pedidos = pedidosRaw.map((pMap) {
         final String pId = pMap['id'].toString().trim();
@@ -107,9 +105,6 @@ class PedidoSupabaseCollection extends PedidoCollection {
           tagsIds: tagsRaw
               .where((r) => r['pedido_id'].toString().trim() == pId)
               .map((r) => r['tag_id'].toString())
-              .toList(),
-          archivesRaw: archivesRaw
-              .where((r) => r['pedido_id'].toString().trim() == pId)
               .toList(),
         );
         return pedido;
@@ -236,10 +231,6 @@ class PedidoSupabaseCollection extends PedidoCollection {
             .from('pedido_tags')
             .delete()
             .eq('pedido_id', model.id),
-        SupabaseService.client
-            .from('pedido_archives')
-            .delete()
-            .eq('pedido_id', model.id),
       ]);
     } catch (e) {
       syncErrors.add('Erro ao limpar relações antigas: $e');
@@ -289,15 +280,8 @@ class PedidoSupabaseCollection extends PedidoCollection {
     }
 
     try {
-      // Archives
-      if (model.archives.isNotEmpty) {
-        await SupabaseService.client.from('pedido_archives').insert(
-          model.archives.map((a) => {
-            ...a.toSupabaseMap(),
-            'pedido_id': model.id,
-          }).toList(),
-        );
-      }
+      // Archives — saved as JSONB in pedidos table, not a separate table
+      // No insert needed here; archives are included in toSupabaseMap()
     } catch (e) {
       syncErrors.add('Erro Archives: $e');
     }

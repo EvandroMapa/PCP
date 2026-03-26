@@ -6,7 +6,7 @@ import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
-import 'package:aco_plus/app/core/services/firebase_service.dart';
+import 'package:aco_plus/app/core/services/supabase_storage_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
@@ -226,7 +226,7 @@ class _ArchiveAddBottomState extends State<ArchiveAddBottom> {
     setState(() {
       isLoading = true;
     });
-    final url = await FirebaseService.uploadFile(
+    final url = await SupabaseStorageService.uploadFile(
       name: archive!.name!,
       bytes: await result!.xFiles.first.readAsBytes(),
       mimeType: archive!.mime,

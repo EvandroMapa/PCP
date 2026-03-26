@@ -3,7 +3,7 @@ import 'package:aco_plus/app/core/components/archive/ui/archive_widget.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
-import 'package:aco_plus/app/core/services/firebase_service.dart';
+import 'package:aco_plus/app/core/services/supabase_storage_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:flutter/foundation.dart';
@@ -144,7 +144,7 @@ class _ArchiveSimpleWidgetState extends State<ArchiveSimpleWidget> {
         mime: mime,
         type: mime.getArchiveTypeMimeType(),
       );
-      archive!.url = await FirebaseService.uploadFile(
+      archive!.url = await SupabaseStorageService.uploadFile(
         name: archive!.name!,
         bytes: archive!.bytes!,
         mimeType: archive!.mime,

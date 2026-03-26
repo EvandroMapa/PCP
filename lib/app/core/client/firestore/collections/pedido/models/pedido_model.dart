@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
@@ -16,6 +15,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/tag/models/tag_mo
 import 'package:aco_plus/app/core/components/archive/archive_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/components/checklist/check_item_model.dart';
 import 'package:aco_plus/app/core/components/comment/comment_model.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
@@ -497,15 +497,33 @@ class PedidoModel {
         tags: tagsIds != null
             ? tagsIds.map((tid) => FirestoreClient.tags.getById(tid)).toList()
             : [],
-        checks: [],
-        comments: [],
-        users: [],
+        checks: map['checks'] != null
+            ? (map['checks'] as List<dynamic>)
+                .map((c) => CheckItemModel.fromMap(Map<String, dynamic>.from(c)))
+                .toList()
+            : [],
+        comments: map['comments'] != null
+            ? (map['comments'] as List<dynamic>)
+                .map((c) => CommentModel.fromMap(Map<String, dynamic>.from(c)))
+                .toList()
+            : [],
+        users: map['user_ids'] != null
+            ? (map['user_ids'] as List<dynamic>)
+                .map((id) => BackendClient.usuarios.getById(id.toString()))
+                .whereType<UsuarioModel>()
+                .toList()
+            : [],
         index: int.tryParse((map['index'] ?? '0').toString()) ?? 0,
         histories: [],
         isArchived: map['is_archived'] == true,
-        archives: archivesRaw != null
-            ? archivesRaw.map((a) => ArchiveModel.fromSupabaseMap(a)).toList()
-            : [],
+        archives: map['archives'] != null
+            ? (map['archives'] as List<dynamic>)
+                .map((a) => ArchiveModel.fromSupabaseMap(
+                    Map<String, dynamic>.from(a)))
+                .toList()
+            : (archivesRaw != null
+                ? archivesRaw.map((a) => ArchiveModel.fromSupabaseMap(a)).toList()
+                : []),
         checklistId: map['checklist_id']?.toString(),
         planilhamento: map['planilhamento']?.toString() ?? '',
         pedidoFinanceiro: map['pedido_financeiro']?.toString() ?? '',
@@ -554,6 +572,10 @@ class PedidoModel {
     'valor_taxas': valorTaxas,
     'valor_desconto': valorDesconto,
     'valor_total': valorTotal,
+    'checks': checks.map((c) => c.toMap()).toList(),
+    'archives': archives.map((a) => a.toSupabaseMap()).toList(),
+    'comments': comments.map((c) => c.toMap()).toList(),
+    'user_ids': users.map((u) => u.id).toList(),
   };
 
   PedidoModel copyWith({
