@@ -327,61 +327,68 @@ class PedidoProdutoModel {
   }
 
   factory PedidoProdutoModel.fromSupabaseMap(Map<String, dynamic> map) {
-    try {
-      // qtde pode vir como double, int ou String dependendo do ambiente
-      final qtdeRaw = map['quantidade'] ?? map['qtde'] ?? 0;
-      final double qtde = qtdeRaw is num 
-          ? qtdeRaw.toDouble() 
-          : double.tryParse(qtdeRaw.toString()) ?? 0.0;
+    // qtde pode vir como double, int ou String dependendo do ambiente
+    final qtdeRaw = map['quantidade'] ?? map['qtde'] ?? 0;
+    final double qtde = qtdeRaw is num 
+        ? qtdeRaw.toDouble() 
+        : double.tryParse(qtdeRaw.toString()) ?? 0.0;
 
-      // produto_raw é prioritário; se não existir, busca pelo produto_id no cache local
-      ProdutoModel produto;
+    // produto_raw é prioritário; se não existir, busca pelo produto_id no cache local
+    ProdutoModel produto = ProdutoModel.empty();
+    try {
       if (map['produto_raw'] != null) {
-        produto = ProdutoModel.fromMap(
-          map['produto_raw'] is String 
-              ? json.decode(map['produto_raw']) 
-              : map['produto_raw']
-        );
+        final rawMap = map['produto_raw'] is String 
+            ? json.decode(map['produto_raw']) 
+            : map['produto_raw'];
+        produto = ProdutoModel.fromMap(Map<String, dynamic>.from(rawMap));
       } else {
         final produtoId = (map['produto_id'] ?? '').toString();
-        produto = produtoId.isNotEmpty
-            ? FirestoreClient.produtos.data.firstWhere(
-                (e) => e.id == produtoId,
-                orElse: () => ProdutoModel.empty(),
-              )
-            : ProdutoModel.empty();
+        if (produtoId.isNotEmpty) {
+          produto = FirestoreClient.produtos.data.firstWhere(
+            (e) => e.id == produtoId,
+            orElse: () => ProdutoModel.empty(),
+          );
+        }
       }
+    } catch (_) {}
 
-      return PedidoProdutoModel(
-        id: (map['id'] ?? map['id_id'] ?? '').toString(),
-        qtde: qtde,
-        produto: produto,
-        materiaPrima: map['materia_prima_raw'] != null 
-            ? MateriaPrimaModel.fromMap(map['materia_prima_raw'] is String ? json.decode(map['materia_prima_raw']) : map['materia_prima_raw']) 
-            : null,
-        pedidoId: (map['pedido_id'] ?? '').toString(),
-        clienteId: (map['cliente_id'] ?? '').toString(),
-        obraId: (map['obra_id'] ?? '').toString(),
-        statusess: map['statusess_raw'] != null
-            ? (map['statusess_raw'] is String ? json.decode(map['statusess_raw']) : map['statusess_raw'] as List)
-                .map((e) => PedidoProdutoStatusModel.fromMap(e))
-                .toList()
-            : [PedidoProdutoStatusModel.empty()],
-        valorUnitario: (map['valor_unitario'] ?? 0.0).toDouble(),
-        valorTotal: (map['valor_total'] ?? 0.0).toDouble(),
-      );
-    } catch (e) {
-      log('Error parsing PedidoProdutoModel from Supabase: $e');
-      return PedidoProdutoModel(
-        id: (map['id'] ?? '').toString(),
-        pedidoId: (map['pedido_id'] ?? '').toString(),
-        clienteId: '',
-        obraId: '',
-        produto: ProdutoModel.empty(),
-        statusess: [PedidoProdutoStatusModel.empty()],
-        qtde: 0,
-      );
-    }
+    // statusess_raw: JSArray<dynamic> no Flutter Web não pode ser cast direto.
+    // Usar List.from() para criar lista Dart nativa antes do .map()
+    List<PedidoProdutoStatusModel> statusess = [PedidoProdutoStatusModel.empty()];
+    try {
+      if (map['statusess_raw'] != null) {
+        final rawList = map['statusess_raw'] is String
+            ? json.decode(map['statusess_raw']) as List
+            : map['statusess_raw'] as List;
+        statusess = List.from(rawList)
+            .map((e) => PedidoProdutoStatusModel.fromMap(Map<String, dynamic>.from(e)))
+            .toList();
+      }
+    } catch (_) {}
+
+    // materia_prima_raw: mesmo padrão robusto
+    MateriaPrimaModel? materiaPrima;
+    try {
+      if (map['materia_prima_raw'] != null) {
+        final rawMap = map['materia_prima_raw'] is String
+            ? json.decode(map['materia_prima_raw'])
+            : map['materia_prima_raw'];
+        materiaPrima = MateriaPrimaModel.fromMap(Map<String, dynamic>.from(rawMap));
+      }
+    } catch (_) {}
+
+    return PedidoProdutoModel(
+      id: (map['id'] ?? map['id_id'] ?? '').toString(),
+      qtde: qtde,
+      produto: produto,
+      materiaPrima: materiaPrima,
+      pedidoId: (map['pedido_id'] ?? '').toString(),
+      clienteId: (map['cliente_id'] ?? '').toString(),
+      obraId: (map['obra_id'] ?? '').toString(),
+      statusess: statusess.isNotEmpty ? statusess : [PedidoProdutoStatusModel.empty()],
+      valorUnitario: (map['valor_unitario'] ?? 0.0).toDouble(),
+      valorTotal: (map['valor_total'] ?? 0.0).toDouble(),
+    );
   }
 
   PedidoProdutoModel copyWith({

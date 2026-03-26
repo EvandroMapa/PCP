@@ -38,7 +38,7 @@ class KanbanStepTitleWidget extends StatelessWidget {
           // Linha 1: Nome da etapa
           Text(
             step.name,
-            style: AppCss.minimumBold.setSize(10.4),
+            style: AppCss.minimumBold,
             overflow: TextOverflow.ellipsis,
             maxLines: 1,
           ),
