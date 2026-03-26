@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'package:aco_plus/app/core/services/notification_service.dart';
@@ -118,11 +119,15 @@ class PedidoSupabaseCollection extends PedidoCollection {
     }
   }
 
+  Timer? _streamDebounce;
+
   void _updateStreams(List<Map<String, dynamic>> raw) {
-    // Quando ocorre uma atualização via stream na tabela principal de pedidos, 
-    // precisamos disparar o start() para buscar as relações (produtos, status, etc)
-    // Caso contrário, os pedidos ficariam sem produtos no estado local.
-    start(lock: false);
+    // Debounce: cancela o timer anterior e agenda um novo fetch
+    // Evita rebuild durante o drag (que grava no banco e dispara o stream)
+    _streamDebounce?.cancel();
+    _streamDebounce = Timer(const Duration(seconds: 2), () {
+      start(lock: false);
+    });
   }
 
   bool _isListen = false;
@@ -148,8 +153,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
         .stream(primaryKey: ['id'])
         .eq('is_archived', false)
         .listen((List<Map<String, dynamic>> data) {
-          // Pequeno delay para garantir que as operações de escrita em tabelas relacionadas terminaram
-          Future.delayed(const Duration(milliseconds: 500), () => _updateStreams(data));
+          _updateStreams(data);
         });
   }
 
@@ -188,25 +192,14 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
   @override
   Future<PedidoModel?> update(PedidoModel model) async {
-    final List<String> errorLogs = [];
     try {
-      log('Supabase (Pedido.update): Updating main record...');
       await SupabaseService.client
           .from(tableName)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
-      log('Supabase (Pedido.update): Main record updated. Syncing relationships...');
       
-      final syncErrors = await _syncRelationships(model);
-      errorLogs.addAll(syncErrors);
+      await _syncRelationships(model);
 
-      if (errorLogs.isNotEmpty) {
-        final alert = '--- ERROS DE SINCRONIZAÇÃO (PODE COPIAR) ---\n${errorLogs.join("\n")}\n------------------------------------------';
-        log(alert);
-        NotificationService.showNegative('Pedido Atualizado com Alertas', 'Alguns itens não foram sincronizados. Erros detalhados no console.');
-      }
-
-      log('Supabase (Pedido.update): Fetching updated data...');
       await fetch();
       return model;
     } catch (e) {
