@@ -25,7 +25,7 @@ class KanbanBlackLensWidget extends StatelessWidget {
               child: Container(
                 height: double.maxFinite,
                 width: double.maxFinite,
-                color: Colors.black.withValues(alpha: 0.8),
+                color: Colors.black.withValues(alpha: 0.4),
               ),
             ),
     );

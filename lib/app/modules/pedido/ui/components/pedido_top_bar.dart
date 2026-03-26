@@ -40,7 +40,7 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
       children: [
         InkWell(
           onTap: () => onDelete!(),
-          child: const Icon(Icons.close, color: Colors.white),
+          child: Icon(Icons.close, color: AppColors.white),
         ),
         const W(16),
         Expanded(
@@ -48,7 +48,7 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
             pedido.isArchived
                 ? '${pedido.localizador} - Arquivado'
                 : pedido.localizador,
-            style: AppCss.largeBold.setColor(Colors.white).setSize(18),
+            style: AppCss.largeBold.setColor(AppColors.white).setSize(20),
           ),
         ),
         const Spacer(),
@@ -133,7 +133,7 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
       pedido.isArchived
           ? '${pedido.localizador} - Arquivado'
           : pedido.localizador,
-      style: AppCss.largeBold.setColor(AppColors.white),
+      style: AppCss.largeBold.setColor(AppColors.white).setSize(20),
     ),
     backgroundColor: AppColors.primaryMain,
     actions: [

@@ -3,6 +3,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_
 import 'package:aco_plus/app/modules/kanban/kanban_view_model.dart';
 import 'package:aco_plus/app/modules/kanban/ui/components/step/kanban_step_body_widget.dart';
 import 'package:aco_plus/app/modules/kanban/ui/components/step/kanban_step_title_widget.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 
@@ -18,9 +19,9 @@ class KanbanStepWidget extends StatelessWidget {
       borderRadius: const BorderRadius.all(Radius.circular(8)),
       child: Container(
         width: 300,
-        decoration: const BoxDecoration(
-          color: Color(0xFFF1F2F4),
-          borderRadius: BorderRadius.all(Radius.circular(8)),
+        decoration: BoxDecoration(
+          color: AppColors.neutralLightest.withOpacity(0.5),
+          borderRadius: const BorderRadius.all(Radius.circular(8)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

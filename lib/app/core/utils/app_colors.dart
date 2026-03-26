@@ -45,61 +45,61 @@ class AppColorsSystem {
 
   factory AppColorsSystem.lightFactory() {
     return AppColorsSystem(
-      primary: const MaterialColor(0xFFDA251C, <int, Color>{
-        50: Color(0xFFE09B97),
-        100: Color(0xFFE48E86),
-        200: Color(0xFFE68175),
-        300: Color(0xFFE97464),
-        500: Color(0xFFDA251C),
-        700: Color(0xFFC62219),
-        900: Color(0xFFAF1F16),
+      primary: const MaterialColor(0xFF0F172A, <int, Color>{
+        50: Color(0xFFF1F5F9),
+        100: Color(0xFFE2E8F0),
+        200: Color(0xFFCBD5E1),
+        300: Color(0xFF94A3B8),
+        500: Color(0xFF0F172A),
+        700: Color(0xFF334155),
+        900: Color(0xFF1E293B),
       }),
-      secondary: const MaterialColor(0xFFf98209, <int, Color>{
-        200: Color(0xFFffc367),
-        500: Color(0xFFf98209),
-        900: Color(0xFFb74b01),
+      secondary: const MaterialColor(0xFF3B82F6, <int, Color>{
+        200: Color(0xFFBFDBFE),
+        500: Color(0xFF3B82F6),
+        900: Color(0xFF1E3A8A),
       }),
-      neutral: const MaterialColor(0xFF8a99a8, <int, Color>{
-        100: Color(0xFFF8FCFC),
-        300: Color(0xFFEEF0F2),
-        400: Color(0xFFc4ccd3),
-        500: Color(0xFF8a99a8),
-        700: Color(0xFF3d4c5c),
-        900: Color(0xFF020d17),
+      neutral: const MaterialColor(0xFF64748B, <int, Color>{
+        100: Color(0xFFFFFFFF),
+        300: Color(0xFFF1F5F9),
+        400: Color(0xFFE2E8F0),
+        500: Color(0xFF64748B),
+        700: Color(0xFF334155),
+        900: Color(0xFF0F172A),
       }),
-      error: const Color(0xFFdb2a36),
-      success: const Color(0xFF31ac47),
-      pending: Colors.orange,
+      error: const Color(0xFFBE123C),
+      success: const Color(0xFF15803D),
+      pending: Color(0xFFB45309),
     );
   }
 
   factory AppColorsSystem.darkFactory() {
     return AppColorsSystem(
-      primary: const MaterialColor(0xFFDA251C, <int, Color>{
-        50: Color(0xFFE09B97),
-        100: Color(0xFFE48E86),
-        200: Color(0xFFE68175),
-        300: Color(0xFFE97464),
-        500: Color(0xFFDA251C),
-        700: Color(0xFFC62219),
-        900: Color(0xFFAF1F16),
+      primary: const MaterialColor(0xFF0F172A, <int, Color>{
+        50: Color(0xFFF1F5F9),
+        100: Color(0xFFE2E8F0),
+        200: Color(0xFFCBD5E1),
+        300: Color(0xFF94A3B8),
+        500: Color(0xFF0F172A),
+        700: Color(0xFF334155),
+        900: Color(0xFF1E293B),
       }),
-      secondary: const MaterialColor(0xFFf98209, <int, Color>{
-        200: Color(0xFFffc367),
-        500: Color(0xFFf98209),
-        900: Color(0xFFb74b01),
+      secondary: const MaterialColor(0xFF3B82F6, <int, Color>{
+        200: Color(0xFFBFDBFE),
+        500: Color(0xFF3B82F6),
+        900: Color(0xFF1E3A8A),
       }),
-      neutral: const MaterialColor(0xFF8a99a8, <int, Color>{
-        100: Color(0xFF020d17),
-        300: Color(0xFFEEF0F2),
-        400: Color(0xFFc4ccd3),
-        500: Color(0xFF8a99a8),
-        700: Color(0xFF3d4c5c),
-        900: Color(0xFFF8FCFC),
+      neutral: const MaterialColor(0xFF64748B, <int, Color>{
+        100: Color(0xFF0F172A),
+        300: Color(0xFF1E293B),
+        400: Color(0xFF334155),
+        500: Color(0xFF64748B),
+        700: Color(0xFFE2E8F0),
+        900: Color(0xFFF8FAFC),
       }),
-      error: const Color(0xFFdb2a36),
-      success: const Color(0xFF31ac47),
-      pending: const Color(0xFFdbc114),
+      error: const Color(0xFFBE123C),
+      success: const Color(0xFF15803D),
+      pending: const Color(0xFFB45309),
     );
   }
 }
