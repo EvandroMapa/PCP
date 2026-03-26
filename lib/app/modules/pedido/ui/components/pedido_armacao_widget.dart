@@ -14,6 +14,7 @@ class PedidoArmacaoWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusess = pedido.getArmacaoStatusses();
+    if (statusess.isEmpty) return const SizedBox.shrink();
     final status = statusess.first;
     return Container(
       padding: const EdgeInsets.all(16),

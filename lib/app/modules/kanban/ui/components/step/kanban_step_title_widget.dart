@@ -36,23 +36,31 @@ class KanbanStepTitleWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Linha 1: Nome da etapa
-          Text(
-            step.name,
-            style: AppCss.minimumBold,
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Text(
+                  step.name,
+                  style: AppCss.minimumBold,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                ),
+              ),
+            ],
           ),
           const H(4),
           // Linha 2: lock + kgs + botões
           Row(
             children: [
               if (!step.isEnable) ...[
-                const Icon(Icons.lock, color: Colors.red, size: 11),
+                const Icon(Icons.lock, color: Colors.red, size: 12),
                 const W(4),
               ],
               Text(
                 kgsTotal.toKg(),
-                style: AppCss.minimumRegular.setSize(10).setColor(AppColors.neutralDark),
+                style: AppCss.minimumBold.setSize(11).setColor(AppColors.neutralDark),
               ),
               const Spacer(),
               // Botão adicionar

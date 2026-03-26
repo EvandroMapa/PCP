@@ -119,12 +119,10 @@ class PedidoSupabaseCollection extends PedidoCollection {
   }
 
   void _updateStreams(List<Map<String, dynamic>> raw) {
-    // Legacy support or for simple updates - ideally start() is called
-    final pedidos = raw.map((e) => PedidoModel.fromSupabaseMap(e)).toList();
-    dataStream.add(pedidos);
-    pedidosUnarchivedsStream.add(pedidos.where((e) => !e.isArchived).toList());
-    pedidosPrioridadeStream
-        .add(pedidos.where((e) => e.prioridade != null).toList());
+    // Quando ocorre uma atualização via stream na tabela principal de pedidos, 
+    // precisamos disparar o start() para buscar as relações (produtos, status, etc)
+    // Caso contrário, os pedidos ficariam sem produtos no estado local.
+    start(lock: false);
   }
 
   bool _isListen = false;
@@ -150,7 +148,8 @@ class PedidoSupabaseCollection extends PedidoCollection {
         .stream(primaryKey: ['id'])
         .eq('is_archived', false)
         .listen((List<Map<String, dynamic>> data) {
-          _updateStreams(data);
+          // Pequeno delay para garantir que as operações de escrita em tabelas relacionadas terminaram
+          Future.delayed(const Duration(milliseconds: 500), () => _updateStreams(data));
         });
   }
 

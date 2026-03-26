@@ -258,7 +258,7 @@ class PedidoModel {
     return getProdutos()
         .where(
           (e) =>
-              e.statusess.last.getStatusView() ==
+              e.status.getStatusView() ==
               PedidoProdutoStatus.aguardandoProducao,
         )
         .fold(0, (previousValue, element) => previousValue + element.qtde);
@@ -266,13 +266,13 @@ class PedidoModel {
 
   double getQtdeProduzindo() {
     return getProdutos()
-        .where((e) => e.statusess.last.status == PedidoProdutoStatus.produzindo)
+        .where((e) => e.status.status == PedidoProdutoStatus.produzindo)
         .fold(0, (previousValue, element) => previousValue + element.qtde);
   }
 
   double getQtdePronto() {
     return getProdutos()
-        .where((e) => e.statusess.last.status == PedidoProdutoStatus.pronto)
+        .where((e) => e.status.status == PedidoProdutoStatus.pronto)
         .fold(0, (previousValue, element) => previousValue + element.qtde);
   }
 
@@ -348,7 +348,9 @@ class PedidoModel {
           : null,
       cliente: ClienteModel.fromMap(map['cliente']),
       obra: getObra(map),
-      tipo: PedidoTipo.values[map['tipo']],
+      tipo: (map['tipo'] is int && map['tipo'] < PedidoTipo.values.length)
+          ? PedidoTipo.values[map['tipo']]
+          : PedidoTipo.cda,
       statusess: List<PedidoStatusModel>.from(
         map['status']?.map((x) => PedidoStatusModel.fromMap(x)) ?? [],
       ),

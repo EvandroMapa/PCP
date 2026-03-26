@@ -78,14 +78,14 @@ class PedidoProdutosWidget extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: produto.statusess.last
+                    color: produto.status
                         .getStatusView()
                         .color
                         .withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    produto.statusess.last.getStatusView().label,
+                    produto.status.getStatusView().label,
                     style: AppCss.mediumRegular.setSize(12),
                   ),
                 ),
@@ -138,7 +138,7 @@ class PedidoProdutosWidget extends StatelessWidget {
                 in produto.statusess.map((e) => e.copyWith()).toList())
               Builder(
                 builder: (context) {
-                  final isLast = status.id == produto.statusess.last.id;
+                  final isLast = produto.statusess.isNotEmpty && status.id == produto.statusess.last.id;
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8),

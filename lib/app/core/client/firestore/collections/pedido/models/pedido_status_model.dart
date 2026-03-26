@@ -36,7 +36,9 @@ class PedidoStatusModel {
   factory PedidoStatusModel.fromMap(Map<String, dynamic> map) {
     return PedidoStatusModel(
       id: map['id'],
-      status: PedidoStatus.values[map['status']],
+      status: (map['status'] is int && map['status'] < PedidoStatus.values.length)
+          ? PedidoStatus.values[map['status']]
+          : PedidoStatus.aguardandoProducaoCD,
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
     );
   }
