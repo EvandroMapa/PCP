@@ -15,6 +15,7 @@ import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_view_model.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedidos_vinculados_move_select_dialog.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/usuario_role.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -159,10 +160,10 @@ class StepController {
       }
     }
     if (!auto) {
-      final isUserAvailable =
-          step.moveRoles.contains(usuario.role) &&
-          pedido.step.moveRoles.contains(usuario.role);
-      if (!isUserAvailable) {
+      final isAdmin = usuario.role == UsuarioRole.administrador;
+      final destAllowed = step.moveRoles.isEmpty || step.moveRoles.contains(usuario.role);
+      final origAllowed = pedido.step.moveRoles.isEmpty || pedido.step.moveRoles.contains(usuario.role);
+      if (!isAdmin && (!destAllowed || !origAllowed)) {
         NotificationService.showNegative(
           'Operação não permitida',
           'Usuário não tem permissão para alterar essa etapa',

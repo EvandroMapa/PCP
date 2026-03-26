@@ -13,6 +13,7 @@ class ProdutoCreateModel {
   TextController nome = TextController();
   TextController descricao = TextController();
   TextController massaFinal = TextController.number();
+  TextController codigoFinanceiro = TextController();
   FabricanteModel? fabricante;
   late bool isEdit;
 
@@ -24,6 +25,7 @@ class ProdutoCreateModel {
     nome.text = produto.nome;
     descricao.text = produto.descricao;
     massaFinal = TextController.number(value: produto.massaFinal);
+    codigoFinanceiro.text = produto.codigoFinanceiro;
   }
 
   ProdutoModel toProdutoModel() => ProdutoModel(
@@ -31,5 +33,6 @@ class ProdutoCreateModel {
     nome: nome.text,
     descricao: descricao.text,
     massaFinal: massaFinal.doubleValue,
+    codigoFinanceiro: codigoFinanceiro.text,
   );
 }

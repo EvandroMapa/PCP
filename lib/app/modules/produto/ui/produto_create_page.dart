@@ -75,6 +75,12 @@ class _ProdutoCreatePageState extends State<ProdutoCreatePage> {
         ),
         const H(16),
         AppField(
+          label: 'Código Financeiro',
+          controller: form.codigoFinanceiro,
+          onChanged: (_) => produtoCtrl.formStream.update(),
+        ),
+        const H(16),
+        AppField(
           label: 'Descrição',
           controller: form.descricao,
           onChanged: (_) => produtoCtrl.formStream.update(),
