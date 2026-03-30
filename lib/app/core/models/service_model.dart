@@ -1,6 +1,7 @@
 import 'package:aco_plus/app/core/services/firebase_service.dart';
 import 'package:aco_plus/app/core/services/keyboard_visible_service.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
+import 'package:aco_plus/app/core/services/preferences_service.dart';
 
 abstract class Service {
   Future<void> initialize();
@@ -11,10 +12,7 @@ abstract class Service {
     FirebaseService(),
     KeyboardVisibleService(),
     SupabaseService(),
-    // DateService(),
-    // SharedPreferencesService(),
-    // LogManagerService(),
-    // AdManagerService(),
+    PreferencesService(),
   ];
 
   static Future<void> initAplicationServices() async {

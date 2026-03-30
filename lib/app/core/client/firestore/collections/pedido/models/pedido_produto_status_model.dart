@@ -98,8 +98,11 @@ class PedidoProdutoStatusModel {
   factory PedidoProdutoStatusModel.fromMap(Map<String, dynamic> map) {
     return PedidoProdutoStatusModel(
       id: map['id'] ?? '',
-      status: PedidoProdutoStatus.values[map['status']],
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
+      status: PedidoProdutoStatus.values[map['status'] ?? 0],
+      createdAt: map['createdAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(
+              (double.tryParse(map['createdAt'].toString()) ?? 0).toInt())
+          : DateTime.now(),
     );
   }
 

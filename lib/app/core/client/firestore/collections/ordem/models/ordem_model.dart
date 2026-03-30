@@ -19,7 +19,28 @@ class OrdemModel {
   DateTime updatedAt;
   MateriaPrimaModel? materiaPrima;
   DateTime? endAt;
-  List<PedidoProdutoModel> produtos;
+  List<Map<String, String>> _idPedidosProdutosRefs = [];
+  List<PedidoProdutoModel>? _produtosIniciais;
+
+  List<PedidoProdutoModel> get produtos {
+    if (_idPedidosProdutosRefs.isNotEmpty) {
+      return _idPedidosProdutosRefs
+          .map((x) => BackendClient.pedidos.getProdutoByPedidoId(
+              x['pedidoId'] ?? '', x['produtoId'] ?? ''))
+          .toList()
+          .where((e) => e.cliente.id != '') // Filter out true NOTFOUND
+          .toList();
+    }
+    return _produtosIniciais ?? [];
+  }
+
+  set produtos(List<PedidoProdutoModel> value) {
+    _produtosIniciais = value;
+    _idPedidosProdutosRefs = value
+        .map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id})
+        .toList();
+  }
+
   bool selected = true;
   final OrdemFreezedModel freezed;
   bool isArchived;
@@ -152,7 +173,7 @@ class OrdemModel {
     required this.id,
     required this.createdAt,
     required this.produto,
-    required this.produtos,
+    required List<PedidoProdutoModel> produtos,
     required this.freezed,
     required this.updatedAt,
     this.isArchived = false,
@@ -160,7 +181,10 @@ class OrdemModel {
     this.beltIndex,
     this.endAt,
     required this.history,
-  });
+    List<Map<String, String>>? idPedidosProdutosRefs,
+  })  : _produtosIniciais = produtos,
+        _idPedidosProdutosRefs = idPedidosProdutosRefs ??
+            produtos.map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id}).toList();
 
   Map<String, dynamic> toMap() => {
     'id': id,
@@ -231,39 +255,54 @@ class OrdemModel {
           ? DateTime.parse(map['updated_at'])
           : DateTime.now(),
       endAt: map['end_at'] != null ? DateTime.parse(map['end_at']) : null,
-      produto: ProdutoModel.fromMap(map['produto_raw']), // Assuming we store raw or fetch later
-      produtos: () {
-        if (map['id_pedidos_produtos'] == null) return <PedidoProdutoModel>[];
+      produto: ProdutoModel.fromMap(
+          map['produto_raw'] is String ? json.decode(map['produto_raw']) : map['produto_raw']),
+      produtos: [],
+      idPedidosProdutosRefs: () {
+        if (map['id_pedidos_produtos'] == null) return <Map<String, String>>[];
         try {
           final rawList = map['id_pedidos_produtos'] is String
               ? json.decode(map['id_pedidos_produtos'])
               : map['id_pedidos_produtos'];
           
-          if (rawList is! List) return <PedidoProdutoModel>[];
+          if (rawList is! List) return <Map<String, String>>[];
 
           return rawList.map((x) {
             final mapx = Map<String, dynamic>.from(x);
             final pedidoId = (mapx['pedidoId'] ?? mapx['pedido_id'] ?? '').toString();
             final produtoId = (mapx['produtoId'] ?? mapx['produto_id'] ?? '').toString();
-            return BackendClient.pedidos.getProdutoByPedidoId(pedidoId, produtoId);
+            return {
+              'pedidoId': pedidoId,
+              'produtoId': produtoId,
+            };
           }).toList();
         } catch (_) {
-          return <PedidoProdutoModel>[];
+          return <Map<String, String>>[];
         }
       }(),
       freezed: map['freezed'] != null
-          ? OrdemFreezedModel.fromMap(map['freezed'])
+          ? OrdemFreezedModel.fromMap(
+              map['freezed'] is String ? json.decode(map['freezed']) : map['freezed'])
           : OrdemFreezedModel.static().copyWith(),
       isArchived: map['is_archived'] ?? false,
       beltIndex: map['belt_index'],
-      materiaPrima: map['materia_prima_raw'] != null 
-          ? MateriaPrimaModel.fromMap(map['materia_prima_raw'])
+      materiaPrima: map['materia_prima_raw'] != null
+          ? MateriaPrimaModel.fromMap(map['materia_prima_raw'] is String
+              ? json.decode(map['materia_prima_raw'])
+              : map['materia_prima_raw'])
           : null,
-      history: map['history'] != null
-          ? List<OrdemHistoryModel>.from(
-              (map['history'] as List).map((e) => OrdemHistoryModel.fromJson(e)),
-            )
-          : [],
+      history: () {
+        if (map['history'] == null) return <OrdemHistoryModel>[];
+        try {
+          final rawList = map['history'] is String
+              ? json.decode(map['history'])
+              : map['history'];
+          if (rawList is! List) return <OrdemHistoryModel>[];
+          return rawList.map((e) => OrdemHistoryModel.fromJson(e)).toList();
+        } catch (_) {
+          return <OrdemHistoryModel>[];
+        }
+      }(),
     );
   }
 
@@ -273,9 +312,7 @@ class OrdemModel {
     'updated_at': updatedAt.toIso8601String(),
     'end_at': endAt?.toIso8601String(),
     'produto_raw': produto.toMap(),
-    'id_pedidos_produtos': produtos
-        .map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id})
-        .toList(),
+    'id_pedidos_produtos': _idPedidosProdutosRefs,
     'freezed': freezed.toMap(),
     'is_archived': isArchived,
     'belt_index': beltIndex,

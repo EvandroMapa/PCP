@@ -1,6 +1,7 @@
 import 'package:aco_plus/app/core/components/app_shimmer.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/w.dart';
+import 'package:aco_plus/app/core/services/preferences_service.dart';
 import 'package:aco_plus/app/modules/kanban/ui/components/kanban/kanban_background_widget.dart';
 import 'package:flutter/material.dart';
 
@@ -25,7 +26,7 @@ class KanbanBodyShimmerWidget extends StatelessWidget {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  width: 300,
+                  width: PreferencesService.kanbanColumnWidth.value,
                   height: double.maxFinite,
                 ),
               ),
