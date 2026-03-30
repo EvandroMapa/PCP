@@ -311,9 +311,10 @@ class PedidoSupabaseCollection extends PedidoCollection {
           break;
         }
       }
+      // Salva o objeto completo como JSONB — fromSupabaseMap lê de materia_prima_raw
       await SupabaseService.client
           .from('pedido_produtos')
-          .update({'materia_prima_id': materiaPrima?.id})
+          .update({'materia_prima_raw': materiaPrima?.toMap()})
           .eq('id', produto.id);
     } catch (e) {
       log('Supabase Error (updateProdutoMateriaPrima): $e');
