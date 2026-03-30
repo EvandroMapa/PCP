@@ -8,6 +8,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:flutter/material.dart';
 
@@ -33,7 +34,7 @@ class OrdemModel {
         .map((e) => e.id)
         .toSet()
         .toList();
-    return pedidosIds.map<PedidoModel>((e) => FirestoreClient.pedidos.getById(e)).toList();
+    return pedidosIds.map<PedidoModel>((e) => BackendClient.pedidos.getById(e)).toList();
   }
 
   double get qtdeTotal => produtos.isEmpty
@@ -234,7 +235,7 @@ class OrdemModel {
       produtos: map['id_pedidos_produtos'] != null
           ? List<PedidoProdutoModel>.from(
               (map['id_pedidos_produtos'] as List).map(
-                (x) => FirestoreClient.pedidos.getProdutoByPedidoId(
+                (x) => BackendClient.pedidos.getProdutoByPedidoId(
                   x['pedidoId'],
                   x['produtoId'],
                 ),

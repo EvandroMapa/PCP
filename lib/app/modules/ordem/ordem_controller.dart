@@ -10,6 +10,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
 import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
@@ -189,21 +190,23 @@ class OrdemController {
     }
     for (PedidoProdutoModel produto in ordemCriada.produtos) {
       if (ordemCriada.materiaPrima != null) {
-        await FirestoreClient.pedidos.updateProdutoMateriaPrima(
+        await BackendClient.pedidos.updateProdutoMateriaPrima(
           produto,
           ordemCriada.materiaPrima!,
         );
       }
-      await FirestoreClient.pedidos.updateProdutoStatus(
+      await BackendClient.pedidos.updateProdutoStatus(
         produto,
         produto.statusess.last.status,
       );
     }
     await FirestoreClient.ordens.add(ordemCriada);
-    await FirestoreClient.pedidos.fetch();
+    await BackendClient.pedidos.fetch();
+    await FirestoreClient.ordens.fetch(); // Refresh list immediately
+    onReorder(FirestoreClient.ordens.ordensNaoCongeladas);
     await automatizacaoCtrl.onSetStepByPedidoStatus(
       ordemCriada.pedidos
-          .map<PedidoModel>((e) => FirestoreClient.pedidos.getById(e.id))
+          .map<PedidoModel>((e) => BackendClient.pedidos.getById(e.id))
           .toList(),
     );
     Navigator.pop(value);
