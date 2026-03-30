@@ -3,8 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'dart:developer';
 import 'package:aco_plus/app/core/services/notification_service.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/models/materia_prima_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_status_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -295,26 +299,112 @@ class PedidoSupabaseCollection extends PedidoCollection {
   }
 
   @override
-  Future<void> delete(PedidoModel model) async {
+  Future<void> updateProdutoMateriaPrima(
+    PedidoProdutoModel produto,
+    MateriaPrimaModel? materiaPrima,
+  ) async {
     try {
-      await SupabaseService.client.from(tableName).delete().eq('id', model.id);
-      await fetch();
+      final pedido = getById(produto.pedidoId);
+      for (final p in pedido.produtos) {
+        if (p.id == produto.id) {
+          p.materiaPrima = materiaPrima;
+          break;
+        }
+      }
+      await SupabaseService.client
+          .from('pedido_produtos')
+          .update({'materia_prima_id': materiaPrima?.id})
+          .eq('id', produto.id);
     } catch (e) {
-      print('Supabase Error (Pedido.delete): $e');
+      log('Supabase Error (updateProdutoMateriaPrima): $e');
     }
   }
 
-  Future<void> updateAll(List<PedidoModel> pedidos) async {
+  @override
+  Future<void> updateProdutoPause(
+    PedidoProdutoModel produto,
+    bool isPaused,
+  ) async {
     try {
-      final maps = pedidos
-          .where((e) => e != null)
-          .map((e) => e.toSupabaseMap())
-          .toList();
-      if (maps.isNotEmpty) {
-        await SupabaseService.client.from(tableName).upsert(maps);
+      final pedido = getById(produto.pedidoId);
+      for (final p in pedido.produtos) {
+        if (p.id == produto.id) {
+          p.isPaused = isPaused;
+          break;
+        }
       }
+      await SupabaseService.client
+          .from('pedido_produtos')
+          .update({'is_paused': isPaused})
+          .eq('id', produto.id);
     } catch (e) {
-      print('Supabase Error (Pedido.updateAll): $e');
+      log('Supabase Error (updateProdutoPause): $e');
+    }
+  }
+
+  @override
+  Future<void> updateProdutoStatus(
+    PedidoProdutoModel produto,
+    PedidoProdutoStatus status, {
+    bool clear = false,
+  }) async {
+    try {
+      final pedido = getById(produto.pedidoId);
+      final pedidoProduto =
+          pedido.produtos.firstWhereOrNull((e) => e.id == produto.id);
+      if (pedidoProduto == null) return;
+
+      if (clear) {
+        pedidoProduto.statusess.clear();
+      }
+
+      if (pedidoProduto.statusess.isEmpty ||
+          pedidoProduto.statusess.last.status != status) {
+        pedidoProduto.statusess.add(PedidoProdutoStatusModel.create(status));
+      }
+
+      // Persiste o histórico de status como JSONB na tabela pedido_produtos
+      final statusessJson = pedidoProduto.statusess
+          .map((s) => s.toMap())
+          .toList();
+      await SupabaseService.client
+          .from('pedido_produtos')
+          .update({'statusess_raw': statusessJson})
+          .eq('id', produto.id);
+    } catch (e) {
+      log('Supabase Error (updateProdutoStatus): $e');
+      // Fallback: update the full pedido
+      try {
+        final pedido = getById(produto.pedidoId);
+        await update(pedido);
+      } catch (_) {}
+    }
+  }
+
+  @override
+  Future<PedidoModel?> updatePedidoStatus(PedidoProdutoModel produto) async {
+    try {
+      final pedido = getById(produto.pedidoId);
+      final newPedidoStatus =
+          getPedidoStatusByProduto(pedido);
+      if (newPedidoStatus == pedido.status) return null;
+
+      final statusModel = PedidoStatusModel.create(newPedidoStatus);
+      pedido.statusess.add(statusModel);
+
+      // Persist the new status in the history table
+      await SupabaseService.client
+          .from('pedido_status_history')
+          .insert({
+            'id': statusModel.id,
+            'pedido_id': pedido.id,
+            'status': newPedidoStatus.name,
+            'created_at': statusModel.createdAt.toIso8601String(),
+          });
+      return pedido;
+    } catch (e) {
+      log('Supabase Error (updatePedidoStatus): $e');
+      return null;
     }
   }
 }
