@@ -232,16 +232,25 @@ class OrdemModel {
           : DateTime.now(),
       endAt: map['end_at'] != null ? DateTime.parse(map['end_at']) : null,
       produto: ProdutoModel.fromMap(map['produto_raw']), // Assuming we store raw or fetch later
-      produtos: map['id_pedidos_produtos'] != null
-          ? List<PedidoProdutoModel>.from(
-              (map['id_pedidos_produtos'] as List).map(
-                (x) => BackendClient.pedidos.getProdutoByPedidoId(
-                  x['pedidoId'],
-                  x['produtoId'],
-                ),
-              ),
-            )
-          : [],
+      produtos: () {
+        if (map['id_pedidos_produtos'] == null) return <PedidoProdutoModel>[];
+        try {
+          final rawList = map['id_pedidos_produtos'] is String
+              ? json.decode(map['id_pedidos_produtos'])
+              : map['id_pedidos_produtos'];
+          
+          if (rawList is! List) return <PedidoProdutoModel>[];
+
+          return rawList.map((x) {
+            final mapx = Map<String, dynamic>.from(x);
+            final pedidoId = (mapx['pedidoId'] ?? mapx['pedido_id'] ?? '').toString();
+            final produtoId = (mapx['produtoId'] ?? mapx['produto_id'] ?? '').toString();
+            return BackendClient.pedidos.getProdutoByPedidoId(pedidoId, produtoId);
+          }).toList();
+        } catch (_) {
+          return <PedidoProdutoModel>[];
+        }
+      }(),
       freezed: map['freezed'] != null
           ? OrdemFreezedModel.fromMap(map['freezed'])
           : OrdemFreezedModel.static().copyWith(),
