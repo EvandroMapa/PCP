@@ -31,8 +31,10 @@ import 'package:aco_plus/app/modules/pedido/view_models/pedido_view_model.dart';
 import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/pedido/relatorio_pedido_pdf_page.dart';
 import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_pedido_view_model.dart';
+import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_pedido_view_model.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:overlay_support/overlay_support.dart';
 
 final pedidoCtrl = PedidoController();
@@ -68,6 +70,7 @@ class PedidoController {
         final updatedPedido = pedidos.firstWhereOrNull((e) => e.id == currentId);
         if (updatedPedido != null) {
           pedidoStream.add(updatedPedido);
+          SchedulerBinding.instance.scheduleFrame();
         }
       }
     });

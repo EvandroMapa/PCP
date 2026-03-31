@@ -16,6 +16,7 @@ import 'package:aco_plus/app/modules/pedido/ui/pedidos_vinculados_move_select_di
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/usuario_role.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
 
 const stepIdAguardandoProd = 'E2chjojxDVgeHa3i248t3Xl5O';
@@ -49,6 +50,9 @@ class StepController {
     _pedidosSubscription = BackendClient.pedidos.dataStream.listen.listen((_) {
       if (!isDragging) {
         updateKanban();
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          SchedulerBinding.instance.ensureVisualUpdate();
+        });
       }
     });
 
