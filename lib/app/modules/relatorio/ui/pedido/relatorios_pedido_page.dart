@@ -79,7 +79,7 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
           ],
           if ([RelatorioPedidoTipo.totaisPedidos, RelatorioPedidoTipo.totais]
               .contains(model.tipo)) ...[
-            _totaisWidget(),
+            _totaisWidget(model),
             const H(16),
           ],
           if ([RelatorioPedidoTipo.totaisPedidos, RelatorioPedidoTipo.pedidos]
@@ -200,7 +200,7 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
     );
   }
 
-  Widget _totaisWidget() {
+  Widget _totaisWidget(RelatorioPedidoViewModel model) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -227,26 +227,97 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
                 double totalBitola =
                     relatorioCtrl.getPedidosTotalPorBitola(produto);
                 if (totalBitola <= 0) return const SizedBox();
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey[200]!),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Bitola ${produto.descricaoReplaced}mm',
-                          style: AppCss.minimumBold),
-                      Text(totalBitola.toKg(), style: AppCss.minimumBold),
-                    ],
-                  ),
+                final isExpanded = model.expandedProdutosIds.contains(produto.id);
+                return Column(
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        if (isExpanded) {
+                          model.expandedProdutosIds.remove(produto.id);
+                        } else {
+                          model.expandedProdutosIds.add(produto.id);
+                        }
+                        relatorioCtrl.pedidoViewModelStream.update();
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey[200]!),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              isExpanded
+                                  ? Icons.keyboard_arrow_down
+                                  : Icons.keyboard_arrow_right,
+                              size: 18,
+                              color: Colors.grey[600],
+                            ),
+                            const W(8),
+                            Expanded(
+                              child: Text('Bitola ${produto.descricaoReplaced}mm',
+                                  style: AppCss.minimumBold),
+                            ),
+                            Text(totalBitola.toKg(), style: AppCss.minimumBold),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (isExpanded) _bitolaDetalheWidget(model, produto, totalBitola),
+                  ],
                 );
               },
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _bitolaDetalheWidget(
+      RelatorioPedidoViewModel model, ProdutoModel produto, double totalBitola) {
+    List<PedidoModel> pedidos = model.relatorio!.pedidos
+        .where((p) => p.produtos.any((pr) => pr.produto.id == produto.id))
+        .toList();
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 0, 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
+        border: Border(left: BorderSide(color: AppColors.primaryMain, width: 2)),
+      ),
+      child: Column(
+        children: pedidos.map((pedido) {
+          double qtde = pedido.produtos
+              .where((p) => p.produto.id == produto.id)
+              .fold(0, (prev, curr) => prev + curr.qtde);
+          double percent = (qtde / totalBitola) * 100;
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(pedido.localizador,
+                      style: AppCss.minimumRegular.setSize(12)),
+                ),
+                Text(qtde.toKg(), style: AppCss.minimumBold.setSize(12)),
+                const W(12),
+                SizedBox(
+                  width: 50,
+                  child: Text('${percent.toStringAsFixed(1)}%',
+                      textAlign: TextAlign.end,
+                      style: AppCss.minimumRegular
+                          .setSize(11)
+                          .setColor(Colors.grey[600]!)),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
       ),
     );
   }

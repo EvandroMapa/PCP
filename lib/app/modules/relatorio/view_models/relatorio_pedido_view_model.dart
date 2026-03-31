@@ -33,6 +33,7 @@ class RelatorioPedidoViewModel {
   SortOrder sortOrder = SortOrder.asc;
   RelatorioPedidoTipo tipo = RelatorioPedidoTipo.totais;
   bool showFilter = false;
+  List<String> expandedProdutosIds = [];
 
   List<SortType> sortTypes = [
     SortType.localizator,
