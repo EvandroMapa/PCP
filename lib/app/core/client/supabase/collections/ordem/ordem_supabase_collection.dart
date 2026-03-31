@@ -1,3 +1,4 @@
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/ordem_collection.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
@@ -93,6 +94,8 @@ class OrdemSupabaseCollection extends OrdemCollection {
   @override
   Future<OrdemModel?> add(OrdemModel model) async {
     await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+    // Após adicionar ordem, forçar atualização de pedidos (pois eles agora estão vinculados)
+    await BackendClient.pedidos.fetch();
     return model;
   }
 
@@ -102,11 +105,15 @@ class OrdemSupabaseCollection extends OrdemCollection {
         .from(tableName)
         .update(model.toSupabaseMap())
         .eq('id', model.id);
+    // Após atualizar ordem, forçar atualização de pedidos
+    await BackendClient.pedidos.fetch();
     return model;
   }
 
   @override
   Future<void> delete(OrdemModel model) async {
     await SupabaseService.client.from(tableName).delete().eq('id', model.id);
+    // Após deletar ordem, forçar atualização de pedidos
+    await BackendClient.pedidos.fetch();
   }
 }

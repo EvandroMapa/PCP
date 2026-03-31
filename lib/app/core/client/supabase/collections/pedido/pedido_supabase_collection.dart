@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+
 import 'dart:convert';
 import 'dart:developer';
 import 'package:aco_plus/app/core/services/notification_service.dart';
@@ -128,12 +128,8 @@ class PedidoSupabaseCollection extends PedidoCollection {
   Timer? _streamDebounce;
 
   void _updateStreams(List<Map<String, dynamic>> raw) {
-    // Em debug mode (local), rebuilds automaticos da stream causam freeze no drag
-    // pois o Flutter debug mode e muito mais lento. Fetches explicitos sao suficientes.
-    if (kDebugMode) return;
-
     _streamDebounce?.cancel();
-    _streamDebounce = Timer(const Duration(seconds: 5), () {
+    _streamDebounce = Timer(const Duration(seconds: 2), () {
       if (!kanbanCtrl.isDragging) start(lock: false);
     });
   }
@@ -316,6 +312,12 @@ class PedidoSupabaseCollection extends PedidoCollection {
           .from('pedido_produtos')
           .update({'materia_prima_raw': materiaPrima?.toMap()})
           .eq('id', produto.id);
+
+      // Gatilho: atualiza a tabela pai 'pedidos' para acionar o stream
+      await SupabaseService.client
+          .from(tableName)
+          .update({'index': pedido.index})
+          .eq('id', pedido.id);
     } catch (e) {
       log('Supabase Error (updateProdutoMateriaPrima): $e');
     }
@@ -338,6 +340,12 @@ class PedidoSupabaseCollection extends PedidoCollection {
           .from('pedido_produtos')
           .update({'is_paused': isPaused})
           .eq('id', produto.id);
+
+      // Gatilho: atualiza a tabela pai 'pedidos' para acionar o stream
+      await SupabaseService.client
+          .from(tableName)
+          .update({'index': pedido.index})
+          .eq('id', pedido.id);
     } catch (e) {
       log('Supabase Error (updateProdutoPause): $e');
     }
@@ -372,6 +380,12 @@ class PedidoSupabaseCollection extends PedidoCollection {
           .from('pedido_produtos')
           .update({'statusess_raw': statusessJson})
           .eq('id', produto.id);
+
+      // Gatilho: atualiza a tabela pai 'pedidos' para acionar o stream
+      await SupabaseService.client
+          .from(tableName)
+          .update({'index': pedido.index})
+          .eq('id', pedido.id);
     } catch (e) {
       log('Supabase Error (updateProdutoStatus): $e');
       // Fallback: update the full pedido
