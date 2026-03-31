@@ -227,6 +227,8 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
               ],
             ),
           ),
+          const H(16),
+          _barraPercentualWidget(),
           const H(24),
           Text('Resumo por Status', style: AppCss.mediumBold),
           const H(8),
@@ -288,6 +290,36 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
               },
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _barraPercentualWidget() {
+    double total = relatorioCtrl.getPedidosTotal();
+    if (total <= 0) return const SizedBox();
+
+    return Container(
+      height: 14,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(7),
+        child: Row(
+          children: PedidoProdutoStatus.values.map((status) {
+            double qtde = relatorioCtrl.getPedidosTotalPorStatus(status);
+            if (qtde <= 0) return const SizedBox();
+            return Expanded(
+              flex: (qtde * 100).toInt(),
+              child: Container(
+                color: status.color,
+                margin: const EdgeInsets.symmetric(horizontal: 0.5),
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
