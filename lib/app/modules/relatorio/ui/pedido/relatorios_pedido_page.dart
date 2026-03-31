@@ -4,11 +4,8 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
-import 'package:aco_plus/app/core/components/app_bottom_nav.dart';
 import 'package:aco_plus/app/core/components/app_drop_down.dart';
-import 'package:aco_plus/app/core/components/drawer/app_drawer.dart';
 import 'package:aco_plus/app/core/components/app_drop_down_list.dart';
-import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -22,8 +19,6 @@ import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_pedido_view_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/usuario_role.dart';
-import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -211,23 +206,17 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.primaryMain,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('TOTAL GERAL',
-                    style: AppCss.mediumBold.setColor(Colors.white)),
-                Text(relatorioCtrl.getPedidosTotal().toKg(),
-                    style: AppCss.largeBold.setColor(Colors.white)),
-              ],
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('RESUMO GERAL', style: AppCss.mediumBold),
+              Text(
+                'Total: ${relatorioCtrl.getPedidosTotal().toKg()}',
+                style: AppCss.mediumBold.setColor(AppColors.primaryMain),
+              ),
+            ],
           ),
-          const H(16),
+          const H(12),
           _barraPercentualWidget(),
           const H(24),
           Text('Resumo por Status', style: AppCss.mediumBold),
@@ -298,29 +287,61 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
     double total = relatorioCtrl.getPedidosTotal();
     if (total <= 0) return const SizedBox();
 
-    return Container(
-      height: 14,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(7),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(7),
-        child: Row(
+    return Column(
+      children: [
+        Container(
+          height: 16,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Row(
+              children: PedidoProdutoStatus.values.map((status) {
+                double qtde = relatorioCtrl.getPedidosTotalPorStatus(status);
+                if (qtde <= 0) return const SizedBox();
+                return Expanded(
+                  flex: (qtde * 100).toInt(),
+                  child: Container(
+                    color: status.color,
+                    margin: const EdgeInsets.symmetric(horizontal: 0.5),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+        const H(12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 8,
           children: PedidoProdutoStatus.values.map((status) {
             double qtde = relatorioCtrl.getPedidosTotalPorStatus(status);
             if (qtde <= 0) return const SizedBox();
-            return Expanded(
-              flex: (qtde * 100).toInt(),
-              child: Container(
-                color: status.color,
-                margin: const EdgeInsets.symmetric(horizontal: 0.5),
-              ),
+            double percent = (qtde / total) * 100;
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: status.color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const W(4),
+                Text(
+                  '${status.label} (${percent.toStringAsFixed(1)}%)',
+                  style: AppCss.minimumRegular.setSize(10).setColor(Colors.grey[700]!),
+                ),
+              ],
             );
           }).toList(),
         ),
-      ),
+      ],
     );
   }
 
