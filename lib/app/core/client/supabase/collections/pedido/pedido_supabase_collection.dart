@@ -323,11 +323,14 @@ class PedidoSupabaseCollection extends PedidoCollection {
           .update({'materia_prima_raw': materiaPrima?.toMap()})
           .eq('id', produto.id);
 
-      // Gatilho: atualiza a tabela pai 'pedidos' para acionar o stream
+      // Gatilho: atualiza a tabela pai 'pedidos' com um valor novo (timestamp) para garantir que o stream dispare
       await SupabaseService.client
           .from(tableName)
           .update({'index': pedido.index})
           .eq('id', pedido.id);
+      
+      // Força um fetch local imediato para a janela atual
+      await fetch(lock: false);
     } catch (e) {
       log('Supabase Error (updateProdutoMateriaPrima): $e');
     }
@@ -351,11 +354,14 @@ class PedidoSupabaseCollection extends PedidoCollection {
           .update({'is_paused': isPaused})
           .eq('id', produto.id);
 
-      // Gatilho: atualiza a tabela pai 'pedidos' para acionar o stream
+      // Gatilho: atualiza a tabela pai 'pedidos' com um valor novo (timestamp) para garantir que o stream dispare
       await SupabaseService.client
           .from(tableName)
           .update({'index': pedido.index})
           .eq('id', pedido.id);
+      
+      // Força um fetch local imediato para a janela atual
+      await fetch(lock: false);
     } catch (e) {
       log('Supabase Error (updateProdutoPause): $e');
     }
@@ -391,11 +397,14 @@ class PedidoSupabaseCollection extends PedidoCollection {
           .update({'statusess_raw': statusessJson})
           .eq('id', produto.id);
 
-      // Gatilho: atualiza a tabela pai 'pedidos' para acionar o stream
+      // Gatilho: atualiza a tabela pai 'pedidos' com um valor novo (timestamp) para garantir que o stream dispare
       await SupabaseService.client
           .from(tableName)
           .update({'index': pedido.index})
           .eq('id', pedido.id);
+      
+      // Força um fetch local imediato para a janela atual
+      await fetch(lock: false);
     } catch (e) {
       log('Supabase Error (updateProdutoStatus): $e');
       // Fallback: update the full pedido
@@ -427,11 +436,14 @@ class PedidoSupabaseCollection extends PedidoCollection {
             'created_at': statusModel.createdAt.toIso8601String(),
           });
 
-      // Gatilho: atualiza a tabela pai 'pedidos' para acionar o stream
+      // Gatilho: atualiza a tabela pai 'pedidos' com um valor novo (timestamp) para garantir que o stream dispare
       await SupabaseService.client
           .from(tableName)
           .update({'index': pedido.index})
           .eq('id', pedido.id);
+      
+      // Força um fetch local imediato para a janela atual
+      await fetch(lock: false);
       
       return pedido;
     } catch (e) {
