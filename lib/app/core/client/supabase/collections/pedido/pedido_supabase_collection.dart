@@ -62,10 +62,20 @@ class PedidoSupabaseCollection extends PedidoCollection {
           .select()
           .eq('is_archived', false);
 
-      // 2. Fetch auxiliary tables with individual error handling
+      if (pedidosRaw.isEmpty) {
+        pedidosUnarchivedsStream.add([]);
+        return;
+      }
+
+      final List<String> pIds = pedidosRaw.map((e) => e['id'].toString().trim()).toList();
+
+      // 2. Fetch auxiliary tables FILTERED by pIds
       Future<List<Map<String, dynamic>>> safeFetch(String table) async {
         try {
-          final res = await SupabaseService.client.from(table).select();
+          final res = await SupabaseService.client
+              .from(table)
+              .select()
+              .filter('pedido_id', 'in', pIds);
           if (res == null) return [];
           final list = res as List;
           return list.map((item) {
@@ -129,7 +139,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
   void _updateStreams(List<Map<String, dynamic>> raw) {
     _streamDebounce?.cancel();
-    _streamDebounce = Timer(const Duration(seconds: 2), () {
+    _streamDebounce = Timer(const Duration(milliseconds: 500), () {
       if (!kanbanCtrl.isDragging) start(lock: false);
     });
   }

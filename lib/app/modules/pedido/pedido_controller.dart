@@ -58,6 +58,19 @@ class PedidoController {
     utilsStream.add(PedidoUtils());
     BackendClient.pedidos.fetch();
     _listenChecklists();
+    _listenGlobalPedidos();
+  }
+
+  void _listenGlobalPedidos() {
+    BackendClient.pedidos.dataStream.listen.listen((pedidos) {
+      if (pedidoStream.hasValue) {
+        final currentId = pedidoStream.value.id;
+        final updatedPedido = pedidos.firstWhereOrNull((e) => e.id == currentId);
+        if (updatedPedido != null) {
+          pedidoStream.add(updatedPedido);
+        }
+      }
+    });
   }
 
   void _listenChecklists() {
