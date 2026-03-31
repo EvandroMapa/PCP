@@ -219,38 +219,6 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
           const H(12),
           _barraPercentualWidget(),
           const H(24),
-          Text('Resumo por Status', style: AppCss.mediumBold),
-          const H(8),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            childAspectRatio: 2.5,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-            children: PedidoProdutoStatus.values.map((status) {
-              double qtde = relatorioCtrl.getPedidosTotalPorStatus(status);
-              if (qtde <= 0) return const SizedBox();
-              return Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: status.color.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: status.color.withValues(alpha: 0.2)),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(status.label,
-                        style: AppCss.minimumBold.setColor(status.color)),
-                    Text(qtde.toKg(), style: AppCss.minimumBold),
-                  ],
-                ),
-              );
-            }).where((w) => w is! SizedBox).toList(),
-          ),
-          const H(24),
           Text('Resumo por Bitola', style: AppCss.mediumBold),
           const H(8),
           for (final produto in FirestoreClient.produtos.data)
@@ -334,8 +302,8 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
                 ),
                 const W(4),
                 Text(
-                  '${status.label} (${percent.toStringAsFixed(1)}%)',
-                  style: AppCss.minimumRegular.setSize(10).setColor(Colors.grey[700]!),
+                  '${status.label}: ${qtde.toKg()} (${percent.toStringAsFixed(1)}%)',
+                  style: AppCss.minimumRegular.setSize(12).setColor(Colors.grey[700]!),
                 ),
               ],
             );
