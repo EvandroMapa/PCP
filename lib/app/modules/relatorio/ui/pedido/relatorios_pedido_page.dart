@@ -283,15 +283,15 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
         .toList();
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 0, 12),
+      margin: const EdgeInsets.fromLTRB(16, 0, 0, 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.horizontal(right: Radius.circular(12)),
-        border: Border(left: BorderSide(color: AppColors.primaryMain, width: 3)),
+        border: Border(left: BorderSide(color: AppColors.primaryMain, width: 4)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 12,
               offset: const Offset(0, 4))
         ],
       ),
@@ -307,34 +307,60 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
             double percent = (qtde / totalBitola) * 100;
             bool isOdd = index % 2 != 0;
 
-            return Container(
-              color: isOdd ? Colors.grey[100] : Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(pedido.localizador,
-                        style: AppCss.minimumBold.setSize(12)),
+            return Column(
+              children: [
+                if (index > 0)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Divider(
+                        height: 1, color: Colors.grey[200], thickness: 0.5),
                   ),
-                  Text(qtde.toKg(),
-                      style: AppCss.minimumBold
-                          .setSize(12)
-                          .setColor(AppColors.primaryMain)),
-                  const W(16),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryMain.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text('${percent.toStringAsFixed(1)}%',
-                        style: AppCss.minimumBold
-                            .setSize(10)
-                            .setColor(AppColors.primaryMain)),
+                Container(
+                  color: isOdd
+                      ? AppColors.primaryMain.withValues(alpha: 0.03)
+                      : Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryMain.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const W(12),
+                      Expanded(
+                        child: Text(
+                          pedido.localizador,
+                          style: AppCss.minimumBold
+                              .setSize(12)
+                              .setColor(Colors.grey[800]!),
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            qtde.toKg(),
+                            style: AppCss.minimumBold
+                                .setSize(12)
+                                .setColor(AppColors.primaryMain),
+                          ),
+                          Text(
+                            '${percent.toStringAsFixed(1)}% do total',
+                            style: AppCss.minimumRegular
+                                .setSize(9)
+                                .setColor(Colors.grey[500]!),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             );
           }).toList(),
         ),
