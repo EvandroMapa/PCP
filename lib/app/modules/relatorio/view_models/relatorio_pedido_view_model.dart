@@ -31,7 +31,7 @@ class RelatorioPedidoViewModel {
   RelatorioPedidoModel? relatorio;
   late SortType sortType;
   SortOrder sortOrder = SortOrder.asc;
-  RelatorioPedidoTipo tipo = RelatorioPedidoTipo.totaisPedidos;
+  RelatorioPedidoTipo tipo = RelatorioPedidoTipo.totais;
   bool showFilter = false;
 
   List<SortType> sortTypes = [
