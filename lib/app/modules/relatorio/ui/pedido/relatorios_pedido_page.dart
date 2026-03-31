@@ -284,40 +284,60 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 0, 12),
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
-        border: Border(left: BorderSide(color: AppColors.primaryMain, width: 2)),
+        color: Colors.white,
+        borderRadius: const BorderRadius.horizontal(right: Radius.circular(12)),
+        border: Border(left: BorderSide(color: AppColors.primaryMain, width: 3)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4))
+        ],
       ),
-      child: Column(
-        children: pedidos.map((pedido) {
-          double qtde = pedido.produtos
-              .where((p) => p.produto.id == produto.id)
-              .fold(0, (prev, curr) => prev + curr.qtde);
-          double percent = (qtde / totalBitola) * 100;
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(pedido.localizador,
-                      style: AppCss.minimumRegular.setSize(12)),
-                ),
-                Text(qtde.toKg(), style: AppCss.minimumBold.setSize(12)),
-                const W(12),
-                SizedBox(
-                  width: 50,
-                  child: Text('${percent.toStringAsFixed(1)}%',
-                      textAlign: TextAlign.end,
-                      style: AppCss.minimumRegular
-                          .setSize(11)
-                          .setColor(Colors.grey[600]!)),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.horizontal(right: Radius.circular(12)),
+        child: Column(
+          children: pedidos.asMap().entries.map((entry) {
+            int index = entry.key;
+            PedidoModel pedido = entry.value;
+            double qtde = pedido.produtos
+                .where((p) => p.produto.id == produto.id)
+                .fold(0, (prev, curr) => prev + curr.qtde);
+            double percent = (qtde / totalBitola) * 100;
+            bool isOdd = index % 2 != 0;
+
+            return Container(
+              color: isOdd ? Colors.grey[50] : Colors.transparent,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(pedido.localizador,
+                        style: AppCss.minimumBold.setSize(12)),
+                  ),
+                  Text(qtde.toKg(),
+                      style: AppCss.minimumBold
+                          .setSize(12)
+                          .setColor(AppColors.primaryMain)),
+                  const W(16),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryMain.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text('${percent.toStringAsFixed(1)}%',
+                        style: AppCss.minimumBold
+                            .setSize(10)
+                            .setColor(AppColors.primaryMain)),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -386,12 +406,19 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
 
   Widget itemRelatorio(PedidoModel pedido) {
     if (pedido.produtos.isEmpty) return const SizedBox();
-    return Card(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey[200]!),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -399,17 +426,61 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              color: AppColors.primaryMain.withValues(alpha: 0.05),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              border: Border(
+                  bottom: BorderSide(
+                      color: AppColors.primaryMain.withValues(alpha: 0.1))),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(pedido.localizador,
-                    style: AppCss.mediumBold.setColor(AppColors.primaryMain)),
-                Text(
-                  DateFormat('dd/MM/yyyy HH:mm').format(pedido.createdAt),
-                  style: AppCss.minimumRegular.setSize(11),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        pedido.cliente.nome.toUpperCase(),
+                        style: AppCss.minimumBold
+                            .setSize(13)
+                            .setColor(AppColors.primaryMain),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const W(8),
+                    Text(
+                      DateFormat('dd/MM/yyyy HH:mm').format(pedido.createdAt),
+                      style: AppCss.minimumRegular
+                          .setSize(10)
+                          .setColor(Colors.grey[600]!),
+                    ),
+                  ],
+                ),
+                const H(4),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryMain,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        pedido.localizador,
+                        style: AppCss.minimumBold
+                            .setSize(10)
+                            .setColor(Colors.white),
+                      ),
+                    ),
+                    const W(8),
+                    Text(
+                      pedido.tipo.label,
+                      style: AppCss.minimumRegular
+                          .setSize(11)
+                          .setColor(Colors.grey[700]!),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -419,25 +490,80 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _itemInfoRow('Cliente', pedido.cliente.nome),
-                _itemInfoRow('Tipo', pedido.tipo.label),
-                _itemInfoRow('Entrega',
-                    pedido.deliveryAt?.text() ?? 'Não definida'),
-                if (pedido.descricao.isNotEmpty)
-                  _itemInfoRow('Obs', pedido.descricao),
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_today_outlined,
+                        size: 14, color: Colors.grey),
+                    const W(6),
+                    Text(
+                      'Entrega: ${pedido.deliveryAt?.text() ?? 'Não definida'}',
+                      style: AppCss.minimumRegular.setSize(12),
+                    ),
+                  ],
+                ),
+                if (pedido.descricao.isNotEmpty) ...[
+                  const H(8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.notes, size: 14, color: Colors.grey),
+                      const W(6),
+                      Expanded(
+                        child: Text(
+                          pedido.descricao,
+                          style: AppCss.minimumRegular
+                              .setSize(12)
+                              .setColor(Colors.grey[700]!),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const Divisor(height: 24),
                 for (final produto in pedido.produtos)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
+                    padding: const EdgeInsets.only(bottom: 8),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('${produto.produto.descricaoReplaced}mm',
-                            style: AppCss.minimumRegular),
-                        Text(
-                          '${produto.qtde.toKg()} (${produto.status.status.label})',
-                          style: AppCss.minimumBold
-                              .setColor(produto.status.status.color),
+                        Row(
+                          children: [
+                            Container(
+                              width: 3,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: produto.status.status.color,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const W(8),
+                            Text('${produto.produto.descricaoReplaced}mm',
+                                style: AppCss.minimumRegular),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Text(
+                              produto.qtde.toKg(),
+                              style: AppCss.minimumBold,
+                            ),
+                            const W(8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: produto.status.status.color
+                                    .withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                produto.status.status.label,
+                                style: AppCss.minimumBold
+                                    .setSize(9)
+                                    .setColor(produto.status.status.color),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -446,32 +572,16 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('TOTAL', style: AppCss.mediumBold),
-                    Text(pedido.getQtdeTotal().toKg(),
-                        style: AppCss.mediumBold.setColor(AppColors.primaryMain)),
+                    Text('TOTAL DO PEDIDO',
+                        style: AppCss.minimumBold.setColor(Colors.grey[700]!)),
+                    Text(
+                      pedido.getQtdeTotal().toKg(),
+                      style: AppCss.mediumBold.setColor(AppColors.primaryMain),
+                    ),
                   ],
                 ),
               ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _itemInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 70,
-            child: Text('$label:',
-                style: AppCss.minimumRegular.setColor(Colors.grey[600]!)),
-          ),
-          Expanded(
-            child: Text(value, style: AppCss.minimumRegular),
           ),
         ],
       ),
