@@ -32,6 +32,7 @@ class RelatorioPedidoViewModel {
   late SortType sortType;
   SortOrder sortOrder = SortOrder.asc;
   RelatorioPedidoTipo tipo = RelatorioPedidoTipo.totaisPedidos;
+  bool showFilter = false;
 
   List<SortType> sortTypes = [
     SortType.localizator,
