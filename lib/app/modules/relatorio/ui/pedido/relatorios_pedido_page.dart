@@ -308,7 +308,7 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
             bool isOdd = index % 2 != 0;
 
             return Container(
-              color: isOdd ? Colors.grey[50] : Colors.transparent,
+              color: isOdd ? Colors.grey[100] : Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               child: Row(
                 children: [
