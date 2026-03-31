@@ -68,7 +68,7 @@ class PedidoController {
   void onInitPage(PedidoModel pedido) {
     pedidoStream.add(pedido);
     _pagePollingTimer?.cancel();
-    _pagePollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+    _pagePollingTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
       if (pedidoStream.hasValue) {
         final updated = await BackendClient.pedidos.getByIdSupabase(pedidoStream.value.id);
         if (updated != null) {
