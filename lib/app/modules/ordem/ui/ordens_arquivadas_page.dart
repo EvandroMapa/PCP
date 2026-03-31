@@ -39,6 +39,7 @@ class _OrdensArquivadasPageState extends State<OrdensArquivadasPage> {
   Widget build(BuildContext context) {
     return AppScaffold(
       appBar: AppBar(
+        iconTheme: const IconThemeData(color: Colors.white, size: 22),
         title: Text(
           'Ordens Arquivadas',
           style: AppCss.largeBold.setColor(AppColors.white),
@@ -57,6 +58,7 @@ class _OrdensArquivadasPageState extends State<OrdensArquivadasPage> {
               icon: Icon(Icons.sort, color: AppColors.white),
             ),
           ),
+          const W(8),
         ],
         backgroundColor: AppColors.primaryMain,
       ),

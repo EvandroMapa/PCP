@@ -6,6 +6,7 @@ import 'package:aco_plus/app/core/enums/app_module.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
+import 'package:aco_plus/app/core/components/w.dart';
 import 'package:flutter/material.dart';
 
 class BasePage extends StatefulWidget {
@@ -42,7 +43,7 @@ class _BasePageState extends State<BasePage> {
             : null,
         appBar: module.appBar(context) ??
             AppBar(
-              iconTheme: const IconThemeData(color: Colors.white),
+              iconTheme: const IconThemeData(color: Colors.white, size: 22),
               title: Text(
                 module.label,
                 style: const TextStyle(color: Colors.white),
@@ -52,7 +53,13 @@ class _BasePageState extends State<BasePage> {
                   stream: baseCtrl.appBarActionsStream.listen,
                   builder: (_, actions) => Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: actions,
+                    children: [
+                      for (int i = 0; i < actions.length; i++) ...[
+                        actions[i],
+                        if (i < actions.length - 1) const W(8),
+                      ],
+                      const W(8),
+                    ],
                   ),
                 ),
               ],

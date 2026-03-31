@@ -61,6 +61,7 @@ class _OrdemPageState extends State<OrdemPage> {
           builder: (_, ordem) => AppScaffold(
             resizeAvoid: true,
             appBar: AppBar(
+              iconTheme: const IconThemeData(color: Colors.white, size: 22),
               actions: usuario.isOperador
                   ? []
                   : [
@@ -76,6 +77,7 @@ class _OrdemPageState extends State<OrdemPage> {
                               ordemCtrl.onUnarchive(context, ordem, 2),
                           icon: Icon(Icons.unarchive, color: AppColors.white),
                         ),
+                      const W(8),
                       IconButton(
                         onPressed: () async {
                           final tipo = await showOrdemExportarPdfTipoBottom();
@@ -92,16 +94,19 @@ class _OrdemPageState extends State<OrdemPage> {
                           color: AppColors.white,
                         ),
                       ),
+                      const W(8),
                       IconButton(
                         onPressed: () async =>
                             push(context, OrdemCreatePage(ordem: ordem)),
                         icon: Icon(Icons.edit, color: AppColors.white),
                       ),
+                      const W(8),
                       IconButton(
                         onPressed: () async =>
                             ordemCtrl.onDelete(context, ordem),
                         icon: Icon(Icons.delete, color: AppColors.white),
                       ),
+                      const W(8),
                     ],
               title: Text(
                 'Ordem ${ordem.localizator}',

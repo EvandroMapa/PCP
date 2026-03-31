@@ -4,13 +4,13 @@ import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
-import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_filter_widget.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_view_model.dart';
 import 'package:aco_plus/app/modules/kanban/ui/components/kanban/shimmer/kanban_top_bar_shimmer_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_create_page.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
+import 'package:aco_plus/app/core/components/w.dart';
 import 'package:flutter/material.dart';
 import 'package:info_popup/info_popup.dart';
 
@@ -44,6 +44,7 @@ class _KanbanTopbarConcreteWidgetState
       loading: const KanbanTopBarShimmerWidget(),
       stream: kanbanCtrl.utilsStream.listen,
       builder: (_, utils) => AppBar(
+        iconTheme: const IconThemeData(color: Colors.white, size: 22),
         leading: Builder(
           builder: (context) => IconButton(
             onPressed: () => Scaffold.of(context).openDrawer(),
@@ -72,23 +73,11 @@ class _KanbanTopbarConcreteWidgetState
                 arrowTheme: InfoPopupArrowTheme(color: AppColors.white),
                 child: Stack(
                   children: [
-                    IgnorePointer(
-                      ignoring: true,
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        decoration: BoxDecoration(
-                          color: utils.hasFilter()
-                              ? Colors.redAccent
-                              : AppColors.primaryMain.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: IconButton(
-                          iconSize: 22,
-                          padding: const EdgeInsets.all(8),
-                          constraints: const BoxConstraints(),
-                          onPressed: () {},
-                          icon: Icon(Icons.filter_list, color: AppColors.white),
-                        ),
+                    IconButton(
+                      onPressed: () {},
+                      icon: Icon(
+                        Icons.filter_list,
+                        color: utils.hasFilter() ? Colors.redAccent : AppColors.white,
                       ),
                     ),
                     if (utils.hasFilter())
@@ -129,52 +118,35 @@ class _KanbanTopbarConcreteWidgetState
                   ],
                 ),
               ),
-              Container(
-                margin: const EdgeInsets.only(right: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryMain.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: IconButton(
-                  iconSize: 22,
-                  padding: const EdgeInsets.all(8),
-                  constraints: const BoxConstraints(),
-                  onPressed: () {
-                    if (utils.view == KanbanViewMode.calendar) {
-                      utils.view = KanbanViewMode.kanban;
-                    } else {
-                      utils.view = KanbanViewMode.calendar;
-                    }
-                    kanbanCtrl.utilsStream.update();
-                  },
-                  icon: Icon(
-                    utils.view != KanbanViewMode.calendar
-                        ? Icons.calendar_month
-                        : Icons.view_kanban,
-                    color: AppColors.white,
-                  ),
+              const W(4),
+              IconButton(
+                onPressed: () {
+                  if (utils.view == KanbanViewMode.calendar) {
+                    utils.view = KanbanViewMode.kanban;
+                  } else {
+                    utils.view = KanbanViewMode.calendar;
+                  }
+                  kanbanCtrl.utilsStream.update();
+                },
+                icon: Icon(
+                  utils.view != KanbanViewMode.calendar
+                      ? Icons.calendar_month
+                      : Icons.view_kanban,
+                  color: AppColors.white,
                 ),
               ),
+              const W(8),
               if (usuario.permission.pedido.contains(UserPermissionType.create))
-                Container(
-                  margin: const EdgeInsets.only(right: 16),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryMain.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: IconButton(
-                    iconSize: 22,
-                    padding: const EdgeInsets.all(8),
-                    constraints: const BoxConstraints(),
-                    onPressed: () async {
-                      await push(context, const PedidoCreatePage());
-                      final pedidos = FirestoreClient.pedidos.data;
-                      pedidos.sort((a, b) => a.id.compareTo(b.id));
-                      kanbanCtrl.onAccept(pedidos.last.step, pedidos.last, 0);
-                    },
-                    icon: Icon(Icons.add, color: AppColors.white),
-                  ),
+                IconButton(
+                  onPressed: () async {
+                    await push(context, const PedidoCreatePage());
+                    final pedidos = FirestoreClient.pedidos.data;
+                    pedidos.sort((a, b) => a.id.compareTo(b.id));
+                    kanbanCtrl.onAccept(pedidos.last.step, pedidos.last, 0);
+                  },
+                  icon: Icon(Icons.add, color: AppColors.white),
                 ),
+              const W(8),
             ],
           ),
         ],
