@@ -313,11 +313,11 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Divider(
-                        height: 1, color: Colors.grey[200], thickness: 0.5),
+                        height: 1, color: Colors.grey[300], thickness: 0.5),
                   ),
                 Container(
                   color: isOdd
-                      ? AppColors.primaryMain.withValues(alpha: 0.03)
+                      ? AppColors.primaryMain.withValues(alpha: 0.07)
                       : Colors.white,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
