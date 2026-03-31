@@ -13,6 +13,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/usuario/usuario_c
 import 'package:aco_plus/app/core/client/firestore/collections/tag/tag_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/ordem_collection.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automacoes_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/notificacao/notificacao_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/checklist/checklist_collection.dart';
@@ -61,6 +62,7 @@ class BackendClient {
   static AutomatizacaoCollection get automatizacao => AutomatizacaoCollection(); // Still firestore for now
 
   static NotificacaoCollection get notificacoes => NotificacaoCollection(); // Still firestore for now
+  static AutomacoesCollection get automacoes => AutomacoesCollection();
 
   static OrdemCollection get ordens => type == BackendType.firestore
       ? OrdemCollection()

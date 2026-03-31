@@ -32,7 +32,7 @@ class RelatoriosPedidoPage extends StatefulWidget {
 class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
   @override
   void initState() {
-    setWebTitle('Relatórios de Pedidos');
+    setWebTitle('Consumo');
     relatorioCtrl.pedidoViewModelStream.add(RelatorioPedidoViewModel());
     relatorioCtrl.onCreateRelatorioPedido();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -97,7 +97,7 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Text('Pedidos Detalhados', style: AppCss.mediumBold),
+          child: Text('Consumo Detalhado', style: AppCss.mediumBold),
         ),
         ...model.relatorio!.pedidos.map((e) => itemRelatorio(e)),
       ],

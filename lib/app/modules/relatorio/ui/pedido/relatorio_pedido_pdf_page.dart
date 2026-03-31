@@ -61,7 +61,7 @@ class RelatorioPedidoPdfPage {
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text('RELATÓRIO DE PEDIDOS',
+                  pw.Text('RELATÓRIO DE CONSUMO',
                       style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
                   pw.Text('Sistema de Controle de Produção - PCP',
                       style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
@@ -92,7 +92,7 @@ class RelatorioPedidoPdfPage {
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text('Relatório Gerencial de Pedidos',
+          pw.Text('Relatório Gerencial de Consumo',
               style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
           pw.Text('Página ${context.pageNumber} de ${context.pagesCount}',
               style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
