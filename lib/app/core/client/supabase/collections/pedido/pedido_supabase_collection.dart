@@ -416,6 +416,13 @@ class PedidoSupabaseCollection extends PedidoCollection {
             'status': newPedidoStatus.name,
             'created_at': statusModel.createdAt.toIso8601String(),
           });
+
+      // Gatilho: atualiza a tabela pai 'pedidos' para acionar o stream
+      await SupabaseService.client
+          .from(tableName)
+          .update({'index': pedido.index})
+          .eq('id', pedido.id);
+      
       return pedido;
     } catch (e) {
       log('Supabase Error (updatePedidoStatus): $e');

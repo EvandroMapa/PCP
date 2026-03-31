@@ -34,6 +34,9 @@ class StepController {
 
   /// Bloqueia rebuilds do stream durante o arrasto de cartoes
   bool isDragging = false;
+  StreamSubscription? _pedidosSubscription;
+  Timer? _refreshTimer;
+
   void startDrag() => isDragging = true;
   void endDrag() {
     isDragging = false;
@@ -42,6 +45,20 @@ class StepController {
   }
 
   Future<void> onInit() async {
+    _pedidosSubscription?.cancel();
+    _pedidosSubscription = BackendClient.pedidos.dataStream.listen.listen((_) {
+      if (!isDragging) {
+        updateKanban();
+      }
+    });
+
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (!isDragging) {
+        BackendClient.pedidos.fetch();
+      }
+    });
+
     await BackendClient.pedidos.fetch();
     final kanban = mountKanban();
     final calendar = _mountCalendar();
