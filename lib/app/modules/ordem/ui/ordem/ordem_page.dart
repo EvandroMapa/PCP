@@ -61,7 +61,7 @@ class _OrdemPageState extends State<OrdemPage> {
           builder: (_, ordem) => AppScaffold(
             resizeAvoid: true,
             appBar: AppBar(
-              iconTheme: const IconThemeData(color: Colors.white, size: 22),
+              iconTheme: const IconThemeData(color: Colors.white, size: 20),
               actions: usuario.isOperador
                   ? []
                   : [

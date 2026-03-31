@@ -43,7 +43,7 @@ class _BasePageState extends State<BasePage> {
             : null,
         appBar: module.appBar(context) ??
             AppBar(
-              iconTheme: const IconThemeData(color: Colors.white, size: 22),
+              iconTheme: const IconThemeData(color: Colors.white, size: 20),
               title: Text(
                 module.label,
                 style: const TextStyle(color: Colors.white),

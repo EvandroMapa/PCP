@@ -44,7 +44,7 @@ class _KanbanTopbarConcreteWidgetState
       loading: const KanbanTopBarShimmerWidget(),
       stream: kanbanCtrl.utilsStream.listen,
       builder: (_, utils) => AppBar(
-        iconTheme: const IconThemeData(color: Colors.white, size: 22),
+        iconTheme: const IconThemeData(color: Colors.white, size: 20),
         leading: Builder(
           builder: (context) => IconButton(
             onPressed: () => Scaffold.of(context).openDrawer(),
