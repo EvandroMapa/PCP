@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:developer';
 
+import 'package:aco_plus/app/core/client/firestore/collections/checklist/models/checklist_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_prioridade_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
@@ -60,6 +62,26 @@ class PedidoController {
     BackendClient.pedidos.fetch();
     _listenChecklists();
     _listenGlobalPedidos();
+  }
+
+  Timer? _pagePollingTimer;
+  void onInitPage(PedidoModel pedido) {
+    pedidoStream.add(pedido);
+    _pagePollingTimer?.cancel();
+    _pagePollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+      if (pedidoStream.hasValue) {
+        final updated = await BackendClient.pedidos.getByIdSupabase(pedidoStream.value.id);
+        if (updated != null) {
+          pedidoStream.add(updated);
+          SchedulerBinding.instance.scheduleFrame();
+        }
+      }
+    });
+  }
+
+  void onDisposePage() {
+    _pagePollingTimer?.cancel();
+    _pagePollingTimer = null;
   }
 
   void _listenGlobalPedidos() {
@@ -297,10 +319,6 @@ class PedidoController {
       ...FirestoreClient.ordens.data,
       if (isArquivada) ...FirestoreClient.ordens.ordensArquivadas,
     ]).firstWhereOrNull((e) => e.produtos.any((p) => p.id == produto.id));
-  }
-
-  Future<void> onInitPage(PedidoModel pedido) async {
-    pedidoStream.add(pedido);
   }
 
   void onChangePedidoStatus(PedidoModel pedido) async {

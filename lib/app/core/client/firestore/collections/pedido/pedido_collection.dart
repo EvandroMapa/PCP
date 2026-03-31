@@ -141,6 +141,8 @@ class PedidoCollection {
       ([...data, ...pedidosArchiveds]).firstWhereOrNull((e) => e.id == id) ??
       PedidoModel.empty();
 
+  Future<PedidoModel?> getByIdSupabase(String id) async => null;
+
   PedidoProdutoModel getProdutoByPedidoId(String pedidoId, String produtoId) =>
       getById(pedidoId).produtos.firstWhereOrNull((e) => e.id == produtoId) ??
       PedidoProdutoModel.empty(getById(pedidoId));

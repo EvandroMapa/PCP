@@ -53,20 +53,24 @@ class _PedidoPageState extends State<PedidoPage>
     with AutomaticKeepAliveClientMixin {
   @override
   void initState() {
+    super.initState();
     if (widget.reason != PedidoInitReason.kanban) {
       setWebTitle('Pedido ${widget.pedido.localizador}');
     }
-    pedidoCtrl.onInitPage(widget.pedido).then((_) {
-      notificacaoCtrl.onSetPedidoViewed(widget.pedido);
-    });
-    super.initState();
+    pedidoCtrl.onInitPage(widget.pedido);
+    notificacaoCtrl.onSetPedidoViewed(widget.pedido);
   }
 
   @override
+  @override
   void dispose() {
+    pedidoCtrl.onDisposePage();
     pedidoCtrl.setPedido(null);
     super.dispose();
   }
+
+  @override
+  bool get wantKeepAlive => true;
 
   bool get isKanban => widget.reason == PedidoInitReason.kanban;
   bool get isArchived => widget.reason == PedidoInitReason.archived;

@@ -146,6 +146,41 @@ class PedidoSupabaseCollection extends PedidoCollection {
     });
   }
 
+  @override
+  Future<PedidoModel?> getByIdSupabase(String id) async {
+    try {
+      final res = await SupabaseService.client
+          .from(tableName)
+          .select('*, pedido_produtos(*), pedido_status_history(*), pedido_steps_history(*), pedido_tags(*)')
+          .eq('id', id)
+          .maybeSingle();
+
+      if (res == null) return null;
+
+      final pMap = res as Map<String, dynamic>;
+      
+      final List<Map<String, dynamic>> pProdutos = 
+          List<Map<String, dynamic>>.from(pMap['pedido_produtos'] ?? []);
+      final List<Map<String, dynamic>> statusRaw = 
+          List<Map<String, dynamic>>.from(pMap['pedido_status_history'] ?? []);
+      final List<Map<String, dynamic>> stepsRaw = 
+          List<Map<String, dynamic>>.from(pMap['pedido_steps_history'] ?? []);
+      final List<Map<String, dynamic>> tagsRaw = 
+          List<Map<String, dynamic>>.from(pMap['pedido_tags'] ?? []);
+
+      return PedidoModel.fromSupabaseMap(
+        pMap,
+        produtosRaw: pProdutos,
+        statusRaw: statusRaw,
+        stepsRaw: stepsRaw,
+        tagsIds: tagsRaw.map((t) => (t['tag_id'] ?? '').toString()).toList(),
+      );
+    } catch (e) {
+      log('Supabase Error (Pedido.getByIdSupabase): $e');
+      return null;
+    }
+  }
+
   bool _isListen = false;
   @override
   Future<void> listen({
