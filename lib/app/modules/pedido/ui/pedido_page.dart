@@ -198,7 +198,4 @@ class _PedidoPageState extends State<PedidoPage>
       ],
     );
   }
-
-  @override
-  bool get wantKeepAlive => true;
 }
