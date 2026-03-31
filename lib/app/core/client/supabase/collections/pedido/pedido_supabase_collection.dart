@@ -56,74 +56,38 @@ class PedidoSupabaseCollection extends PedidoCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     try {
-      // 1. Fetch main table first (critical)
-      final pedidosRaw = await SupabaseService.client
+      // Fetch everything in ONE single request using Supabase joins
+      // This is much faster than multiple separate requests
+      final res = await SupabaseService.client
           .from(tableName)
-          .select()
+          .select('*, pedido_produtos(*), pedido_status_history(*), pedido_steps_history(*), pedido_tags(*)')
           .eq('is_archived', false);
 
-      if (pedidosRaw.isEmpty) {
+      if (res == null) {
         pedidosUnarchivedsStream.add([]);
         return;
       }
 
-      final List<String> pIds = pedidosRaw.map((e) => e['id'].toString().trim()).toList();
+      final List<Map<String, dynamic>> rawList = List<Map<String, dynamic>>.from(res as List);
+      
+      final List<PedidoModel> pedidos = rawList.map((pMap) {
+        // Map the joined data back to the format the model expects
+        final List<Map<String, dynamic>> pProdutos = 
+            List<Map<String, dynamic>>.from(pMap['pedido_produtos'] ?? []);
+        final List<Map<String, dynamic>> statusRaw = 
+            List<Map<String, dynamic>>.from(pMap['pedido_status_history'] ?? []);
+        final List<Map<String, dynamic>> stepsRaw = 
+            List<Map<String, dynamic>>.from(pMap['pedido_steps_history'] ?? []);
+        final List<Map<String, dynamic>> tagsRaw = 
+            List<Map<String, dynamic>>.from(pMap['pedido_tags'] ?? []);
 
-      // 2. Fetch auxiliary tables FILTERED by pIds
-      Future<List<Map<String, dynamic>>> safeFetch(String table) async {
-        try {
-          final res = await SupabaseService.client
-              .from(table)
-              .select()
-              .filter('pedido_id', 'in', pIds);
-          if (res == null) return [];
-          final list = res as List;
-          return list.map((item) {
-            try {
-              if (item is Map) {
-                return item.map((key, value) => MapEntry(key.toString(), value));
-              }
-            } catch (_) {}
-            return <String, dynamic>{};
-          }).toList();
-        } catch (_) {
-          return [];
-        }
-      }
-
-      final results = await Future.wait([
-        safeFetch('pedido_produtos'),
-        safeFetch('pedido_status_history'),
-        safeFetch('pedido_steps_history'),
-        safeFetch('pedido_tags'),
-      ]);
-
-      final List<Map<String, dynamic>> produtosRaw = results[0];
-      final List<Map<String, dynamic>> statusRaw = results[1];
-      final List<Map<String, dynamic>> stepsRaw = results[2];
-      final List<Map<String, dynamic>> tagsRaw = results[3];
-
-      final pedidos = pedidosRaw.map((pMap) {
-        final String pId = pMap['id'].toString().trim();
-        
-        final pProdutos = produtosRaw
-            .where((r) {
-              final String pedidoId = (r['pedido_id'] ?? '').toString().trim();
-              return pedidoId == pId;
-            })
-            .toList();
-        
-        final pedido = PedidoModel.fromSupabaseMap(
+        return PedidoModel.fromSupabaseMap(
           pMap,
           produtosRaw: pProdutos,
-          statusRaw: statusRaw.where((r) => r['pedido_id'].toString().trim() == pId).toList(),
-          stepsRaw: stepsRaw.where((r) => r['pedido_id'].toString().trim() == pId).toList(),
-          tagsIds: tagsRaw
-              .where((r) => r['pedido_id'].toString().trim() == pId)
-              .map((r) => r['tag_id'].toString())
-              .toList(),
+          statusRaw: statusRaw,
+          stepsRaw: stepsRaw,
+          tagsIds: tagsRaw.map((t) => (t['tag_id'] ?? '').toString()).toList(),
         );
-        return pedido;
       }).toList();
 
       dataStream.add(pedidos);
@@ -131,7 +95,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
       pedidosPrioridadeStream
           .add(pedidos.where((e) => e.prioridade != null).toList());
     } catch (e) {
-      print('Supabase Error (Pedido.start): $e');
+      log('Supabase Error (Pedido.start): $e');
     }
   }
 
