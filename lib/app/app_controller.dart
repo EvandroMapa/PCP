@@ -1,5 +1,6 @@
 import 'package:aco_plus/app/core/models/service_model.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
+import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 
@@ -22,6 +23,7 @@ class AppController {
     await Service.initAplicationServices();
     await usuarioCtrl.getCurrentUser();
     await kanbanCtrl.onInit();
+    pedidoCtrl.onInit();
     precacheImage(
       const AssetImage('assets/images/kanban_background.png'),
       context,
