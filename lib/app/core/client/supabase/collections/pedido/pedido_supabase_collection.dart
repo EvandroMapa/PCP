@@ -90,6 +90,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
         );
       }).toList();
 
+      pedidosUnarchivedsStream.add(pedidos);
       dataStream.add(pedidos);
       pedidosUnarchivedsStream.add(pedidos.where((e) => !e.isArchived).toList());
       pedidosPrioridadeStream
