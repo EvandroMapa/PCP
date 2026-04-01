@@ -440,9 +440,9 @@ class OrdemController {
   OrdemModel get ordem => ordemStream.value;
 
   StreamSubscription<OrdemModel>? subscription;
-  void onInitPage(String ordemId) {
+  void onInitPage(String ordemId, {OrdemModel? ordem}) {
     try {
-      final initialOrdem = getOrdemById(ordemId);
+      final initialOrdem = ordem ?? getOrdemById(ordemId);
       ordemStream.add(initialOrdem);
       
       // Carrega os pedidos da ordem para garantir que os produtos (bitolas) apareçam

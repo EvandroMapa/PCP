@@ -30,7 +30,8 @@ import 'package:flutter/material.dart';
 
 class OrdemPage extends StatefulWidget {
   final String ordemId;
-  const OrdemPage(this.ordemId, {super.key});
+  final OrdemModel? ordem;
+  const OrdemPage(this.ordemId, {this.ordem, super.key});
 
   @override
   State<OrdemPage> createState() => _OrdemPageState();
@@ -40,7 +41,7 @@ class _OrdemPageState extends State<OrdemPage> {
   @override
   void initState() {
     setWebTitle('Ordem');
-    ordemCtrl.onInitPage(widget.ordemId);
+    ordemCtrl.onInitPage(widget.ordemId, ordem: widget.ordem);
     super.initState();
   }
 
