@@ -87,7 +87,7 @@ class _ProdutoCreatePageState extends State<ProdutoCreatePage> {
         ),
         const H(16),
         AppField(
-          label: 'Massa Final',
+          label: 'MASSA NOMINAL LINEAR (Kg/Metro)',
           controller: form.massaFinal,
           onChanged: (_) => produtoCtrl.formStream.update(),
           suffixText: 'Kg',

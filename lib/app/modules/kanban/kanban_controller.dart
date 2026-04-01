@@ -38,13 +38,11 @@ class StepController {
   /// Bloqueia rebuilds do stream durante o arrasto de cartoes
   bool isDragging = false;
   StreamSubscription? _pedidosSubscription;
-  Timer? _refreshTimer;
+
 
   void startDrag() => isDragging = true;
   void endDrag() {
     isDragging = false;
-    // Dispara um fetch apos o drag terminar para sincronizar
-    BackendClient.pedidos.fetch();
   }
 
   Future<void> onInit() async {
@@ -56,13 +54,6 @@ class StepController {
           SchedulerBinding.instance.addPostFrameCallback((_) {
             SchedulerBinding.instance.ensureVisualUpdate();
           });
-        }
-      });
-
-      _refreshTimer?.cancel();
-      _refreshTimer = Timer.periodic(const Duration(seconds: 12), (timer) {
-        if (!isDragging) {
-          BackendClient.pedidos.fetch();
         }
       });
 
@@ -192,10 +183,17 @@ class StepController {
   }) async {
     if (!onWillAccept(pedido, step, auto: auto)) return;
     _onMovePedido(pedido, step, index);
+    utilsStream.update();
+    
+    // Process secondary actions in background
     _onAddStep(pedido, step);
     onRemovePedidoFromPrioridadeIfNeeded(step, pedido);
-    onMovePedidosVinculados(step, await _getPedidosVinculadosToMove(pedido, step));
-    utilsStream.update();
+    _getPedidosVinculadosToMove(pedido, step).then((pedidosVinculados) {
+      if (pedidosVinculados.isNotEmpty) {
+        onMovePedidosVinculados(step, pedidosVinculados);
+        utilsStream.update();
+      }
+    });
   }
 
   bool onWillAccept(PedidoModel pedido, StepModel step, {bool auto = false}) {
@@ -235,7 +233,9 @@ class StepController {
     );
     pedido.addStep(step);
     BackendClient.pedidos.pedidosUnarchivedsStream.update();
-    await BackendClient.pedidos.update(pedido);
+    // A chamada de update aqui já persiste a nova etapa e o novo índice do pedido
+    // Não usamos await para não travar a UI
+    BackendClient.pedidos.update(pedido);
   }
 
   void _onMovePedido(PedidoModel pedido, StepModel step, int index) {
@@ -246,7 +246,7 @@ class StepController {
         index,
         pedido: removedPedido,
       );
-      _onUpdatePedidosIndex(step.id, index);
+      _onUpdatePedidosIndex(step.id, removedPedido.id);
     }
   }
 
@@ -271,14 +271,22 @@ class StepController {
     pedido.addStep(key);
   }
 
-  void _onUpdatePedidosIndex(String stepId, int index) async {
+  void _onUpdatePedidosIndex(String stepId, String movingPedidoId) {
     final key = utils.kanban.keys.firstWhereOrNull((e) => e.id == stepId);
     if (key == null) return;
     List<PedidoModel> pedidos = utils.kanban[key]!;
+    
+    // Atualiza os índices locais
     for (int i = 0; i < pedidos.length; i++) {
       pedidos[i].index = i;
     }
-    await BackendClient.pedidos.updateAll(pedidos);
+
+    // Filtra os pedidos que NÃO são o que acabou de se mover 
+    // (pois este já terá um update individual via _onAddStep)
+    final otherPedidos = pedidos.where((p) => p.id != movingPedidoId).toList();
+    if (otherPedidos.isNotEmpty) {
+      BackendClient.pedidos.updateAll(otherPedidos);
+    }
   }
 
   void onListenerSrollEnd(BuildContext context, Offset mouse) {

@@ -242,6 +242,25 @@ class PedidoSupabaseCollection extends PedidoCollection {
   }
 
   @override
+  Future<List<PedidoModel>> updateAll(List<PedidoModel> models) async {
+    try {
+      if (models.isEmpty) return [];
+      
+      final payload = models.map((e) => e.toSupabaseMap()).toList();
+      await SupabaseService.client
+          .from(tableName)
+          .upsert(payload);
+          
+      // O streaming cuidará de atualizar a UI local.
+      // Retornamos a lista original para consistência.
+      return models;
+    } catch (e) {
+      log('Supabase Error (Pedido.updateAll): $e');
+      return [];
+    }
+  }
+
+  @override
   Future<PedidoModel?> update(PedidoModel model) async {
     try {
       await SupabaseService.client
