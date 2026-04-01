@@ -58,10 +58,14 @@ class PedidoController {
   PedidoArquivedUtils get utilsArquiveds => utilsArquivedsStream.value;
 
   void onInit() {
-    utilsStream.add(PedidoUtils());
-    BackendClient.pedidos.fetch();
-    _listenChecklists();
-    _listenGlobalPedidos();
+    try {
+      utilsStream.add(PedidoUtils());
+      BackendClient.pedidos.fetch();
+      _listenChecklists();
+      _listenGlobalPedidos();
+    } catch (e) {
+      print('PedidoController: Erro no onInit: $e');
+    }
   }
 
   Timer? _pagePollingTimer;

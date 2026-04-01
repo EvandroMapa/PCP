@@ -48,28 +48,32 @@ class StepController {
   }
 
   Future<void> onInit() async {
-    _pedidosSubscription?.cancel();
-    _pedidosSubscription = BackendClient.pedidos.dataStream.listen.listen((_) {
-      if (!isDragging) {
-        updateKanban();
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          SchedulerBinding.instance.ensureVisualUpdate();
-        });
-      }
-    });
+    try {
+      _pedidosSubscription?.cancel();
+      _pedidosSubscription = BackendClient.pedidos.dataStream.listen.listen((_) {
+        if (!isDragging) {
+          updateKanban();
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            SchedulerBinding.instance.ensureVisualUpdate();
+          });
+        }
+      });
 
-    _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 12), (timer) {
-      if (!isDragging) {
-        BackendClient.pedidos.fetch();
-      }
-    });
+      _refreshTimer?.cancel();
+      _refreshTimer = Timer.periodic(const Duration(seconds: 12), (timer) {
+        if (!isDragging) {
+          BackendClient.pedidos.fetch();
+        }
+      });
 
-    await BackendClient.pedidos.fetch();
-    final kanban = mountKanban();
-    final calendar = _mountCalendar();
-    utilsStream.add(KanbanUtils(kanban: kanban, calendar: calendar));
-    onMount();
+      await BackendClient.pedidos.fetch();
+      final kanban = mountKanban();
+      final calendar = _mountCalendar();
+      utilsStream.add(KanbanUtils(kanban: kanban, calendar: calendar));
+      onMount();
+    } catch (e) {
+      print('StepController: Erro no onInit: $e');
+    }
   }
 
   void onMount() async {
@@ -81,14 +85,32 @@ class StepController {
   }
 
   Map<StepModel, List<PedidoModel>> mountKanban() {
-    final pedidos = BackendClient.pedidos.pepidosUnarchiveds.toList();
-    final kanban = <StepModel, List<PedidoModel>>{};
-    for (StepModel step in BackendClient.steps.data.toList()) {
-      final pedidosStep = pedidos.where((e) => e.step.id == step.id).toList();
-      pedidosStep.sort((a, b) => a.index.compareTo(b.index));
-      kanban.addAll({step: pedidosStep});
+    try {
+      final pedidos = BackendClient.pedidos.pepidosUnarchiveds.toList();
+      final kanban = <StepModel, List<PedidoModel>>{};
+      final stepsData = BackendClient.steps.data.toList();
+      
+      if (stepsData.isEmpty) return kanban;
+
+      for (StepModel step in stepsData) {
+        final pedidosStep = pedidos.where((e) => e.step.id == step.id).toList();
+        
+        // Proteção contra index nulo ou erros de comparação
+        pedidosStep.sort((a, b) {
+          try {
+            return (a.index).compareTo(b.index);
+          } catch (_) {
+            return 0;
+          }
+        });
+        
+        kanban.addAll({step: pedidosStep});
+      }
+      return kanban;
+    } catch (e) {
+      print('StepController: Erro no mountKanban: $e');
+      return {};
     }
-    return kanban;
   }
 
   Future<void> onMountCalendar() async {

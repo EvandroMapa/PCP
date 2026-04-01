@@ -17,18 +17,20 @@ class AppController {
 
   bool isInitialized = false;
   Future<void> onInit() async {
-    if (isInitialized) return;
-    isInitialized = true;
-    await usuarioCtrl.getCurrentUser();
-    await kanbanCtrl.onInit();
-    pedidoCtrl.onInit();
     try {
+      if (isInitialized) return;
+      isInitialized = true;
+      await usuarioCtrl.getCurrentUser();
+      await kanbanCtrl.onInit();
+      pedidoCtrl.onInit();
       if (key.currentState?.context != null) {
         precacheImage(
           const AssetImage('assets/images/kanban_background.png'),
           key.currentState!.context,
         );
       }
-    } catch (_) {}
+    } catch (e) {
+      print('AppController: Erro no onInit: $e');
+    }
   }
 }

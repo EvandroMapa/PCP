@@ -25,10 +25,14 @@ class DashboardController {
 
   List<RankingModel<ClienteModel>> getRankingClientes() {
     List<RankingModel<ClienteModel>> rankings = [];
-    for (ClienteModel transportadora in FirestoreClient.clientes.data) {
-      final map = FirestoreClient.clientes.data.map(
+    final clientesData = FirestoreClient.clientes.data;
+    if (clientesData.isEmpty) return rankings;
+
+    for (ClienteModel transportadora in clientesData) {
+      final map = clientesData.map(
         (e) => getClienteValueByType(e),
-      );
+      ).where((e) => e > 0).toList();
+      
       final num = (map.isNotEmpty ? map.reduce((a, b) => a + b) : 0).toDouble();
       rankings.add(
         RankingModel<ClienteModel>(
@@ -46,11 +50,11 @@ class DashboardController {
       case DashboardClienteRankingType.pedidos:
         return 1;
       case DashboardClienteRankingType.kilos:
-        return FirestoreClient.pedidos.data
+        final pedidos = FirestoreClient.pedidos.data
             .where((e) => e.cliente.id == cliente.id)
             .map((e) => e.getQtdeTotal())
-            .reduce((a, b) => a + b)
-            .toDouble();
+            .toList();
+        return pedidos.isNotEmpty ? pedidos.reduce((a, b) => a + b).toDouble() : 0;
     }
   }
 

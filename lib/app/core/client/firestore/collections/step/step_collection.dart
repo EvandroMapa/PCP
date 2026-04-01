@@ -33,7 +33,13 @@ class StepCollection {
     final countries = data.docs
         .map((e) => StepModel.fromMap(e.data()))
         .toList();
-    countries.sort((a, b) => a.index.compareTo(b.index));
+    countries.sort((a, b) {
+      try {
+        return (a.index).compareTo(b.index);
+      } catch (_) {
+        return 0;
+      }
+    });
     dataStream.add(countries);
   }
 
@@ -75,7 +81,13 @@ class StepCollection {
           final countries = e.docs
               .map((e) => StepModel.fromMap(e.data()))
               .toList();
-          countries.sort((a, b) => a.index.compareTo(b.index));
+          countries.sort((a, b) {
+            try {
+              return (a.index).compareTo(b.index);
+            } catch (_) {
+              return 0;
+            }
+          });
           dataStream.add(countries);
         });
   }

@@ -31,7 +31,13 @@ class ChecklistCollection {
     final countries = data.docs
         .map((e) => ChecklistModel.fromMap(e.data()))
         .toList();
-    countries.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    countries.sort((a, b) {
+      try {
+        return (a.createdAt).compareTo(b.createdAt);
+      } catch (_) {
+        return 0;
+      }
+    });
     dataStream.add(countries);
   }
 

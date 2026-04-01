@@ -459,7 +459,7 @@ class PedidoModel {
           ObraModel.empty();
       step = FirestoreClient.steps.getById(stepId);
       if (step == StepModel.notFound && FirestoreClient.steps.data.isNotEmpty) {
-        step = FirestoreClient.steps.data.first;
+        step = FirestoreClient.steps.data.firstOrNull ?? StepModel.notFound;
       }
     } catch (_) {
       cliente = ClienteModel.empty();
