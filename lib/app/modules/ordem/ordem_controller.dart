@@ -10,6 +10,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
@@ -189,20 +190,47 @@ class OrdemController {
         return;
       }
     }
+    final List<(PedidoProdutoModel, PedidoProdutoStatus)> statusUpdates = [];
+    final List<(PedidoProdutoModel, MateriaPrimaModel?)> mpUpdates = [];
+    final Set<String> pedidosAfetados = {};
+
     for (PedidoProdutoModel produto in ordemCriada.produtos) {
+      statusUpdates.add((produto, PedidoProdutoStatus.aguardandoProducao));
       if (ordemCriada.materiaPrima != null) {
-        await BackendClient.pedidos.updateProdutoMateriaPrima(
-          produto,
-          ordemCriada.materiaPrima!,
-        );
+        mpUpdates.add((produto, ordemCriada.materiaPrima!));
       }
-      await BackendClient.pedidos.updateProdutoStatus(
-        produto,
-        produto.statusess.last.status,
-      );
+      pedidosAfetados.add(produto.pedidoId);
     }
+
+    if (FirestoreClient.pedidos is PedidoSupabaseCollection) {
+      final supabaseColl = FirestoreClient.pedidos as PedidoSupabaseCollection;
+      if (mpUpdates.isNotEmpty) {
+        await supabaseColl.updateProdutosMateriaPrima(mpUpdates);
+      }
+      if (statusUpdates.isNotEmpty) {
+        await supabaseColl.updateProdutosStatus(statusUpdates);
+      }
+    } else {
+      // Fallback para Firestore (Legado)
+      for (var update in mpUpdates) {
+        await FirestoreClient.pedidos.updateProdutoMateriaPrima(update.$1, update.$2);
+      }
+      for (var update in statusUpdates) {
+        await FirestoreClient.pedidos.updateProdutoStatus(update.$1, update.$2);
+      }
+    }
+
     await FirestoreClient.ordens.add(ordemCriada);
-    await BackendClient.pedidos.fetch();
+    
+    // Atualiza status dos pedidos pai de forma otimizada
+    for (var pedidoId in pedidosAfetados) {
+      final pedido = FirestoreClient.pedidos.getById(pedidoId);
+      if (pedido.produtos.isNotEmpty) {
+        await FirestoreClient.pedidos.updatePedidoStatus(pedido.produtos.first);
+      }
+    }
+
+    await FirestoreClient.pedidos.fetch();
     await FirestoreClient.ordens.fetch(); // Refresh list immediately
     onReorder(FirestoreClient.ordens.ordensNaoCongeladas);
     await automatizacaoCtrl.onSetStepByPedidoStatus(
@@ -227,34 +255,68 @@ class OrdemController {
         return;
       }
     }
+
+    final List<(PedidoProdutoModel, PedidoProdutoStatus)> statusUpdates = [];
+    final List<(PedidoProdutoModel, MateriaPrimaModel?)> mpUpdates = [];
+    final Set<String> pedidosAfetados = {};
+
+    // Produtos removidos da ordem
     for (PedidoProdutoModel produto in ordem.produtos) {
-      if (!ordemEditada.produtos.contains(produto)) {
-        await FirestoreClient.pedidos.updateProdutoStatus(
-          produto,
-          PedidoProdutoStatus.separado,
-          clear: true,
-        );
+      if (!ordemEditada.produtos.any((e) => e.id == produto.id)) {
+        statusUpdates.add((produto, PedidoProdutoStatus.aguardandoProducao));
+        pedidosAfetados.add(produto.pedidoId);
       }
     }
+
+    // Produtos na ordem editada
     for (PedidoProdutoModel produto in ordemEditada.produtos) {
+      pedidosAfetados.add(produto.pedidoId);
+      
+      // Atualizar Matéria-Prima se necessário
       if (produto.status.status != PedidoProdutoStatus.pronto) {
         if (ordemEditada.materiaPrima?.id != produto.materiaPrima?.id) {
-          await FirestoreClient.pedidos.updateProdutoMateriaPrima(
-            produto,
-            ordemEditada.materiaPrima!,
-          );
+          mpUpdates.add((produto, ordemEditada.materiaPrima!));
         }
       }
-      await FirestoreClient.pedidos.updateProdutoStatus(
-        produto,
-        produto.statusess.last.status,
-      );
+      
+      // Atualizar Status
+      statusUpdates.add((produto, produto.statusess.last.status));
     }
+
+    // Executa atualizações em massa (Status e MP)
+    if (FirestoreClient.pedidos is PedidoSupabaseCollection) {
+      final supabaseColl = FirestoreClient.pedidos as PedidoSupabaseCollection;
+      if (mpUpdates.isNotEmpty) {
+        await supabaseColl.updateProdutosMateriaPrima(mpUpdates);
+      }
+      if (statusUpdates.isNotEmpty) {
+        await supabaseColl.updateProdutosStatus(statusUpdates);
+      }
+    } else {
+      // Fallback para Firestore (Legado)
+      for (var update in mpUpdates) {
+        await FirestoreClient.pedidos.updateProdutoMateriaPrima(update.$1, update.$2);
+      }
+      for (var update in statusUpdates) {
+        await FirestoreClient.pedidos.updateProdutoStatus(update.$1, update.$2);
+      }
+    }
+
     ordemEditada.produtos.removeWhere((e) => e.status.status.index == 0);
     await FirestoreClient.ordens.update(ordemEditada);
+
+    // Atualiza status dos pedidos pai de forma otimizada
+    for (var pedidoId in pedidosAfetados) {
+      final pedido = FirestoreClient.pedidos.getById(pedidoId);
+      if (pedido.produtos.isNotEmpty) {
+        await FirestoreClient.pedidos.updatePedidoStatus(pedido.produtos.first);
+      }
+    }
+
     await FirestoreClient.pedidos.fetch();
     await automatizacaoCtrl.onSetStepByPedidoStatus(ordemEditada.pedidos);
     await OrdemTimelineRegister.editada(ordemEditada, ordem);
+    
     Navigator.pop(value);
     Navigator.pop(value);
     NotificationService.showPositive(

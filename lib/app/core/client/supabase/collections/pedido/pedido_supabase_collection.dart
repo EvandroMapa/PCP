@@ -365,30 +365,57 @@ class PedidoSupabaseCollection extends PedidoCollection {
     PedidoProdutoModel produto,
     MateriaPrimaModel? materiaPrima,
   ) async {
+    return await updateProdutosMateriaPrima([(produto, materiaPrima)]);
+  }
+
+  Future<void> updateProdutosMateriaPrima(
+    List<(PedidoProdutoModel, MateriaPrimaModel?)> updates,
+  ) async {
     try {
-      final pedido = getById(produto.pedidoId);
-      for (final p in pedido.produtos) {
-        if (p.id == produto.id) {
-          p.materiaPrima = materiaPrima;
-          break;
+      if (updates.isEmpty) return;
+
+      final List<Map<String, dynamic>> payload = [];
+      final Set<String> pedidoIds = {};
+
+      for (var update in updates) {
+        final produto = update.$1;
+        final materiaPrima = update.$2;
+        final pedido = getById(produto.pedidoId);
+        pedidoIds.add(pedido.id);
+
+        for (final p in pedido.produtos) {
+          if (p.id == produto.id) {
+            p.materiaPrima = materiaPrima;
+            break;
+          }
+        }
+
+        payload.add({
+          'id': produto.id,
+          'materia_prima_raw': materiaPrima?.toMap(),
+        });
+      }
+
+      if (payload.isNotEmpty) {
+        await SupabaseService.client
+            .from('pedido_produtos')
+            .upsert(payload, onConflict: 'id');
+      }
+
+      // Gatilho: atualiza a tabela pai 'pedidos' para os pedidos afetados
+      if (pedidoIds.isNotEmpty) {
+        for (var pId in pedidoIds) {
+          final pedido = getById(pId);
+          await SupabaseService.client
+              .from(tableName)
+              .update({'index': pedido.index})
+              .eq('id', pId);
         }
       }
-      // Salva o objeto completo como JSONB — fromSupabaseMap lê de materia_prima_raw
-      await SupabaseService.client
-          .from('pedido_produtos')
-          .update({'materia_prima_raw': materiaPrima?.toMap()})
-          .eq('id', produto.id);
-
-      // Gatilho: atualiza a tabela pai 'pedidos' com um valor novo (timestamp) para garantir que o stream dispare
-      await SupabaseService.client
-          .from(tableName)
-          .update({'index': pedido.index})
-          .eq('id', pedido.id);
       
-      // Força um fetch local imediato para a janela atual
       await fetch(lock: false);
     } catch (e) {
-      log('Supabase Error (updateProdutoMateriaPrima): $e');
+      log('Supabase Error (updateProdutosMateriaPrima): $e');
     }
   }
 
@@ -429,45 +456,64 @@ class PedidoSupabaseCollection extends PedidoCollection {
     PedidoProdutoStatus status, {
     bool clear = false,
   }) async {
+    return await updateProdutosStatus([(produto, status)], clear: clear);
+  }
+
+  Future<void> updateProdutosStatus(
+    List<(PedidoProdutoModel, PedidoProdutoStatus)> updates, {
+    bool clear = false,
+  }) async {
     try {
-      final pedido = getById(produto.pedidoId);
-      final pedidoProduto =
-          pedido.produtos.firstWhereOrNull((e) => e.id == produto.id);
-      if (pedidoProduto == null) return;
+      if (updates.isEmpty) return;
 
-      if (clear) {
-        pedidoProduto.statusess.clear();
+      final List<Map<String, dynamic>> payload = [];
+      final Set<String> pedidoIds = {};
+
+      for (var update in updates) {
+        final produto = update.$1;
+        final status = update.$2;
+        final pedido = getById(produto.pedidoId);
+        pedidoIds.add(pedido.id);
+
+        final pedidoProduto =
+            pedido.produtos.firstWhereOrNull((e) => e.id == produto.id);
+        if (pedidoProduto == null) continue;
+
+        if (clear) {
+          pedidoProduto.statusess.clear();
+        }
+
+        if (pedidoProduto.statusess.isEmpty ||
+            pedidoProduto.statusess.last.status != status) {
+          pedidoProduto.statusess.add(PedidoProdutoStatusModel.create(status));
+        }
+
+        payload.add({
+          'id': produto.id,
+          'statusess_raw': pedidoProduto.statusess.map((s) => s.toMap()).toList(),
+        });
       }
 
-      if (pedidoProduto.statusess.isEmpty ||
-          pedidoProduto.statusess.last.status != status) {
-        pedidoProduto.statusess.add(PedidoProdutoStatusModel.create(status));
+      if (payload.isNotEmpty) {
+        await SupabaseService.client
+            .from('pedido_produtos')
+            .upsert(payload, onConflict: 'id');
       }
 
-      // Persiste o histórico de status como JSONB na tabela pedido_produtos
-      final statusessJson = pedidoProduto.statusess
-          .map((s) => s.toMap())
-          .toList();
-      await SupabaseService.client
-          .from('pedido_produtos')
-          .update({'statusess_raw': statusessJson})
-          .eq('id', produto.id);
-
-      // Gatilho: atualiza a tabela pai 'pedidos' com um valor novo (timestamp) para garantir que o stream dispare
-      await SupabaseService.client
-          .from(tableName)
-          .update({'index': pedido.index})
-          .eq('id', pedido.id);
+      // Gatilho: atualiza a tabela pai 'pedidos' para os pedidos afetados
+      if (pedidoIds.isNotEmpty) {
+        for (var pId in pedidoIds) {
+          final pedido = getById(pId);
+          await SupabaseService.client
+              .from(tableName)
+              .update({'index': pedido.index})
+              .eq('id', pId);
+        }
+      }
       
-      // Força um fetch local imediato para a janela atual
       await fetch(lock: false);
     } catch (e) {
-      log('Supabase Error (updateProdutoStatus): $e');
-      // Fallback: update the full pedido
-      try {
-        final pedido = getById(produto.pedidoId);
-        await update(pedido);
-      } catch (_) {}
+      log('Supabase Error (updateProdutosStatus): $e');
     }
   }
 
