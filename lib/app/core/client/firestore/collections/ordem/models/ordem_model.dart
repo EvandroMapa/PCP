@@ -215,75 +215,33 @@ class OrdemModel {
   factory OrdemModel.fromMap(Map<String, dynamic> map) {
     return OrdemModel(
       id: map['id'] ?? '',
-      produto: ProdutoModel.fromMap(map['produto']),
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
-      endAt: map['endAt'] != null
-          ? DateTime.fromMillisecondsSinceEpoch(map['endAt'])
-          : null,
-      produtos: List<PedidoProdutoModel>.from(
-        map['idPedidosProdutos']?.map(
-          (x) => FirestoreClient.pedidos.getProdutoByPedidoId(
-            x['pedidoId'],
-            x['produtoId'],
-          ),
-        ),
-      ),
-      freezed: map['freezed'] != null
-          ? OrdemFreezedModel.fromMap(map['freezed'])
-          : OrdemFreezedModel.static().copyWith(),
-      beltIndex: map['beltIndex'],
-      materiaPrima: map['materiaPrima'] != null
-          ? MateriaPrimaModel.fromMap(map['materiaPrima'])
-          : null,
-      isArchived: map['isArchived'] ?? false,
+      produto: ProdutoModel.fromMap(map['produto'] ?? map['produto_raw']),
+      createdAt: map['createdAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'])
+          : map['created_at'] != null
+              ? DateTime.parse(map['created_at'])
+              : DateTime.now(),
       updatedAt: map['updatedAt'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['updatedAt'])
-          : DateTime.now(),
-      history: map['history'] != null
-          ? List<OrdemHistoryModel>.from(
-              map['history'].map((e) => OrdemHistoryModel.fromJson(e)),
-            )
-          : [],
-    );
-  }
-
-  factory OrdemModel.empty() => OrdemModel(
-        id: '',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-        produto: ProdutoModel.empty(),
-        produtos: [],
-        freezed: OrdemFreezedModel.static(),
-        history: [],
-      );
-
-  factory OrdemModel.fromSupabaseMap(Map<String, dynamic> map) {
-    return OrdemModel(
-      id: map['id'] ?? '',
-      createdAt: DateTime.parse(map['created_at']),
-      updatedAt: map['updated_at'] != null
-          ? DateTime.parse(map['updated_at'])
-          : DateTime.now(),
-      endAt: map['end_at'] != null ? DateTime.parse(map['end_at']) : null,
-      produto: ProdutoModel.fromMap(
-          map['produto_raw'] is String ? json.decode(map['produto_raw']) : map['produto_raw']),
-      produtos: [],
+          : map['updated_at'] != null
+              ? DateTime.parse(map['updated_at'])
+              : DateTime.now(),
+      endAt: map['endAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['endAt'])
+          : map['end_at'] != null
+              ? DateTime.parse(map['end_at'])
+              : null,
+      produtos: [], // Será preenchido pelo idPedidosProdutosRefs via getter resiliente
       idPedidosProdutosRefs: () {
-        if (map['id_pedidos_produtos'] == null) return <Map<String, String>>[];
+        final rawList = map['idPedidosProdutos'] ?? map['id_pedidos_produtos'];
+        if (rawList == null) return <Map<String, String>>[];
         try {
-          final rawList = map['id_pedidos_produtos'] is String
-              ? json.decode(map['id_pedidos_produtos'])
-              : map['id_pedidos_produtos'];
-          
-          if (rawList is! List) return <Map<String, String>>[];
-
-          return rawList.map((x) {
+          final List list = rawList is String ? json.decode(rawList) : rawList;
+          return list.map((x) {
             final mapx = Map<String, dynamic>.from(x);
-            final pedidoId = (mapx['pedidoId'] ?? mapx['pedido_id'] ?? '').toString();
-            final produtoId = (mapx['produtoId'] ?? mapx['produto_id'] ?? '').toString();
             return {
-              'pedidoId': pedidoId,
-              'produtoId': produtoId,
+              'pedidoId': (mapx['pedidoId'] ?? mapx['pedido_id'] ?? '').toString(),
+              'produtoId': (mapx['produtoId'] ?? mapx['produto_id'] ?? '').toString(),
             };
           }).toList();
         } catch (_) {
@@ -294,27 +252,38 @@ class OrdemModel {
           ? OrdemFreezedModel.fromMap(
               map['freezed'] is String ? json.decode(map['freezed']) : map['freezed'])
           : OrdemFreezedModel.static().copyWith(),
-      isArchived: map['is_archived'] ?? false,
-      beltIndex: map['belt_index'],
-      materiaPrima: map['materia_prima_raw'] != null
-          ? MateriaPrimaModel.fromMap(map['materia_prima_raw'] is String
-              ? json.decode(map['materia_prima_raw'])
-              : map['materia_prima_raw'])
+      isArchived: map['isArchived'] ?? map['is_archived'] ?? false,
+      beltIndex: map['beltIndex'] ?? map['belt_index'],
+      materiaPrima: (map['materiaPrima'] ?? map['materia_prima_raw']) != null
+          ? MateriaPrimaModel.fromMap(
+              (map['materiaPrima'] ?? map['materia_prima_raw']) is String
+                  ? json.decode(map['materiaPrima'] ?? map['materia_prima_raw'])
+                  : (map['materiaPrima'] ?? map['materia_prima_raw']))
           : null,
       history: () {
-        if (map['history'] == null) return <OrdemHistoryModel>[];
+        final rawList = map['history'];
+        if (rawList == null) return <OrdemHistoryModel>[];
         try {
-          final rawList = map['history'] is String
-              ? json.decode(map['history'])
-              : map['history'];
-          if (rawList is! List) return <OrdemHistoryModel>[];
-          return rawList.map((e) => OrdemHistoryModel.fromJson(e)).toList();
+          final List list = rawList is String ? json.decode(rawList) : rawList;
+          return list.map((e) => OrdemHistoryModel.fromJson(e)).toList();
         } catch (_) {
           return <OrdemHistoryModel>[];
         }
       }(),
     );
   }
+
+  factory OrdemModel.fromSupabaseMap(Map<String, dynamic> map) => OrdemModel.fromMap(map);
+
+  factory OrdemModel.empty() => OrdemModel(
+        id: '',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        produto: ProdutoModel.empty(),
+        produtos: [],
+        freezed: OrdemFreezedModel.static(),
+        history: [],
+      );
 
   Map<String, dynamic> toSupabaseMap() => {
     'id': id,
