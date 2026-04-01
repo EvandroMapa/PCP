@@ -1,4 +1,5 @@
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/models/automatizacao_item_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
@@ -19,51 +20,57 @@ class AutomatizacaoController {
 
   Future<void> onSetStepByPedidoStatus(List<PedidoModel> pedidos) async {
     for (PedidoModel pedido in pedidos) {
-      StepModel? step;
+      AutomatizacaoItemModel? item;
       switch (pedido.status) {
         case PedidoStatus.aguardandoProducaoCD:
-          step = automatizacaoConfig.produtoPedidoSeparado.step;
+          item = automatizacaoConfig.produtoPedidoSeparado;
           break;
         case PedidoStatus.produzindoCD:
-          step = automatizacaoConfig.produzindoCDPedido.step;
+          item = automatizacaoConfig.produzindoCDPedido;
           break;
         case PedidoStatus.aguardandoProducaoCDA:
-          step = automatizacaoConfig.aguardandoArmacaoPedido.step;
+          item = automatizacaoConfig.aguardandoArmacaoPedido;
           break;
         case PedidoStatus.produzindoCDA:
-          step = automatizacaoConfig.produzindoArmacaoPedido.step;
+          item = automatizacaoConfig.produzindoArmacaoPedido;
           break;
         case PedidoStatus.pronto:
           switch (pedido.tipo) {
             case PedidoTipo.cd:
-              step = automatizacaoConfig.prontoCDPedido.step;
+              item = automatizacaoConfig.prontoCDPedido;
               break;
             case PedidoTipo.cda:
-              step = automatizacaoConfig.prontoArmacaoPedido.step;
+              item = automatizacaoConfig.prontoArmacaoPedido;
             default:
           }
-
           break;
         default:
       }
 
-      if (step != null) {
-        if (pedido.step.index >= step.index) {
-          step = null;
+      if (item != null) {
+        List<StepModel> stepsToAdd = [];
+        if (item.steps != null && item.steps!.isNotEmpty) {
+          stepsToAdd = item.steps!;
+        } else if (item.step != null) {
+          stepsToAdd = [item.step!];
         }
-      }
 
-      if (step != null) {
-        final stepById = FirestoreClient.steps.getById(step.id);
-        pedido.steps.add(PedidoStepModel.create(stepById));
-        pedidoCtrl.onAddHistory(
-          pedido: pedido,
-          data: stepById,
-          type: PedidoHistoryType.step,
-          action: PedidoHistoryAction.update,
-          isFromAutomatizacao: true,
-        );
-        await FirestoreClient.pedidos.update(pedido);
+        for (var step in stepsToAdd) {
+          if (pedido.step.index < step.index) {
+            final stepById = FirestoreClient.steps.getById(step.id);
+            pedido.steps.add(PedidoStepModel.create(stepById));
+            pedidoCtrl.onAddHistory(
+              pedido: pedido,
+              data: stepById,
+              type: PedidoHistoryType.step,
+              action: PedidoHistoryAction.update,
+              isFromAutomatizacao: true,
+            );
+          }
+        }
+        if (stepsToAdd.isNotEmpty) {
+          await FirestoreClient.pedidos.update(pedido);
+        }
       }
     }
   }

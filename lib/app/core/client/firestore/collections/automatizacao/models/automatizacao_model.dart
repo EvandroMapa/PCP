@@ -149,38 +149,47 @@ class AutomatizacaoModel {
         criacaoPedido: AutomatizacaoItemModel(
           type: AutomatizacaoItemType.CRIACAO_PEDIDO,
           step: null,
+          steps: [],
         ),
         produtoPedidoSeparado: AutomatizacaoItemModel(
           type: AutomatizacaoItemType.PRODUTO_PEDIDO_SEPARADO,
           step: null,
+          steps: [],
         ),
         produzindoCDPedido: AutomatizacaoItemModel(
           type: AutomatizacaoItemType.PRODUZINDO_CD_PEDIDO,
           step: null,
+          steps: [],
         ),
         prontoCDPedido: AutomatizacaoItemModel(
           type: AutomatizacaoItemType.PRONTO_CD_PEDIDO,
           step: null,
+          steps: [],
         ),
         aguardandoArmacaoPedido: AutomatizacaoItemModel(
           type: AutomatizacaoItemType.AGUARDANDO_ARMACAO_PEDIDO,
           step: null,
+          steps: [],
         ),
         produzindoArmacaoPedido: AutomatizacaoItemModel(
           type: AutomatizacaoItemType.PRODUZINDO_ARMACAO_PEDIDO,
           step: null,
+          steps: [],
         ),
         prontoArmacaoPedido: AutomatizacaoItemModel(
           type: AutomatizacaoItemType.PRONTO_ARMACAO_PEDIDO,
           step: null,
+          steps: [],
         ),
         naoMostrarNoCalendario: AutomatizacaoItemModel(
           type: AutomatizacaoItemType.NAO_MOSTRAR_NO_CALENDARIO,
           step: null,
+          steps: [],
         ),
         removerListaPrioridade: AutomatizacaoItemModel(
           type: AutomatizacaoItemType.REMOVER_LISTA_PRIORIDADE,
           step: null,
+          steps: [],
         ),
       );
 }
