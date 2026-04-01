@@ -116,7 +116,8 @@ class OrdemController {
       final pedidoProdutos = pedido.produtos
           .where(
             (e) =>
-                e.status.status == PedidoProdutoStatus.separado &&
+                (e.status.status == PedidoProdutoStatus.separado ||
+                    e.status.status == PedidoProdutoStatus.aguardandoProducao) &&
                 e.produto.id == produto.id,
           )
           .toList();
