@@ -1,4 +1,3 @@
-import 'package:aco_plus/app/core/models/service_model.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
@@ -20,13 +19,16 @@ class AppController {
   Future<void> onInit() async {
     if (isInitialized) return;
     isInitialized = true;
-    await Service.initAplicationServices();
     await usuarioCtrl.getCurrentUser();
     await kanbanCtrl.onInit();
     pedidoCtrl.onInit();
-    precacheImage(
-      const AssetImage('assets/images/kanban_background.png'),
-      context,
-    );
+    try {
+      if (key.currentState?.context != null) {
+        precacheImage(
+          const AssetImage('assets/images/kanban_background.png'),
+          key.currentState!.context,
+        );
+      }
+    } catch (_) {}
   }
 }
