@@ -86,7 +86,11 @@ class ClienteSupabaseCollection extends ClienteCollection {
   @override
   Future<ClienteModel?> add(ClienteModel model) async {
     try {
-      await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      final map = model.toSupabaseMap();
+      if (model.codigo == 0) {
+        map.remove('codigo');
+      }
+      await SupabaseService.client.from(tableName).insert(map);
       if (model.obras.isNotEmpty) {
         await SupabaseService.client.from(obraTableName).insert(
             model.obras.map((e) => e.toSupabaseMap(model.id)).toList());

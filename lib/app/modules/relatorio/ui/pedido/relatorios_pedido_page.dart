@@ -32,7 +32,7 @@ class RelatoriosPedidoPage extends StatefulWidget {
 class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
   @override
   void initState() {
-    setWebTitle('Consumo');
+    setWebTitle('AçoPlus - Relatório de Consumo');
     relatorioCtrl.pedidoViewModelStream.add(RelatorioPedidoViewModel());
     relatorioCtrl.onCreateRelatorioPedido();
     WidgetsBinding.instance.addPostFrameCallback((_) {

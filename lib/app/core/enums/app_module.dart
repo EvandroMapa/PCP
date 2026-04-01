@@ -117,7 +117,7 @@ extension AppModuleExt on AppModule {
       case AppModule.ordemRelatorio:
         return 'Ordens de Produção';
       case AppModule.pedidoRelatorio:
-        return 'Pedidos';
+        return 'Relatório de Consumo';
       case AppModule.producaoRelatorio:
         return 'Produção';
       case AppModule.steps:

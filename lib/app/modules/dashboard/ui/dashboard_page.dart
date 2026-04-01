@@ -40,7 +40,7 @@ class DashboardPage extends StatefulWidget {
 class DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
-    setWebTitle('Dashboard');
+    setWebTitle('AçoPlus - Dashboard');
     super.initState();
   }
 
@@ -545,8 +545,11 @@ class DashboardPageState extends State<DashboardPage> {
               ),
               child: ListView.builder(
                 itemCount: ordensFiltradas.length,
-                itemBuilder: (_, i) =>
-                    _ordemProducaoItemWidget(context, ordensFiltradas[i]),
+                itemBuilder: (_, i) => _ordemProducaoItemWidget(
+                  context,
+                  ordensFiltradas[i],
+                  i,
+                ),
               ),
             ),
           ),
@@ -558,26 +561,28 @@ class DashboardPageState extends State<DashboardPage> {
   Widget _ordemProducaoItemWidget(
     BuildContext context,
     OrdemModel ordem,
-  ) => InkWell(
-    onTap: () => push(context, OrdemPage(ordem.id)),
-    child: Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FCFC),
-        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
-      ),
-      child: Stack(
-        children: [
-          Container(
-            color: ordem.freezed.isFreezed
-                ? Colors.grey[200]!
-                : const Color(0xFFF8FCFC),
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Text(
-                  ordem.beltIndex != null ? '${ordem.beltIndex! + 1}º' : '-',
-                  style: AppCss.mediumBold,
-                ),
+    int index,
+  ) =>
+      InkWell(
+        onTap: () => push(context, OrdemPage(ordem.id)),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FCFC),
+            border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+          ),
+          child: Stack(
+            children: [
+              Container(
+                color: ordem.freezed.isFreezed
+                    ? Colors.grey[200]!
+                    : const Color(0xFFF8FCFC),
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Text(
+                      '${index + 1}º',
+                      style: AppCss.mediumBold,
+                    ),
                 const W(16),
                 Expanded(
                   child: Column(
