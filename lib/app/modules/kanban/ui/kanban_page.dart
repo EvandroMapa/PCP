@@ -19,7 +19,8 @@ import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 
 class KanbanPage extends StatefulWidget {
-  const KanbanPage({super.key});
+  final bool standalone;
+  const KanbanPage({this.standalone = false, super.key});
 
   @override
   State<KanbanPage> createState() => _KanbanPageState();
@@ -38,7 +39,7 @@ class _KanbanPageState extends State<KanbanPage> {
 
   @override
   void initState() {
-    setWebTitle('Kanban');
+    if (!widget.standalone) setWebTitle('Kanban');
     kanbanCtrl.onInit().then((_) {
       pedidoStream = FirestoreClient.pedidos.pedidosUnarchivedsStream.listen
           .listen((e) {
@@ -53,7 +54,7 @@ class _KanbanPageState extends State<KanbanPage> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamOut(
+    Widget body = StreamOut(
       loading: const KanbanBodyShimmerWidget(),
       stream: kanbanCtrl.utilsStream.listen,
       builder: (context, utils) => StreamBuilder<AutomatizacaoModel>(
@@ -64,5 +65,12 @@ class _KanbanPageState extends State<KanbanPage> {
         },
       ),
     );
+    if (widget.standalone) {
+      return Scaffold(
+        appBar: const KanbanTopBarWidget(standalone: true),
+        body: body,
+      );
+    }
+    return body;
   }
 }

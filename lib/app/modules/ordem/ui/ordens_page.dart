@@ -26,7 +26,8 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 class OrdensPage extends StatefulWidget {
-  const OrdensPage({super.key});
+  final bool standalone;
+  const OrdensPage({this.standalone = false, super.key});
 
   @override
   State<OrdensPage> createState() => _OrdensPageState();
@@ -35,47 +36,87 @@ class OrdensPage extends StatefulWidget {
 class _OrdensPageState extends State<OrdensPage> {
   @override
   void initState() {
-    setWebTitle('Ordens');
+    if (!widget.standalone) setWebTitle('Ordens');
     ordemCtrl.onInit();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      baseCtrl.appBarActionsStream.add(usuario.isOperador
-          ? []
-          : [
-              Tooltip(
-                message: 'Ordens Arquivadas',
-                child: IconButton(
-                  onPressed: () => push(context, const OrdensArquivadasPage()),
-                  icon: const Icon(
-                    Icons.domain_verification,
-                    color: Colors.white,
-                  ),
+    if (!widget.standalone) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        baseCtrl.appBarActionsStream.add(usuario.isOperador
+            ? []
+            : [
+                IconButton(
+                  onPressed: () => openInNewTab('/ordens'),
+                  icon: const Icon(Icons.open_in_new, color: Colors.white),
+                  tooltip: 'Abrir em nova aba',
                 ),
-              ),
-              Tooltip(
-                message: 'Filtro',
-                child: IconButton(
-                  onPressed: () {
-                    ordemCtrl.utils.showFilter = !ordemCtrl.utils.showFilter;
-                    ordemCtrl.utilsStream.update();
-                  },
-                  icon: const Icon(Icons.sort, color: Colors.white),
-                ),
-              ),
-              if (usuario.permission.ordem.contains(UserPermissionType.create))
                 Tooltip(
-                  message: 'Nova ordem',
+                  message: 'Ordens Arquivadas',
                   child: IconButton(
-                    onPressed: () => push(context, const OrdemCreatePage()),
-                    icon: const Icon(Icons.add, color: Colors.white),
+                    onPressed: () => push(context, const OrdensArquivadasPage()),
+                    icon: const Icon(
+                      Icons.domain_verification,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-            ]);
-    });
+                Tooltip(
+                  message: 'Filtro',
+                  child: IconButton(
+                    onPressed: () {
+                      ordemCtrl.utils.showFilter = !ordemCtrl.utils.showFilter;
+                      ordemCtrl.utilsStream.update();
+                    },
+                    icon: const Icon(Icons.sort, color: Colors.white),
+                  ),
+                ),
+                if (usuario.permission.ordem.contains(UserPermissionType.create))
+                  Tooltip(
+                    message: 'Nova ordem',
+                    child: IconButton(
+                      onPressed: () => push(context, const OrdemCreatePage()),
+                      icon: const Icon(Icons.add, color: Colors.white),
+                    ),
+                  ),
+              ]);
+      });
+    }
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.standalone) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Ordens', style: TextStyle(color: Colors.white)),
+          backgroundColor: AppColors.primaryMain,
+          actions: usuario.isOperador
+              ? []
+              : [
+                  IconButton(
+                    onPressed: () => push(context, const OrdensArquivadasPage()),
+                    icon: const Icon(
+                      Icons.domain_verification,
+                      color: Colors.white,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      ordemCtrl.utils.showFilter = !ordemCtrl.utils.showFilter;
+                      ordemCtrl.utilsStream.update();
+                    },
+                    icon: const Icon(Icons.sort, color: Colors.white),
+                  ),
+                  if (usuario.permission.ordem
+                      .contains(UserPermissionType.create))
+                    IconButton(
+                      onPressed: () => push(context, const OrdemCreatePage()),
+                      icon: const Icon(Icons.add, color: Colors.white),
+                    ),
+                ],
+        ),
+        body: body(),
+      );
+    }
     return body();
   }
 

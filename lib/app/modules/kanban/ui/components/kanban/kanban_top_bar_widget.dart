@@ -16,19 +16,21 @@ import 'package:info_popup/info_popup.dart';
 
 class KanbanTopBarWidget extends StatelessWidget
     implements PreferredSizeWidget {
-  const KanbanTopBarWidget({super.key});
+  final bool standalone;
+  const KanbanTopBarWidget({this.standalone = false, super.key});
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
-    return const _KanbanTopbarConcreteWidget();
+    return _KanbanTopbarConcreteWidget(standalone: standalone);
   }
 }
 
 class _KanbanTopbarConcreteWidget extends StatefulWidget {
-  const _KanbanTopbarConcreteWidget();
+  final bool standalone;
+  const _KanbanTopbarConcreteWidget({this.standalone = false});
 
   @override
   State<_KanbanTopbarConcreteWidget> createState() =>
@@ -45,12 +47,14 @@ class _KanbanTopbarConcreteWidgetState
       stream: kanbanCtrl.utilsStream.listen,
       builder: (_, utils) => AppBar(
         iconTheme: const IconThemeData(color: Colors.white, size: 20),
-        leading: Builder(
-          builder: (context) => IconButton(
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            icon: Icon(Icons.menu, color: AppColors.white),
-          ),
-        ),
+        leading: widget.standalone
+            ? null
+            : Builder(
+                builder: (context) => IconButton(
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                  icon: Icon(Icons.menu, color: AppColors.white),
+                ),
+              ),
         title: Text(
           'Kanban',
           style: AppCss.largeBold.setColor(AppColors.white),
@@ -59,6 +63,14 @@ class _KanbanTopbarConcreteWidgetState
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (!widget.standalone) ...[
+                IconButton(
+                  onPressed: () => openInNewTab('/kanban'),
+                  icon: Icon(Icons.open_in_new, color: AppColors.white),
+                  tooltip: 'Abrir em nova aba',
+                ),
+                const W(4),
+              ],
               InfoPopupWidget(
                 onControllerCreated: (value) {
                   controller = value;

@@ -3,6 +3,8 @@ import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 
 const String empty = '';
 
@@ -65,4 +67,8 @@ void setWebTitle(String title) {
   SystemChrome.setApplicationSwitcherDescription(
     ApplicationSwitcherDescription(label: title),
   );
+}
+
+void openInNewTab(String path) {
+  html.window.open(path, '_blank');
 }
