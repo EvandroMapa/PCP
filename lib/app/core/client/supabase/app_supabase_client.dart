@@ -24,42 +24,46 @@ class AppSupabaseClient {
   static MateriaPrimaSupabaseCollection materiaPrima = MateriaPrimaSupabaseCollection();
 
   static Future<void> init() async {
-    // Start all collections in parallel for better performance
-    await Future.wait([
-      usuarios.start(),
-      clientes.start(),
-      steps.start(),
-      ordens.start(),
-      produtos.start(),
-      fabricantes.start(),
-      materiaPrima.start(),
-      pedidoArquivos.start(),
-      pedidoProdutos.start(),
-      BackendClient.tags.start(),
-      BackendClient.checklists.start(),
-      BackendClient.automatizacao.start(),
-      BackendClient.notificacoes.start(),
-      BackendClient.automacoes.start(),
-      VersionCollection().start(),
-    ]);
+    try {
+      // Start all collections in parallel for better performance
+      await Future.wait([
+        usuarios.start(),
+        clientes.start(),
+        steps.start(),
+        ordens.start(),
+        produtos.start(),
+        fabricantes.start(),
+        materiaPrima.start(),
+        pedidoArquivos.start(),
+        pedidoProdutos.start(),
+        BackendClient.tags.start(),
+        BackendClient.checklists.start(),
+        BackendClient.automatizacao.start(),
+        BackendClient.notificacoes.start(),
+        BackendClient.automacoes.start(),
+        VersionCollection().start(),
+      ]);
 
-    // Pedidos depends on clientes/steps for mapping, so start it after
-    await pedidos.start();
+      // Pedidos depends on clientes/steps for mapping, so start it after
+      await pedidos.start();
 
-    // Start real-time listeners
-    usuarios.listen();
-    clientes.listen();
-    steps.listen();
-    pedidos.listen();
-    ordens.listen();
-    materiaPrima.listen();
-    pedidoArquivos.listen();
-    pedidoProdutos.listen();
-    BackendClient.tags.listen();
-    BackendClient.checklists.listen();
-    BackendClient.automatizacao.listen();
-    BackendClient.notificacoes.listen();
-    BackendClient.automacoes.listen();
-    VersionCollection().listen();
+      // Start real-time listeners
+      usuarios.listen();
+      clientes.listen();
+      steps.listen();
+      pedidos.listen();
+      ordens.listen();
+      materiaPrima.listen();
+      pedidoArquivos.listen();
+      pedidoProdutos.listen();
+      BackendClient.tags.listen();
+      BackendClient.checklists.listen();
+      BackendClient.automatizacao.listen();
+      BackendClient.notificacoes.listen();
+      BackendClient.automacoes.listen();
+      VersionCollection().listen();
+    } catch (e) {
+      print('AppSupabaseClient: Critical error during init: $e');
+    }
   }
 }
