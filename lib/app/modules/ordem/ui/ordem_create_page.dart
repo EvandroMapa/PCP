@@ -190,40 +190,33 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
               if (form.produto != null)
                 Builder(
                   builder: (_) {
-                    List<PedidoProdutoModel> produtos = ordemCtrl
+                    final List<PedidoProdutoModel> produtos = ordemCtrl
                         .getPedidosPorProduto(
                           form.produto!,
                           ordem: widget.ordem,
-                        );
-                    produtos = produtos
+                        )
                         .where(
                           (produto) => !form.produtos
-                              .map((e) => e.id)
-                              .contains(produto.id),
+                              .any((e) => e.id == produto.id),
                         )
                         .toList();
 
-                    return Column(
-                      children: [
-                        for (PedidoProdutoModel produto in produtos)
-                          _itemProduto(
-                            isEnable: produto.isAvailable,
-                            produto: produto,
-                            check: form.produtos
-                                .map((e) => e.id)
-                                .contains(produto.id),
-                            onTap: () {
-                              form.produtos
-                                      .map((e) => e.id)
-                                      .contains(produto.id)
-                                  ? form.produtos.removeWhere(
-                                      (e) => e.id == produto.id,
-                                    )
-                                  : form.produtos.add(produto);
-                              ordemCtrl.formStream.update();
-                            },
-                          ),
-                      ],
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: produtos.length,
+                      itemBuilder: (context, index) {
+                        final produto = produtos[index];
+                        return _itemProduto(
+                          isEnable: produto.isAvailable,
+                          produto: produto,
+                          check: false, // Itens desta lista nunca estão no form.produtos (visto no filter acima)
+                          onTap: () {
+                            form.produtos.add(produto);
+                            ordemCtrl.formStream.update();
+                          },
+                        );
+                      },
                     );
                   },
                 ),

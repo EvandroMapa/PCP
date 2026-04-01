@@ -13,6 +13,7 @@ import 'package:aco_plus/app/core/enums/sort_type.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
 enum OrdemExportarPdfTipo { relatorio, etiquetas }
@@ -82,9 +83,10 @@ class OrdemCreateModel {
   OrdemCreateModel.edit(OrdemModel ordem) : id = ordem.id, isEdit = true {
     isCreate = false;
     createdAt = ordem.createdAt;
-    produto = FirestoreClient.produtos.data.firstWhere(
+    produto = FirestoreClient.produtos.data.firstWhereOrNull(
       (e) => e.id == ordem.produto.id,
-    );
+    ) ?? ProdutoModel.empty();
+    
     produtos = ordem.produtos
         .map(
           (e) =>

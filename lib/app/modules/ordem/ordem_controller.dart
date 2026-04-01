@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/enums/materia_prima_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/models/materia_prima_model.dart';
@@ -77,9 +78,14 @@ class OrdemController {
   OrdemCreateModel get form => formStream.value;
 
   void onInitCreatePage(OrdemModel? ordem) {
-    formStream.add(
-      ordem != null ? OrdemCreateModel.edit(ordem) : OrdemCreateModel(),
-    );
+    try {
+      formStream.add(
+        ordem != null ? OrdemCreateModel.edit(ordem) : OrdemCreateModel(),
+      );
+    } catch (e) {
+      log('Erro ao inicializar página de Ordem: $e');
+      formStream.add(OrdemCreateModel());
+    }
   }
 
   List<PedidoProdutoModel> getPedidosPorProduto(

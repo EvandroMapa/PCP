@@ -24,12 +24,22 @@ class OrdemModel {
 
   List<PedidoProdutoModel> get produtos {
     if (_idPedidosProdutosRefs.isNotEmpty) {
-      return _idPedidosProdutosRefs
-          .map((x) => BackendClient.pedidos.getProdutoByPedidoId(
-              x['pedidoId'] ?? '', x['produtoId'] ?? ''))
-          .toList()
-          .where((e) => e.cliente.id != '') // Filter out true NOTFOUND
-          .toList();
+      final List<PedidoProdutoModel> result = [];
+      for (var x in _idPedidosProdutosRefs) {
+        try {
+          final pedidoId = x['pedidoId'] ?? x['pedido_id'] ?? '';
+          final produtoId = x['produtoId'] ?? x['produto_id'] ?? '';
+          if (pedidoId.isEmpty || produtoId.isEmpty) continue;
+
+          final produto = BackendClient.pedidos.getProdutoByPedidoId(pedidoId, produtoId);
+          if (produto.cliente.id.isNotEmpty) {
+            result.add(produto);
+          }
+        } catch (_) {
+          // Ignora produtos que falham ao carregar para evitar trava na UI
+        }
+      }
+      return result;
     }
     return _produtosIniciais ?? [];
   }
