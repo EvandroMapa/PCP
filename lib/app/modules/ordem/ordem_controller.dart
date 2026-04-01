@@ -441,10 +441,15 @@ class OrdemController {
 
   StreamSubscription<OrdemModel>? subscription;
   void onInitPage(String ordemId) {
-    ordemStream.add(getOrdemById(ordemId));
-    subscription = FirestoreClient.ordens.listenById(ordemId).listen((ordem) {
+    try {
       ordemStream.add(getOrdemById(ordemId));
-    });
+      subscription = FirestoreClient.ordens.listenById(ordemId).listen((ordem) {
+        ordemStream.add(getOrdemById(ordemId));
+      });
+    } catch (e) {
+      log('Erro ao inicializar detalhes da ordem: $e');
+      ordemStream.add(OrdemModel.empty());
+    }
   }
 
   void onDisposePage() {
@@ -453,8 +458,12 @@ class OrdemController {
   }
 
   OrdemModel getOrdemById(String ordemId) {
-    final ordem = FirestoreClient.ordens.getById(ordemId);
-    return ordem;
+    try {
+      final ordem = FirestoreClient.ordens.data.firstWhereOrNull((e) => e.id == ordemId);
+      return ordem ?? OrdemModel.empty();
+    } catch (_) {
+      return OrdemModel.empty();
+    }
   }
 
   void setOrdem(OrdemModel ordem) {
