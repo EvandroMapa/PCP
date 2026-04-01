@@ -1,8 +1,4 @@
-import 'package:aco_plus/app/core/client/supabase/collections/cliente/cliente_supabase_collection.dart';
-import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_supabase_collection.dart';
-import 'package:aco_plus/app/core/client/supabase/collections/step/step_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_produto_supabase_collection.dart';
-import 'package:aco_plus/app/core/client/supabase/collections/usuario/usuario_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 
 // Original Firestore collection imports to avoid recursion via FirestoreClient
@@ -13,7 +9,6 @@ import 'package:aco_plus/app/core/client/firestore/collections/usuario/usuario_c
 import 'package:aco_plus/app/core/client/firestore/collections/tag/tag_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/ordem_collection.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automacoes_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/notificacao/notificacao_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/checklist/checklist_collection.dart';
@@ -43,7 +38,9 @@ class BackendClient {
 
   static PedidoProdutoSupabaseCollection get pedidoProdutos => AppSupabaseClient.pedidoProdutos;
 
-  static TagCollection get tags => TagCollection(); // Still firestore for now
+  static TagCollection get tags => type == BackendType.firestore
+      ? TagCollection()
+      : AppSupabaseClient.tags;
 
   static ProdutoCollection get produtos => type == BackendType.firestore
       ? ProdutoCollection()
@@ -57,12 +54,18 @@ class BackendClient {
       ? MateriaPrimaCollection()
       : AppSupabaseClient.materiaPrima;
 
-  static ChecklistCollection get checklists => ChecklistCollection(); // Still firestore for now
+  static ChecklistCollection get checklists => type == BackendType.firestore
+      ? ChecklistCollection()
+      : AppSupabaseClient.checklists;
 
-  static AutomatizacaoCollection get automatizacao => AutomatizacaoCollection(); // Still firestore for now
+  static AutomatizacaoCollection get automatizacao => type == BackendType.firestore
+      ? AutomatizacaoCollection()
+      : AppSupabaseClient.automatizacao;
 
-  static NotificacaoCollection get notificacoes => NotificacaoCollection(); // Still firestore for now
-  static AutomacoesCollection get automacoes => AutomacoesCollection();
+  static NotificacaoCollection get notificacoes => type == BackendType.firestore
+      ? NotificacaoCollection()
+      : AppSupabaseClient.notificacoes;
+
 
   static OrdemCollection get ordens => type == BackendType.firestore
       ? OrdemCollection()

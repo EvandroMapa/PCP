@@ -8,7 +8,11 @@ import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_arqu
 import 'package:aco_plus/app/core/client/supabase/collections/produto/produto_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/step/step_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/usuario/usuario_supabase_collection.dart';
-import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/tag/tag_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/checklist/checklist_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/automatizacao/automatizacao_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/notificacao/notificacao_supabase_collection.dart';
+
 import 'package:aco_plus/app/core/client/firestore/collections/version/version_collection.dart';
 
 class AppSupabaseClient {
@@ -22,6 +26,10 @@ class AppSupabaseClient {
   static ProdutoSupabaseCollection produtos = ProdutoSupabaseCollection();
   static FabricanteSupabaseCollection fabricantes = FabricanteSupabaseCollection();
   static MateriaPrimaSupabaseCollection materiaPrima = MateriaPrimaSupabaseCollection();
+  static TagSupabaseCollection tags = TagSupabaseCollection();
+  static ChecklistSupabaseCollection checklists = ChecklistSupabaseCollection();
+  static AutomatizacaoSupabaseCollection automatizacao = AutomatizacaoSupabaseCollection();
+  static NotificacaoSupabaseCollection notificacoes = NotificacaoSupabaseCollection();
 
   static Future<void> init() async {
     try {
@@ -36,11 +44,10 @@ class AppSupabaseClient {
         materiaPrima.start(),
         pedidoArquivos.start(),
         pedidoProdutos.start(),
-        BackendClient.tags.start(),
-        BackendClient.checklists.start(),
-        BackendClient.automatizacao.start(),
-        BackendClient.notificacoes.start(),
-        BackendClient.automacoes.start(),
+        tags.start(),
+        checklists.start(),
+        automatizacao.start(),
+        notificacoes.start(),
         VersionCollection().start(),
       ]);
 
@@ -56,11 +63,10 @@ class AppSupabaseClient {
       materiaPrima.listen();
       pedidoArquivos.listen();
       pedidoProdutos.listen();
-      BackendClient.tags.listen();
-      BackendClient.checklists.listen();
-      BackendClient.automatizacao.listen();
-      BackendClient.notificacoes.listen();
-      BackendClient.automacoes.listen();
+      tags.listen();
+      checklists.listen();
+      automatizacao.listen();
+      notificacoes.listen();
       VersionCollection().listen();
     } catch (e) {
       print('AppSupabaseClient: Critical error during init: $e');

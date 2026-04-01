@@ -7,9 +7,11 @@ class TagCollection {
   static final TagCollection _instance = TagCollection._();
 
   TagCollection._();
+  TagCollection.base(); // New constructor for inheritance
 
   factory TagCollection() => _instance;
   String name = 'tags';
+  String get tableName => name;
 
   AppStream<List<TagModel>> dataStream = AppStream<List<TagModel>>.seed([]);
   List<TagModel> get data => dataStream.value;

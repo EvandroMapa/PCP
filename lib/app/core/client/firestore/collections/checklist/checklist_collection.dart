@@ -6,9 +6,11 @@ class ChecklistCollection {
   static final ChecklistCollection _instance = ChecklistCollection._();
 
   ChecklistCollection._();
+  ChecklistCollection.base(); // New constructor for inheritance
 
   factory ChecklistCollection() => _instance;
   String name = 'checklist';
+  String get tableName => name;
 
   AppStream<List<ChecklistModel>> dataStream =
       AppStream<List<ChecklistModel>>.seed([]);

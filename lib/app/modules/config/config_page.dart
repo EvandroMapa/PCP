@@ -1,7 +1,7 @@
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
-import 'package:aco_plus/app/modules/automatizacao/ui/automatizacao_page.dart';
+
 import 'package:aco_plus/app/modules/backup/ui/backups_page.dart';
 import 'package:aco_plus/app/modules/checklist/ui/checklists_page.dart';
 import 'package:aco_plus/app/modules/step/ui/steps_page.dart';
@@ -75,16 +75,7 @@ class _ConfigPageState extends State<ConfigPage> {
             ),
           ),
           const Divisor(),
-          ListTile(
-            onTap: () => push(context, const AutomatizacaoPage()),
-            title: const Text('Automatização de Etapas'),
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Colors.grey[400]!,
-            ),
-          ),
-          const Divisor(),
+
           ListTile(
             onTap: () => push(context, const TagsPage()),
             title: const Text('Etiquetas'),

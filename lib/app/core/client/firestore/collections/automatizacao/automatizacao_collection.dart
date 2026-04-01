@@ -10,9 +10,11 @@ class AutomatizacaoCollection {
   static final AutomatizacaoCollection _instance = AutomatizacaoCollection._();
 
   AutomatizacaoCollection._();
+  AutomatizacaoCollection.base(); // New constructor for inheritance
 
   factory AutomatizacaoCollection() => _instance;
   String name = 'automatizacao';
+  String get tableName => name;
 
   AppStream<AutomatizacaoModel> dataStream =
       AppStream<AutomatizacaoModel>.seed(AutomatizacaoModel.empty);

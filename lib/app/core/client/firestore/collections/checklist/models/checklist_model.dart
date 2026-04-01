@@ -36,6 +36,31 @@ class ChecklistModel {
     );
   }
 
+  Map<String, dynamic> toSupabaseMap() {
+    return {
+      'id': id,
+      'nome': nome,
+      'checklist': checklist.map((x) => x.toMap()).toList(),
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+
+  factory ChecklistModel.fromSupabaseMap(Map<String, dynamic> map) {
+    return ChecklistModel(
+      id: map['id'] ?? '',
+      nome: map['nome'] ?? '',
+      checklist: map['checklist'] != null
+          ? List<CheckItemModel>.from((map['checklist'] is String
+                  ? json.decode(map['checklist'])
+                  : map['checklist'])
+              .map((x) => CheckItemModel.fromMap(x)))
+          : [],
+      createdAt: map['created_at'] != null
+          ? DateTime.parse(map['created_at'])
+          : DateTime.now(),
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -49,10 +74,14 @@ class ChecklistModel {
     return ChecklistModel(
       id: map['id'] ?? '',
       nome: map['nome'] ?? '',
-      checklist: List<CheckItemModel>.from(
-        map['checklist']?.map((x) => CheckItemModel.fromMap(x)),
-      ),
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
+      checklist: map['checklist'] != null
+          ? List<CheckItemModel>.from(
+              map['checklist']?.map((x) => CheckItemModel.fromMap(x)),
+            )
+          : [],
+      createdAt: map['createdAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'])
+          : DateTime.now(),
     );
   }
 

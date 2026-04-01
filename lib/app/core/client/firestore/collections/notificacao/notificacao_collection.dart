@@ -8,9 +8,11 @@ class NotificacaoCollection {
   static final NotificacaoCollection _instance = NotificacaoCollection._();
 
   NotificacaoCollection._();
+  NotificacaoCollection.base(); // New constructor for inheritance
 
   factory NotificacaoCollection() => _instance;
   String name = 'notificacoes';
+  String get tableName => name;
 
   AppStream<List<NotificacaoModel>> dataStream =
       AppStream<List<NotificacaoModel>>.seed([]);

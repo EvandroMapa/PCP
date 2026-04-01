@@ -24,6 +24,28 @@ class TagModel {
     createdAt: DateTime.now(),
   );
 
+  Map<String, dynamic> toSupabaseMap() {
+    return {
+      'id': id,
+      'nome': nome,
+      'descricao': descricao,
+      'color': color.value,
+      'created_at': createdAt.toIso8601String(),
+    };
+  }
+
+  factory TagModel.fromSupabaseMap(Map<String, dynamic> map) {
+    return TagModel(
+      id: map['id'] ?? '',
+      nome: map['nome'] ?? '',
+      descricao: map['descricao'] ?? '',
+      color: Color(int.tryParse(map['color'].toString()) ?? 0),
+      createdAt: map['created_at'] != null
+          ? DateTime.parse(map['created_at'])
+          : DateTime.now(),
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -39,8 +61,10 @@ class TagModel {
       id: map['id'] ?? '',
       nome: map['nome'] ?? '',
       descricao: map['descricao'] ?? '',
-      color: Color(map['color']),
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
+      color: Color(map['color'] ?? 0),
+      createdAt: map['createdAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'])
+          : DateTime.now(),
     );
   }
 

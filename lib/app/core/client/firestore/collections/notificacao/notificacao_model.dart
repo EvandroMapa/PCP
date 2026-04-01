@@ -51,6 +51,32 @@ class NotificacaoModel {
     );
   }
 
+  Map<String, dynamic> toSupabaseMap() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'viewed': viewed,
+      'created_at': createdAt.toIso8601String(),
+      'user_id': userId,
+      'payload': payload,
+    };
+  }
+
+  factory NotificacaoModel.fromSupabaseMap(Map<String, dynamic> map) {
+    return NotificacaoModel(
+      id: map['id'] ?? '',
+      title: map['title'] ?? '',
+      description: map['description'] ?? '',
+      viewed: map['viewed'] ?? true,
+      createdAt: map['created_at'] != null
+          ? DateTime.parse(map['created_at'])
+          : DateTime.now(),
+      userId: map['user_id'] ?? '',
+      payload: map['payload'] ?? '',
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -69,7 +95,9 @@ class NotificacaoModel {
       title: map['title'] ?? '',
       description: map['description'] ?? '',
       viewed: map['viewed'] ?? true,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
+      createdAt: map['createdAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'])
+          : DateTime.now(),
       userId: map['userId'] ?? '',
       payload: map['payload'] ?? '',
     );
