@@ -113,11 +113,9 @@ extension AppModuleExt on AppModule {
       case AppModule.pedidos:
         return 'Pedidos';
       case AppModule.ordens:
-        return (usuarioCtrl.usuario?.isNotOperador ?? false)
-            ? 'Lista'
-            : 'Ordens';
+        return 'Ordens de Produção';
       case AppModule.ordemRelatorio:
-        return 'Ordens';
+        return 'Ordens de Produção';
       case AppModule.pedidoRelatorio:
         return 'Pedidos';
       case AppModule.producaoRelatorio:

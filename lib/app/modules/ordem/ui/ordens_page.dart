@@ -36,7 +36,7 @@ class OrdensPage extends StatefulWidget {
 class _OrdensPageState extends State<OrdensPage> {
   @override
   void initState() {
-    if (!widget.standalone) setWebTitle('Ordens');
+    if (!widget.standalone) setWebTitle('AçoPlus - Ordens de Produção');
     ordemCtrl.onInit();
     if (!widget.standalone) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -53,7 +53,7 @@ class _OrdensPageState extends State<OrdensPage> {
                   child: IconButton(
                     onPressed: () => push(context, const OrdensArquivadasPage()),
                     icon: const Icon(
-                      Icons.domain_verification,
+                      Icons.document_scanner,
                       color: Colors.white,
                     ),
                   ),
@@ -87,7 +87,7 @@ class _OrdensPageState extends State<OrdensPage> {
     if (widget.standalone) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Ordens', style: TextStyle(color: Colors.white)),
+          title: const Text('Ordens de Produção', style: TextStyle(color: Colors.white)),
           backgroundColor: AppColors.primaryMain,
           actions: usuario.isOperador
               ? []

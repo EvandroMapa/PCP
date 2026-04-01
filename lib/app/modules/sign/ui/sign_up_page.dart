@@ -35,7 +35,7 @@ class SignUpPageState extends State<SignUpPage> {
               const H(20),
               Image.asset('assets/images/logo.png', width: 100),
               const H(20),
-              Text('AÇO+', style: AppCss.largeBold.setSize(16)),
+              Text('AçoPlus', style: AppCss.largeBold.setSize(16)),
               const H(20),
               AppField(
                 controller: email,

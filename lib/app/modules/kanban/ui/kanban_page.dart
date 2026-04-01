@@ -39,7 +39,7 @@ class _KanbanPageState extends State<KanbanPage> {
 
   @override
   void initState() {
-    if (!widget.standalone) setWebTitle('Kanban');
+    if (!widget.standalone) setWebTitle('AçoPlus - Kanban');
     kanbanCtrl.onInit().then((_) {
       pedidoStream = FirestoreClient.pedidos.pedidosUnarchivedsStream.listen
           .listen((e) {

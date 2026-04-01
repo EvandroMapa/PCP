@@ -23,7 +23,7 @@ class SplashPage extends StatelessWidget {
                 Image.asset('assets/images/logo.png', width: 60),
                 const H(20),
                 Text(
-                  'AÇO+',
+                  'AçoPlus',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const H(20),

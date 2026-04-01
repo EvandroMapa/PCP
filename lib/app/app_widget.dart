@@ -36,7 +36,7 @@ class _AppState extends State<App> {
           color: AppColors.primaryMain,
           theme: AppTheme.theme,
           debugShowCheckedModeBanner: false,
-          title: 'AÇO+',
+          title: 'AçoPlus',
           routeInformationParser: RouteConfig.config.routeInformationParser,
           routeInformationProvider: RouteConfig.config.routeInformationProvider,
           routerDelegate: RouteConfig.config.routerDelegate,
