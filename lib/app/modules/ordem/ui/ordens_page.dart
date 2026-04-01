@@ -36,7 +36,7 @@ class OrdensPage extends StatefulWidget {
 class _OrdensPageState extends State<OrdensPage> {
   @override
   void initState() {
-    if (!widget.standalone) setWebTitle('AçoPlus - Ordens de Produção');
+    if (!widget.standalone) setWebTitle('Aço Plus - Ordens');
     ordemCtrl.onInit();
     if (!widget.standalone) {
       WidgetsBinding.instance.addPostFrameCallback((_) {

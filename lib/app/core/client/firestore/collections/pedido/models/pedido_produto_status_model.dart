@@ -57,7 +57,7 @@ class PedidoProdutoStatusModel {
   factory PedidoProdutoStatusModel.empty() => PedidoProdutoStatusModel(
     createdAt: DateTime.now(),
     id: HashService.get,
-    status: PedidoProdutoStatus.pronto,
+    status: PedidoProdutoStatus.aguardandoProducao,
   );
 
   PedidoProdutoStatus getStatusMinified() {
