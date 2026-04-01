@@ -46,16 +46,6 @@ class ProdutoModel {
     };
   }
 
-  factory ProdutoModel.fromSupabaseMap(Map<String, dynamic> map) {
-    return ProdutoModel(
-      id: map['id'] ?? '',
-      nome: map['nome'] ?? '',
-      descricao: map['descricao'] ?? '',
-      massaFinal: double.tryParse(map['massa_final'].toString()) ?? 0.0,
-      codigoFinanceiro: map['codigo_financeiro']?.toString() ?? '',
-    );
-  }
-
   Map<String, dynamic> toSupabaseMap() {
     return {
       'id': id,
@@ -71,10 +61,12 @@ class ProdutoModel {
       id: map['id'] ?? '',
       nome: map['nome'] ?? '',
       descricao: map['descricao'] ?? '',
-      massaFinal: double.tryParse(map['massaFinal']?.toString() ?? '0') ?? 0.0,
-      codigoFinanceiro: map['codigoFinanceiro']?.toString() ?? '',
+      massaFinal: double.tryParse((map['massaFinal'] ?? map['massa_final'] ?? '0').toString()) ?? 0.0,
+      codigoFinanceiro: (map['codigoFinanceiro'] ?? map['codigo_financeiro'] ?? '').toString(),
     );
   }
+
+  factory ProdutoModel.fromSupabaseMap(Map<String, dynamic> map) => ProdutoModel.fromMap(map);
 
   String toJson() => json.encode(toMap());
 

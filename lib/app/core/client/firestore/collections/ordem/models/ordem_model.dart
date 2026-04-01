@@ -7,7 +7,6 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
-import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:flutter/material.dart';
@@ -19,13 +18,13 @@ class OrdemModel {
   DateTime updatedAt;
   MateriaPrimaModel? materiaPrima;
   DateTime? endAt;
-  List<Map<String, String>> _idPedidosProdutosRefs = [];
+  List<Map<String, String>> idPedidosProdutosRefs = [];
   List<PedidoProdutoModel>? _produtosIniciais;
 
   List<PedidoProdutoModel> get produtos {
-    if (_idPedidosProdutosRefs.isNotEmpty) {
+    if (idPedidosProdutosRefs.isNotEmpty) {
       final List<PedidoProdutoModel> result = [];
-      for (var x in _idPedidosProdutosRefs) {
+      for (var x in idPedidosProdutosRefs) {
         try {
           final pedidoId = x['pedidoId'] ?? x['pedido_id'] ?? '';
           final produtoId = x['produtoId'] ?? x['produto_id'] ?? '';
@@ -46,7 +45,7 @@ class OrdemModel {
 
   set produtos(List<PedidoProdutoModel> value) {
     _produtosIniciais = value;
-    _idPedidosProdutosRefs = value
+    idPedidosProdutosRefs = value
         .map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id})
         .toList();
   }
@@ -191,10 +190,12 @@ class OrdemModel {
     this.beltIndex,
     this.endAt,
     required this.history,
-    List<Map<String, String>>? idPedidosProdutosRefs,
-  })  : _produtosIniciais = produtos,
-        _idPedidosProdutosRefs = idPedidosProdutosRefs ??
-            produtos.map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id}).toList();
+    this.idPedidosProdutosRefs = const [],
+  })  : _produtosIniciais = produtos {
+    if (idPedidosProdutosRefs.isEmpty && produtos.isNotEmpty) {
+       idPedidosProdutosRefs = produtos.map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id}).toList();
+    }
+  }
 
   Map<String, dynamic> toMap() => {
     'id': id,
@@ -291,7 +292,7 @@ class OrdemModel {
     'updated_at': updatedAt.toIso8601String(),
     'end_at': endAt?.toIso8601String(),
     'produto_raw': produto.toMap(),
-    'id_pedidos_produtos': _idPedidosProdutosRefs,
+    'id_pedidos_produtos': idPedidosProdutosRefs,
     'freezed': freezed.toMap(),
     'is_archived': isArchived,
     'belt_index': beltIndex,

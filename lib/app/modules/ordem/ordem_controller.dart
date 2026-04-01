@@ -442,13 +442,29 @@ class OrdemController {
   StreamSubscription<OrdemModel>? subscription;
   void onInitPage(String ordemId) {
     try {
-      ordemStream.add(getOrdemById(ordemId));
+      final initialOrdem = getOrdemById(ordemId);
+      ordemStream.add(initialOrdem);
+      
+      // Carrega os pedidos da ordem para garantir que os produtos (bitolas) apareçam
+      _fetchPedidosDaOrdem(initialOrdem);
+
       subscription = FirestoreClient.ordens.listenById(ordemId).listen((ordem) {
         ordemStream.add(ordem);
+        _fetchPedidosDaOrdem(ordem);
       });
     } catch (e) {
       log('Erro ao inicializar detalhes da ordem: $e');
       ordemStream.add(OrdemModel.empty());
+    }
+  }
+
+  Future<void> _fetchPedidosDaOrdem(OrdemModel ordem) async {
+    if (ordem.id.isEmpty) return;
+    final pedidoIds = ordem.idPedidosProdutosRefs.map((e) => e['pedidoId'] ?? e['pedido_id'] ?? '').where((id) => id.isNotEmpty).toSet().toList();
+    if (pedidoIds.isNotEmpty) {
+      // Busca os pedidos no banco para popular a memória local e as bitolas aparecerem
+      await FirestoreClient.pedidos.fetchByIds(pedidoIds);
+      ordemStream.update(); // Força a re-renderização com os produtos agora carregados
     }
   }
 

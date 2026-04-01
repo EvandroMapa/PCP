@@ -208,6 +208,78 @@ class PedidoSupabaseCollection extends PedidoCollection {
         });
   }
 
+  @override
+  Future<void> fetchByIds(List<String> ids) async {
+    if (ids.isEmpty) return;
+    try {
+      log('Supabase (Pedido.fetchByIds): Fetching ${ids.length} records...');
+      // 1. Fetch main table
+      final pedidosRaw = await SupabaseService.client
+          .from(tableName)
+          .select()
+          .filter('id', 'in', ids);
+
+      if (pedidosRaw.isEmpty) return;
+
+      final List<String> pIds = pedidosRaw.map((e) => e['id'].toString().trim()).toList();
+
+      // 2. Fetch auxiliary tables in parallel
+      Future<List<Map<String, dynamic>>> safeFetch(String table) async {
+        try {
+          final res = await SupabaseService.client
+              .from(table)
+              .select()
+              .filter('pedido_id', 'in', pIds);
+          final list = res as List;
+          return list.map((item) => Map<String, dynamic>.from(item)).toList();
+        } catch (_) {
+          return [];
+        }
+      }
+
+      final results = await Future.wait([
+        safeFetch('pedido_produtos'),
+        safeFetch('pedido_status_history'),
+        safeFetch('pedido_steps_history'),
+        safeFetch('pedido_tags'),
+      ]);
+
+      final List<Map<String, dynamic>> produtosRaw = results[0];
+      final List<Map<String, dynamic>> statusRaw = results[1];
+      final List<Map<String, dynamic>> stepsRaw = results[2];
+      final List<Map<String, dynamic>> tagsRaw = results[3];
+
+      final newPedidos = pedidosRaw.map((pMap) {
+        final String pId = pMap['id'].toString().trim();
+        return PedidoModel.fromSupabaseMap(
+          pMap,
+          produtosRaw: produtosRaw.where((r) => r['pedido_id'].toString().trim() == pId).toList(),
+          statusRaw: statusRaw.where((r) => r['pedido_id'].toString().trim() == pId).toList(),
+          stepsRaw: stepsRaw.where((r) => r['pedido_id'].toString().trim() == pId).toList(),
+          tagsIds: tagsRaw
+              .where((r) => r['pedido_id'].toString().trim() == pId)
+              .map((r) => r['tag_id'].toString())
+              .toList(),
+        );
+      }).toList();
+
+      // 3. Merge with local data and update streams
+      final currentData = Map<String, PedidoModel>.fromIterable(data, key: (e) => e.id);
+      for (var p in newPedidos) {
+        currentData[p.id] = p;
+      }
+      
+      final updatedList = currentData.values.toList();
+      dataStream.add(updatedList);
+      pedidosUnarchivedsStream.add(updatedList.where((e) => !e.isArchived).toList());
+      pedidosPrioridadeStream.add(updatedList.where((e) => e.prioridade != null).toList());
+
+      log('Supabase (Pedido.fetchByIds): ${newPedidos.length} records synced.');
+    } catch (e) {
+      log('Supabase Error (Pedido.fetchByIds): $e');
+    }
+  }
+
   PedidoModel getById(String id) =>
       ([...data, ...pedidosArchiveds]).firstWhereOrNull((e) => e.id == id) ??
       PedidoModel.empty();
