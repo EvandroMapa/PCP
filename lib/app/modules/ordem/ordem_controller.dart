@@ -444,7 +444,7 @@ class OrdemController {
     try {
       ordemStream.add(getOrdemById(ordemId));
       subscription = FirestoreClient.ordens.listenById(ordemId).listen((ordem) {
-        ordemStream.add(getOrdemById(ordemId));
+        ordemStream.add(ordem);
       });
     } catch (e) {
       log('Erro ao inicializar detalhes da ordem: $e');
