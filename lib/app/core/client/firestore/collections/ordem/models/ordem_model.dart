@@ -214,9 +214,26 @@ class OrdemModel {
   };
 
   factory OrdemModel.fromMap(Map<String, dynamic> map) {
+    dynamic tryDecode(dynamic value) {
+      if (value is String) {
+        try {
+          return json.decode(value);
+        } catch (_) {
+          return value;
+        }
+      }
+      return value;
+    }
+
+    final produtoRaw = tryDecode(map['produto'] ?? map['produto_raw']);
+    final materiaPrimaRaw = tryDecode(map['materiaPrima'] ?? map['materia_prima_raw']);
+    final freezedRaw = tryDecode(map['freezed']);
+    final historyRaw = tryDecode(map['history']);
+    final idPedidosProdutosRaw = tryDecode(map['idPedidosProdutos'] ?? map['id_pedidos_produtos']);
+
     return OrdemModel(
       id: map['id'] ?? '',
-      produto: ProdutoModel.fromMap(map['produto'] ?? map['produto_raw']),
+      produto: ProdutoModel.fromMap(produtoRaw),
       createdAt: map['createdAt'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'])
           : map['created_at'] != null
@@ -234,10 +251,9 @@ class OrdemModel {
               : null,
       produtos: [], // Será preenchido pelo idPedidosProdutosRefs via getter resiliente
       idPedidosProdutosRefs: () {
-        final rawList = map['idPedidosProdutos'] ?? map['id_pedidos_produtos'];
-        if (rawList == null) return <Map<String, String>>[];
+        if (idPedidosProdutosRaw == null) return <Map<String, String>>[];
         try {
-          final List list = rawList is String ? json.decode(rawList) : rawList;
+          final List list = idPedidosProdutosRaw;
           return list.map((x) {
             final mapx = Map<String, dynamic>.from(x);
             return {
@@ -249,23 +265,18 @@ class OrdemModel {
           return <Map<String, String>>[];
         }
       }(),
-      freezed: map['freezed'] != null
-          ? OrdemFreezedModel.fromMap(
-              map['freezed'] is String ? json.decode(map['freezed']) : map['freezed'])
+      freezed: freezedRaw != null
+          ? OrdemFreezedModel.fromMap(freezedRaw)
           : OrdemFreezedModel.static().copyWith(),
       isArchived: map['isArchived'] ?? map['is_archived'] ?? false,
       beltIndex: map['beltIndex'] ?? map['belt_index'],
-      materiaPrima: (map['materiaPrima'] ?? map['materia_prima_raw']) != null
-          ? MateriaPrimaModel.fromMap(
-              (map['materiaPrima'] ?? map['materia_prima_raw']) is String
-                  ? json.decode(map['materiaPrima'] ?? map['materia_prima_raw'])
-                  : (map['materiaPrima'] ?? map['materia_prima_raw']))
+      materiaPrima: materiaPrimaRaw != null
+          ? MateriaPrimaModel.fromMap(materiaPrimaRaw)
           : null,
       history: () {
-        final rawList = map['history'];
-        if (rawList == null) return <OrdemHistoryModel>[];
+        if (historyRaw == null) return <OrdemHistoryModel>[];
         try {
-          final List list = rawList is String ? json.decode(rawList) : rawList;
+          final List list = historyRaw;
           return list.map((e) => OrdemHistoryModel.fromJson(e)).toList();
         } catch (_) {
           return <OrdemHistoryModel>[];
