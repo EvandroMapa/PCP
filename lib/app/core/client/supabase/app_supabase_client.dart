@@ -39,6 +39,7 @@ class AppSupabaseClient {
       BackendClient.checklists.start(),
       BackendClient.automatizacao.start(),
       BackendClient.notificacoes.start(),
+      BackendClient.automacoes.start(),
       VersionCollection().start(),
     ]);
 
@@ -58,6 +59,7 @@ class AppSupabaseClient {
     BackendClient.checklists.listen();
     BackendClient.automatizacao.listen();
     BackendClient.notificacoes.listen();
+    BackendClient.automacoes.listen();
     VersionCollection().listen();
   }
 }
