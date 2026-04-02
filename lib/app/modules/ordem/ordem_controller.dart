@@ -317,6 +317,7 @@ class OrdemController {
     // Sem removeWhere! Se era para deletar, não deveria estar no array para começar. 
     // Além disso, se ele acabou de entrar na ordem, não será deletado.
     await FirestoreClient.ordens.update(ordemEditada);
+    await FirestoreClient.ordens.fetch();
 
     // Atualiza status dos pedidos pai de forma otimizada
     for (var pedidoId in pedidosAfetados) {
@@ -373,6 +374,7 @@ class OrdemController {
     }
     ordem.produtos.clear();
     await FirestoreClient.ordens.delete(ordem);
+    await FirestoreClient.ordens.fetch();
     await automatizacaoCtrl.onSetStepByPedidoStatus(ordem.pedidos);
     pop(value);
 
