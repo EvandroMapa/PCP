@@ -116,4 +116,9 @@ class OrdemSupabaseCollection extends OrdemCollection {
     // Após deletar ordem, forçar atualização de pedidos
     await BackendClient.pedidos.fetch();
   }
+
+  @override
+  Stream<OrdemModel> listenById(String id) {
+    return dataStream.listen.map((_) => getById(id));
+  }
 }
