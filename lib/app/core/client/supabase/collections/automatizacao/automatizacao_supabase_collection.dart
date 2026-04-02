@@ -52,10 +52,12 @@ class AutomatizacaoSupabaseCollection extends AutomatizacaoCollection {
   @override
   Future<void> update(AutomatizacaoModel model) async {
     try {
+      final payload = model.toSupabaseMap();
+      payload['id'] = 'instance';
+      
       await SupabaseService.client
           .from(tableName)
-          .update(model.toSupabaseMap())
-          .eq('id', 'instance');
+          .upsert(payload);
       await fetch();
     } catch (e) {
       print('Supabase Error (Automatizacao.update): $e');

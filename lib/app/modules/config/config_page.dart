@@ -8,6 +8,7 @@ import 'package:aco_plus/app/modules/step/ui/steps_page.dart';
 import 'package:aco_plus/app/modules/tag/ui/tags_page.dart';
 import 'package:aco_plus/app/modules/usuario/ui/usuarios_page.dart';
 import 'package:aco_plus/app/modules/config/ui/layout_settings_page.dart';
+import 'package:aco_plus/app/modules/automatizacao/ui/automatizacao_page.dart';
 import 'package:flutter/material.dart';
 
 class ConfigPage extends StatefulWidget {
@@ -68,6 +69,16 @@ class _ConfigPageState extends State<ConfigPage> {
           ListTile(
             onTap: () => push(context, const StepsPage()),
             title: const Text('Etapas'),
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Colors.grey[400]!,
+            ),
+          ),
+          const Divisor(),
+          ListTile(
+            onTap: () => push(context, const AutomatizacaoPage()),
+            title: const Text('Automações de Processos'),
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: 16,

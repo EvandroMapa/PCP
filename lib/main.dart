@@ -9,7 +9,7 @@ import 'package:intl/date_symbol_data_local.dart';
 void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
-    setWebTitle('AçoPlus');
+    setWebTitle('AçoPlus - Planejamento e controle de Produção');
     RouteConfig.setConfig();
     await initializeDateFormatting('pt_BR');
     await Service.initAplicationServices();

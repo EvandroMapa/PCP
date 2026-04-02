@@ -38,7 +38,7 @@ class PedidosPage extends StatefulWidget {
 class _PedidosPageState extends State<PedidosPage> {
   @override
   void initState() {
-    setWebTitle('AçoPlus - Pedidos');
+    setWebTitle(widget.standalone ? 'AçoPlus - Pedidos' : 'AçoPlus - Planejamento e controle de Produção');
     pedidoCtrl.onInit();
     if (!widget.standalone) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
