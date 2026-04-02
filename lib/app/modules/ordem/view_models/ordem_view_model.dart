@@ -122,6 +122,7 @@ class OrdemCreateModel {
             ),
           )
           .toList(),
+      idPedidosProdutosRefs: produtos.map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id}).toList(),
       freezed: OrdemFreezedModel.static(),
       beltIndex: FirestoreClient.ordens.ordensNaoCongeladas.length,
       materiaPrima: materiaPrima,
@@ -161,6 +162,7 @@ class OrdemCreateModel {
             ),
           )
           .toList(),
+      idPedidosProdutosRefs: produtos.map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id}).toList(),
       freezed: freezed.toOrdemFreeze(),
       beltIndex: beltIndex,
       materiaPrima: materiaPrima,

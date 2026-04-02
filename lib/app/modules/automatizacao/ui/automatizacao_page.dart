@@ -23,11 +23,11 @@ class AutomatizacaoPage extends StatefulWidget {
 class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
   late AutomatizacaoModel model;
   bool isSaving = false;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     setWebTitle('Automações de Processos');
-    // Fazemos um fallback seguro inicial caso seja empty
     model = FirestoreClient.automatizacao.data.copyWith();
     super.initState();
   }
@@ -53,7 +53,11 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
       ),
       body: StreamOut<AutomatizacaoModel>(
         stream: FirestoreClient.automatizacao.dataStream.listen,
-        builder: (_, __) {
+        builder: (_, data) {
+          if (!_isInitialized && data != AutomatizacaoModel.empty) {
+            model = data.copyWith();
+            _isInitialized = true;
+          }
           // Mantendo os steps sempre fresquinhos (caso tenham adicionado/removido um)
           final steps = FirestoreClient.steps.data;
 

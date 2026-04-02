@@ -33,12 +33,23 @@ class AutomatizacaoItemModel {
   }
 
   factory AutomatizacaoItemModel.fromMap(Map<String, dynamic> map) {
+    // Retrocompatibilidade: se stepId estiver ausente, tenta pegar do objeto aninhado 'step'
+    String? parsedStepId = map['stepId'];
+    if (parsedStepId == null && map['step'] != null) {
+      if (map['step'] is Map) {
+        parsedStepId = map['step']['id'];
+      } else if (map['step'] is String) {
+        parsedStepId = map['step'];
+      }
+    }
+
     return AutomatizacaoItemModel(
       type: AutomatizacaoItemType.values[map['type']],
-      step: map['stepId'] != null ? FirestoreClient.steps.getById(map['stepId']) : null,
-      steps: map['steps']
-          ?.map<StepModel>((e) => FirestoreClient.steps.getById(e))
-          .toList(),
+      step: parsedStepId != null ? FirestoreClient.steps.getById(parsedStepId) : null,
+      steps: map['steps']?.map<StepModel>((e) {
+        if (e is Map) return FirestoreClient.steps.getById(e['id']);
+        return FirestoreClient.steps.getById(e.toString());
+      }).toList(),
     );
   }
 
