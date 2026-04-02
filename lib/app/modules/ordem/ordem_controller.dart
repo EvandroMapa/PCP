@@ -448,9 +448,12 @@ class OrdemController {
       // Carrega os pedidos da ordem para garantir que os produtos (bitolas) apareçam
       _fetchPedidosDaOrdem(initialOrdem);
 
-      subscription = FirestoreClient.ordens.listenById(ordemId).listen((ordem) {
-        ordemStream.add(ordem);
-        _fetchPedidosDaOrdem(ordem);
+      subscription = FirestoreClient.ordens.listenById(ordemId).listen((ordemFetched) {
+        // Se o objeto vindo do stream não tem a lista de produtos, preservamos a que já temos.
+        final hasProdutos = ordemFetched.produtos.isNotEmpty;
+        final mergedOrdem = hasProdutos ? ordemFetched : ordemFetched.copyWith(produtos: ordemStream.value.produtos);
+        ordemStream.add(mergedOrdem);
+        _fetchPedidosDaOrdem(mergedOrdem);
       });
     } catch (e) {
       log('Erro ao inicializar detalhes da ordem: $e');
