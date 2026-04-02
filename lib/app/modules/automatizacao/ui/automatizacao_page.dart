@@ -9,6 +9,7 @@ import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
+import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:flutter/material.dart';
 
@@ -186,52 +187,115 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
 
   Widget _buildSingleStepRule(
     String targetName,
-    String label,
+    String description,
     StepModel? currentStep,
     List<StepModel> allSteps,
     void Function(StepModel) onChanged,
   ) {
-    // Garante que o item existe na lista para nao quebrar o dropdown.
     StepModel? selected = currentStep;
     if (selected != null && !allSteps.any((e) => e.id == selected!.id)) {
       selected = null;
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: AppDropDown<StepModel?>(
-        label: targetName,
-        item: selected,
-        itens: allSteps,
-        itemLabel: (v) => v?.name ?? 'Selecione',
-        required: false,
-        onSelect: (step) {
-          if (step != null) onChanged(step);
-        },
-        hint: 'Selecione uma etapa',
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: AppColors.neutralLight),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            flex: 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(targetName, style: AppCss.largeBold.copyWith(fontSize: 15)),
+                const SizedBox(height: 4),
+                Text(description, style: AppCss.smallRegular.copyWith(color: AppColors.neutralDark)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 24),
+          Expanded(
+            flex: 2,
+            child: AppDropDown<StepModel?>(
+              item: selected,
+              itens: allSteps,
+              itemLabel: (v) => v?.name ?? 'Selecione',
+              required: false,
+              onSelect: (step) {
+                if (step != null) onChanged(step);
+              },
+              hint: 'Selecione a etapa',
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildMultiStepRule(
     String targetName,
-    String label,
+    String description,
     List<StepModel> currentSteps,
     List<StepModel> allSteps,
     void Function() onChanged,
   ) {
-    // Saneia caso steps que foram deletados ainda estejam gravados
     currentSteps.removeWhere((st) => !allSteps.any((s) => s.id == st.id));
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: AppDropDownList<StepModel>(
-        label: targetName,
-        addeds: currentSteps,
-        itens: allSteps,
-        itemLabel: (v) => v.name,
-        required: false,
-        onChanged: onChanged,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: AppColors.neutralLight),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(targetName, style: AppCss.largeBold.copyWith(fontSize: 15)),
+                const SizedBox(height: 4),
+                Text(description, style: AppCss.smallRegular.copyWith(color: AppColors.neutralDark)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 24),
+          Expanded(
+            flex: 3,
+            child: AppDropDownList<StepModel>(
+              label: '',
+              addeds: currentSteps,
+              itens: allSteps,
+              itemLabel: (v) => v.name,
+              required: false,
+              onChanged: onChanged,
+            ),
+          ),
+        ],
       ),
     );
   }
