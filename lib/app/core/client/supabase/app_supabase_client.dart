@@ -13,7 +13,7 @@ import 'package:aco_plus/app/core/client/supabase/collections/checklist/checklis
 import 'package:aco_plus/app/core/client/supabase/collections/automatizacao/automatizacao_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/notificacao/notificacao_supabase_collection.dart';
 
-import 'package:aco_plus/app/core/client/firestore/collections/version/version_collection.dart';
+
 
 class AppSupabaseClient {
   static OrdemSupabaseCollection ordens = OrdemSupabaseCollection();
@@ -48,7 +48,6 @@ class AppSupabaseClient {
         checklists.start().catchError((e) => print('Error starting checklists: $e')),
         automatizacao.start().catchError((e) => print('Error starting automatizacao: $e')),
         notificacoes.start().catchError((e) => print('Error starting notificacoes: $e')),
-        VersionCollection().start().catchError((e) => print('Error starting version: $e')),
       ];
 
       await Future.wait(futures);
@@ -69,7 +68,6 @@ class AppSupabaseClient {
       checklists.listen();
       automatizacao.listen();
       notificacoes.listen();
-      VersionCollection().listen();
     } catch (e) {
       print('AppSupabaseClient: Critical error during init: $e');
     }
