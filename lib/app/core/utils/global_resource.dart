@@ -64,6 +64,17 @@ Future<bool> onDeleteProcess({
 }
 
 void setWebTitle(String title) {
+  const allowedTitles = [
+    'AçoPlus - Kanban',
+    'AçoPlus - Pedidos',
+    'AçoPlus - Ordens de Produção',
+    'AçoPlus - Planejamento e controle de Produção',
+  ];
+
+  if (!allowedTitles.contains(title)) {
+    title = 'AçoPlus - Planejamento e controle de Produção';
+  }
+
   SystemChrome.setApplicationSwitcherDescription(
     ApplicationSwitcherDescription(label: title),
   );

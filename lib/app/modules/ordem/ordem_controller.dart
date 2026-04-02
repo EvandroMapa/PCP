@@ -269,7 +269,8 @@ class OrdemController {
     // Produtos removidos da ordem
     for (PedidoProdutoModel produto in ordem.produtos) {
       if (!ordemEditada.produtos.any((e) => e.id == produto.id)) {
-        statusUpdates.add((produto, PedidoProdutoStatus.aguardandoProducao));
+        // Se o item foi removido da Ordem, ele volta a ficar 'separado'
+        statusUpdates.add((produto, PedidoProdutoStatus.separado));
         pedidosAfetados.add(produto.pedidoId);
       }
     }
@@ -286,7 +287,12 @@ class OrdemController {
       }
       
       // Atualizar Status
-      statusUpdates.add((produto, produto.statusess.last.status));
+      PedidoProdutoStatus newStatus = produto.status.status;
+      if (newStatus == PedidoProdutoStatus.separado) {
+        newStatus = PedidoProdutoStatus.aguardandoProducao;
+        produto.statusess.add(PedidoProdutoStatusModel.create(newStatus)); // Atualiza na memória pra UI não piscar
+      }
+      statusUpdates.add((produto, newStatus));
     }
 
     // Executa atualizações em massa (Status e MP)
@@ -308,7 +314,8 @@ class OrdemController {
       }
     }
 
-    ordemEditada.produtos.removeWhere((e) => e.status.status.index == 0);
+    // Sem removeWhere! Se era para deletar, não deveria estar no array para começar. 
+    // Além disso, se ele acabou de entrar na ordem, não será deletado.
     await FirestoreClient.ordens.update(ordemEditada);
 
     // Atualiza status dos pedidos pai de forma otimizada
@@ -449,11 +456,9 @@ class OrdemController {
       _fetchPedidosDaOrdem(initialOrdem);
 
       subscription = FirestoreClient.ordens.listenById(ordemId).listen((ordemFetched) {
-        // Se o objeto vindo do stream não tem a lista de produtos, preservamos a que já temos.
-        final hasProdutos = ordemFetched.produtos.isNotEmpty;
-        final mergedOrdem = hasProdutos ? ordemFetched : ordemFetched.copyWith(produtos: ordemStream.value.produtos);
-        ordemStream.add(mergedOrdem);
-        _fetchPedidosDaOrdem(mergedOrdem);
+        // Agora aceita que a lista de produtos seja esvaziada (permitido pela UI).
+        ordemStream.add(ordemFetched);
+        _fetchPedidosDaOrdem(ordemFetched);
       });
     } catch (e) {
       log('Erro ao inicializar detalhes da ordem: $e');
