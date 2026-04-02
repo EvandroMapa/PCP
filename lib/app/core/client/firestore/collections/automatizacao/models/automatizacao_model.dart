@@ -81,42 +81,43 @@ class AutomatizacaoModel {
   }
 
   factory AutomatizacaoModel.fromSupabaseMap(Map<String, dynamic> map) {
+    final empty = AutomatizacaoModel.empty;
     return AutomatizacaoModel(
-      criacaoPedido: AutomatizacaoItemModel.fromMap(map['criacao_pedido'] is String
+      criacaoPedido: map['criacao_pedido'] != null ? AutomatizacaoItemModel.fromMap(map['criacao_pedido'] is String
           ? json.decode(map['criacao_pedido'])
-          : map['criacao_pedido']),
-      produtoPedidoSeparado: AutomatizacaoItemModel.fromMap(
+          : map['criacao_pedido']) : empty.criacaoPedido,
+      produtoPedidoSeparado: map['produto_pedido_separado'] != null ? AutomatizacaoItemModel.fromMap(
           map['produto_pedido_separado'] is String
               ? json.decode(map['produto_pedido_separado'])
-              : map['produto_pedido_separado']),
-      produzindoCDPedido: AutomatizacaoItemModel.fromMap(
+              : map['produto_pedido_separado']) : empty.produtoPedidoSeparado,
+      produzindoCDPedido: map['produzindo_cd_pedido'] != null ? AutomatizacaoItemModel.fromMap(
           map['produzindo_cd_pedido'] is String
               ? json.decode(map['produzindo_cd_pedido'])
-              : map['produzindo_cd_pedido']),
-      prontoCDPedido: AutomatizacaoItemModel.fromMap(
+              : map['produzindo_cd_pedido']) : empty.produzindoCDPedido,
+      prontoCDPedido: map['pronto_cd_pedido'] != null ? AutomatizacaoItemModel.fromMap(
           map['pronto_cd_pedido'] is String
               ? json.decode(map['pronto_cd_pedido'])
-              : map['pronto_cd_pedido']),
-      aguardandoArmacaoPedido: AutomatizacaoItemModel.fromMap(
+              : map['pronto_cd_pedido']) : empty.prontoCDPedido,
+      aguardandoArmacaoPedido: map['aguardando_armacao_pedido'] != null ? AutomatizacaoItemModel.fromMap(
           map['aguardando_armacao_pedido'] is String
               ? json.decode(map['aguardando_armacao_pedido'])
-              : map['aguardando_armacao_pedido']),
-      produzindoArmacaoPedido: AutomatizacaoItemModel.fromMap(
+              : map['aguardando_armacao_pedido']) : empty.aguardandoArmacaoPedido,
+      produzindoArmacaoPedido: map['produzindo_armacao_pedido'] != null ? AutomatizacaoItemModel.fromMap(
           map['produzindo_armacao_pedido'] is String
               ? json.decode(map['produzindo_armacao_pedido'])
-              : map['produzindo_armacao_pedido']),
-      prontoArmacaoPedido: AutomatizacaoItemModel.fromMap(
+              : map['produzindo_armacao_pedido']) : empty.produzindoArmacaoPedido,
+      prontoArmacaoPedido: map['pronto_armacao_pedido'] != null ? AutomatizacaoItemModel.fromMap(
           map['pronto_armacao_pedido'] is String
               ? json.decode(map['pronto_armacao_pedido'])
-              : map['pronto_armacao_pedido']),
-      naoMostrarNoCalendario: AutomatizacaoItemModel.fromMap(
+              : map['pronto_armacao_pedido']) : empty.prontoArmacaoPedido,
+      naoMostrarNoCalendario: map['nao_mostrar_no_calendario'] != null ? AutomatizacaoItemModel.fromMap(
           map['nao_mostrar_no_calendario'] is String
               ? json.decode(map['nao_mostrar_no_calendario'])
-              : map['nao_mostrar_no_calendario']),
-      removerListaPrioridade: AutomatizacaoItemModel.fromMap(
+              : map['nao_mostrar_no_calendario']) : empty.naoMostrarNoCalendario,
+      removerListaPrioridade: map['remover_lista_prioridade'] != null ? AutomatizacaoItemModel.fromMap(
           map['remover_lista_prioridade'] is String
               ? json.decode(map['remover_lista_prioridade'])
-              : map['remover_lista_prioridade']),
+              : map['remover_lista_prioridade']) : empty.removerListaPrioridade,
     );
   }
 

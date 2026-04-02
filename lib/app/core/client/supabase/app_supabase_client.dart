@@ -33,26 +33,28 @@ class AppSupabaseClient {
 
   static Future<void> init() async {
     try {
-      // Start all collections in parallel for better performance
-      await Future.wait([
-        usuarios.start(),
-        clientes.start(),
-        steps.start(),
-        ordens.start(),
-        produtos.start(),
-        fabricantes.start(),
-        materiaPrima.start(),
-        pedidoArquivos.start(),
-        pedidoProdutos.start(),
-        tags.start(),
-        checklists.start(),
-        automatizacao.start(),
-        notificacoes.start(),
-        VersionCollection().start(),
-      ]);
+      // Start all collections with individual error handling to be resilient
+      final futures = [
+        usuarios.start().catchError((e) => print('Error starting usuarios: $e')),
+        clientes.start().catchError((e) => print('Error starting clientes: $e')),
+        steps.start().catchError((e) => print('Error starting steps: $e')),
+        ordens.start().catchError((e) => print('Error starting ordens: $e')),
+        produtos.start().catchError((e) => print('Error starting produtos: $e')),
+        fabricantes.start().catchError((e) => print('Error starting fabricantes: $e')),
+        materiaPrima.start().catchError((e) => print('Error starting materiaPrima: $e')),
+        pedidoArquivos.start().catchError((e) => print('Error starting pedidoArquivos: $e')),
+        pedidoProdutos.start().catchError((e) => print('Error starting pedidoProdutos: $e')),
+        tags.start().catchError((e) => print('Error starting tags: $e')),
+        checklists.start().catchError((e) => print('Error starting checklists: $e')),
+        automatizacao.start().catchError((e) => print('Error starting automatizacao: $e')),
+        notificacoes.start().catchError((e) => print('Error starting notificacoes: $e')),
+        VersionCollection().start().catchError((e) => print('Error starting version: $e')),
+      ];
+
+      await Future.wait(futures);
 
       // Pedidos depends on clientes/steps for mapping, so start it after
-      await pedidos.start();
+      await pedidos.start().catchError((e) => print('Error starting pedidos: $e'));
 
       // Start real-time listeners
       usuarios.listen();

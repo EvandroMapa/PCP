@@ -26,11 +26,11 @@ class TagSupabaseCollection extends TagCollection {
     try {
       final response = await SupabaseService.client
           .from(tableName)
-          .select()
-          .order('created_at', ascending: true);
+          .select();
       final tags = List<Map<String, dynamic>>.from(response)
           .map((e) => TagModel.fromSupabaseMap(e))
           .toList();
+      tags.sort((a, b) => a.createdAt.compareTo(b.createdAt));
       dataStream.add(tags);
     } catch (e) {
       print('Supabase Error (Tag.start): $e');

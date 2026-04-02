@@ -28,12 +28,17 @@ class AutomatizacaoSupabaseCollection extends AutomatizacaoCollection {
       final response = await SupabaseService.client
           .from(tableName)
           .select()
-          .eq('id', 'instance')
-          .single();
-      final automatizacao = AutomatizacaoModel.fromSupabaseMap(response);
-      dataStream.add(automatizacao);
+          .eq('id', 'instance');
+      
+      if (response.isNotEmpty) {
+        final automatizacao = AutomatizacaoModel.fromSupabaseMap(response.first);
+        dataStream.add(automatizacao);
+      } else {
+        dataStream.add(AutomatizacaoModel.empty);
+      }
     } catch (e) {
       print('Supabase Error (Automatizacao.start): $e');
+      dataStream.add(AutomatizacaoModel.empty);
     }
   }
 
