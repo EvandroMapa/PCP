@@ -71,7 +71,8 @@ class PedidoProdutosWidget extends StatelessWidget {
                 ),
                 const W(4),
               ],
-              if (!pedido.isAguardandoEntradaProducao())
+              if (!pedido.isAguardandoEntradaProducao() &&
+                  produto.status.status != PedidoProdutoStatus.separado)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 6,
@@ -151,13 +152,13 @@ class PedidoProdutosWidget extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: status.getStatusView().color.withValues(
+                            color: status.status.color.withValues(
                               alpha: isLast ? 0.4 : 0.2,
                             ),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            status.getStatusView().label,
+                            status.status.label,
                             style: AppCss.mediumRegular
                                 .setSize(14)
                                 .setColor(
