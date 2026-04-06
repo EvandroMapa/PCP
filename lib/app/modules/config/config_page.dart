@@ -107,6 +107,13 @@ class _ConfigPageState extends State<ConfigPage> {
             ),
           ),
           const Divisor(),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text(
+              'Versão: 71cccb59',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+          )
         ],
       ),
     );
