@@ -342,8 +342,10 @@ class PedidoSupabaseCollection extends PedidoCollection {
       
       await _syncRelationships(model);
 
-      // Nao chama fetch() aqui -- o stream debounce (2s) cuidara do refresh.
-      // Chamar fetch() aqui causava rebuild do Kanban no meio do drag (freeze).
+      if (!kanbanCtrl.isDragging) {
+        await fetch(lock: false);
+      }
+
       return model;
     } catch (e) {
       log('Supabase CRITICAL ERROR (Pedido.update): $e');
