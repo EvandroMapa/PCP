@@ -6,7 +6,6 @@ import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/mod
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_status_produtos.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
@@ -125,8 +124,7 @@ class OrdemController {
       final pedidoProdutos = pedido.produtos
           .where(
             (e) =>
-                (e.status.status == PedidoProdutoStatus.separado ||
-                    e.status.status == PedidoProdutoStatus.aguardandoProducao) &&
+                e.status.status == PedidoProdutoStatus.separado &&
                 e.produto.id == produto.id,
           )
           .toList();
