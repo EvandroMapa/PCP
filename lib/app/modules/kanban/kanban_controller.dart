@@ -38,11 +38,14 @@ class StepController {
   /// Bloqueia rebuilds do stream durante o arrasto de cartoes
   bool isDragging = false;
   StreamSubscription? _pedidosSubscription;
+  Timer? _refreshTimer;
 
 
   void startDrag() => isDragging = true;
   void endDrag() {
     isDragging = false;
+    // Dispara um fetch após o drag terminar para sincronizar
+    BackendClient.pedidos.fetch();
   }
 
   Future<void> onInit() async {
@@ -61,6 +64,15 @@ class StepController {
       final kanban = mountKanban();
       final calendar = _mountCalendar();
       utilsStream.add(KanbanUtils(kanban: kanban, calendar: calendar));
+
+      // Timer de atualização automática a cada 3 segundos
+      _refreshTimer?.cancel();
+      _refreshTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+        if (!isDragging) {
+          BackendClient.pedidos.fetch();
+        }
+      });
+
       onMount();
     } catch (e) {
       print('StepController: Erro no onInit: $e');
