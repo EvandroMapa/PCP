@@ -244,11 +244,11 @@ class PedidoCollection {
           ? PedidoStatus.pronto
           : PedidoStatus.aguardandoProducaoCDA;
     } else {
-      bool isAnyProduzindo = pedido.produtos.any(
-        (e) => e.status.status == PedidoProdutoStatus.produzindo,
-      );
+      bool isAnyInProduction = pedido.produtos.any((e) =>
+          e.status.status == PedidoProdutoStatus.produzindo ||
+          e.status.status == PedidoProdutoStatus.aguardandoProducao);
 
-      return isAnyProduzindo
+      return isAnyInProduction
           ? PedidoStatus.produzindoCD
           : PedidoStatus.aguardandoProducaoCD;
     }
