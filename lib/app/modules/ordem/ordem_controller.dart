@@ -118,7 +118,7 @@ class OrdemController {
     for (final pedido
         in FirestoreClient.pedidos.data
             .where(
-              (e) => FirestoreClient.steps.getById(e.step.id).isPermiteProducao && e.pedidosFilhos.isEmpty,
+              (e) => (!e.isAguardandoEntradaProducao() || FirestoreClient.steps.getById(e.step.id).isPermiteProducao) && e.pedidosFilhos.isEmpty,
             )
             .toList()) {
       final pedidoProdutos = pedido.produtos
@@ -203,10 +203,16 @@ class OrdemController {
 
     for (PedidoProdutoModel produto in ordemCriada.produtos) {
       statusUpdates.add((produto, PedidoProdutoStatus.aguardandoProducao));
+      pedidosAfetados.add(produto.pedidoId);
+
       if (ordemCriada.materiaPrima != null) {
         mpUpdates.add((produto, ordemCriada.materiaPrima!));
+        produto.materiaPrima = ordemCriada.materiaPrima;
       }
-      pedidosAfetados.add(produto.pedidoId);
+
+      if (produto.statusess.isEmpty || produto.statusess.last.status != PedidoProdutoStatus.aguardandoProducao) {
+        produto.statusess.add(PedidoProdutoStatusModel.create(PedidoProdutoStatus.aguardandoProducao));
+      }
     }
 
     if (FirestoreClient.pedidos is PedidoSupabaseCollection) {
