@@ -462,10 +462,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
           }
         }
 
-        payload.add({
-          'id': produto.id,
-          'materia_prima_raw': materiaPrima?.toMap(),
-        });
+        payload.add(pedido.produtos.firstWhere((e) => e.id == produto.id).toSupabaseMap(pedido.id));
       }
 
       if (payload.isNotEmpty) {
@@ -560,10 +557,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
           pedidoProduto.statusess.add(PedidoProdutoStatusModel.create(status));
         }
 
-        payload.add({
-          'id': produto.id,
-          'statusess_raw': pedidoProduto.statusess.map((s) => s.toMap()).toList(),
-        });
+        payload.add(pedidoProduto.toSupabaseMap(pedido.id));
       }
 
       if (payload.isNotEmpty) {
