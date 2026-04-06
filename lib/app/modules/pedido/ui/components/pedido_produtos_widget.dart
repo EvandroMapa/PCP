@@ -19,6 +19,7 @@ class PedidoProdutosWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Adicionando uma pequena alteração para testar o commit e deploy
     return IgnorePointer(
       ignoring: pedido.isAguardandoEntradaProducao(),
       child: Column(
