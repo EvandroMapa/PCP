@@ -244,13 +244,13 @@ class PedidoCollection {
           ? PedidoStatus.pronto
           : PedidoStatus.aguardandoProducaoCDA;
     } else {
-      bool isAllAguardandoProducao = pedido.produtos.every(
-        (e) => e.status.status == PedidoProdutoStatus.aguardandoProducao,
+      bool isAnyProduzindo = pedido.produtos.any(
+        (e) => e.status.status == PedidoProdutoStatus.produzindo,
       );
 
-      return isAllAguardandoProducao
-          ? PedidoStatus.aguardandoProducaoCD
-          : PedidoStatus.produzindoCD;
+      return isAnyProduzindo
+          ? PedidoStatus.produzindoCD
+          : PedidoStatus.aguardandoProducaoCD;
     }
   }
 }

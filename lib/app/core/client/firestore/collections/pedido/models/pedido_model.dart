@@ -258,7 +258,7 @@ class PedidoModel {
     return getProdutos()
         .where(
           (e) =>
-              e.status.getStatusView() ==
+              e.status.status ==
               PedidoProdutoStatus.aguardandoProducao,
         )
         .fold(0, (previousValue, element) => previousValue + element.qtde);
