@@ -71,8 +71,7 @@ class PedidoProdutosWidget extends StatelessWidget {
                 ),
                 const W(4),
               ],
-              if (!pedido.isAguardandoEntradaProducao() &&
-                  produto.status.status != PedidoProdutoStatus.separado)
+              if (!pedido.isAguardandoEntradaProducao())
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 6,
