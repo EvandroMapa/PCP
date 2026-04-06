@@ -12,6 +12,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/ordem/ordem_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
@@ -317,7 +318,6 @@ class OrdemController {
     // Sem removeWhere! Se era para deletar, não deveria estar no array para começar. 
     // Além disso, se ele acabou de entrar na ordem, não será deletado.
     await FirestoreClient.ordens.update(ordemEditada);
-    await FirestoreClient.ordens.fetch();
 
     // Atualiza status dos pedidos pai de forma otimizada
     for (var pedidoId in pedidosAfetados) {
@@ -327,7 +327,9 @@ class OrdemController {
       }
     }
 
+    // Pedidos PRIMEIRO, depois ordens (para que ordem.produtos resolva os kilos corretamente)
     await FirestoreClient.pedidos.fetch();
+    await FirestoreClient.ordens.fetch();
     await automatizacaoCtrl.onSetStepByPedidoStatus(ordemEditada.pedidos);
     await OrdemTimelineRegister.editada(ordemEditada, ordem);
     
@@ -660,8 +662,21 @@ class OrdemController {
   void onReorder(List<OrdemModel> ordensNaoConcluidas) {
     for (var i = 0; i < ordensNaoConcluidas.length; i++) {
       ordensNaoConcluidas[i].beltIndex = i;
-      FirestoreClient.ordens.dataStream.update();
-      FirestoreClient.ordens.update(ordensNaoConcluidas[i]);
+    }
+    // Atualiza a UI imediatamente com os novos beltIndexes
+    FirestoreClient.ordens.dataStream.update();
+    FirestoreClient.ordens.ordensNaoArquivadasStream.update();
+
+    // Persiste no banco de forma leve (apenas belt_index)
+    if (FirestoreClient.ordens is OrdemSupabaseCollection) {
+      final supabaseColl = FirestoreClient.ordens as OrdemSupabaseCollection;
+      for (var ordem in ordensNaoConcluidas) {
+        supabaseColl.updateBeltIndex(ordem);
+      }
+    } else {
+      for (var ordem in ordensNaoConcluidas) {
+        FirestoreClient.ordens.update(ordem);
+      }
     }
   }
 

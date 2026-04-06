@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/ordem_collection.dart';
@@ -13,6 +15,8 @@ class OrdemSupabaseCollection extends OrdemCollection {
     ordensArquivadasStream = AppStream.seed([]);
   }
   factory OrdemSupabaseCollection() => _instance;
+
+  Timer? _streamDebounce;
 
   @override
   final String tableName = 'ordens';
@@ -86,8 +90,12 @@ class OrdemSupabaseCollection extends OrdemCollection {
         .stream(primaryKey: ['id'])
         .eq('is_archived', false)
         .listen((List<Map<String, dynamic>> data) {
-          final ordens = data.map((e) => OrdemModel.fromSupabaseMap(e)).toList();
-          _updateStreams(ordens);
+          // Debounce para evitar rebuilds rápidos que acessam pedidos
+          // ainda não carregados (ex: durante onReorder batch updates)
+          _streamDebounce?.cancel();
+          _streamDebounce = Timer(const Duration(milliseconds: 500), () {
+            start(lock: false);
+          });
         });
   }
 
@@ -105,9 +113,15 @@ class OrdemSupabaseCollection extends OrdemCollection {
         .from(tableName)
         .update(model.toSupabaseMap())
         .eq('id', model.id);
-    // Após atualizar ordem, forçar atualização de pedidos
-    await BackendClient.pedidos.fetch();
     return model;
+  }
+
+  /// Atualiza apenas o beltIndex (usado pelo onReorder) sem recarregar pedidos.
+  Future<void> updateBeltIndex(OrdemModel model) async {
+    await SupabaseService.client
+        .from(tableName)
+        .update({'belt_index': model.beltIndex})
+        .eq('id', model.id);
   }
 
   @override
