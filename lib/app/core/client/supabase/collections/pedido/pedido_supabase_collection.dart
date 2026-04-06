@@ -23,10 +23,10 @@ import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 class PedidoSupabaseCollection extends PedidoCollection {
   static final PedidoSupabaseCollection _instance = PedidoSupabaseCollection._();
   PedidoSupabaseCollection._() : super.base() {
-    dataStream = AppStream.seed([]);
-    pedidosUnarchivedsStream = AppStream.seed([]);
-    pedidosArchivedsStream = AppStream.seed([]);
-    pedidosPrioridadeStream = AppStream.seed([]);
+    dataStream = AppStream.seed(<PedidoModel>[]);
+    pedidosUnarchivedsStream = AppStream.seed(<PedidoModel>[]);
+    pedidosArchivedsStream = AppStream.seed(<PedidoModel>[]);
+    pedidosPrioridadeStream = AppStream.seed(<PedidoModel>[]);
   }
   factory PedidoSupabaseCollection() => _instance;
 
@@ -66,8 +66,8 @@ class PedidoSupabaseCollection extends PedidoCollection {
           .eq('is_archived', false);
 
       if (pedidosRaw.isEmpty) {
-        pedidosUnarchivedsStream.add([]);
-        dataStream.add([]);
+        pedidosUnarchivedsStream.add(<PedidoModel>[]);
+        dataStream.add(<PedidoModel>[]);
         return;
       }
 
