@@ -100,7 +100,7 @@ class PedidoProdutoStatusModel {
             orElse: () => PedidoProdutoStatus.separado,
           );
         }
-        return PedidoProdutoStatus.values[val as int? ?? 0];
+        return PedidoProdutoStatus.values[int.tryParse(val.toString()) ?? 0];
       }(),
       createdAt: map['createdAt'] != null
           ? DateTime.fromMillisecondsSinceEpoch(
