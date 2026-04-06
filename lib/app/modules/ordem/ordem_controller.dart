@@ -6,6 +6,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/mod
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_status_produtos.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
@@ -118,7 +119,11 @@ class OrdemController {
     for (final pedido
         in FirestoreClient.pedidos.data
             .where(
-              (e) => (!e.isAguardandoEntradaProducao() || FirestoreClient.steps.getById(e.step.id).isPermiteProducao) && e.pedidosFilhos.isEmpty,
+              (e) {
+                final isPermite = FirestoreClient.steps.getById(e.step.id).isPermiteProducao;
+                final isProduzindo = e.status == PedidoStatus.produzindoCD || e.status == PedidoStatus.produzindoCDA;
+                return (isPermite || isProduzindo) && e.pedidosFilhos.isEmpty;
+              },
             )
             .toList()) {
       final pedidoProdutos = pedido.produtos
