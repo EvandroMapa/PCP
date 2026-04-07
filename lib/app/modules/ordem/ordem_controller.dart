@@ -537,9 +537,13 @@ class OrdemController {
     final produtoStatus = produto.statusess.last.status;
     final status = await showOrdemProdutoStatusBottom(produtoStatus);
     if (status == null || produtoStatus == status) return;
+    // Busca o produto atualizado no cache para garantir que a matéria prima está populada
+    final produtoAtualizado = FirestoreClient.pedidos
+        .getProdutoByPedidoId(produto.pedidoId, produto.id);
+    final materiaPrimaEfetiva = produtoAtualizado.materiaPrima ?? produto.materiaPrima;
     if ((status == PedidoProdutoStatus.pronto ||
             status == PedidoProdutoStatus.produzindo) &&
-        produto.materiaPrima == null) {
+        materiaPrimaEfetiva == null) {
       showInfoDialog(
         'Para finalizar a ordem, é necessário selecionar uma matéria prima para o produto.',
       );
@@ -556,9 +560,13 @@ class OrdemController {
     PedidoProdutoModel produto,
     PedidoProdutoStatus status,
   ) async {
+    // Busca o produto atualizado no cache para garantir que a matéria prima está populada
+    final produtoAtualizado = FirestoreClient.pedidos
+        .getProdutoByPedidoId(produto.pedidoId, produto.id);
+    final materiaPrimaEfetiva = produtoAtualizado.materiaPrima ?? produto.materiaPrima;
     if ((status == PedidoProdutoStatus.pronto ||
             status == PedidoProdutoStatus.produzindo) &&
-        produto.materiaPrima == null) {
+        materiaPrimaEfetiva == null) {
       showInfoDialog(
         'Para finalizar a ordem, é necessário selecionar uma matéria prima para o produto.',
       );
