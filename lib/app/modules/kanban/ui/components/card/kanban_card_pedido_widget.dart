@@ -16,7 +16,6 @@ import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_tags_
 import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_users_widget.dart';
 import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_vinculados_widget.dart';
 import 'package:aco_plus/app/modules/notificacao/notificacao_controller.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 
@@ -62,8 +61,6 @@ class KanbanCardPedidoWidget extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      _tipoTagWidget(pedido.tipo),
-                      const W(4),
 
                       if (pedido.comments.any((e) => e.isFixed)) ...[
                         Icon(Icons.warning, color: Colors.orange, size: 16),
@@ -126,19 +123,7 @@ class KanbanCardPedidoWidget extends StatelessWidget {
     );
   }
 
-  Widget _tipoTagWidget(PedidoTipo tipo) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: tipo == PedidoTipo.cd ? Colors.red : Colors.green,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        tipo.name.toUpperCase(),
-        style: AppCss.minimumBold.setColor(Colors.white).setSize(12),
-      ),
-    );
-  }
+
 
   Color _getColor(PedidoModel pedido) {
     if (pedido.comments.any((e) => e.isFixed)) {
