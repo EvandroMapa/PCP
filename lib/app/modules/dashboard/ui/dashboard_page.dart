@@ -1,6 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
+
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/app_bottom_nav.dart';
@@ -23,11 +23,11 @@ import 'package:aco_plus/app/modules/graph/pedido_status/pedido_status_widget.da
 import 'package:aco_plus/app/modules/graph/produto_produzido/produto_produzido_widget.dart';
 import 'package:aco_plus/app/modules/graph/produto_status/produto_status_widget.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem/ordem_page.dart';
-import 'package:aco_plus/app/modules/pedido/ui/pedido_page.dart';
+
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/usuario_role.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:gap/gap.dart';
+
 import 'package:material_symbols_icons/symbols.dart';
 
 class DashboardPage extends StatefulWidget {

@@ -5,7 +5,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_m
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_prioridade_model.dart';
+
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_status_model.dart';
@@ -48,7 +48,7 @@ class PedidoModel {
   final String pedidoFinanceiro;
   final String instrucoesEntrega;
   final String instrucoesFinanceiras;
-  PedidoPrioridadeModel? prioridade;
+
   final List<String> pedidosVinculados;
   final List<String> pedidosFilhos;
   String? pai;
@@ -86,7 +86,7 @@ class PedidoModel {
     pedidoFinanceiro: '',
     instrucoesEntrega: '',
     instrucoesFinanceiras: '',
-    prioridade: null,
+
     pedidosVinculados: [],
     pedidosFilhos: [],
     pai: null,
@@ -177,7 +177,7 @@ class PedidoModel {
     required this.pedidoFinanceiro,
     required this.instrucoesEntrega,
     required this.instrucoesFinanceiras,
-    required this.prioridade,
+
     required this.pedidosVinculados,
     required this.pedidosFilhos,
     required this.pai,
@@ -323,7 +323,7 @@ class PedidoModel {
       'pedidoFinanceiro': pedidoFinanceiro,
       'instrucoesEntrega': instrucoesEntrega,
       'instrucoesFinanceiras': instrucoesFinanceiras,
-      'prioridade': prioridade?.toMap(),
+
       'pedidosVinculados': pedidosVinculados,
       'pedidosFilhos': pedidosFilhos,
       'pai': pai,
@@ -394,9 +394,7 @@ class PedidoModel {
       pedidoFinanceiro: map['pedidoFinanceiro'] ?? '',
       instrucoesEntrega: map['instrucoesEntrega'] ?? '',
       instrucoesFinanceiras: map['instrucoesFinanceiras'] ?? '',
-      prioridade: map['prioridade'] != null
-          ? PedidoPrioridadeModel.fromMap(map['prioridade'])
-          : null,
+
       pedidosVinculados: map['pedidosVinculados'] != null
           ? List<String>.from(map['pedidosVinculados'])
           : [],
@@ -529,7 +527,7 @@ class PedidoModel {
         pedidoFinanceiro: map['pedido_financeiro']?.toString() ?? '',
         instrucoesEntrega: map['instrucoes_entrega']?.toString() ?? '',
         instrucoesFinanceiras: map['instrucoes_financeiras']?.toString() ?? '',
-        prioridade: null,
+
         pedidosVinculados: [],
         pedidosFilhos: [],
         pai: null,
@@ -603,7 +601,7 @@ class PedidoModel {
     String? pedidoFinanceiro,
     String? instrucoesEntrega,
     String? instrucoesFinanceiras,
-    PedidoPrioridadeModel? prioridade,
+
     List<String>? pedidosVinculados,
     List<String>? pedidosFilhos,
     String? pai,
@@ -640,7 +638,7 @@ class PedidoModel {
       instrucoesEntrega: instrucoesEntrega ?? this.instrucoesEntrega,
       instrucoesFinanceiras:
           instrucoesFinanceiras ?? this.instrucoesFinanceiras,
-      prioridade: prioridade ?? this.prioridade,
+
       pedidosVinculados: pedidosVinculados ?? this.pedidosVinculados,
       pedidosFilhos: pedidosFilhos ?? this.pedidosFilhos,
       pai: pai ?? this.pai,

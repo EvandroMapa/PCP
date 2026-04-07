@@ -194,7 +194,7 @@ class PedidoCreateModel {
       instrucoesFinanceiras: instrucoesFinanceiras.text,
       pedidoFinanceiro: pedidoFinanceiro.text,
       planilhamento: planilhamento.text,
-      prioridade: null,
+
       pedidosVinculados: pedidosVinculados,
       pedidosFilhos: pedidosFilhos,
       pai: pai,

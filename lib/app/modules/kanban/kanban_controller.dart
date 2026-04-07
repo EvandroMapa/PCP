@@ -334,7 +334,7 @@ class StepController {
     StepModel step,
     PedidoModel pedido,
   ) async {
-    final automatizacao = BackendClient.automatizacao.data;
+
   }
 
 

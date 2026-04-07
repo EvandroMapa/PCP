@@ -64,28 +64,7 @@ class KanbanCardPedidoWidget extends StatelessWidget {
                     children: [
                       _tipoTagWidget(pedido.tipo),
                       const W(4),
-                      if (pedido.prioridade != null) ...[
-                        Container(
-                          margin: const EdgeInsets.only(right: 4),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.orange,
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: Colors.black, width: 0.8),
-                          ),
-                          child: Text(
-                            pedido.prioridade!.getLabelShort(),
-                            style: AppCss.minimumRegular.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
-                      ],
+
                       if (pedido.comments.any((e) => e.isFixed)) ...[
                         Icon(Icons.warning, color: Colors.orange, size: 16),
                         const W(4),
@@ -165,9 +144,6 @@ class KanbanCardPedidoWidget extends StatelessWidget {
     if (pedido.comments.any((e) => e.isFixed)) {
       return const Color.fromARGB(255, 255, 227, 177);
     }
-    if (pedido.prioridade == null) {
-      return const Color(0xFFFFFFFF);
-    }
-    return const Color.fromARGB(255, 255, 249, 239);
+    return const Color(0xFFFFFFFF);
   }
 }
