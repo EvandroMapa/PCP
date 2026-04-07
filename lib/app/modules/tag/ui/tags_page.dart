@@ -58,6 +58,7 @@ class _TagsPageState extends State<TagsPage> {
             final tags = tagCtrl
                 .getTagsFiltered(utils.search.text, __)
                 .toList();
+            tags.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
             return Column(
               children: [
                 Padding(
@@ -94,9 +95,23 @@ class _TagsPageState extends State<TagsPage> {
       onTap: () => push(context, TagCreatePage(tag: tag)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       title: Text(tag.nome, style: AppCss.mediumBold),
-      subtitle: tag.descricao.isNotEmpty
-          ? Text(tag.descricao, style: AppCss.minimumRegular)
-          : null,
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (tag.isDefaultCD)
+            Text(
+              'Esta etiqueta será vinculada automaticamente aos pedidos de corte e dobra',
+              style: AppCss.minimumBold.setColor(AppColors.secondary),
+            ),
+          if (tag.isDefaultCDA)
+            Text(
+              'Esta etiqueta será vinculada automaticamente aos pedidos de armado',
+              style: AppCss.minimumBold.setColor(AppColors.secondary),
+            ),
+          if (tag.descricao.isNotEmpty)
+            Text(tag.descricao, style: AppCss.minimumRegular)
+        ],
+      ),
       trailing: SizedBox(
         width: 50,
         child: Row(
