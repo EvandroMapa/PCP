@@ -125,12 +125,10 @@ class PedidoPdfParser {
     if (value.isEmpty) return 0.0;
     String clean = value.replaceAll(RegExp(r'[^0-9,.]'), '');
 
-    if (clean.contains(',') && clean.contains('.')) {
-      return double.tryParse(clean.replaceAll('.', '').replaceAll(',', '.')) ?? 0.0;
-    }
-    if (clean.contains(',')) {
-      return double.tryParse(clean.replaceAll(',', '.')) ?? 0.0;
-    }
+    // Para o padrão brasileiro de PDF, o ponto (.) é separador de milhar e a vírgula (,) é o decimal.
+    clean = clean.replaceAll('.', '');
+    clean = clean.replaceAll(',', '.');
+
     return double.tryParse(clean) ?? 0.0;
   }
 }
