@@ -35,12 +35,12 @@ class _BackupsPageState extends State<BackupsPage> {
         actions: [
           IconButton(
             tooltip: 'Restaurar Backup',
-            onPressed: () => backupCtrl.onRestoreBackup(),
+            onPressed: () => backupCtrl.onRestoreBackup(context),
             icon: Icon(Icons.upload, color: AppColors.white),
           ),
           IconButton(
             tooltip: 'Criar Backup',
-            onPressed: () => backupCtrl.onCreateBackup(),
+            onPressed: () => backupCtrl.onCreateBackup(context),
             icon: Icon(Icons.add, color: AppColors.white),
           ),
         ],
