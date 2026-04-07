@@ -53,7 +53,7 @@ class KanbanStepTitleWidget extends StatelessWidget {
                   child: Text(
                     step.name,
                     style: AppCss.minimumBold
-                        .setSize(16)
+                        .setSize(13.5)
                         .setColor(AppColors.primaryMain),
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.center,

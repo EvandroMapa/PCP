@@ -176,16 +176,15 @@ class OrdemController {
   Future<void> onCreate(value) async {
     onValid();
 
-    String descricao = form.produto!.descricao
-        .replaceAll('m', '')
-        .replaceAll('.', '');
-    descricao = descricao.length > 2 ? descricao.substring(0, 2) : descricao;
-    if (descricao.length == 1) {
-      descricao = '${descricao}0';
-    }
+    String bitola = form.produto!.descricao
+        .replaceAll('mm', '')
+        .replaceAll(',', '.')
+        .split('.')
+        .first
+        .replaceAll(RegExp(r'[^0-9]'), '');
 
     form.id =
-        'OP$descricao-${[...FirestoreClient.ordens.ordensNaoArquivadas, ...FirestoreClient.ordens.ordensArquivadas].length + 1}_${HashService.get}';
+        'OP$bitola-${[...FirestoreClient.ordens.ordensNaoArquivadas, ...FirestoreClient.ordens.ordensArquivadas].length + 1}_${HashService.get}';
 
     final ordemCriada = form.toOrdemModelCreate();
     if (ordemCriada.produtos.isEmpty) {

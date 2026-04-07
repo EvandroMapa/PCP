@@ -96,7 +96,7 @@ class KanbanCardPedidoWidget extends StatelessWidget {
                   const H(8),
                   Text(
                     pedido.localizador,
-                    style: AppCss.mediumBold.setSize(16),
+                    style: AppCss.mediumBold.setSize(13.5),
                   ),
                   const H(8),
                   Row(
