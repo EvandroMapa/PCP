@@ -8,12 +8,17 @@ class TagModel {
   final String descricao;
   final Color color;
   final DateTime createdAt;
+  final bool isDefaultCD;
+  final bool isDefaultCDA;
+
   TagModel({
     required this.id,
     required this.nome,
     required this.descricao,
     required this.color,
     required this.createdAt,
+    this.isDefaultCD = false,
+    this.isDefaultCDA = false,
   });
 
   factory TagModel.empty() => TagModel(
@@ -22,6 +27,8 @@ class TagModel {
     descricao: '',
     color: Colors.transparent,
     createdAt: DateTime.now(),
+    isDefaultCD: false,
+    isDefaultCDA: false,
   );
 
   Map<String, dynamic> toSupabaseMap() {
@@ -31,6 +38,8 @@ class TagModel {
       'descricao': descricao,
       'color': color.value,
       'created_at': createdAt.toIso8601String(),
+      'is_default_cd': isDefaultCD,
+      'is_default_cda': isDefaultCDA,
     };
   }
 
@@ -43,6 +52,8 @@ class TagModel {
       createdAt: map['created_at'] != null
           ? DateTime.parse(map['created_at'])
           : DateTime.now(),
+      isDefaultCD: map['is_default_cd'] ?? false,
+      isDefaultCDA: map['is_default_cda'] ?? false,
     );
   }
 
@@ -53,6 +64,8 @@ class TagModel {
       'descricao': descricao,
       'color': color.value,
       'createdAt': createdAt.millisecondsSinceEpoch,
+      'isDefaultCD': isDefaultCD,
+      'isDefaultCDA': isDefaultCDA,
     };
   }
 
@@ -65,6 +78,8 @@ class TagModel {
       createdAt: map['createdAt'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'])
           : DateTime.now(),
+      isDefaultCD: map['isDefaultCD'] ?? false,
+      isDefaultCDA: map['isDefaultCDA'] ?? false,
     );
   }
 
@@ -72,4 +87,24 @@ class TagModel {
 
   factory TagModel.fromJson(String source) =>
       TagModel.fromMap(json.decode(source));
+
+  TagModel copyWith({
+    String? id,
+    String? nome,
+    String? descricao,
+    Color? color,
+    DateTime? createdAt,
+    bool? isDefaultCD,
+    bool? isDefaultCDA,
+  }) {
+    return TagModel(
+      id: id ?? this.id,
+      nome: nome ?? this.nome,
+      descricao: descricao ?? this.descricao,
+      color: color ?? this.color,
+      createdAt: createdAt ?? this.createdAt,
+      isDefaultCD: isDefaultCD ?? this.isDefaultCD,
+      isDefaultCDA: isDefaultCDA ?? this.isDefaultCDA,
+    );
+  }
 }

@@ -89,6 +89,40 @@ class _TagCreatePageState extends State<TagCreatePage> {
             tagCtrl.formStream.update();
           },
         ),
+        const H(16),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(
+            'Etiqueta padrão para Pedido CD',
+            style: AppCss.mediumBold,
+          ),
+          subtitle: Text(
+            'Esta etiqueta será vinculada automaticamente a todo pedido do tipo Corte e Dobra',
+            style: AppCss.minimumRegular.setColor(AppColors.neutralMedium),
+          ),
+          value: form.isDefaultCD,
+          onChanged: (v) {
+            form.isDefaultCD = v;
+            tagCtrl.formStream.update();
+          },
+        ),
+        const H(8),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(
+            'Etiqueta padrão para Pedido CDA',
+            style: AppCss.mediumBold,
+          ),
+          subtitle: Text(
+            'Esta etiqueta será vinculada automaticamente a todo pedido do tipo Armado',
+            style: AppCss.minimumRegular.setColor(AppColors.neutralMedium),
+          ),
+          value: form.isDefaultCDA,
+          onChanged: (v) {
+            form.isDefaultCDA = v;
+            tagCtrl.formStream.update();
+          },
+        ),
         const H(24),
         if (form.isEdit)
           TextButton.icon(

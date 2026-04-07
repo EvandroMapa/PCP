@@ -3,6 +3,7 @@ import 'dart:developer';
 
 
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 
@@ -228,6 +229,16 @@ class PedidoController {
         }
       } else {
         PedidoModel pedidoModel = form.toPedidoModel(pedido);
+        
+        final defaultCDTags = FirestoreClient.tags.data.where((e) => e.isDefaultCD).toList();
+        final defaultCDATags = FirestoreClient.tags.data.where((e) => e.isDefaultCDA).toList();
+        
+        if (pedidoModel.tipo == PedidoTipo.cd && defaultCDTags.isNotEmpty) {
+          pedidoModel.tags.addAll(defaultCDTags);
+        } else if (pedidoModel.tipo == PedidoTipo.cda && defaultCDATags.isNotEmpty) {
+          pedidoModel.tags.addAll(defaultCDATags);
+        }
+
         await BackendClient.pedidos.add(pedidoModel);
         if (form.pai != null) {
           final pai = BackendClient.pedidos.getById(form.pai!);

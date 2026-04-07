@@ -14,6 +14,8 @@ class TagCreateModel {
   TextController descricao = TextController();
   Color color = AppColors.primaryMain;
   DateTime createdAt = DateTime.now();
+  bool isDefaultCD = false;
+  bool isDefaultCDA = false;
 
   late bool isEdit;
 
@@ -24,6 +26,8 @@ class TagCreateModel {
     descricao.text = tag.descricao;
     color = tag.color;
     createdAt = tag.createdAt;
+    isDefaultCD = tag.isDefaultCD;
+    isDefaultCDA = tag.isDefaultCDA;
   }
 
   TagModel toTagModel() => TagModel(
@@ -32,5 +36,7 @@ class TagCreateModel {
     descricao: descricao.text,
     color: color,
     createdAt: createdAt,
+    isDefaultCD: isDefaultCD,
+    isDefaultCDA: isDefaultCDA,
   );
 }
