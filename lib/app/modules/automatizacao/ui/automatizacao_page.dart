@@ -27,7 +27,7 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
 
   @override
   void initState() {
-    setWebTitle('Automações de Processos');
+    setWebTitle('Automações de Etapas');
     model = FirestoreClient.automatizacao.data.copyWith();
     super.initState();
   }
@@ -66,7 +66,7 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildSectionHeader('Regras de Transição de Status'),
+                _buildSectionHeader('Regras de Transição de Etapas'),
                 const SizedBox(height: 16),
                 
                 _buildSingleStepRule(
@@ -143,15 +143,6 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                   steps,
                   () => setState(() => model = model.copyWith(
                       naoMostrarNoCalendario: model.naoMostrarNoCalendario.copyWith(steps: List.from(model.naoMostrarNoCalendario.steps ?? [])))),
-                ),
-
-                _buildMultiStepRule(
-                  '09 - Remover Lista Prioridade',
-                  'Selecionar etapas a serem ocultadas da lista de priorização:',
-                  model.removerListaPrioridade.steps ?? [],
-                  steps,
-                  () => setState(() => model = model.copyWith(
-                      removerListaPrioridade: model.removerListaPrioridade.copyWith(steps: List.from(model.removerListaPrioridade.steps ?? [])))),
                 ),
 
                 const SizedBox(height: 32),

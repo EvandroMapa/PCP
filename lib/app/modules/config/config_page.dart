@@ -78,7 +78,7 @@ class _ConfigPageState extends State<ConfigPage> {
           const Divisor(),
           ListTile(
             onTap: () => push(context, const AutomatizacaoPage()),
-            title: const Text('Automações de Processos'),
+            title: const Text('Automações de Etapas'),
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: 16,
