@@ -35,6 +35,9 @@ class BackupController {
     final backups = <BackupModel>[];
     try {
       final items = await SupabaseService.client.storage.from('backups').list();
+      if (items.isEmpty) {
+        backups.add(BackupModel(nome: 'INFO: A pasta backups retornou 0 arquivos', createdAt: DateTime.now())..url = '');
+      }
       for (var file in items) {
         if (!file.name.endsWith('.json')) continue;
         final backup = BackupModel.fromFileObject(file);
