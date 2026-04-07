@@ -43,7 +43,9 @@ class BackupController {
       }
       // Ordena por decrescente (mais novo primeiro)
       backups.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    } catch (_) {}
+    } catch (e) {
+      print('Erro ao buscar backups: \$e');
+    }
     backupsStream.add(backups);
   }
 

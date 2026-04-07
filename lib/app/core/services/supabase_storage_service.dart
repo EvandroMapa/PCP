@@ -15,7 +15,7 @@ class SupabaseStorageService {
     required String path,
     String bucket = _bucket,
   }) async {
-    final fullPath = '$path/$name';
+    final fullPath = path.isEmpty ? name : '$path/$name';
     await SupabaseService.client.storage.from(bucket).uploadBinary(
       fullPath,
       bytes,
