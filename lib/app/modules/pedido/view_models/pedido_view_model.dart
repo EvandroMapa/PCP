@@ -167,7 +167,7 @@ class PedidoCreateModel {
           .toList(),
       deliveryAt: deliveryAt,
       steps: pedido?.steps ?? [pedidoStepModel],
-      tags: pedido?.tags ?? [tipo!.tag],
+      tags: pedido?.tags ?? [],
       checks: checklist?.checklist.map((e) => e.copyWith()).toList() ?? [],
       checklistId: checklist?.id,
       comments: pedido?.comments ?? [],
