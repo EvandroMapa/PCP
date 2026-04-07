@@ -124,17 +124,22 @@ class StepController {
 
   Map<String, List<PedidoModel>> _mountCalendar() {
     final calendar = <String, List<PedidoModel>>{};
-    final keys = BackendClient.pedidos.pepidosUnarchiveds
+    
+    // Filtramos apenas pedidos não arquivados que têm data de entrega
+    final pedidosCalendario = BackendClient.pedidos.pepidosUnarchiveds
         .where((e) => e.deliveryAt != null)
-        .map((e) => e.deliveryAt!)
-        .toSet();
-    for (DateTime key in keys) {
-      calendar[DateFormat('dd/MM/yyyy').format(key)] = BackendClient
-          .pedidos
-          .pepidosUnarchiveds
-          .where((e) => e.deliveryAt == key)
-          .toList();
+        .toList();
+
+    for (final pedido in pedidosCalendario) {
+      // Formata a data de entrega ignorando o horário, apenas dia, mês e ano
+      final diaKey = DateFormat('dd/MM/yyyy').format(pedido.deliveryAt!);
+      
+      if (!calendar.containsKey(diaKey)) {
+        calendar[diaKey] = [];
+      }
+      calendar[diaKey]!.add(pedido);
     }
+    
     return calendar;
   }
 
