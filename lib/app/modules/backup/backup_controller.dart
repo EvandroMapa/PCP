@@ -45,6 +45,7 @@ class BackupController {
       backups.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     } catch (e) {
       print('Erro ao buscar backups: \$e');
+      backups.add(BackupModel(nome: 'ERRO: \$e', createdAt: DateTime.now())..url = '');
     }
     backupsStream.add(backups);
   }
