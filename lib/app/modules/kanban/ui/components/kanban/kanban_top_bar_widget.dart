@@ -86,7 +86,7 @@ class _KanbanTopbarConcreteWidgetState
                 child: Stack(
                   children: [
                     IconButton(
-                      onPressed: () {},
+                      onPressed: () => controller.show(),
                       icon: Icon(
                         Icons.filter_list,
                         color: utils.hasFilter() ? Colors.redAccent : AppColors.white,
