@@ -196,7 +196,14 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
     List<StepModel> allSteps,
     void Function(StepModel) onChanged,
   ) {
-    StepModel? selected = currentStep;
+    // Busca o step por ID na lista atual para garantir que seja a mesma instância (referência)
+    // Sem isso, o operator == por referência do StepModel nunca dá match no dropdown
+    StepModel? selected = currentStep != null
+        ? allSteps.firstWhere(
+            (e) => e.id == currentStep.id,
+            orElse: () => currentStep,
+          )
+        : null;
     if (selected != null && !allSteps.any((e) => e.id == selected!.id)) {
       selected = null;
     }
