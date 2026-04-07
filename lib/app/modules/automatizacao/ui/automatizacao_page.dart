@@ -70,8 +70,8 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                 const SizedBox(height: 16),
                 
                 _buildSingleStepRule(
-                  'Criação de Pedido',
-                  'Ao criar um pedido, anexar a etapa:',
+                  '01 - Criação de pedido',
+                  'Novos pedidos serão alocados na etapa:',
                   model.criacaoPedido.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
@@ -79,8 +79,8 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                 ),
 
                 _buildSingleStepRule(
-                  'Produto Separado',
-                  'Ao marcar Produto como Separado:',
+                  '02 - Produto separado',
+                  'Ao Marcar produto como separado:',
                   model.produtoPedidoSeparado.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
@@ -88,8 +88,8 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                 ),
 
                 _buildSingleStepRule(
-                  'Produzindo CD (Corte e Dobra)',
-                  'Muda status para Produzindo CD:',
+                  '03 - Produto entra pra produção (Corte e Dobra ou Armado)',
+                  'Quando o item entrar numa Ordem de Produção, mover para:',
                   model.produzindoCDPedido.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
@@ -97,8 +97,8 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                 ),
 
                 _buildSingleStepRule(
-                  'Pronto CD',
-                  'Ao finalizar a produção na etapa de CD:',
+                  '04 - Produção da Etapa de Corte e dobra Finalizado (CD)',
+                  'Quando todos os itens estiverem prontos, mover para:',
                   model.prontoCDPedido.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
@@ -106,8 +106,8 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                 ),
 
                 _buildSingleStepRule(
-                  'Aguardando Armação',
-                  'Enviado/Aguardando iniciar Armação:',
+                  '05 - Produção da Etapa de Corte e dobra Finalizado (CDA)',
+                  'Quando todos os itens estiverem prontos, mover para:',
                   model.aguardandoArmacaoPedido.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
@@ -115,7 +115,7 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                 ),
 
                 _buildSingleStepRule(
-                  'Produzindo Armação',
+                  '06 - Produzindo Armação',
                   'Muda status para Produzindo Armação:',
                   model.produzindoArmacaoPedido.step,
                   steps,
@@ -124,7 +124,7 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                 ),
 
                 _buildSingleStepRule(
-                  'Pronto Armação',
+                  '07 - Pronto Armação',
                   'Ao finalizar a produção de Armação:',
                   model.prontoArmacaoPedido.step,
                   steps,
@@ -137,7 +137,7 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                 const SizedBox(height: 16),
 
                 _buildMultiStepRule(
-                  'Não Mostrar no Calendário',
+                  '08 - Não Mostrar no Calendário',
                   'Selecionar etapas onde o Pedido não deve constar na visualização de calendário:',
                   model.naoMostrarNoCalendario.steps ?? [],
                   steps,
@@ -146,7 +146,7 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                 ),
 
                 _buildMultiStepRule(
-                  'Remover Lista Prioridade',
+                  '09 - Remover Lista Prioridade',
                   'Selecionar etapas a serem ocultadas da lista de priorização:',
                   model.removerListaPrioridade.steps ?? [],
                   steps,
