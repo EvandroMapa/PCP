@@ -67,7 +67,10 @@ class _BackupScheduleDialogState extends State<BackupScheduleDialog> {
   Widget build(BuildContext context) {
     if (_loading || _config == null) {
       return const AlertDialog(
-        content: Center(child: CircularProgressIndicator()),
+        content: SizedBox(
+          height: 80,
+          child: Center(child: CircularProgressIndicator()),
+        ),
       );
     }
 
@@ -75,115 +78,190 @@ class _BackupScheduleDialogState extends State<BackupScheduleDialog> {
 
     return AlertDialog(
       backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+      contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       title: Row(
         children: [
-          Icon(Icons.schedule, color: AppColors.primaryMain),
-          const SizedBox(width: 8),
-          Text('Backup Automático', style: AppCss.largeBold),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primaryMain.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(Icons.schedule_rounded, color: AppColors.primaryMain, size: 22),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Backup Automático', style: AppCss.largeBold),
+              Text(
+                'Configure dias e horário',
+                style: AppCss.smallRegular.copyWith(color: Colors.grey[500]),
+              ),
+            ],
+          ),
         ],
       ),
       content: SizedBox(
-        width: 380,
+        width: 400,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Toggle ativo
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text('Agendamento ativo', style: AppCss.mediumBold),
-              subtitle: Text(
-                _config!.enabled
-                    ? 'Backup automático habilitado'
-                    : 'Backup automático desabilitado',
-                style: AppCss.smallRegular
-                    .copyWith(color: _config!.enabled ? Colors.green : Colors.grey),
+            const SizedBox(height: 8),
+
+            // ── Toggle ativo ──────────────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              decoration: BoxDecoration(
+                color: _config!.enabled
+                    ? Colors.green.shade50
+                    : Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: _config!.enabled
+                      ? Colors.green.shade200
+                      : Colors.grey.shade200,
+                ),
               ),
-              value: _config!.enabled,
-              activeColor: AppColors.primaryMain,
-              onChanged: (v) => setState(() => _config!.enabled = v),
+              child: Row(
+                children: [
+                  Icon(
+                    _config!.enabled
+                        ? Icons.check_circle_rounded
+                        : Icons.radio_button_unchecked,
+                    color: _config!.enabled ? Colors.green : Colors.grey,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Agendamento ativo', style: AppCss.mediumBold),
+                        Text(
+                          _config!.enabled
+                              ? 'Backups automáticos habilitados'
+                              : 'Clique para habilitar',
+                          style: AppCss.smallRegular.copyWith(
+                            color: _config!.enabled
+                                ? Colors.green.shade700
+                                : Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: _config!.enabled,
+                    activeColor: Colors.green,
+                    onChanged: (v) => setState(() => _config!.enabled = v),
+                  ),
+                ],
+              ),
             ),
 
-            const Divider(),
+            const SizedBox(height: 20),
 
-            // Dias da semana
+            // ── Dias da semana ────────────────────────────────────────────
             Text('Dias da semana', style: AppCss.mediumBold),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: _diasNomes.entries.map((e) {
                 final selected = _config!.dias.contains(e.key);
-                return FilterChip(
-                  label: Text(e.value),
+                return _DayButton(
+                  label: e.value,
                   selected: selected,
-                  selectedColor: AppColors.primaryMain.withOpacity(0.15),
-                  checkmarkColor: AppColors.primaryMain,
-                  labelStyle: TextStyle(
-                    color: selected ? AppColors.primaryMain : Colors.grey[600],
-                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                  ),
-                  onSelected: (_) {
-                    setState(() {
-                      if (selected) {
-                        _config!.dias.remove(e.key);
-                      } else {
-                        _config!.dias.add(e.key);
-                        _config!.dias.sort();
-                      }
-                    });
-                  },
+                  color: AppColors.primaryMain,
+                  onTap: () => setState(() {
+                    if (selected) {
+                      _config!.dias.remove(e.key);
+                    } else {
+                      _config!.dias
+                        ..add(e.key)
+                        ..sort();
+                    }
+                  }),
                 );
               }).toList(),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
-            // Horário
-            Text('Horário', style: AppCss.mediumBold),
-            const SizedBox(height: 8),
+            // ── Horário ───────────────────────────────────────────────────
+            Text('Horário do backup', style: AppCss.mediumBold),
+            const SizedBox(height: 10),
             InkWell(
               onTap: _pickTime,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(8),
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primaryMain.withOpacity(0.05),
+                      AppColors.primaryMain.withOpacity(0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primaryMain.withOpacity(0.3)),
                 ),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.access_time, color: AppColors.primaryMain, size: 20),
-                    const SizedBox(width: 8),
+                    Icon(Icons.access_time_rounded,
+                        color: AppColors.primaryMain, size: 22),
+                    const SizedBox(width: 12),
                     Text(
                       '${_config!.hora.toString().padLeft(2, '0')}:${_config!.minuto.toString().padLeft(2, '0')}',
-                      style: AppCss.largeBold.setColor(AppColors.primaryMain),
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryMain,
+                        letterSpacing: 2,
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                    Text('(clique para alterar)', style: AppCss.smallRegular.copyWith(color: Colors.grey)),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryMain.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Alterar',
+                        style: AppCss.smallRegular
+                            .copyWith(color: AppColors.primaryMain),
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
 
-            // Próximo backup
+            // ── Próximo backup ────────────────────────────────────────────
             if (proximo != null) ...[
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: Colors.green.shade200),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.event_available, color: Colors.green, size: 18),
+                    const Icon(Icons.event_available_rounded,
+                        color: Colors.green, size: 18),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Próximo backup: ${DateFormat('EEE, dd/MM/yyyy \'às\' HH:mm', 'pt_BR').format(proximo)}',
-                        style: AppCss.smallRegular.copyWith(color: Colors.green.shade700),
+                        'Próximo: ${DateFormat("EEE, dd/MM 'às' HH:mm", 'pt_BR').format(proximo)}',
+                        style: AppCss.smallRegular
+                            .copyWith(color: Colors.green.shade700),
                       ),
                     ),
                   ],
@@ -193,28 +271,93 @@ class _BackupScheduleDialogState extends State<BackupScheduleDialog> {
 
             if (_config!.ultimoBackup != null) ...[
               const SizedBox(height: 8),
-              Text(
-                'Último backup automático: ${DateFormat('dd/MM/yyyy HH:mm').format(_config!.ultimoBackup!)}',
-                style: AppCss.smallRegular.copyWith(color: Colors.grey),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  'Último automático: ${DateFormat('dd/MM/yyyy HH:mm').format(_config!.ultimoBackup!)}',
+                  style: AppCss.smallRegular.copyWith(color: Colors.grey[500]),
+                ),
               ),
             ],
+            const SizedBox(height: 8),
           ],
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('Cancelar', style: TextStyle(color: Colors.grey[600])),
+          child: Text('Cancelar',
+              style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w500)),
         ),
-        ElevatedButton(
+        const SizedBox(width: 4),
+        ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryMain,
             foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            elevation: 0,
           ),
+          icon: const Icon(Icons.save_rounded, size: 18),
+          label: const Text('Salvar configuração',
+              style: TextStyle(fontWeight: FontWeight.bold)),
           onPressed: _save,
-          child: const Text('Salvar'),
         ),
       ],
+    );
+  }
+}
+
+// ─── BOTÃO DE DIA ─────────────────────────────────────────────────────────────
+class _DayButton extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _DayButton({
+    required this.label,
+    required this.selected,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: selected ? color : Colors.transparent,
+          border: Border.all(
+            color: selected ? color : Colors.grey.shade300,
+            width: 1.5,
+          ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: color.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              : [],
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: selected ? Colors.white : Colors.grey[600],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
