@@ -56,7 +56,7 @@ class PedidoItemWidget extends StatelessWidget {
                               padding: EdgeInsets.only(right: 8),
                               child: KanbanCardNotificacaoWidget(),
                             ),
-                          if (pedido.prioridade != null) _prioridadeWidget(),
+
                           if (pedido.tags.isNotEmpty) ...[
                             for (final tag in pedido.tags) _tagWidget(tag),
                           ],
@@ -152,32 +152,6 @@ class PedidoItemWidget extends StatelessWidget {
     );
   }
 
-  Container _prioridadeWidget() {
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-      decoration: BoxDecoration(
-        color: Colors.orange,
-        borderRadius: BorderRadius.all(Radius.circular(4)),
-        border: Border.all(color: Colors.black, width: 0.6),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.priority_high,
-            color: Colors.black,
-            size: 9,
-            weight: FontWeight.bold.value.toDouble(),
-          ),
-          const W(2),
-          Text(
-            pedido.prioridade!.getLabel(),
-            style: AppCss.minimumBold.setSize(9).setColor(Colors.black),
-          ),
-        ],
-      ),
-    );
-  }
 
   Container _tagWidget(TagModel tag) {
     return Container(
@@ -223,9 +197,6 @@ class PedidoItemWidget extends StatelessWidget {
     if (pedido.comments.any((e) => e.isFixed)) {
       return const Color.fromARGB(255, 255, 249, 239);
     }
-    if (pedido.prioridade == null) {
-      return const Color(0xFFFFFFFF);
-    }
-    return const Color.fromARGB(255, 255, 249, 239);
+    return const Color(0xFFFFFFFF);
   }
 }

@@ -20,7 +20,7 @@ import 'package:aco_plus/app/modules/pedido/ui/components/pedido_desc_widget.dar
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_entrega_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_filhos_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_financ_widget.dart';
-import 'package:aco_plus/app/modules/pedido/ui/components/pedido_prioridade_widget.dart';
+
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_produtos_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_status_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_steps_widget.dart';
@@ -120,7 +120,7 @@ class _PedidoPageState extends State<PedidoPage>
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  PedidoPrioridadeWidget(pedido),
+
                   Expanded(child: PedidoTagsWidget(pedido)),
                   PedidoUsersWidget(pedido),
                   const W(12),

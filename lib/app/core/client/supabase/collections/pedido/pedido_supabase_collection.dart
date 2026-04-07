@@ -26,7 +26,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
     dataStream = AppStream.seed(<PedidoModel>[]);
     pedidosUnarchivedsStream = AppStream.seed(<PedidoModel>[]);
     pedidosArchivedsStream = AppStream.seed(<PedidoModel>[]);
-    pedidosPrioridadeStream = AppStream.seed(<PedidoModel>[]);
+
   }
   factory PedidoSupabaseCollection() => _instance;
 
@@ -42,8 +42,6 @@ class PedidoSupabaseCollection extends PedidoCollection {
   @override
   List<PedidoModel> get pedidosArchiveds => pedidosArchivedsStream.value;
 
-  @override
-  List<PedidoModel> get pedidosPrioridade => pedidosPrioridadeStream.value;
 
   bool _isStarted = false;
 
@@ -130,8 +128,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
       pedidosUnarchivedsStream.add(pedidos);
       dataStream.add(pedidos);
-      pedidosPrioridadeStream
-          .add(pedidos.where((e) => e.prioridade != null).toList());
+
     } catch (e) {
       log('Supabase Error (Pedido.start): $e');
     }
@@ -272,7 +269,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
       final updatedList = currentData.values.toList();
       dataStream.add(updatedList);
       pedidosUnarchivedsStream.add(updatedList.where((e) => !e.isArchived).toList());
-      pedidosPrioridadeStream.add(updatedList.where((e) => e.prioridade != null).toList());
+
 
       log('Supabase (Pedido.fetchByIds): ${newPedidos.length} records synced.');
     } catch (e) {

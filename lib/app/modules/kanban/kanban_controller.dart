@@ -335,22 +335,8 @@ class StepController {
     PedidoModel pedido,
   ) async {
     final automatizacao = BackendClient.automatizacao.data;
-    final removerListaPrioridade = automatizacao.removerListaPrioridade;
-    if (pedido.prioridade != null) {
-      if ((removerListaPrioridade.steps ?? [])
-          .map((step) => step.id)
-          .contains(step.id)) {
-        pedido.prioridade = null;
-        await BackendClient.pedidos.update(pedido);
-        pedidoCtrl.onReorderPrioridade(
-          BackendClient.pedidos.pedidosPrioridade,
-        );
-        await BackendClient.pedidos.updateAll(
-          BackendClient.pedidos.pedidosPrioridade,
-        );
-      }
-    }
   }
+
 
   Alignment? _getAlignByPosition(BuildContext context, Offset mouse) {
     const gap = 200;
