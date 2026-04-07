@@ -289,7 +289,17 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         )).toList(),
       );
 
-      await AppSupabaseClient.pedidos.add(pedido);
+      final finalPedido = pedido.copyWith();
+      final defaultCDTags = FirestoreClient.tags.data.where((e) => e.isDefaultCD).toList();
+      final defaultCDATags = FirestoreClient.tags.data.where((e) => e.isDefaultCDA).toList();
+
+      if (finalPedido.tipo == PedidoTipo.cd && defaultCDTags.isNotEmpty) {
+        finalPedido.tags.addAll(defaultCDTags);
+      } else if (finalPedido.tipo == PedidoTipo.cda && defaultCDATags.isNotEmpty) {
+        finalPedido.tags.addAll(defaultCDATags);
+      }
+
+      await AppSupabaseClient.pedidos.add(finalPedido);
 
       if (mounted) {
         Navigator.pop(context);
