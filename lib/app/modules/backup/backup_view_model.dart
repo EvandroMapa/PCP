@@ -1,5 +1,5 @@
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class BackupUtils {
   String restoreTitle = 'Restaurar Backup';
@@ -14,10 +14,15 @@ class BackupModel {
 
   BackupModel({required this.nome, required this.createdAt});
 
-  factory BackupModel.fromRef(Reference ref) {
-    final createdAt = DateFormat(
-      'dd_MM_yyyy_hh_mm_ss',
-    ).parse(ref.name.split('.').first.split('backup_').last);
-    return BackupModel(nome: ref.name, createdAt: createdAt);
+  factory BackupModel.fromFileObject(FileObject file) {
+    DateTime createdAt;
+    try {
+      createdAt = DateFormat(
+        'dd_MM_yyyy_HH_mm_ss',
+      ).parse(file.name.split('.').first.split('backup_').last);
+    } catch (_) {
+      createdAt = file.createdAt != null ? DateTime.parse(file.createdAt!) : DateTime.now();
+    }
+    return BackupModel(nome: file.name, createdAt: createdAt);
   }
 }

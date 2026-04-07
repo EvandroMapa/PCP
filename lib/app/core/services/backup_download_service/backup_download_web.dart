@@ -10,7 +10,8 @@ Future<bool> backupDownload(String name, String path, Uint8List bytes) async {
       name: name,
       bytes: bytes,
       mimeType: 'application/json',
-      path: path,
+      path: '',
+      bucket: 'backups',
     );
     html.AnchorElement(
         href:

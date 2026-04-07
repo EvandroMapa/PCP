@@ -13,13 +13,14 @@ class SupabaseStorageService {
     required Uint8List bytes,
     required String mimeType,
     required String path,
+    String bucket = _bucket,
   }) async {
     final fullPath = '$path/$name';
-    await SupabaseService.client.storage.from(_bucket).uploadBinary(
+    await SupabaseService.client.storage.from(bucket).uploadBinary(
       fullPath,
       bytes,
       fileOptions: FileOptions(contentType: mimeType, upsert: true),
     );
-    return SupabaseService.client.storage.from(_bucket).getPublicUrl(fullPath);
+    return SupabaseService.client.storage.from(bucket).getPublicUrl(fullPath);
   }
 }

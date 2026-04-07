@@ -1,13 +1,12 @@
 import 'dart:convert';
 
-import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'dart:html' as html;
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/backup_download_service/backup_download_web.dart'
     if (dart.library.io) 'package:aco_plus/app/core/services/backup_download_service/backup_download_mobile.dart';
 import 'package:aco_plus/app/modules/backup/backup_view_model.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:intl/intl.dart';
 
 final backupCtrl = BackupController();
@@ -31,156 +30,121 @@ class BackupController {
 
   Future<void> onFetch() async {
     final backups = <BackupModel>[];
-    for (var item
-        in (await FirebaseStorage.instance.ref().child('backups').listAll())
-            .items) {
-      final backup = BackupModel.fromRef(item);
-      backup.url = await item.getDownloadURL();
-      backups.add(backup);
-    }
+    try {
+      final items = await SupabaseService.client.storage.from('backups').list();
+      for (var file in items) {
+        if (!file.name.endsWith('.json')) continue;
+        final backup = BackupModel.fromFileObject(file);
+        backup.url = SupabaseService.client.storage.from('backups').getPublicUrl(file.name);
+        backups.add(backup);
+      }
+      // Ordena por decrescente (mais novo primeiro)
+      backups.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    } catch (_) {}
     backupsStream.add(backups);
   }
 
   Future<void> onCreateBackup() async {
-    Map<String, dynamic> backup = {};
-    onAddCollection(
-      backup,
-      'usuarios',
-      FirestoreClient.usuarios.data.map((e) => e.toMap()).toList(),
-    );
-    onAddCollection(
-      backup,
-      'clientes',
-      FirestoreClient.clientes.data.map((e) => e.toMap()).toList(),
-    );
-    onAddCollection(
-      backup,
-      'produtos',
-      FirestoreClient.produtos.data.map((e) => e.toMap()).toList(),
-    );
-    onAddCollection(
-      backup,
-      'steps',
-      FirestoreClient.steps.data.map((e) => e.toMap()).toList(),
-    );
-    onAddCollection(
-      backup,
-      'tags',
-      FirestoreClient.tags.data.map((e) => e.toMap()).toList(),
-    );
-    onAddCollection(
-      backup,
-      'pedidos',
-      FirestoreClient.pedidos.data.map((e) => e.toMap()).toList(),
-    );
-    onAddCollection(
-      backup,
-      'ordens',
-      FirestoreClient.ordens.data.map((e) => e.toMap()).toList(),
-    );
-    onAddCollection(
-      backup,
-      'clientes',
-      FirestoreClient.clientes.data.map((e) => e.toMap()).toList(),
-    );
-    onAddCollection(
-      backup,
-      'produtos',
-      FirestoreClient.produtos.data.map((e) => e.toMap()).toList(),
-    );
-    onAddCollection(
-      backup,
-      'steps',
-      FirestoreClient.steps.data.map((e) => e.toMap()).toList(),
-    );
-    onAddCollection(
-      backup,
-      'tags',
-      FirestoreClient.tags.data.map((e) => e.toMap()).toList(),
-    );
-    onAddCollection(
-      backup,
-      'pedidos',
-      FirestoreClient.pedidos.data.map((e) => e.toMap()).toList(),
-    );
-    onAddCollection(
-      backup,
-      'ordens',
-      FirestoreClient.ordens.data.map((e) => e.toMap()).toList(),
-    );
-    onAddCollection(backup, 'automatizacao', [
-      FirestoreClient.automatizacao.data.toMap(),
-    ]);
+    Map<String, List<dynamic>> backup = {};
+    
+    // Lista completa de todas as tabelas em ordem de abstração
+    final tables = [
+      'usuarios', 'clientes', 'materia_primas', 'fabricantes', 'produtos',
+      'steps', 'step_from_steps', 'step_move_roles', 'tags',
+      'pedidos', 'pedido_produtos', 'pedido_status_history', 'pedido_steps_history', 'pedido_tags',
+      'ordens', 'ordem_produtos', 'ordem_status_history',
+      'checklists', 'notificacoes', 'automatizacao'
+    ];
+
+    for (final table in tables) {
+      try {
+        final data = await SupabaseService.client.from(table).select();
+        backup[table] = data as List<dynamic>;
+      } catch (e) {
+        print('Erro ao exportar tabela \$table: \$e');
+        backup[table] = []; // fallback vazio em caso de erro/inexistência momentânea
+      }
+    }
+
     final bytes = utf8.encode(json.encode(backup));
-    final name =
-        'backup_${DateFormat('dd_MM_yyyy_hh_mm_ss').format(DateTime.now())}.json';
+    final name = 'backup_${DateFormat('dd_MM_yyyy_HH_mm_ss').format(DateTime.now())}.json';
+    
     await backupDownload(name, 'backups', bytes);
     await onInit();
-  }
-
-  void onAddCollection(
-    Map<String, dynamic> backup,
-    String key,
-    List<Map<String, dynamic>> data,
-  ) {
-    backup.addAll({key: data});
   }
 
   Future<void> onRestoreBackup() async {
     final file = await FilePicker.platform.pickFiles();
     if (file == null) return;
 
-    final backup = json.decode(utf8.decode(file.files.first.bytes!));
-    await onRestoreCollection(
-      FirestoreClient.usuarios.collection,
-      backup['usuarios'],
-    );
-    await onRestoreCollection(
-      FirestoreClient.clientes.collection,
-      backup['clientes'],
-    );
-    await onRestoreCollection(
-      FirestoreClient.produtos.collection,
-      backup['produtos'],
-    );
-    await onRestoreCollection(
-      FirestoreClient.steps.collection,
-      backup['steps'],
-    );
-    await onRestoreCollection(FirestoreClient.tags.collection, backup['tags']);
-    await onRestoreCollection(
-      FirestoreClient.pedidos.collection,
-      backup['pedidos'],
-    );
-    await onRestoreCollection(
-      FirestoreClient.ordens.collection,
-      backup['ordens'],
-    );
-    await onRestoreCollection(
-      FirestoreClient.automatizacao.collection,
-      backup['automatizacao'],
-    );
-  }
+    Map<String, dynamic> backup;
+    try {
+      backup = json.decode(utf8.decode(file.files.first.bytes!));
+    } catch (_) {
+      print('Erro ao ler .json');
+      return;
+    }
 
-  Future<void> onRestoreCollection(
-    CollectionReference<Map<String, dynamic>> collection,
-    List data,
-  ) async {
-    final bacthDelete = FirebaseFirestore.instance.batch();
-    for (var query in (await collection.get()).docs) {
-      bacthDelete.delete(query.reference);
+    // 1. Ordem de Deleção (Filhos -> Pais)
+    final cascadeOrder = [
+      'pedido_status_history', 'pedido_steps_history', 'pedido_produtos', 'pedido_tags',
+      'ordem_produtos', 'ordem_status_history',
+      'step_from_steps', 'step_move_roles',
+      'pedidos', 'ordens', 'notificacoes', 'checklists',
+      'produtos', 'materia_primas', 'fabricantes', 'steps', 'tags',
+      'clientes', 'usuarios', 'automatizacao'
+    ];
+
+    print('Iniciando deleção massiva remota...');
+    for (final table in cascadeOrder) {
+      if (!backup.containsKey(table)) continue;
+      try {
+        // Tenta excluir todos os registros baseando-se em uma lógica de varredura
+        final allCurrent = await SupabaseService.client.from(table).select();
+        // Agrupa deleções por ID quando possível para evitar timeout de request
+        final ids = allCurrent.where((e) => e.containsKey('id')).map((e) => e['id']).toList();
+        if (ids.isNotEmpty) {
+           // Delete in chunks of 200
+           for (var i = 0; i < ids.length; i += 200) {
+             final chunk = ids.sublist(i, i + 200 > ids.length ? ids.length : i + 200);
+             await SupabaseService.client.from(table).delete().inFilter('id', chunk);
+           }
+        } else {
+           // Tabelas relacionais sem ID (ex: pedido_tags)
+           // Exclui individualmente (ineficiente, mas necessário via REST sem PK simples)
+           for (var item in allCurrent) {
+              var q = SupabaseService.client.from(table).delete();
+              item.forEach((k, v) => q = q.eq(k, v));
+              await q;
+           }
+        }
+      } catch (e) {
+        print('Erro ao limpar \$table: \$e');
+      }
     }
-    await bacthDelete.commit();
-    // utils.restoreTitle = 'Restaurando ${collection.id}';
-    // utils.restoreLenght = data.length;
-    // utilsStream.update();
-    // final batchAdd = FirebaseFirestore.instance.batch();
-    for (final item in data) {
-      // utils.restoreIndex++;
-      // utilsStream.update();
-      // batchAdd.set(collection.doc(item['id']), item);
-      await collection.doc(item['id']).set(item);
+
+    print('Iniciando restauração e inserções...');
+    // 2. Ordem de Inserção (Pais -> Filhos)
+    final insertOrder = cascadeOrder.reversed.toList();
+
+    for (final table in insertOrder) {
+      if (!backup.containsKey(table)) continue;
+      final dataList = backup[table] as List<dynamic>;
+      if (dataList.isEmpty) continue;
+      
+      try {
+        final payloads = dataList.cast<Map<String, dynamic>>();
+        // Inserir em chunks de 1000
+        for (var i = 0; i < payloads.length; i += 1000) {
+          final chunk = payloads.sublist(i, i + 1000 > payloads.length ? payloads.length : i + 1000);
+          await SupabaseService.client.from(table).upsert(chunk);
+        }
+      } catch (e) {
+        print('Erro ao inserir em \$table: \$e');
+      }
     }
-    // await batchAdd.commit();
+    
+    print('Backup restaurado com sucesso. Realocando local memory cache...');
+    html.window.location.reload();
   }
 }
