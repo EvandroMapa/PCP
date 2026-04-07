@@ -1,10 +1,12 @@
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/components/w.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
+import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
+import 'package:aco_plus/app/modules/elemento/ui/elementos_tab.dart';
 import 'package:aco_plus/app/modules/notificacao/notificacao_controller.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pai/pai_pedido_corte_dobra_widget.dart';
@@ -20,7 +22,6 @@ import 'package:aco_plus/app/modules/pedido/ui/components/pedido_desc_widget.dar
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_entrega_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_filhos_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_financ_widget.dart';
-
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_produtos_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_status_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_steps_widget.dart';
@@ -50,10 +51,14 @@ class PedidoPage extends StatefulWidget {
 }
 
 class _PedidoPageState extends State<PedidoPage>
-    with AutomaticKeepAliveClientMixin {
+    with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
+
+  late TabController _tabController;
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     if (widget.reason != PedidoInitReason.kanban) {
       setWebTitle('Pedido ${widget.pedido.localizador}');
     }
@@ -62,8 +67,8 @@ class _PedidoPageState extends State<PedidoPage>
   }
 
   @override
-  @override
   void dispose() {
+    _tabController.dispose();
     pedidoCtrl.onDisposePage();
     pedidoCtrl.setPedido(null);
     super.dispose();
@@ -93,15 +98,17 @@ class _PedidoPageState extends State<PedidoPage>
         reason: widget.reason,
         onDelete: widget.onDelete,
       ),
-      body: body(pedido),
+      body: _bodyWithTabs(pedido),
     );
   }
 
   Widget _kanbanReasonWidget(PedidoModel pedido) {
-    return Material(surfaceTintColor: Colors.transparent, child: body(pedido));
+    return Material(
+        surfaceTintColor: Colors.transparent,
+        child: _bodyWithTabs(pedido));
   }
 
-  Widget body(PedidoModel pedido) {
+  Widget _bodyWithTabs(PedidoModel pedido) {
     return Column(
       children: [
         if (isKanban)
@@ -110,90 +117,121 @@ class _PedidoPageState extends State<PedidoPage>
             reason: widget.reason,
             onDelete: widget.onDelete,
           ),
-        Expanded(
-          child: ListView(
-            children: [
-              if (pedido.getPedidosFilhos().isNotEmpty)
-                PaiPedidoSinalizadorWidget(),
-              if (pedido.pai != null && pedido.pai != '')
-                PaiPedidoFilhoSinalizadorWidget(),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
 
-                  Expanded(child: PedidoTagsWidget(pedido)),
-                  PedidoUsersWidget(pedido),
-                  const W(12),
-                ],
-              ),
-              Column(
-                children: [
-                  PedidoDescWidget(pedido),
-                  const Divisor(),
-                  PedidoStepsWidget(pedido),
-                  const Divisor(),
-                  if (pedido.pedidosFilhos.isEmpty) ...[
-                    PedidoStatusWidget(pedido),
-                    const Divisor(),
-                    if (pedido.isAguardandoEntradaProducao()) ...[
-                      PedidoProdutosWidget(pedido),
-                      const Divisor(),
-                    ],
-                    if (!pedido.isAguardandoEntradaProducao())
-                      Column(
-                        children: [
-                          PedidoCorteDobraWidget(pedido),
-                          const Divisor(),
-                          PedidoProdutosWidget(pedido),
-                          const Divisor(),
-                          if (pedido.tipo == PedidoTipo.cda) ...[
-                            PedidoArmacaoWidget(pedido),
-                            const Divisor(),
-                          ],
-                        ],
-                      ),
-                  ],
-
-                  if (pedido.pedidosFilhos.isNotEmpty) ...[
-                    PaiPedidoCorteDobraWidget(pedido),
-                    const Divisor(),
-                    PaiPedidoProdutosWidget(pedido),
-                    const Divisor(),
-                    PedidoFilhosWidget(
-                      pedido: pedido,
-                      filhos: pedido.getPedidosFilhos(),
-                    ),
-                    const Divisor(),
-                  ],
-
-                  if (pedido.instrucoesEntrega.isNotEmpty) ...[
-                    PedidoEntregaWidget(pedido),
-                    const Divisor(),
-                  ],
-                  if (pedido.instrucoesFinanceiras.isNotEmpty ||
-                      pedido.instrucoesFinanceiras.isNotEmpty) ...[
-                    PedidoFinancWidget(pedido),
-                    const Divisor(),
-                  ],
-                  PedidoAnexosWidget(pedido),
-                  const Divisor(),
-                  PedidoChecksWidget(pedido),
-                  const Divisor(),
-                  if (pedido.pedidosFilhos.isEmpty) ...[
-                    PedidoVinculadosWidget(
-                      pedido: pedido,
-                      vinculados: pedido.getPedidosVinculados(),
-                    ),
-                    const Divisor(),
-                  ],
-                  PedidoCommentsWidget(pedido),
-                  const Divisor(),
-                  if (pedido.histories.isNotEmpty)
-                    PedidoTimelineWidget(pedido: pedido),
-                ],
-              ),
+        // ── TabBar ───────────────────────────────────────────────────────
+        Container(
+          color: Colors.white,
+          child: TabBar(
+            controller: _tabController,
+            labelStyle: AppCss.mediumBold.copyWith(fontSize: 13),
+            unselectedLabelStyle:
+                AppCss.mediumRegular.copyWith(fontSize: 13),
+            labelColor: AppColors.primaryMain,
+            unselectedLabelColor: Colors.grey[500],
+            indicatorColor: AppColors.primaryMain,
+            indicatorWeight: 2.5,
+            tabs: const [
+              Tab(text: 'Detalhes do Pedido'),
+              Tab(text: 'Elementos'),
             ],
           ),
+        ),
+
+        // ── Conteúdo das abas ─────────────────────────────────────────────
+        Expanded(
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              // Aba 1: Detalhes (igual ao que existia antes)
+              _detalhesBody(pedido),
+
+              // Aba 2: Elementos
+              ElementosTab(pedido: pedido),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Conteúdo original da tela de detalhe do pedido
+  Widget _detalhesBody(PedidoModel pedido) {
+    return ListView(
+      children: [
+        if (pedido.getPedidosFilhos().isNotEmpty)
+          PaiPedidoSinalizadorWidget(),
+        if (pedido.pai != null && pedido.pai != '')
+          PaiPedidoFilhoSinalizadorWidget(),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: PedidoTagsWidget(pedido)),
+            PedidoUsersWidget(pedido),
+            const W(12),
+          ],
+        ),
+        Column(
+          children: [
+            PedidoDescWidget(pedido),
+            const Divisor(),
+            PedidoStepsWidget(pedido),
+            const Divisor(),
+            if (pedido.pedidosFilhos.isEmpty) ...[
+              PedidoStatusWidget(pedido),
+              const Divisor(),
+              if (pedido.isAguardandoEntradaProducao()) ...[
+                PedidoProdutosWidget(pedido),
+                const Divisor(),
+              ],
+              if (!pedido.isAguardandoEntradaProducao())
+                Column(
+                  children: [
+                    PedidoCorteDobraWidget(pedido),
+                    const Divisor(),
+                    PedidoProdutosWidget(pedido),
+                    const Divisor(),
+                    PedidoArmacaoWidget(pedido),
+                    const Divisor(),
+                  ],
+                ),
+            ],
+
+            if (pedido.pedidosFilhos.isNotEmpty) ...[
+              PaiPedidoCorteDobraWidget(pedido),
+              const Divisor(),
+              PaiPedidoProdutosWidget(pedido),
+              const Divisor(),
+              PedidoFilhosWidget(
+                pedido: pedido,
+                filhos: pedido.getPedidosFilhos(),
+              ),
+              const Divisor(),
+            ],
+
+            if (pedido.instrucoesEntrega.isNotEmpty) ...[
+              PedidoEntregaWidget(pedido),
+              const Divisor(),
+            ],
+            if (pedido.instrucoesFinanceiras.isNotEmpty) ...[
+              PedidoFinancWidget(pedido),
+              const Divisor(),
+            ],
+            PedidoAnexosWidget(pedido),
+            const Divisor(),
+            PedidoChecksWidget(pedido),
+            const Divisor(),
+            if (pedido.pedidosFilhos.isEmpty) ...[
+              PedidoVinculadosWidget(
+                pedido: pedido,
+                vinculados: pedido.getPedidosVinculados(),
+              ),
+              const Divisor(),
+            ],
+            PedidoCommentsWidget(pedido),
+            const Divisor(),
+            if (pedido.histories.isNotEmpty)
+              PedidoTimelineWidget(pedido: pedido),
+          ],
         ),
       ],
     );

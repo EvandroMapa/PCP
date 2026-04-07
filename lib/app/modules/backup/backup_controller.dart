@@ -123,6 +123,7 @@ class BackupController {
         'pedido_steps_history', 'pedido_tags',
         'ordens', 'ordem_produtos', 'ordem_status_history',
         'checklists', 'notificacoes', 'automatizacao',
+        'elementos', 'elemento_posicoes',
       ];
 
       final Map<String, dynamic> data = {};
