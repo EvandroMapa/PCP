@@ -1,4 +1,4 @@
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
+
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/tag/models/tag_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
@@ -125,14 +125,6 @@ class _TagModelBottomState extends State<TagModelBottom> {
               .contains(e.id),
         )
         .toList();
-
-    if (widget.pedido.tipo == PedidoTipo.cda) {
-      return tags.where((tag) => tag.nome != "CD").toList();
-    }
-
-    if (widget.pedido.tipo == PedidoTipo.cd) {
-      return tags.where((tag) => tag.nome != "CDA").toList();
-    }
 
     return tags;
   }

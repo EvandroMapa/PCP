@@ -3,7 +3,6 @@ import 'dart:developer';
 
 
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 
@@ -644,14 +643,6 @@ class PedidoController {
   }
 
   void verificarTags(PedidoModel edit) {
-    edit.tags.removeWhere((tag) => tag.nome == "CDA" || tag.nome == "CD");
-
-    if (edit.tipo == PedidoTipo.cda) {
-      edit.tags.add(PedidoTipo.cda.tag);
-    }
-
-    if (edit.tipo == PedidoTipo.cd) {
-      edit.tags.add(PedidoTipo.cd.tag);
-    }
+    // Lógica antiga (que forçava etiqueta CDA) foi removida a pedido do usuário
   }
 }
