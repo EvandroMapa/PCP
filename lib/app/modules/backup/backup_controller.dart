@@ -1,167 +1,179 @@
 import 'dart:convert';
-
 import 'dart:html' as html;
+
+import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
+import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
-import 'package:aco_plus/app/core/services/backup_download_service/backup_download_web.dart'
-    if (dart.library.io) 'package:aco_plus/app/core/services/backup_download_service/backup_download_mobile.dart';
-import 'package:aco_plus/app/modules/backup/backup_view_model.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
+import 'package:aco_plus/app/core/utils/global_resource.dart';
+import 'package:aco_plus/app/modules/backup/backup_view_model.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
-
-import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
-import 'package:aco_plus/app/core/utils/global_resource.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 final backupCtrl = BackupController();
 
 class BackupController {
   static final BackupController _instance = BackupController._();
-
   BackupController._();
-
   factory BackupController() => _instance;
 
-  final AppStream<List<BackupModel>> backupsStream =
-      AppStream<List<BackupModel>>();
+  static const _bucket = 'backups';
+
+  final AppStream<List<BackupModel>> backupsStream = AppStream<List<BackupModel>>();
   List<BackupModel> get backups => backupsStream.value;
   final AppStream<BackupUtils> utilsStream = AppStream<BackupUtils>();
   BackupUtils get utils => utilsStream.value;
 
   Future<void> onInit() async {
-    onFetch();
+    await onFetch();
   }
 
+  // ─── LISTAR BACKUPS ──────────────────────────────────────────────────────
   Future<void> onFetch() async {
-    final backups = <BackupModel>[];
     try {
-      final items = await SupabaseService.client.storage.from('backups').list();
-      if (items.isEmpty) {
-        backups.add(BackupModel(nome: 'INFO: A pasta backups retornou 0 arquivos', createdAt: DateTime.now())..url = '');
-      }
-      for (var file in items) {
-        if (!file.name.endsWith('.json')) continue;
-        final backup = BackupModel.fromFileObject(file);
-        backup.url = SupabaseService.client.storage.from('backups').getPublicUrl(file.name);
-        backups.add(backup);
-      }
-      // Ordena por decrescente (mais novo primeiro)
+      // Lista arquivos na RAIZ do bucket (sem pasta intermediária)
+      final List<FileObject> items = await SupabaseService.client.storage
+          .from(_bucket)
+          .list();
+
+      final backups = items
+          .where((f) => f.name.endsWith('.json'))
+          .map((f) => BackupModel.fromFileObject(f))
+          .toList();
+
       backups.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      backupsStream.add(backups);
     } catch (e) {
-      print('Erro ao buscar backups: \$e');
-      backups.add(BackupModel(nome: 'ERRO: \$e', createdAt: DateTime.now())..url = '');
+      print('BackupController.onFetch erro: $e');
+      backupsStream.add([]);
     }
-    backupsStream.add(backups);
   }
 
+  // ─── CRIAR BACKUP ────────────────────────────────────────────────────────
   Future<void> onCreateBackup() async {
     showLoadingDialog();
     try {
-      Map<String, List<dynamic>> backup = {};
-      
-      // Lista completa de todas as tabelas em ordem de abstração
+      // 1. Extrai todas as tabelas
       final tables = [
         'usuarios', 'clientes', 'materia_primas', 'fabricantes', 'produtos',
         'steps', 'step_from_steps', 'step_move_roles', 'tags',
-        'pedidos', 'pedido_produtos', 'pedido_status_history', 'pedido_steps_history', 'pedido_tags',
+        'pedidos', 'pedido_produtos', 'pedido_status_history',
+        'pedido_steps_history', 'pedido_tags',
         'ordens', 'ordem_produtos', 'ordem_status_history',
-        'checklists', 'notificacoes', 'automatizacao'
+        'checklists', 'notificacoes', 'automatizacao',
       ];
 
+      final Map<String, dynamic> data = {};
       for (final table in tables) {
         try {
-          final data = await SupabaseService.client.from(table).select();
-          backup[table] = data as List<dynamic>;
+          data[table] = await SupabaseService.client.from(table).select();
         } catch (e) {
-          print('Erro ao exportar tabela \$table: \$e');
-          backup[table] = []; // fallback vazio em caso de erro/inexistência momentânea
+          data[table] = [];
         }
       }
 
-      final bytes = utf8.encode(json.encode(backup));
+      // 2. Gera o arquivo JSON
+      final bytes = utf8.encode(jsonEncode(data));
       final name = 'backup_${DateFormat('dd_MM_yyyy_HH_mm_ss').format(DateTime.now())}.json';
-      
-      await backupDownload(name, 'backups', bytes);
-      await onInit();
+
+      // 3. Faz upload no Supabase Storage na RAIZ do bucket
+      await SupabaseService.client.storage.from(_bucket).uploadBinary(
+        name,                  // apenas o nome, sem barra nem pasta
+        bytes,
+        fileOptions: const FileOptions(contentType: 'application/json', upsert: true),
+      );
+
+      // 4. Dispara o download local no navegador
+      final base64 = base64Encode(bytes);
+      html.AnchorElement(href: 'data:application/octet-stream;base64,$base64')
+        ..setAttribute('download', name)
+        ..click();
+
+      // 5. Atualiza a lista
+      await onFetch();
+    } catch (e) {
+      print('BackupController.onCreateBackup erro: $e');
+      showInfoDialog('Erro ao criar backup: $e');
     } finally {
       pop(contextGlobal);
     }
   }
 
+  // ─── URL PARA DOWNLOAD DE UM BACKUP ──────────────────────────────────────
+  Future<void> onDownloadBackup(BackupModel backup) async {
+    try {
+      // Baixa os bytes diretamente do Storage
+      final bytes = await SupabaseService.client.storage
+          .from(_bucket)
+          .download(backup.nome);
+
+      final base64 = base64Encode(bytes);
+      html.AnchorElement(href: 'data:application/octet-stream;base64,$base64')
+        ..setAttribute('download', backup.nome)
+        ..click();
+    } catch (e) {
+      showInfoDialog('Erro ao baixar backup: $e');
+    }
+  }
+
+  // ─── RESTAURAR BACKUP ────────────────────────────────────────────────────
   Future<void> onRestoreBackup() async {
-    final file = await FilePicker.platform.pickFiles();
-    if (file == null) return;
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+    );
+    if (result == null || result.files.first.bytes == null) return;
 
     showLoadingDialog();
     try {
-      Map<String, dynamic> backup;
-      try {
-        backup = json.decode(utf8.decode(file.files.first.bytes!));
-      } catch (_) {
-        print('Erro ao ler .json');
-        return;
-      }
+      // 1. Lê o arquivo
+      final Map<String, dynamic> data =
+          jsonDecode(utf8.decode(result.files.first.bytes!));
 
-      // 1. Ordem de Deleção (Filhos -> Pais)
-      final cascadeOrder = [
-        'pedido_status_history', 'pedido_steps_history', 'pedido_produtos', 'pedido_tags',
+      // 2. Deleta na ordem inversa (filhos -> pais)
+      final deleteOrder = [
+        'pedido_status_history', 'pedido_steps_history',
+        'pedido_produtos', 'pedido_tags',
         'ordem_produtos', 'ordem_status_history',
         'step_from_steps', 'step_move_roles',
         'pedidos', 'ordens', 'notificacoes', 'checklists',
         'produtos', 'materia_primas', 'fabricantes', 'steps', 'tags',
-        'clientes', 'usuarios', 'automatizacao'
+        'clientes', 'usuarios', 'automatizacao',
       ];
 
-      print('Iniciando deleção massiva remota...');
-      for (final table in cascadeOrder) {
-        if (!backup.containsKey(table)) continue;
+      for (final table in deleteOrder) {
         try {
-          // Tenta excluir todos os registros baseando-se em uma lógica de varredura
-          final allCurrent = await SupabaseService.client.from(table).select();
-          // Agrupa deleções por ID quando possível para evitar timeout de request
-          final ids = allCurrent.where((e) => e.containsKey('id')).map((e) => e['id']).toList();
-          if (ids.isNotEmpty) {
-             // Delete in chunks of 200
-             for (var i = 0; i < ids.length; i += 200) {
-               final chunk = ids.sublist(i, i + 200 > ids.length ? ids.length : i + 200);
-               await SupabaseService.client.from(table).delete().inFilter('id', chunk);
-             }
-          } else {
-             // Tabelas relacionais sem ID (ex: pedido_tags)
-             // Exclui individualmente (ineficiente, mas necessário via REST sem PK simples)
-             for (var item in allCurrent) {
-                var q = SupabaseService.client.from(table).delete();
-                item.forEach((k, v) => q = q.eq(k, v));
-                await q;
-             }
+          final rows = await SupabaseService.client.from(table).select('id');
+          final ids = rows.map((r) => r['id']).toList();
+          // Deleta em lotes de 200
+          for (var i = 0; i < ids.length; i += 200) {
+            final chunk = ids.sublist(i, (i + 200).clamp(0, ids.length));
+            await SupabaseService.client.from(table).delete().inFilter('id', chunk);
           }
-        } catch (e) {
-          print('Erro ao limpar \$table: \$e');
-        }
+        } catch (_) {}
       }
 
-      print('Iniciando restauração e inserções...');
-      // 2. Ordem de Inserção (Pais -> Filhos)
-      final insertOrder = cascadeOrder.reversed.toList();
-
+      // 3. Insere na ordem correta (pais -> filhos)
+      final insertOrder = deleteOrder.reversed.toList();
       for (final table in insertOrder) {
-        if (!backup.containsKey(table)) continue;
-        final dataList = backup[table] as List<dynamic>;
-        if (dataList.isEmpty) continue;
-        
+        final rows = (data[table] as List?)?.cast<Map<String, dynamic>>();
+        if (rows == null || rows.isEmpty) continue;
         try {
-          final payloads = dataList.cast<Map<String, dynamic>>();
-          // Inserir em chunks de 1000
-          for (var i = 0; i < payloads.length; i += 1000) {
-            final chunk = payloads.sublist(i, i + 1000 > payloads.length ? payloads.length : i + 1000);
+          for (var i = 0; i < rows.length; i += 500) {
+            final chunk = rows.sublist(i, (i + 500).clamp(0, rows.length));
             await SupabaseService.client.from(table).upsert(chunk);
           }
         } catch (e) {
-          print('Erro ao inserir em \$table: \$e');
+          print('Erro ao restaurar tabela $table: $e');
         }
       }
-      
-      print('Backup restaurado com sucesso. Realocando local memory cache...');
+
+      // 4. Reload
       html.window.location.reload();
+    } catch (e) {
+      print('BackupController.onRestoreBackup erro: $e');
+      showInfoDialog('Erro ao restaurar backup: $e');
     } finally {
       pop(contextGlobal);
     }

@@ -1,7 +1,6 @@
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
-import 'package:aco_plus/app/core/services/download_file_url_service/download_file_url_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
@@ -35,10 +34,12 @@ class _BackupsPageState extends State<BackupsPage> {
         ),
         actions: [
           IconButton(
+            tooltip: 'Restaurar Backup',
             onPressed: () => backupCtrl.onRestoreBackup(),
             icon: Icon(Icons.upload, color: AppColors.white),
           ),
           IconButton(
+            tooltip: 'Criar Backup',
             onPressed: () => backupCtrl.onCreateBackup(),
             icon: Icon(Icons.add, color: AppColors.white),
           ),
@@ -48,13 +49,26 @@ class _BackupsPageState extends State<BackupsPage> {
       body: StreamOut<List<BackupModel>>(
         stream: backupCtrl.backupsStream.listen,
         builder: (_, backups) {
-          backups = backups.reversed.toList();
+          if (backups.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.backup_outlined, size: 48, color: Colors.grey[400]),
+                  const SizedBox(height: 12),
+                  Text('Nenhum backup encontrado', style: AppCss.mediumRegular.copyWith(color: Colors.grey[500])),
+                  const SizedBox(height: 4),
+                  Text('Clique em + para criar o primeiro', style: AppCss.smallRegular.copyWith(color: Colors.grey[400])),
+                ],
+              ),
+            );
+          }
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('Backups Realizados', style: AppCss.mediumBold),
+                child: Text('Backups Realizados (${backups.length})', style: AppCss.mediumBold),
               ),
               Expanded(
                 child: ListView.separated(
@@ -72,15 +86,16 @@ class _BackupsPageState extends State<BackupsPage> {
 
   ListTile _itemWidget(BackupModel backup) {
     return ListTile(
-      onTap: () => DownloadFileURLService.call(backup.url),
+      onTap: () => backupCtrl.onDownloadBackup(backup),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+      leading: Icon(Icons.description_outlined, color: AppColors.primaryMain),
       title: Text(backup.nome, style: AppCss.mediumRegular),
       subtitle: Text(
         'Criado em ${DateFormat('dd/MM/yyyy HH:mm').format(backup.createdAt)}',
         style: AppCss.smallRegular.copyWith(color: Colors.grey[600]),
       ),
       trailing: Icon(
-        Icons.file_download,
+        Icons.file_download_outlined,
         size: 24,
         color: AppColors.neutralDark,
       ),
