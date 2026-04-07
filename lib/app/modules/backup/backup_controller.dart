@@ -113,7 +113,48 @@ class BackupController {
     }
   }
 
-  // ─── DOWNLOAD DE UM BACKUP DO SERVIDOR ───────────────────────────────────
+  // ─── CRIAR BACKUP (SILENCIOSO - para agendamento automático) ─────────────
+  Future<void> onCreateBackupSilent() async {
+    try {
+      final tables = [
+        'usuarios', 'clientes', 'materia_primas', 'fabricantes', 'produtos',
+        'steps', 'step_from_steps', 'step_move_roles', 'tags',
+        'pedidos', 'pedido_produtos', 'pedido_status_history',
+        'pedido_steps_history', 'pedido_tags',
+        'ordens', 'ordem_produtos', 'ordem_status_history',
+        'checklists', 'notificacoes', 'automatizacao',
+      ];
+
+      final Map<String, dynamic> data = {};
+      for (final table in tables) {
+        try {
+          data[table] = await SupabaseService.client.from(table).select();
+        } catch (_) {
+          data[table] = [];
+        }
+      }
+
+      final bytes = utf8.encode(jsonEncode(data));
+      final name =
+          'backup_${DateFormat('dd_MM_yyyy_HH_mm_ss').format(DateTime.now())}.json';
+
+      await SupabaseService.client.storage.from(_bucket).uploadBinary(
+            name,
+            bytes,
+            fileOptions: const FileOptions(
+              contentType: 'application/json',
+              upsert: true,
+            ),
+          );
+
+      await onFetch();
+      print('✅ Backup automático realizado: $name');
+    } catch (e) {
+      print('❌ Erro no backup automático: $e');
+    }
+  }
+
+
   Future<void> onDownloadBackup(BackupModel backup) async {
     try {
       progressStream.add('Baixando ${backup.nome}...');

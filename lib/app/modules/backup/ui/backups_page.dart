@@ -5,7 +5,9 @@ import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/backup/backup_controller.dart';
+import 'package:aco_plus/app/modules/backup/backup_scheduler_service.dart';
 import 'package:aco_plus/app/modules/backup/backup_view_model.dart';
+import 'package:aco_plus/app/modules/backup/ui/backup_schedule_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -21,6 +23,7 @@ class _BackupsPageState extends State<BackupsPage> {
   void initState() {
     setWebTitle('Backup');
     backupCtrl.onInit();
+    BackupSchedulerService().start(context);
     super.initState();
   }
 
@@ -34,12 +37,17 @@ class _BackupsPageState extends State<BackupsPage> {
         ),
         actions: [
           IconButton(
+            tooltip: 'Configurar agendamento automático',
+            onPressed: () => showBackupScheduleDialog(context),
+            icon: Icon(Icons.schedule, color: AppColors.white),
+          ),
+          IconButton(
             tooltip: 'Restaurar Backup',
             onPressed: () => backupCtrl.onRestoreBackup(context),
             icon: Icon(Icons.upload, color: AppColors.white),
           ),
           IconButton(
-            tooltip: 'Criar Backup',
+            tooltip: 'Criar Backup agora',
             onPressed: () => backupCtrl.onCreateBackup(context),
             icon: Icon(Icons.add, color: AppColors.white),
           ),
@@ -56,9 +64,15 @@ class _BackupsPageState extends State<BackupsPage> {
                 children: [
                   Icon(Icons.backup_outlined, size: 48, color: Colors.grey[400]),
                   const SizedBox(height: 12),
-                  Text('Nenhum backup encontrado', style: AppCss.mediumRegular.copyWith(color: Colors.grey[500])),
+                  Text(
+                    'Nenhum backup encontrado',
+                    style: AppCss.mediumRegular.copyWith(color: Colors.grey[500]),
+                  ),
                   const SizedBox(height: 4),
-                  Text('Clique em + para criar o primeiro', style: AppCss.smallRegular.copyWith(color: Colors.grey[400])),
+                  Text(
+                    'Clique em + para criar o primeiro',
+                    style: AppCss.smallRegular.copyWith(color: Colors.grey[400]),
+                  ),
                 ],
               ),
             );
@@ -68,7 +82,10 @@ class _BackupsPageState extends State<BackupsPage> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text('Backups Realizados (${backups.length})', style: AppCss.mediumBold),
+                child: Text(
+                  'Backups Realizados (${backups.length})',
+                  style: AppCss.mediumBold,
+                ),
               ),
               Expanded(
                 child: ListView.separated(
