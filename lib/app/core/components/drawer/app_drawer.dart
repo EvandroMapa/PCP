@@ -248,9 +248,9 @@ class AppDrawerHeader extends StatelessWidget {
                       color: Colors.orange,
                       borderRadius: BorderRadius.circular(4),
                     ),
-                    child: const Text(
-                      'DEV',
-                      style: TextStyle(
+                    child: Text(
+                      kBuildHash,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,

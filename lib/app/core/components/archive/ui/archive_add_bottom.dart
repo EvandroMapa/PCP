@@ -206,18 +206,22 @@ class _ArchiveAddBottomState extends State<ArchiveAddBottom> {
   }
 
   Future<void> onAdd() async {
-    result = await FilePicker.platform.pickFiles(allowMultiple: false);
-    if (result?.xFiles.isNotEmpty ?? false) {
-      final xFile = result!.xFiles.first;
-      final mime = lookupMimeType(kIsWeb ? xFile.name : xFile.path)!;
+    result = await FilePicker.platform.pickFiles(
+      allowMultiple: false,
+      withData: true, // garante bytes na memória no Flutter Web
+    );
+    if (result?.files.isNotEmpty ?? false) {
+      final platformFile = result!.files.first;
+      final bytes = platformFile.bytes ?? Uint8List(0);
+      final mime = lookupMimeType(kIsWeb ? platformFile.name : (platformFile.path ?? platformFile.name))!;
       archive = ArchiveModel.fromFile(
-        bytes: await xFile.readAsBytes(),
+        bytes: bytes,
         createdAt: DateTime.now(),
-        name: xFile.name,
+        name: platformFile.name,
         mime: mime,
         type: mime.getArchiveTypeMimeType(),
       );
-      _nameEC.text = xFile.name;
+      _nameEC.text = platformFile.name;
       _focusNode.requestFocus();
       setState(() {});
     }
