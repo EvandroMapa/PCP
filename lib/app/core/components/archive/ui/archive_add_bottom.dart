@@ -6,6 +6,7 @@ import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
+import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/services/supabase_storage_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
@@ -227,9 +228,11 @@ class _ArchiveAddBottomState extends State<ArchiveAddBottom> {
       isLoading = true;
     });
     try {
+      // Usa os bytes já lidos na seleção — evita falha silenciosa no Flutter Web
+      final bytes = archive!.bytes ?? await result!.xFiles.first.readAsBytes();
       final url = await SupabaseStorageService.uploadFile(
         name: archive!.name!,
-        bytes: await result!.xFiles.first.readAsBytes(),
+        bytes: bytes,
         mimeType: archive!.mime,
         path: widget.path,
       );
@@ -249,12 +252,7 @@ class _ArchiveAddBottomState extends State<ArchiveAddBottom> {
       setState(() {
         isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao enviar arquivo: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      NotificationService.showNegative('Erro ao enviar arquivo', e.toString());
     }
   }
 }

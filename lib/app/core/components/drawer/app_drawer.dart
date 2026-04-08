@@ -16,6 +16,7 @@ import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_notif
 import 'package:aco_plus/app/modules/notificacao/notificacao_controller.dart';
 import 'package:aco_plus/app/modules/notificacao/ui/notificacoes_page.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
+import 'package:aco_plus/app/core/utils/app_env.dart';
 import 'package:flutter/material.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -240,6 +241,23 @@ class AppDrawerHeader extends StatelessWidget {
               ),
               if (usuario.role == UsuarioRole.administrador) ...[
                 const W(8),
+                if (kIsDev)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'DEV',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                if (kIsDev) const W(4),
                 InkWell(
                   onTap: () {
                     Navigator.pop(context);

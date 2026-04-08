@@ -6,4 +6,4 @@ fi
 export PATH="$PATH:`pwd`/flutter/bin"
 echo "Building Flutter Web..."
 flutter pub get
-flutter build web --release
+flutter build web --release --dart-define=APP_ENV=${APP_ENV:-dev}
