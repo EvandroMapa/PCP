@@ -173,7 +173,6 @@ class ObraModel {
         'id': id,
         'nome': descricao,
         'cliente_id': clienteId,
-        'telefone': telefoneFixo,
       };
 
   String toJson() => json.encode(toMap());
