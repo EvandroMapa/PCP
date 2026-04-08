@@ -173,7 +173,7 @@ class _MateriaPrimaCreatePageState extends State<MateriaPrimaCreatePage> {
             : ArchivesWidget(
                 path: 'materia_primas/${form.id}',
                 archives: form.anexos,
-                onChanged: () => materiaPrimaCtrl.formStream.update(),
+                onChanged: (_) => materiaPrimaCtrl.formStream.update(),
               ),
         const H(16),
         if (form.isEdit)

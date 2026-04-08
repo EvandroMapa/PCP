@@ -10,7 +10,8 @@ import 'package:flutter/material.dart';
 class ArchivesWidget extends StatelessWidget {
   final String label;
   final List<ArchiveModel> archives;
-  final void Function() onChanged;
+  // Recebe a lista atualizada — evita race condition com polling timer
+  final void Function(List<ArchiveModel>) onChanged;
   final String path;
 
   const ArchivesWidget({
@@ -69,7 +70,7 @@ class ArchivesWidget extends StatelessWidget {
                     return false;
                   }
                   archives.remove(e);
-                  onChanged.call();
+                  onChanged.call(List.from(archives));
                 },
               ),
             ),
@@ -81,6 +82,6 @@ class ArchivesWidget extends StatelessWidget {
     final archive = await showArchiveAddBottom(path);
     if (archive == null) return;
     archives.add(archive);
-    onChanged.call();
+    onChanged.call(List.from(archives)); // passa snapshot da lista atual
   }
 }
