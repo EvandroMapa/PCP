@@ -251,6 +251,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         descricao: descricaoCtrl.text,
         deliveryAt: deliveryDate,
         cliente: finalCliente,
+        obra: selectedObra ?? ObraModel.empty(),
         tipo: selectedTipo,
         statusess: [PedidoStatusModel.create(PedidoStatus.aguardandoProducaoCDA)],
         steps: [PedidoStepModel.create(selectedStep!)],
