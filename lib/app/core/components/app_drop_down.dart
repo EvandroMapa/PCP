@@ -94,6 +94,10 @@ class _AppDropDown<T> extends State<AppDropDown<T>> {
                 final created = await widget.onCreated!.call();
                 if (created == null) return;
                 widget.onSelect.call(created);
+                // Atualiza o texto do campo para mostrar o item criado/selecionado
+                setState(() {
+                  controller.text = widget.itemLabel.call(created);
+                });
               },
       ),
       controller: controller.controller,
