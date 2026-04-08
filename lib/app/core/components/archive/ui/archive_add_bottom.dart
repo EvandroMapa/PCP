@@ -208,20 +208,23 @@ class _ArchiveAddBottomState extends State<ArchiveAddBottom> {
   Future<void> onAdd() async {
     result = await FilePicker.platform.pickFiles(
       allowMultiple: false,
-      withData: true, // garante bytes na memória no Flutter Web
+      withData: true,
     );
-    if (result?.files.isNotEmpty ?? false) {
-      final platformFile = result!.files.first;
-      final bytes = platformFile.bytes ?? Uint8List(0);
-      final mime = lookupMimeType(kIsWeb ? platformFile.name : (platformFile.path ?? platformFile.name))!;
+    if (result?.xFiles.isNotEmpty ?? false) {
+      final xFile = result!.xFiles.first;
+      // Lê via stream (openRead) — mais confiável no Flutter Web que readAsBytes()
+      final chunks = <int>[];
+      await xFile.openRead().forEach(chunks.addAll);
+      final bytes = Uint8List.fromList(chunks);
+      final mime = lookupMimeType(kIsWeb ? xFile.name : xFile.path) ?? 'application/octet-stream';
       archive = ArchiveModel.fromFile(
         bytes: bytes,
         createdAt: DateTime.now(),
-        name: platformFile.name,
+        name: xFile.name,
         mime: mime,
         type: mime.getArchiveTypeMimeType(),
       );
-      _nameEC.text = platformFile.name;
+      _nameEC.text = xFile.name;
       _focusNode.requestFocus();
       setState(() {});
     }
@@ -232,8 +235,19 @@ class _ArchiveAddBottomState extends State<ArchiveAddBottom> {
       isLoading = true;
     });
     try {
-      // Usa os bytes já lidos na seleção — evita falha silenciosa no Flutter Web
-      final bytes = archive!.bytes ?? await result!.xFiles.first.readAsBytes();
+      // Lê os bytes diretamente do PlatformFile — fonte mais confiável no Flutter Web
+      final platformFile = result!.files.first;
+      final bytes = platformFile.bytes;
+
+      if (bytes == null || bytes.isEmpty) {
+        NotificationService.showNegative(
+          'Erro ao enviar arquivo',
+          'Não foi possível ler o conteúdo do arquivo. Tente novamente.',
+        );
+        setState(() => isLoading = false);
+        return;
+      }
+
       final url = await SupabaseStorageService.uploadFile(
         name: archive!.name!,
         bytes: bytes,
