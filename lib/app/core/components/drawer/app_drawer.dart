@@ -1,7 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/notificacao/notificacao_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/user_permission_type.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/usuario_role.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/version/version_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -228,19 +227,7 @@ class AppDrawerHeader extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                'v',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  fontSize: 10,
-                ),
-              ),
-              Text(
-                VersionCollection.version.toString().split('').join('.'),
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
-              ),
               if (usuario.role == UsuarioRole.administrador) ...[
-                const W(8),
                 if (kIsDev)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),

@@ -277,6 +277,10 @@ class OrdemController {
         // Se o item foi removido da Ordem, ele volta a ficar 'separado'
         statusUpdates.add((produto, PedidoProdutoStatus.separado));
         pedidosAfetados.add(produto.pedidoId);
+        // Limpa a matéria-prima vinculada ao produto removido
+        if (produto.materiaPrima != null) {
+          mpUpdates.add((produto, null));
+        }
       }
     }
 
