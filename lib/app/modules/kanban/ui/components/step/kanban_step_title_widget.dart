@@ -112,6 +112,7 @@ class KanbanStepTitleWidget extends StatelessWidget {
                     }
                   },
                 ),
+                const W(6),
                 // Botão ordenação
                 PopupMenuButton<SortStepType?>(
                   style: ButtonStyle(
