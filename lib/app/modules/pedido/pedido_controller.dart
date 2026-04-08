@@ -98,6 +98,16 @@ class PedidoController {
         }
       }
     });
+
+    // Quando ordens mudam (add/edit/remove), o número da ordem e a matéria-prima
+    // exibidos no pedido precisam ser recalculados.
+    // getOrdemByProduto lê FirestoreClient.ordens.data em memória — precisamos de rebuild.
+    FirestoreClient.ordens.dataStream.listen.listen((_) {
+      if (pedidoStream.hasValue) {
+        pedidoStream.update();
+        SchedulerBinding.instance.scheduleFrame();
+      }
+    });
   }
 
   void _listenChecklists() {
