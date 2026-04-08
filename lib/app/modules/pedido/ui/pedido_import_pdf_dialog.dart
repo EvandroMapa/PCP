@@ -9,20 +9,23 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
+import 'package:aco_plus/app/core/components/app_drop_down.dart';
 import 'package:aco_plus/app/core/components/app_text_button.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/w.dart';
+import 'package:aco_plus/app/core/enums/obra_status.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
+import 'package:aco_plus/app/modules/cliente/ui/cliente_create_simplify_bottom.dart';
 import 'package:aco_plus/app/modules/pedido/services/pedido_pdf_parser.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:collection/collection.dart';
-import 'package:aco_plus/app/core/models/endereco_model.dart';
+
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 Future<void> showPedidoImportPdfDialog({StepModel? initialStep}) async {
@@ -50,7 +53,6 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   final TextEditingController localizadorCtrl = TextEditingController();
   final TextEditingController financeiroCtrl = TextEditingController();
   final TextEditingController descricaoCtrl = TextEditingController();
-  final TextEditingController obraCtrl = TextEditingController();
   final TextEditingController planilhamentoCtrl = TextEditingController();
   final TextEditingController romaneioCtrl = TextEditingController();
   final TextEditingController subtotalCtrl = TextEditingController(text: '0,00');
@@ -60,6 +62,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   
   DateTime deliveryDate = DateTime.now().add(const Duration(days: 7));
   ClienteModel? selectedCliente;
+  ObraModel? selectedObra;
   PedidoTipo selectedTipo = PedidoTipo.cda;
   StepModel? selectedStep;
   List<Map<String, dynamic>> extractedProducts = [];
@@ -111,27 +114,11 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         financeiroCtrl.text = parsedData['pedidoFinanceiro'];
         planilhamentoCtrl.text = parsedData['planilhamento'] ?? '';
         romaneioCtrl.text = parsedData['romaneio'] ?? '';
-        
-        // BUSCA POR CÓDIGO (NOVO)
-        final int code = int.tryParse(parsedData['clienteCodigo']) ?? 0;
-        selectedCliente = FirestoreClient.clientes.data.firstWhereOrNull(
-          (e) => e.codigo == code,
-        ) ?? ClienteModel(
-            id: HashService.get, // Novo UUID se não existir
-            codigo: code,
-            nome: parsedData['clienteNome'],
-            telefone: '',
-            cpf: '',
-            endereco: EnderecoModel.empty(),
-            obras: [],
-          );
         extractedProducts = List<Map<String, dynamic>>.from(parsedData['produtos']);
-        
         subtotalCtrl.text = parsedData['subtotal'].toStringAsFixed(2).replaceAll('.', ',');
         taxasCtrl.text = parsedData['taxas'].toStringAsFixed(2).replaceAll('.', ',');
         descontoCtrl.text = parsedData['desconto'].toStringAsFixed(2).replaceAll('.', ',');
         totalFinalCtrl.text = parsedData['total'].toStringAsFixed(2).replaceAll('.', ',');
-        
         _calculateTotal();
         currentStep = 1;
       });
@@ -174,20 +161,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
     setState(() => isUploading = true);
 
     try {
-      // LÓGICA DE CLIENTE: Verificar se já existe pelo código
-      ClienteModel finalCliente = selectedCliente ?? ClienteModel.empty();
-
-      // Busca atualizada na base de dados para garantir
-      final existing = FirestoreClient.clientes.data.firstWhereOrNull(
-        (e) => e.codigo == finalCliente.codigo && finalCliente.codigo > 0,
-      );
-
-      if (existing == null && finalCliente.codigo > 0) {
-        // Cadastrar novo cliente
-        await AppSupabaseClient.clientes.add(finalCliente);
-      } else if (existing != null) {
-        finalCliente = existing;
-      }
+    final ClienteModel finalCliente = selectedCliente ?? ClienteModel.empty();
 
       final List<String> missingProducts = [];
       final List<PedidoProdutoModel> produtosMapped = [];
@@ -204,7 +178,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
             id: HashService.get,
             pedidoId: '', 
             clienteId: finalCliente.id, 
-            obraId: '',
+            obraId: selectedObra?.id ?? '',
             produto: produtoBase,
             statusess: [PedidoProdutoStatusModel.empty()],
             qtde: p['qtde'],
@@ -479,11 +453,63 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
             ],
           ),
           const H(12),
-          _buildField('Cliente', TextEditingController(text: '${selectedCliente?.codigo} - ${selectedCliente?.nome}')),
+          // ── Cliente com botão + para criação rápida ─────────────────
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Cliente', style: AppCss.minimumBold.setSize(12)),
+              const H(4),
+              AppDropDown<ClienteModel?>(
+                hasFilter: true,
+                label: null,
+                item: selectedCliente,
+                itens: FirestoreClient.clientes.data,
+                onCreated: () async {
+                  ClienteModel? created = await showClienteCreateSimplifyBottom();
+                  if (created == null) return null;
+                  final cliente = FirestoreClient.clientes.data
+                      .firstWhere((e) => e.id == created.id, orElse: () => created);
+                  setState(() {
+                    selectedCliente = cliente;
+                    selectedObra = cliente.obras.firstOrNull;
+                  });
+                  return cliente;
+                },
+                itemLabel: (e) => e != null ? '${e.codigo} - ${e.nome}' : 'Selecione',
+                onSelect: (e) {
+                  setState(() {
+                    if (selectedCliente?.id != e?.id) {
+                      selectedCliente = e;
+                      selectedObra = null;
+                    }
+                  });
+                },
+              ),
+            ],
+          ),
           const H(12),
           Row(
             children: [
-              Expanded(child: _buildField('Obra', obraCtrl)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Obra', style: AppCss.minimumBold.setSize(12)),
+                    const H(4),
+                    AppDropDown<ObraModel?>(
+                      label: null,
+                      item: selectedObra,
+                      disable: selectedCliente == null,
+                      itens: selectedCliente?.obras
+                              .where((e) => e.status == ObraStatus.emAndamento)
+                              .toList() ??
+                          [],
+                      itemLabel: (e) => e?.descricao ?? 'Selecione',
+                      onSelect: (e) => setState(() => selectedObra = e),
+                    ),
+                  ],
+                ),
+              ),
               const W(12),
               Expanded(child: _buildField('Descrição', descricaoCtrl)),
             ],
