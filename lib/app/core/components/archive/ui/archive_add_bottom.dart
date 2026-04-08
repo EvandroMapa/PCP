@@ -226,23 +226,35 @@ class _ArchiveAddBottomState extends State<ArchiveAddBottom> {
     setState(() {
       isLoading = true;
     });
-    final url = await SupabaseStorageService.uploadFile(
-      name: archive!.name!,
-      bytes: await result!.xFiles.first.readAsBytes(),
-      mimeType: archive!.mime,
-      path: widget.path,
-    );
-    final archiveModel = ArchiveModel(
-      url: url,
-      name: archive!.name,
-      createdAt: DateTime.now(),
-      description: _descEC.text.isNotEmpty ? _descEC.text : null,
-      type: archive!.type,
-      mime: archive!.mime,
-    );
-    setState(() {
-      isLoading = false;
-    });
-    Navigator.pop(context, archiveModel);
+    try {
+      final url = await SupabaseStorageService.uploadFile(
+        name: archive!.name!,
+        bytes: await result!.xFiles.first.readAsBytes(),
+        mimeType: archive!.mime,
+        path: widget.path,
+      );
+      final archiveModel = ArchiveModel(
+        url: url,
+        name: archive!.name,
+        createdAt: DateTime.now(),
+        description: _descEC.text.isNotEmpty ? _descEC.text : null,
+        type: archive!.type,
+        mime: archive!.mime,
+      );
+      setState(() {
+        isLoading = false;
+      });
+      Navigator.pop(context, archiveModel);
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao enviar arquivo: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
