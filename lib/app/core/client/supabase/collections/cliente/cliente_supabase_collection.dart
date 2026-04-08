@@ -1,5 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
+import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -92,14 +93,14 @@ class ClienteSupabaseCollection extends ClienteCollection {
       }
       await SupabaseService.client.from(tableName).insert(map);
       if (model.obras.isNotEmpty) {
-        await SupabaseService.client.from(obraTableName).insert(
+        await SupabaseService.client.from(obraTableName).upsert(
             model.obras.map((e) => e.toSupabaseMap(model.id)).toList());
       }
       await fetch();
       return model;
     } catch (e) {
-      print('Supabase Error (Cliente.add): $e');
-      return null;
+      NotificationService.showNegative('Erro ao salvar cliente', e.toString());
+      rethrow;
     }
   }
 
@@ -121,8 +122,8 @@ class ClienteSupabaseCollection extends ClienteCollection {
       await fetch();
       return model;
     } catch (e) {
-      print('Supabase Error (Cliente.update): $e');
-      return null;
+      NotificationService.showNegative('Erro ao editar cliente', e.toString());
+      rethrow;
     }
   }
 
