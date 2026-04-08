@@ -335,9 +335,10 @@ class OrdemController {
       }
     }
 
-    // Pedidos PRIMEIRO, depois ordens (para que ordem.produtos resolva os kilos corretamente)
-    await FirestoreClient.pedidos.fetch();
+    // Ordens PRIMEIRO — garante que ordens.data está atualizado antes de pedidos.fetch()
+    // disparar _listenGlobalPedidos. Evita que getOrdemByProduto retorne null no rebuild.
     await FirestoreClient.ordens.fetch();
+    await FirestoreClient.pedidos.fetch();
     await automatizacaoCtrl.onSetStepByPedidoStatus(ordemEditada.pedidos);
     await OrdemTimelineRegister.editada(ordemEditada, ordem);
     
