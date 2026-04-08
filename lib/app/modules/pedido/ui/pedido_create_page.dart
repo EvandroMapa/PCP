@@ -422,17 +422,22 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
           onCreated: () async {
             ClienteModel? created = await showClienteCreateSimplifyBottom();
             if (created == null) return null;
-            // Busca o objeto atualizado na lista (após o fetch do Supabase)
-            form.cliente = FirestoreClient.clientes.data
+            // Busca o objeto atualizado na lista (após fetch do Supabase)
+            final cliente = FirestoreClient.clientes.data
                 .firstWhere((e) => e.id == created.id, orElse: () => created);
-            form.obra = form.cliente?.obras.firstOrNull;
+            // Pré-seleciona cliente e obra antes do onSelect ser chamado
+            form.cliente = cliente;
+            form.obra = cliente.obras.firstOrNull;
             pedidoCtrl.formStream.update();
-            return null;
+            return cliente;
           },
           itemLabel: (e) => e!.nome,
           onSelect: (e) async {
-            form.cliente = e;
-            form.obra = null;
+            // Só reseta a obra se mudou de cliente
+            if (form.cliente?.id != e?.id) {
+              form.cliente = e;
+              form.obra = null;
+            }
             pedidoCtrl.formStream.update();
           },
         ),
@@ -454,6 +459,7 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
             pedidoCtrl.formStream.update();
           },
         ),
+
         const H(16),
         AppDropDown<ChecklistModel?>(
           label: 'Modelo de checklist',
