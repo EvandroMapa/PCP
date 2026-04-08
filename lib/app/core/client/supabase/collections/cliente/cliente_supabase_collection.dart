@@ -111,10 +111,10 @@ class ClienteSupabaseCollection extends ClienteCollection {
           .update(model.toSupabaseMap())
           .eq('id', model.id);
       
-      // Sync obras: Delete old and insert new ones
+      // Sync obras: Delete old and insert/update new ones
       await SupabaseService.client.from(obraTableName).delete().eq('cliente_id', model.id);
       if (model.obras.isNotEmpty) {
-        await SupabaseService.client.from(obraTableName).insert(
+        await SupabaseService.client.from(obraTableName).upsert(
             model.obras.map((e) => e.toSupabaseMap(model.id)).toList());
       }
       

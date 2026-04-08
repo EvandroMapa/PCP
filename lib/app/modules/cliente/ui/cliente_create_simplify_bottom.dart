@@ -1,5 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
-import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
+
 import 'package:aco_plus/app/core/components/app_field.dart';
 import 'package:aco_plus/app/core/components/app_text_button.dart';
 import 'package:aco_plus/app/core/components/h.dart';
@@ -147,7 +148,7 @@ class _ClienteCreateSimplifyBottomState
   }
 
   Future<void> onConfirm(BuildContext context) async {
-    final int nextCodigo = (FirestoreClient.clientes.data.map((e) => e.codigo).toList()..sort()).lastOrNull ?? 0;
+    final int nextCodigo = (BackendClient.clientes.data.map((e) => e.codigo).toList()..sort()).lastOrNull ?? 0;
     final ClienteModel clienteModel = ClienteModel(
       id: HashService.get,
       codigo: nextCodigo + 1,
@@ -165,8 +166,8 @@ class _ClienteCreateSimplifyBottomState
         ),
       ],
     );
-    await FirestoreClient.clientes.add(clienteModel);
-    FirestoreClient.clientes.dataStream.update();
+    await BackendClient.clientes.add(clienteModel);
     Navigator.pop(context, clienteModel);
+
   }
 }
