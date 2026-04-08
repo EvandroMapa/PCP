@@ -420,9 +420,11 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
           item: form.cliente,
           itens: FirestoreClient.clientes.data,
           onCreated: () async {
-            ClienteModel? cliente = await showClienteCreateSimplifyBottom();
-            assert(cliente != null);
-            form.cliente = cliente;
+            ClienteModel? created = await showClienteCreateSimplifyBottom();
+            if (created == null) return null;
+            // Busca o objeto atualizado na lista (após o fetch do Supabase)
+            form.cliente = FirestoreClient.clientes.data
+                .firstWhere((e) => e.id == created.id, orElse: () => created);
             form.obra = form.cliente?.obras.firstOrNull;
             pedidoCtrl.formStream.update();
             return null;
