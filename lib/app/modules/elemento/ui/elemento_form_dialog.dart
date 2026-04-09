@@ -161,10 +161,15 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
                   TextButton.icon(
                     onPressed: _addPosicao,
                     icon: const Icon(Icons.add_circle_outline, size: 18),
-                    label: const Text('Adicionar Posição'),
+                    label: const Text('Adicionar Posição',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                     style: TextButton.styleFrom(
-                        foregroundColor: AppColors.primaryMain,
-                        textStyle: AppCss.minimumBold),
+                        foregroundColor: AppColors.secondary,
+                        backgroundColor: AppColors.secondary.withOpacity(0.05),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8))),
                   ),
                 ],
               ),

@@ -53,17 +53,16 @@ class _ElementosTabState extends State<ElementosTab> {
                     children: [
                       TextButton.icon(
                         style: TextButton.styleFrom(
-                          foregroundColor: AppColors.primaryMain,
+                          foregroundColor: AppColors.secondary,
+                          backgroundColor: AppColors.secondary.withOpacity(0.05),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
-                              side: BorderSide(color: AppColors.primaryMain.withOpacity(0.2))),
+                              side: BorderSide(color: AppColors.secondary.withOpacity(0.1))),
                         ),
                         icon:
                             const Icon(Icons.picture_as_pdf_outlined, size: 18),
-                        label: Text('Importar PDF',
-                            style: AppCss.minimumBold
-                                .setColor(AppColors.primaryMain)),
+                        label: const Text('Importar PDF', style: TextStyle(fontWeight: FontWeight.bold)),
                         onPressed: () async {
                           final result = await FilePicker.platform.pickFiles(
                             type: FileType.custom,
