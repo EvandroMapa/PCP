@@ -20,6 +20,15 @@ class BaseController {
       AppStream<List<Widget>>.seed([]);
 
   Future<void> onInit() async {
+    _updateInitialModule();
+    usuarioCtrl.usuarioStream.listen((user) {
+      if (user != null) {
+        _updateInitialModule();
+      }
+    });
+  }
+
+  void _updateInitialModule() {
     moduleStream.add(
       usuario.isOperador ? AppModule.ordens : AppModule.values.first,
     );

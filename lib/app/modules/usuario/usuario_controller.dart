@@ -21,6 +21,17 @@ class UsuarioController {
   UsuarioController._();
 
   factory UsuarioController() => _instance;
+  
+  void setup() {
+    BackendClient.usuarios.dataStream.listen((list) {
+      if (usuario != null) {
+        final match = list.firstWhereOrNull((e) => e.id == usuario!.id);
+        if (match != null && match != usuario) {
+          usuarioStream.add(match);
+        }
+      }
+    });
+  }
 
   final AppStream<UsuarioModel?> usuarioStream = AppStream<UsuarioModel?>.seed(
     null,
