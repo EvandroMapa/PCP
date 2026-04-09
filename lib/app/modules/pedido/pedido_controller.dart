@@ -71,10 +71,13 @@ class PedidoController {
   void onInitPage(PedidoModel pedido) {
     pedidoStream.add(pedido);
     _pagePollingTimer?.cancel();
-    _pagePollingTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+    _pagePollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
       if (pedidoStream.hasValue) {
         final updated = await BackendClient.pedidos.getByIdSupabase(pedidoStream.value.id);
         if (updated != null) {
+          // Busca ordens para garantir que o cache local tenha os vínculos novos
+          await BackendClient.ordens.fetch();
+          
           pedidoStream.add(updated);
           SchedulerBinding.instance.scheduleFrame();
         }
