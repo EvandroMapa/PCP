@@ -107,15 +107,47 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
             children: [
               const SizedBox(height: 8),
 
-              // ── Nome do elemento ────────────────────────────────────────
-              Text('Nome do Elemento', style: AppCss.mediumBold),
-              const SizedBox(height: 6),
-              TextFormField(
-                controller: _form.nome.controller,
-
-                maxLength: 30,
-                decoration: _inputDecor('Ex: Bloco B1, Pilar P2...'),
-                onChanged: (_) => setState(() {}),
+              // ── Nome e Quantidade do elemento ──────────────────────────
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Nome do Elemento', style: AppCss.mediumBold),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          controller: _form.nome.controller,
+                          maxLength: 30,
+                          decoration: _inputDecor('Ex: Bloco B1, Pilar P2...'),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Qtde', style: AppCss.mediumBold),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          controller: _form.qtde.controller,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly
+                          ],
+                          decoration: _inputDecor('1'),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 16),

@@ -4,7 +4,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:flutter/material.dart';
 
 enum OrdemHistoryTypeEnum {
-  criada, // OK
+  criada, // OK ok ok
   editada, // OK
   congelada, // OK
   descongelada, // OK

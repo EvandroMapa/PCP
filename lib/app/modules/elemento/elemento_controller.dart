@@ -70,6 +70,7 @@ class ElementoController {
         'id': form.id,
         'pedido_id': pedidoId,
         'nome': form.nome.text,
+        'qtde': form.qtdeInt,
       };
 
       await SupabaseService.client
@@ -143,8 +144,12 @@ class ElementoController {
         // O padrão é: [Nome] + "Elemento" + "Ok"
         if (i + 2 < lines.length && lines[i + 1] == 'Elemento' && lines[i + 2] == 'Ok') {
           if (currentElementName != null && currentPosicoes.isNotEmpty) {
+            final xMatch = RegExp(r'X\s?(\d+)', caseSensitive: false).firstMatch(currentElementName!);
+            final extractedQtde = xMatch != null ? int.tryParse(xMatch.group(1)!) ?? 1 : 1;
+            
             novosElementos.add(ElementoCreateModel()
-              ..nome.text = currentElementName
+              ..nome.text = currentElementName!
+              ..qtde.text = extractedQtde.toString()
               ..posicoes.addAll(currentPosicoes));
           }
           currentElementName = line;
@@ -170,10 +175,14 @@ class ElementoController {
 
           // Se as próximas 7 linhas formarem um bloco numérico válido
           if (bitola != null && peso != null && qtde != null) {
+            final xMatch = RegExp(r'X\s?(\d+)', caseSensitive: false).firstMatch(currentElementName!);
+            final extractedQtde = xMatch != null ? int.tryParse(xMatch.group(1)!) ?? 1 : 1;
+            final pesoUnitario = peso / extractedQtde;
+
             final pos = ElementoPosicaoCreateModel();
             pos.nome.text = posNome;
             pos.numeroOs.text = osStr;
-            pos.pesoKg.text = peso.toStringAsFixed(3);
+            pos.pesoKg.text = pesoUnitario.toStringAsFixed(3);
 
             final bMatch = bitola.toString().replaceAll(RegExp(r'\.0$'), '');
             pos.produto = pedido
@@ -206,10 +215,14 @@ class ElementoController {
               }
             }
             if (peso != null && currentElementName != null) {
+              final xMatch = RegExp(r'X\s?(\d+)', caseSensitive: false).firstMatch(currentElementName!);
+              final extractedQtde = xMatch != null ? int.tryParse(xMatch.group(1)!) ?? 1 : 1;
+              final pesoUnitario = peso / extractedQtde;
+
               final pos = ElementoPosicaoCreateModel();
               pos.nome.text = parts[0];
               pos.numeroOs.text = osStr ?? '';
-              pos.pesoKg.text = peso.toStringAsFixed(3);
+              pos.pesoKg.text = pesoUnitario.toStringAsFixed(3);
               final bMatch = bitola.toString().replaceAll(RegExp(r'\.0$'), '');
               pos.produto = pedido.getProdutos().map((e) => e.produto).where((p) => p.nome.contains(bMatch) || p.labelMinified.contains(bMatch)).firstOrNull;
               if (pos.produto != null) currentPosicoes.add(pos);
@@ -219,8 +232,12 @@ class ElementoController {
       }
 
       if (currentElementName != null && currentPosicoes.isNotEmpty) {
+        final xMatch = RegExp(r'X\s?(\d+)', caseSensitive: false).firstMatch(currentElementName!);
+        final extractedQtde = xMatch != null ? int.tryParse(xMatch.group(1)!) ?? 1 : 1;
+
         novosElementos.add(ElementoCreateModel()
-          ..nome.text = currentElementName
+          ..nome.text = currentElementName!
+          ..qtde.text = extractedQtde.toString()
           ..posicoes.addAll(currentPosicoes));
       }
 

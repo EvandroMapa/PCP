@@ -294,9 +294,20 @@ class _ElementoTileState extends State<_ElementoTile> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(el.nome, style: AppCss.mediumBold),
+                      Row(
+                        children: [
+                          Text(el.nome, style: AppCss.mediumBold),
+                          if (el.qtde > 1)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 6),
+                              child: Text('[x${el.qtde}]',
+                                  style: AppCss.mediumBold
+                                      .setColor(AppColors.primaryMain)),
+                            ),
+                        ],
+                      ),
                       Text(
-                        '${el.posicoes.length} posição(ões) · ${widget.fmt(el.pesoTotal)} kg',
+                        '${el.posicoes.length} posição(ões) · Unit: ${widget.fmt(el.pesoUnitario)} kg · Total: ${widget.fmt(el.pesoTotal)} kg',
                         style: AppCss.smallRegular
                             .copyWith(color: Colors.grey[600]),
                       ),
@@ -382,7 +393,13 @@ class _ElementoTileState extends State<_ElementoTile> {
                                   color: Colors.grey[500]))),
                       Expanded(
                           flex: 1,
-                          child: Text('Peso (kg)',
+                          child: Text('Peso Un.',
+                              style: AppCss.smallBold
+                                  .copyWith(color: Colors.grey[500]),
+                              textAlign: TextAlign.end)),
+                      Expanded(
+                          flex: 1,
+                          child: Text('Peso Total',
                               style: AppCss.smallBold
                                   .copyWith(color: Colors.grey[500]),
                               textAlign: TextAlign.end)),
@@ -415,6 +432,14 @@ class _ElementoTileState extends State<_ElementoTile> {
                             flex: 1,
                             child: Text(
                               widget.fmt(p.pesoKg),
+                              style: AppCss.smallRegular,
+                              textAlign: TextAlign.end,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 1,
+                            child: Text(
+                              widget.fmt(p.pesoKg * el.qtde),
                               style: AppCss.smallBold
                                   .setColor(AppColors.primaryMain),
                               textAlign: TextAlign.end,

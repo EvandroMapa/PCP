@@ -58,6 +58,7 @@ class ElementoModel {
   final String id;
   final String pedidoId;
   final String nome;
+  final int qtde;
   final DateTime createdAt;
   List<ElementoPosicaoModel> posicoes;
 
@@ -65,13 +66,19 @@ class ElementoModel {
     required this.id,
     required this.pedidoId,
     required this.nome,
+    required this.qtde,
     required this.createdAt,
     required this.posicoes,
   });
 
-  /// Peso total calculado (soma das posições)
+  /// Peso total calculado (soma das posições * qtde)
   double get pesoTotal =>
+      posicoes.fold(0.0, (sum, p) => sum + p.pesoKg) * qtde;
+
+  /// Peso unitário de um elemento (soma das posições)
+  double get pesoUnitario =>
       posicoes.fold(0.0, (sum, p) => sum + p.pesoKg);
+
 
   /// Peso agrupado por produto (bitola)
   Map<String, double> get pesoPorBitola {
@@ -93,6 +100,7 @@ class ElementoModel {
       id: (map['id'] ?? '').toString(),
       pedidoId: (map['pedido_id'] ?? '').toString(),
       nome: (map['nome'] ?? '').toString(),
+      qtde: int.tryParse((map['qtde'] ?? '1').toString()) ?? 1,
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -104,6 +112,7 @@ class ElementoModel {
         'id': id,
         'pedido_id': pedidoId,
         'nome': nome,
+        'qtde': qtde,
       };
 }
 
@@ -148,6 +157,7 @@ class ElementoPosicaoCreateModel {
 class ElementoCreateModel {
   final String id;
   final TextController nome = TextController();
+  final TextController qtde = TextController(text: '1');
   List<ElementoPosicaoCreateModel> posicoes = [];
   bool isEdit;
 
@@ -157,13 +167,16 @@ class ElementoCreateModel {
       : id = m.id,
         isEdit = true {
     nome.text = m.nome;
+    qtde.text = m.qtde.toString();
     posicoes = m.posicoes
         .map((p) => ElementoPosicaoCreateModel.fromModel(p))
         .toList();
   }
 
-  double get pesoTotal =>
-      posicoes.fold(0.0, (sum, p) => sum + p.pesoDouble);
+  int get qtdeInt => int.tryParse(qtde.text) ?? 1;
 
-  bool get isValid => nome.text.isNotEmpty && posicoes.isNotEmpty;
+  double get pesoTotal =>
+      posicoes.fold(0.0, (sum, p) => sum + p.pesoDouble) * qtdeInt;
+
+  bool get isValid => (nome.text.isNotEmpty || isEdit) && posicoes.isNotEmpty && qtdeInt > 0;
 }
