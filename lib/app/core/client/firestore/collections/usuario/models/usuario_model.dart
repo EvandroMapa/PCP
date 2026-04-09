@@ -115,6 +115,7 @@ class UsuarioModel {
       email: map['email'] ?? '',
       senha: map['senha'] ?? '',
       role: UsuarioRole.values[map['role'] is int ? map['role'] : 0],
+      usuarioTipoId: (map['usuario_tipo_id'] ?? '').toString(),
       permission: map['permission'] != null
           ? UserPermissionModel.fromMap(map['permission'])
           : UserPermissionModel.all(),
