@@ -21,6 +21,7 @@ class StepModel {
   bool isArchivedAvailable = false;
   bool isPermiteProducao = false;
   bool considerarConsumoRelatorioPedidos = true;
+  bool isExibirArmacao = false;
 
   static StepModel notFound = StepModel(
     createdAt: DateTime.now(),
@@ -36,6 +37,7 @@ class StepModel {
     isArchivedAvailable: false,
     isPermiteProducao: false,
     considerarConsumoRelatorioPedidos: false,
+    isExibirArmacao: false,
   );
 
   List<StepModel> get fromSteps => fromStepsIds
@@ -62,6 +64,7 @@ class StepModel {
     required this.isArchivedAvailable,
     required this.isPermiteProducao,
     required this.considerarConsumoRelatorioPedidos,
+    required this.isExibirArmacao,
   });
 
   StepModel copyWith({
@@ -79,6 +82,7 @@ class StepModel {
     bool? isArchivedAvailable,
     bool? isPermiteProducao,
     bool? considerarConsumoRelatorioPedidos,
+    bool? isExibirArmacao,
   }) {
     return StepModel(
       id: id ?? this.id,
@@ -96,6 +100,7 @@ class StepModel {
       considerarConsumoRelatorioPedidos:
           considerarConsumoRelatorioPedidos ??
           this.considerarConsumoRelatorioPedidos,
+      isExibirArmacao: isExibirArmacao ?? this.isExibirArmacao,
     );
   }
 
@@ -114,6 +119,7 @@ class StepModel {
       'isArchivedAvailable': isArchivedAvailable,
       'isPermiteProducao': isPermiteProducao,
       'considerarConsumoRelatorioPedidos': considerarConsumoRelatorioPedidos,
+      'isExibirArmacao': isExibirArmacao,
     };
   }
 
@@ -148,6 +154,7 @@ class StepModel {
         isArchivedAvailable: false,
         isPermiteProducao: false,
         considerarConsumoRelatorioPedidos: false,
+        isExibirArmacao: map['isExibirArmacao'] ?? false,
       );
     }
     return StepModel(
@@ -181,6 +188,7 @@ class StepModel {
       isPermiteProducao: map['isPermiteProducao'] ?? false,
       considerarConsumoRelatorioPedidos:
           map['considerarConsumoRelatorioPedidos'] ?? true,
+      isExibirArmacao: map['isExibirArmacao'] ?? false,
     );
   }
 
@@ -202,6 +210,7 @@ class StepModel {
       isPermiteProducao: map['is_permite_producao'] ?? false,
       considerarConsumoRelatorioPedidos:
           map['considerar_consumo_relatorio_pedidos'] ?? true,
+      isExibirArmacao: map['exibir_armacao'] ?? false,
     );
   }
 
@@ -254,6 +263,7 @@ class StepModel {
       'is_arquivado_disponivel': isArchivedAvailable,
       'is_permite_producao': isPermiteProducao,
       'considerar_consumo_relatorio_pedidos': considerarConsumoRelatorioPedidos,
+      'exibir_armacao': isExibirArmacao,
     };
   }
 
@@ -264,6 +274,6 @@ class StepModel {
 
   @override
   String toString() {
-    return 'StepModel(id: $id, name: $name, color: $color, fromSteps: $fromSteps, moveRoles: $moveRoles, createdAt: $createdAt, index: $index, isDefault: $isDefault, isShipping: $isShipping, shipping: $shipping, isArchivedAvailable: $isArchivedAvailable, considerarConsumoRelatorioPedidos: $considerarConsumoRelatorioPedidos  )';
+    return 'StepModel(id: $id, name: $name, color: $color, fromSteps: $fromSteps, moveRoles: $moveRoles, createdAt: $createdAt, index: $index, isDefault: $isDefault, isShipping: $isShipping, shipping: $shipping, isArchivedAvailable: $isArchivedAvailable, considerarConsumoRelatorioPedidos: $considerarConsumoRelatorioPedidos, isExibirArmacao: $isExibirArmacao  )';
   }
 }

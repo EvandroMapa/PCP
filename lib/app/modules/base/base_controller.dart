@@ -29,8 +29,9 @@ class BaseController {
   }
 
   void _updateInitialModule() {
-    moduleStream.add(
-      usuario.isOperador ? AppModule.ordens : AppModule.values.first,
-    );
+    AppModule initial = AppModule.values.first;
+    if (usuario.isOperador) initial = AppModule.ordens;
+    if (usuario.isArmador) initial = AppModule.armacao;
+    moduleStream.add(initial);
   }
 }

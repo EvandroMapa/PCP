@@ -1,3 +1,4 @@
+import 'package:aco_plus/app/modules/armacao/ui/armacao_page.dart';
 import 'package:aco_plus/app/modules/cliente/ui/clientes_page.dart';
 import 'package:aco_plus/app/modules/dashboard/ui/dashboard_page.dart';
 import 'package:aco_plus/app/modules/fabricante/ui/fabricantes_page.dart';
@@ -30,6 +31,7 @@ enum AppModule {
   fabricantes,
   produtos,
   materiaPrima,
+  armacao,
 }
 
 extension AppModuleExt on AppModule {
@@ -61,6 +63,8 @@ extension AppModuleExt on AppModule {
         return const ProdutosPage();
       case AppModule.materiaPrima:
         return const MateriasPrimasPage();
+      case AppModule.armacao:
+        return const ArmacaoPage();
     }
   }
 
@@ -101,6 +105,8 @@ extension AppModuleExt on AppModule {
         return Icons.inventory_2_outlined;
       case AppModule.materiaPrima:
         return Icons.warehouse_outlined;
+      case AppModule.armacao:
+        return Icons.iron_rounded;
     }
   }
 
@@ -132,6 +138,8 @@ extension AppModuleExt on AppModule {
         return 'Produtos';
       case AppModule.materiaPrima:
         return 'Materia Prima';
+      case AppModule.armacao:
+        return 'Armação';
     }
   }
 }

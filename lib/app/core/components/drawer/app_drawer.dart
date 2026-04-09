@@ -46,15 +46,21 @@ class AppDrawer extends StatelessWidget {
                     child: ListView(
                       children: [
                         AppDrawerHeader(notificacoes: notificacoes),
-                        !usuario.isOperador
-                            ? AppDrawerNotOperatorList(
-                                module: module,
-                                notificacoes: notificacoes,
-                              )
-                            : AppDrawerOperatorList(
-                                module: module,
-                                notificacoes: notificacoes,
-                              ),
+                        if (usuario.isArmador)
+                          AppDrawerArmadorList(
+                            module: module,
+                            notificacoes: notificacoes,
+                          )
+                        else if (usuario.isOperador)
+                          AppDrawerOperatorList(
+                            module: module,
+                            notificacoes: notificacoes,
+                          )
+                        else
+                          AppDrawerNotOperatorList(
+                            module: module,
+                            notificacoes: notificacoes,
+                          ),
                       ],
                     ),
                   ),
@@ -69,6 +75,29 @@ class AppDrawer extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class AppDrawerArmadorList extends StatelessWidget {
+  final AppModule module;
+  final List<NotificacaoModel> notificacoes;
+  const AppDrawerArmadorList({
+    super.key,
+    required this.module,
+    required this.notificacoes,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        AppDrawerItem(
+          item: AppModule.armacao,
+          module: module,
+          notificacoes: notificacoes,
+        ),
+      ],
     );
   }
 }
@@ -356,7 +385,11 @@ class AppDrawerItem extends StatelessWidget {
     return Builder(
       builder: (context) {
         bool isEnabled = true;
-        if (!usuario.isOperador) {
+        if (usuario.isArmador) {
+          isEnabled = item == AppModule.armacao;
+        } else if (usuario.isOperador) {
+          isEnabled = item == AppModule.ordens || item == AppModule.materiaPrima;
+        } else {
           switch (item) {
             case AppModule.cliente:
               isEnabled = usuario.permission.cliente.contains(
@@ -385,9 +418,6 @@ class AppDrawerItem extends StatelessWidget {
               break;
             default:
           }
-        } else {
-          isEnabled =
-              item == AppModule.ordens || item == AppModule.materiaPrima;
         }
         if (!isEnabled) return const SizedBox();
         return ListTile(

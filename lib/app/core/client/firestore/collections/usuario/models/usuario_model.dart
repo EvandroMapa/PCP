@@ -19,7 +19,8 @@ class UsuarioModel {
   final List<String> deviceTokens;
 
   bool get isOperador => tipo?.isOperador ?? role == UsuarioRole.operador;
-  bool get isNotOperador => !isOperador;
+  bool get isArmador => tipo?.isArmador ?? false;
+  bool get isNotOperador => !isOperador && !isArmador;
 
   bool get temAcessoElementos => tipo?.isPermitirElementos ?? role == UsuarioRole.administrador;
 

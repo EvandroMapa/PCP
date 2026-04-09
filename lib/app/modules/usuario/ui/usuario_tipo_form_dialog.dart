@@ -57,6 +57,13 @@ class _UsuarioTipoFormDialogState extends State<UsuarioTipoFormDialog> {
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
               ),
+              CheckboxListTile(
+                title: const Text('Acessa como armador'),
+                value: form.isArmador,
+                onChanged: (v) => setState(() => form.isArmador = v ?? false),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+              ),
             ],
           ),
         ),
