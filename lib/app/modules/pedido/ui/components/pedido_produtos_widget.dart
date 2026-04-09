@@ -43,8 +43,6 @@ class PedidoProdutosWidget extends StatelessWidget {
                 Builder(
                   builder: (context) {
                     final ordem = pedidoCtrl.getOrdemByProduto(produto, true);
-                    print('DEBUG: Produto ${produto.id} (${produto.produto.nome}) - Status: ${produto.status.status.name}');
-                    print('DEBUG: Ordem encontrada para o produto: ${ordem?.id ?? 'NENHUMA'} - Localizador: ${ordem?.localizator ?? 'NULO'}');
                     
                     if (ordem == null) return const SizedBox();
                     return InkWell(

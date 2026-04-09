@@ -31,9 +31,7 @@ class OrdemModel {
           if (pedidoId.isEmpty || produtoId.isEmpty) continue;
 
           final produto = BackendClient.pedidos.getProdutoByPedidoId(pedidoId, produtoId);
-          if (produto.cliente.id.isNotEmpty) {
-            result.add(produto);
-          }
+          result.add(produto);
         } catch (_) {
           // Ignora produtos que falham ao carregar para evitar trava na UI
         }
