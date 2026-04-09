@@ -51,9 +51,11 @@ class AppSupabaseClient {
       ];
 
       await Future.wait(futures);
+      await ordens.startOnlyArquivadas();
 
       // Pedidos depends on clientes/steps for mapping, so start it after
       await pedidos.start().catchError((e) => print('Error starting pedidos: $e'));
+      await pedidos.startOnlyArquivadas();
 
       // Start real-time listeners
       usuarios.listen();

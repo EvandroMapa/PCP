@@ -1,3 +1,5 @@
+import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
@@ -40,13 +42,14 @@ class PedidoProdutosWidget extends StatelessWidget {
               const W(16),
               if (produto.status.status.index >=
                   PedidoProdutoStatus.aguardandoProducao.index) ...[
-                Builder(
-                  builder: (context) {
+                StreamOut(
+                  stream: FirestoreClient.ordens.dataStream.listen,
+                  builder: (_, __) {
                     final ordem = pedidoCtrl.getOrdemByProduto(produto, true);
                     if (ordem == null) return const SizedBox();
                     return InkWell(
                       onTap: () async {
-                        await push(context, OrdemPage(ordem.id));
+                        await push(contextGlobal, OrdemPage(ordem.id));
                         pedidoCtrl.pedidoStream.update();
                       },
                       child: Container(
@@ -100,8 +103,9 @@ class PedidoProdutosWidget extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('${produto.qtde}Kg', style: AppCss.minimumRegular),
-              Builder(
-                builder: (context) {
+              StreamOut(
+                stream: FirestoreClient.ordens.dataStream.listen,
+                builder: (_, __) {
                   final ordem = pedidoCtrl.getOrdemByProduto(produto, true);
                   final materiaPrima =
                       produto.materiaPrima ?? ordem?.materiaPrima;
@@ -114,7 +118,7 @@ class PedidoProdutosWidget extends StatelessWidget {
                             );
                             if (result != null) {
                               push(
-                                context,
+                                contextGlobal,
                                 MateriaPrimaCreatePage(
                                   materiaPrima: materiaPrima,
                                 ),

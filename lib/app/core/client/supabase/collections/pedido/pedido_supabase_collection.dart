@@ -132,6 +132,75 @@ class PedidoSupabaseCollection extends PedidoCollection {
     }
   }
 
+  @override
+  Future<void> startOnlyArquivadas() async {
+    try {
+      final pedidosRaw = await SupabaseService.client
+          .from(tableName)
+          .select()
+          .eq('is_archived', true);
+
+      if (pedidosRaw.isEmpty) {
+        pedidosArchivedsStream.add(<PedidoModel>[]);
+        return;
+      }
+
+      final List<String> pIds = pedidosRaw.map((e) => e['id'].toString().trim()).toList();
+
+      Future<List<Map<String, dynamic>>> safeFetch(String table) async {
+        try {
+          final res = await SupabaseService.client
+              .from(table)
+              .select()
+              .filter('pedido_id', 'in', pIds);
+          final list = res as List;
+          return list.map((item) {
+            if (item is Map) {
+              return item.map((key, value) => MapEntry(key.toString(), value));
+            }
+            return <String, dynamic>{};
+          }).toList();
+        } catch (_) {
+          return [];
+        }
+      }
+
+      final results = await Future.wait([
+        safeFetch('pedido_produtos'),
+        safeFetch('pedido_status_history'),
+        safeFetch('pedido_steps_history'),
+        safeFetch('pedido_tags'),
+      ]);
+
+      final List<Map<String, dynamic>> produtosRaw = results[0];
+      final List<Map<String, dynamic>> statusRaw = results[1];
+      final List<Map<String, dynamic>> stepsRaw = results[2];
+      final List<Map<String, dynamic>> tagsRaw = results[3];
+
+      final pedidos = pedidosRaw.map((pMap) {
+        final String pId = pMap['id'].toString().trim();
+        final pProdutos = produtosRaw
+            .where((r) => (r['pedido_id'] ?? '').toString().trim() == pId)
+            .toList();
+        
+        return PedidoModel.fromSupabaseMap(
+          pMap,
+          produtosRaw: pProdutos,
+          statusRaw: statusRaw.where((r) => r['pedido_id'].toString().trim() == pId).toList(),
+          stepsRaw: stepsRaw.where((r) => r['pedido_id'].toString().trim() == pId).toList(),
+          tagsIds: tagsRaw
+              .where((r) => r['pedido_id'].toString().trim() == pId)
+              .map((r) => r['tag_id'].toString())
+              .toList(),
+        );
+      }).toList();
+
+      pedidosArchivedsStream.add(pedidos);
+    } catch (e) {
+      log('Supabase Error (Pedido.startOnlyArquivadas): $e');
+    }
+  }
+
   Timer? _streamDebounce;
 
   void _updateStreams(List<Map<String, dynamic>> raw) {

@@ -158,6 +158,7 @@ class _PedidoPageState extends State<PedidoPage>
   Widget _detalhesBody(PedidoModel pedido) {
     return ListView(
       children: [
+        DebugPedidoWidget(pedido),
         if (pedido.getPedidosFilhos().isNotEmpty)
           PaiPedidoSinalizadorWidget(),
         if (pedido.pai != null && pedido.pai != '')

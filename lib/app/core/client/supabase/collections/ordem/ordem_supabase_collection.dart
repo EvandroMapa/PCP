@@ -66,6 +66,24 @@ class OrdemSupabaseCollection extends OrdemCollection {
     dataStream.add(ordensNaoArquivadas);
   }
 
+  @override
+  Future<void> startOnlyArquivadas() async {
+    try {
+      final response = await SupabaseService.client
+          .from(tableName)
+          .select()
+          .eq('is_archived', true);
+      
+      final ordens = List<Map<String, dynamic>>.from(response)
+          .map((e) => OrdemModel.fromSupabaseMap(e))
+          .toList();
+      
+      ordensArquivadasStream.add(ordens);
+    } catch (e) {
+      print('Supabase Error (Ordem.startOnlyArquivadas): $e');
+    }
+  }
+
   bool _isListen = false;
   @override
   Future<void> listen({
