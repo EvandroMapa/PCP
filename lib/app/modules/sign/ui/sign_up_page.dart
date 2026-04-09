@@ -39,8 +39,7 @@ class SignUpPageState extends State<SignUpPage> {
               const H(20),
               AppField(
                 controller: email,
-                label: 'E-mail',
-                type: TextInputType.emailAddress,
+                label: 'Login',
               ),
               const H(20),
               AppField(

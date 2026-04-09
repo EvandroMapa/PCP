@@ -101,6 +101,9 @@ class UsuarioController {
     if (emailForm.isEmpty) {
       throw Exception('Login inválido');
     }
+    if (form.usuarioTipoId.isEmpty) {
+      throw Exception('É obrigatório selecionar um Perfil de Acesso');
+    }
     if (form.isEdit) {
       if (BackendClient.usuarios.data.any((e) =>
           e.email.toLowerCase().trim() == emailForm &&
