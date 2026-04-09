@@ -409,3 +409,5 @@ class OrdemFreezedModel {
   @override
   int get hashCode => isFreezed.hashCode ^ reason.hashCode;
 }
+
+// v-supabase-stable-v1
