@@ -57,6 +57,18 @@ class DebugPedidoWidget extends StatelessWidget {
                   ),
                 );
               }),
+              const Divider(color: Colors.white24),
+              Text(
+                'Conteúdo das Ordens Ativas:',
+                style: AppCss.minimumBold.copyWith(color: Colors.orangeAccent),
+              ),
+              ...ordens.map((o) => Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '${o.localizator}: ${o.idPedidosProdutosRefs}',
+                  style: AppCss.minimumRegular.copyWith(color: Colors.white, fontSize: 10),
+                ),
+              )),
             ],
           ),
         );
