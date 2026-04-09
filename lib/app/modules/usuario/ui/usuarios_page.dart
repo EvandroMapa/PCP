@@ -60,7 +60,7 @@ class _UsuariosPageState extends State<UsuariosPage> {
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: AppField(
-                    hint: 'Pesquisar',
+                    hint: 'Pesquisar Login / Nome',
                     controller: utils.search,
                     suffixIcon: Icons.search,
                     onChanged: (_) => usuarioCtrl.utilsStream.update(),

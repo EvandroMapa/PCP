@@ -74,7 +74,7 @@ class _UsuarioCreatePageState extends State<UsuarioCreatePage> {
           ),
           const H(16),
           AppField(
-            label: 'E-mail',
+            label: 'Login',
             controller: form.email,
             onChanged: (_) => usuarioCtrl.formStream.update(),
           ),
