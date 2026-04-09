@@ -130,88 +130,106 @@ class ElementoController {
         return {'success': false, 'error': 'PDF parece estar sem texto (pode ser uma imagem).', 'rawText': ''};
       }
 
-      final lines = rawText.split('\n');
+      final lines = rawText.split('\n').map((l) => l.trim()).toList();
       String? currentElementName;
       List<ElementoPosicaoCreateModel> currentPosicoes = [];
       final List<ElementoCreateModel> novosElementos = [];
 
-      for (var line in lines) {
-        line = line.trim();
+      for (int i = 0; i < lines.length; i++) {
+        final line = lines[i];
         if (line.isEmpty) continue;
 
-        // 1. Identificar Header de Elemento (ex: "Elemento EP301")
-        final elementMatch = RegExp(r'Elemento\s+([A-Z0-9.\-_]+)', caseSensitive: false).firstMatch(line);
-        if (elementMatch != null) {
+        // 1. Identificar Mudança de Elemento (Vertical)
+        // O padrão é: [Nome] + "Elemento" + "Ok"
+        if (i + 2 < lines.length && lines[i + 1] == 'Elemento' && lines[i + 2] == 'Ok') {
           if (currentElementName != null && currentPosicoes.isNotEmpty) {
-            final el = ElementoCreateModel()..nome.text = currentElementName;
-            el.posicoes = List.from(currentPosicoes);
-            novosElementos.add(el);
+            novosElementos.add(ElementoCreateModel()
+              ..nome.text = currentElementName
+              ..posicoes.addAll(currentPosicoes));
           }
-          currentElementName = elementMatch.group(1);
+          currentElementName = line;
           currentPosicoes = [];
+          i += 2; // Pula "Elemento" e "Ok"
           continue;
         }
 
-        // 2. Identificar Linha de Posição
-        // Padrão esperado: Pos Bitola Aço Qtde Compr Peso [Outros] OS
-        // Tenta capturar 6+ blocos que pareçam uma linha de tabela, mesmo se estiverem um pouco grudados
-        // Ex: "01  20,00  CA50  8  120  24,000  (O)  1"
+        // 2. Tentar coletar um bloco de 7 linhas (Modo Vertical)
+        // Qtde, Compr, Pos, Bitola, Aço, Peso, OS
+        if (currentElementName != null && i + 6 < lines.length) {
+          final qtdeStr = lines[i];
+          final comprStr = lines[i + 1];
+          final posNome = lines[i + 2];
+          final bitolaStr = lines[i + 3].replaceAll(',', '.');
+          final aco = lines[i + 4];
+          final pesoStr = lines[i + 5].replaceAll(',', '.');
+          final osStr = lines[i + 6];
+
+          final bitola = double.tryParse(bitolaStr);
+          final peso = double.tryParse(pesoStr);
+          final qtde = double.tryParse(qtdeStr.replaceAll(',', '.'));
+
+          // Se as próximas 7 linhas formarem um bloco numérico válido
+          if (bitola != null && peso != null && qtde != null) {
+            final pos = ElementoPosicaoCreateModel();
+            pos.nome.text = posNome;
+            pos.numeroOs.text = osStr;
+            pos.pesoKg.text = peso.toStringAsFixed(3);
+
+            final bMatch = bitola.toString().replaceAll(RegExp(r'\.0$'), '');
+            pos.produto = pedido
+                .getProdutos()
+                .map((e) => e.produto)
+                .where((p) => p.nome.contains(bMatch) || p.labelMinified.contains(bMatch))
+                .firstOrNull;
+
+            if (pos.produto != null) {
+              currentPosicoes.add(pos);
+            }
+            i += 6; // Consome o bloco
+            continue;
+          }
+        }
+
+        // 3. Fallback: Lógica de linha única (Modo Horizontal)
         final parts = line.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
-        
         if (parts.length >= 6) {
-          // Heurística para bitola: Geralmente é o segundo campo e tem "," ou ".00"
           final bitolaStr = parts[1].replaceAll(',', '.');
           final bitola = double.tryParse(bitolaStr);
-          
           if (bitola != null) {
-            // Peso: Geralmente é um dos últimos valores numéricos
             double? peso;
             String? osStr;
-            
-            // Varre do fim para o início para achar OS e Peso
-            for (int i = parts.length - 1; i >= 4; i--) {
-                final cleaned = parts[i].replaceAll(',', '.');
-                final val = double.tryParse(cleaned);
-                if (val != null) {
-                    if (osStr == null) {
-                        osStr = parts[i]; 
-                    } else if (peso == null) {
-                        peso = val;
-                        break;
-                    }
-                }
+            for (int j = parts.length - 1; j >= 4; j--) {
+              final val = double.tryParse(parts[j].replaceAll(',', '.'));
+              if (val != null) {
+                if (osStr == null) osStr = parts[j];
+                else if (peso == null) { peso = val; break; }
+              }
             }
-            
             if (peso != null && currentElementName != null) {
               final pos = ElementoPosicaoCreateModel();
               pos.nome.text = parts[0];
               pos.numeroOs.text = osStr ?? '';
               pos.pesoKg.text = peso.toStringAsFixed(3);
-              
-              // Mapeia bitola: remove ".0" para facilitar o "contains"
               final bMatch = bitola.toString().replaceAll(RegExp(r'\.0$'), '');
-              pos.produto = pedido.getProdutos()
-                  .map((e) => e.produto)
-                  .where((p) => p.nome.contains(bMatch) || p.labelMinified.contains(bMatch))
-                  .firstOrNull;
-
-              if (pos.produto != null) {
-                currentPosicoes.add(pos);
-              }
+              pos.produto = pedido.getProdutos().map((e) => e.produto).where((p) => p.nome.contains(bMatch) || p.labelMinified.contains(bMatch)).firstOrNull;
+              if (pos.produto != null) currentPosicoes.add(pos);
             }
           }
         }
       }
 
-      // Adicionar o último elemento capturado
       if (currentElementName != null && currentPosicoes.isNotEmpty) {
-        final el = ElementoCreateModel()..nome.text = currentElementName;
-        el.posicoes = List.from(currentPosicoes);
-        novosElementos.add(el);
+        novosElementos.add(ElementoCreateModel()
+          ..nome.text = currentElementName
+          ..posicoes.addAll(currentPosicoes));
       }
 
       if (novosElementos.isEmpty) {
-        return {'success': false, 'error': 'Nenhum elemento ou posição válida foi identificado.', 'rawText': rawText};
+        return {
+          'success': false,
+          'error': 'Nenhum elemento ou posição válida foi identificado.',
+          'rawText': rawText
+        };
       }
 
       // Salvar no Banco
