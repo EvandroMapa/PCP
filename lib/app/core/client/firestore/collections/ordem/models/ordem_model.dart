@@ -175,9 +175,10 @@ class OrdemModel {
   }
 
   bool hasProduto(String produtoId) {
+    if (produtoId.isEmpty) return false;
     return idPedidosProdutosRefs.any((ref) {
-      final id = ref['produtoId'] ?? ref['produto_id'] ?? '';
-      return id == produtoId;
+      final id = (ref['produtoId'] ?? ref['produto_id'] ?? '').toString().trim();
+      return id == produtoId.trim();
     });
   }
 
@@ -262,8 +263,8 @@ class OrdemModel {
           return list.map((x) {
             final mapx = Map<String, dynamic>.from(x);
             return {
-              'pedidoId': (mapx['pedidoId'] ?? mapx['pedido_id'] ?? '').toString(),
-              'produtoId': (mapx['produtoId'] ?? mapx['produto_id'] ?? '').toString(),
+              'pedidoId': (mapx['pedidoId'] ?? mapx['pedido_id'] ?? '').toString().trim(),
+              'produtoId': (mapx['produtoId'] ?? mapx['produto_id'] ?? '').toString().trim(),
             };
           }).toList();
         } catch (_) {
