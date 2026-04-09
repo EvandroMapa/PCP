@@ -82,7 +82,7 @@ class UsuarioModel {
       'email': email,
       'senha': senha,
       'role': role.index,
-      'usuario_tipo_id': usuarioTipoId,
+      'perfil_id': usuarioTipoId,
       'permission': permission.toMap(),
       'steps': steps.map((x) => x.toMap()).toList(),
       'deviceTokens': deviceTokens,
@@ -133,9 +133,9 @@ class UsuarioModel {
       email: map['email'] ?? '',
       senha: map['senha'] ?? '',
       role: _parseRole(map['role']),
-      usuarioTipoId: (map['usuario_tipo_id'] ?? '').toString(),
-      tipo: map['usuario_tipos'] != null
-          ? UsuarioTipoModel.fromSupabaseMap(map['usuario_tipos'])
+      usuarioTipoId: (map['perfil_id'] ?? '').toString(),
+      tipo: map['perfis'] != null
+          ? UsuarioTipoModel.fromSupabaseMap(map['perfis'])
           : null,
       permission: map['permission'] != null
           ? UserPermissionModel.fromMap(map['permission'] is String
@@ -176,7 +176,7 @@ class UsuarioModel {
         'email': email,
         'senha': senha,
         'role': role.index,
-        'usuario_tipo_id': usuarioTipoId,
+        'perfil_id': usuarioTipoId,
         'permission': json.encode(permission.toMap()),
         'steps': json.encode(steps.map((x) => x.toMap()).toList()),
         'deviceTokens': json.encode(deviceTokens),

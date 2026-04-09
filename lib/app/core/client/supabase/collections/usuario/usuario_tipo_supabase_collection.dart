@@ -7,7 +7,7 @@ class UsuarioTipoSupabaseCollection {
   UsuarioTipoSupabaseCollection._();
   factory UsuarioTipoSupabaseCollection() => _instance;
 
-  final String tableName = 'usuario_tipos';
+  final String tableName = 'perfis';
 
   AppStream<List<UsuarioTipoModel>> dataStream = AppStream.seed([]);
   List<UsuarioTipoModel> get data => dataStream.value;
