@@ -338,10 +338,25 @@ class PedidoController {
   }
 
   OrdemModel? getOrdemByProduto(PedidoProdutoModel produto, bool isArquivada) {
-    return ([
+    final ordensList = [
       ...FirestoreClient.ordens.data,
       if (isArquivada) ...FirestoreClient.ordens.ordensArquivadas,
-    ]).firstWhereOrNull((e) => e.produtos.any((p) => p.id == produto.id));
+    ];
+    
+    final match = ordensList.firstWhereOrNull((e) => e.produtos.any((p) => p.id == produto.id));
+    
+    if (match == null) {
+      print('DEBUG CONTROLLER: Ordem NÃO localizada para ProdutoID: ${produto.id}');
+      print('DEBUG CONTROLLER: Total de Ordens na Memória: ${ordensList.length}');
+      if (ordensList.isNotEmpty) {
+        print('DEBUG CONTROLLER: IDs das Ordens disponíveis: ${ordensList.map((o) => o.id).join(', ')}');
+        print('DEBUG CONTROLLER: Exemplos de ProdutoIDs vinculados na Ordem[0]: ${ordensList[0].produtos.map((p) => p.id).join(', ')}');
+      }
+    } else {
+      print('DEBUG CONTROLLER: Ordem LOCALIZADA: ${match.id} (${match.localizator})');
+    }
+    
+    return match;
   }
 
   void onChangePedidoStatus(PedidoModel pedido) async {
