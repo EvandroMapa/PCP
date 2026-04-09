@@ -3,6 +3,9 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
+import 'package:aco_plus/app/modules/elemento/elemento_arquivo_model.dart';
+import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
+import 'package:aco_plus/app/core/services/supabase_storage_service.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart' as syncfusion;
@@ -68,9 +71,15 @@ class ElementoController {
             .eq('elemento_id', e['id'].toString())
             .order('created_at');
 
+        final arquivosRaw = await SupabaseService.client
+            .from('elemento_arquivos')
+            .select()
+            .eq('elemento_id', e['id'].toString());
+
         result.add(ElementoModel.fromSupabaseMap(
           e,
           posicoesRaw: List<Map<String, dynamic>>.from(posicoesRaw),
+          arquivosRaw: List<Map<String, dynamic>>.from(arquivosRaw),
         ));
       }
 
@@ -135,6 +144,58 @@ class ElementoController {
       await onFetch(elemento.pedidoId);
     } catch (e) {
       print('ElementoController.onDeleteElemento erro: $e');
+    }
+  }
+
+  // ─── GERENCIAMENTO DE ARQUIVOS ───────────────────────────────────────────
+  Future<void> onAddArquivo(
+      ElementoModel elemento, String name, Uint8List bytes, String mimeType) async {
+    try {
+      showLoadingDialog();
+      final url = await SupabaseStorageService.uploadFile(
+        name: name,
+        bytes: bytes,
+        mimeType: mimeType,
+        path: 'elementos/${elemento.id}',
+      );
+
+      final arquivo = ElementoArquivoModel(
+        id: '', // Supabase gera UUID
+        elementoId: elemento.id,
+        nome: name,
+        url: url,
+        tamanho: bytes.length,
+        tipo: mimeType,
+        extensao: name.split('.').last,
+        criadoEm: DateTime.now(),
+      );
+
+      await AppSupabaseClient.elementoArquivos.add(arquivo);
+      await onFetch(elemento.pedidoId);
+      Navigator.pop(contextGlobal); // Fecha loading
+      NotificationService.showPositive('Sucesso', 'Arquivo anexado com sucesso!');
+    } catch (e) {
+      Navigator.pop(contextGlobal); // Fecha loading
+      print('ElementoController.onAddArquivo erro: $e');
+      NotificationService.showNegative('Erro', 'Falha ao anexado arquivo.');
+    }
+  }
+
+  Future<void> onDeleteArquivo(
+      ElementoArquivoModel arquivo, String pedidoId) async {
+    try {
+      showLoadingDialog();
+      // Remove do storage físico
+      await SupabaseStorageService.deleteFile(arquivo.url);
+      // Remove do banco
+      await AppSupabaseClient.elementoArquivos.delete(arquivo.id);
+      
+      await onFetch(pedidoId);
+      Navigator.pop(contextGlobal); // Fecha loading
+      NotificationService.showPositive('Sucesso', 'Arquivo removido!');
+    } catch (e) {
+      Navigator.pop(contextGlobal); // Fecha loading
+      print('ElementoController.onDeleteArquivo erro: $e');
     }
   }
 

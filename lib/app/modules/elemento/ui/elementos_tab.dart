@@ -479,6 +479,16 @@ class _ElementoTileState extends State<_ElementoTile> {
                     ],
                   ),
                   const SizedBox(width: 8),
+                  // Botão de Anexos
+                  IconButton(
+                    onPressed: () => _showArquivosDialog(context, el),
+                    tooltip: 'Anexos (${el.arquivos.length})',
+                    icon: Icon(
+                      el.arquivos.isEmpty ? Icons.attach_file_rounded : Icons.attachment_rounded,
+                      color: el.arquivos.isEmpty ? Colors.grey[400] : AppColors.secondary,
+                      size: 20,
+                    ),
+                  ),
                   // Ações
                   PopupMenuButton<String>(
                     icon: Icon(Icons.more_vert_rounded, color: Colors.grey[400], size: 20),
@@ -609,5 +619,145 @@ class _ElementoTileState extends State<_ElementoTile> {
         textAlign: isEnd ? TextAlign.end : TextAlign.start,
       ),
     );
+  }
+
+  void _showArquivosDialog(BuildContext context, ElementoModel elemento) {
+    showDialog(
+      context: context,
+      builder: (_) => _ElementoArquivosDialog(elemento: elemento, pedido: widget.pedido),
+    );
+  }
+}
+
+// ─── DIÁLOGO DE ARQUIVOS DO ELEMENTO ─────────────────────────────────────────
+class _ElementoArquivosDialog extends StatefulWidget {
+  final ElementoModel elemento;
+  final PedidoModel pedido;
+  const _ElementoArquivosDialog({required this.elemento, required this.pedido});
+
+  @override
+  State<_ElementoArquivosDialog> createState() => _ElementoArquivosDialogState();
+}
+
+class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Row(
+        children: [
+          Icon(Icons.attachment_rounded, color: AppColors.secondary),
+          const SizedBox(width: 12),
+          Expanded(child: Text('Anexos: ${widget.elemento.nome}')),
+        ],
+      ),
+      content: SizedBox(
+        width: 500,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.elemento.arquivos.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 40),
+                child: Column(
+                  children: [
+                    Icon(Icons.file_present_rounded, size: 48, color: Colors.grey[200]),
+                    const SizedBox(height: 12),
+                    Text('Nenhum anexo encontrado', style: AppCss.mediumRegular.copyWith(color: Colors.grey[400])),
+                  ],
+                ),
+              )
+            else
+              Flexible(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: widget.elemento.arquivos.length,
+                  itemBuilder: (_, i) {
+                    final arq = widget.elemento.arquivos[i];
+                    return ListTile(
+                      leading: Icon(
+                        arq.tipo.contains('image') ? Icons.image_outlined : Icons.picture_as_pdf_outlined,
+                        color: AppColors.secondary,
+                      ),
+                      title: Text(arq.nome, style: AppCss.minimumBold),
+                      subtitle: Text('${(arq.tamanho / 1024).toStringAsFixed(1)} KB · ${DateFormat('dd/MM/yy').format(arq.criadoEm)}'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.open_in_new_rounded, size: 20),
+                            onPressed: () => openInNewTab(arq.url),
+                            tooltip: 'Abrir',
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                            onPressed: () async {
+                              if (await showConfirmDialog('Apagar anexo?', 'Deseja remover este arquivo permanentemente?')) {
+                                await elementoCtrl.onDeleteArquivo(arq, widget.pedido.id);
+                                setState(() {});
+                                if (context.mounted) Navigator.pop(context);
+                              }
+                            },
+                            tooltip: 'Excluir',
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _onUpload,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.secondary.withOpacity(0.1),
+                  foregroundColor: AppColors.secondary,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                icon: const Icon(Icons.upload_file_rounded),
+                label: const Text('Adicionar Foto ou PDF', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Fechar'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _onUpload() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+    );
+
+    if (result != null && result.files.single.bytes != null) {
+      final file = result.files.single;
+      await elementoCtrl.onAddArquivo(
+        widget.elemento,
+        file.name,
+        file.bytes!,
+        _getMimeType(file.extension!),
+      );
+      setState(() {});
+      if (mounted) Navigator.pop(context);
+    }
+  }
+
+  String _getMimeType(String ext) {
+    switch (ext.toLowerCase()) {
+      case 'pdf': return 'application/pdf';
+      case 'jpg':
+      case 'jpeg': return 'image/jpeg';
+      case 'png': return 'image/png';
+      default: return 'application/octet-stream';
+    }
   }
 }

@@ -13,6 +13,7 @@ import 'package:aco_plus/app/core/client/supabase/collections/tag/tag_supabase_c
 import 'package:aco_plus/app/core/client/supabase/collections/checklist/checklist_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/automatizacao/automatizacao_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/notificacao/notificacao_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/elemento/elemento_arquivo_supabase_collection.dart';
 
 
 
@@ -32,6 +33,7 @@ class AppSupabaseClient {
   static ChecklistSupabaseCollection checklists = ChecklistSupabaseCollection();
   static AutomatizacaoSupabaseCollection automatizacao = AutomatizacaoSupabaseCollection();
   static NotificacaoSupabaseCollection notificacoes = NotificacaoSupabaseCollection();
+  static ElementoArquivoSupabaseCollection elementoArquivos = ElementoArquivoSupabaseCollection();
 
   static Future<void> init() async {
     try {
@@ -51,6 +53,7 @@ class AppSupabaseClient {
         checklists.start().catchError((e) => print('Error starting checklists: $e')),
         automatizacao.start().catchError((e) => print('Error starting automatizacao: $e')),
         notificacoes.start().catchError((e) => print('Error starting notificacoes: $e')),
+        elementoArquivos.start().catchError((e) => print('Error starting elementoArquivos: $e')),
       ];
 
       await Future.wait(futures);
@@ -72,6 +75,7 @@ class AppSupabaseClient {
       checklists.listen();
       automatizacao.listen();
       notificacoes.listen();
+      elementoArquivos.listen();
     } catch (e) {
       print('AppSupabaseClient: Critical error during init: $e');
     }

@@ -2,6 +2,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_m
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
+import 'package:aco_plus/app/modules/elemento/elemento_arquivo_model.dart';
 
 // ─── POSIÇÃO / OS ─────────────────────────────────────────────────────────────
 class ElementoPosicaoModel {
@@ -61,6 +62,7 @@ class ElementoModel {
   final int qtde;
   final DateTime createdAt;
   List<ElementoPosicaoModel> posicoes;
+  List<ElementoArquivoModel> arquivos;
 
   ElementoModel({
     required this.id,
@@ -69,6 +71,7 @@ class ElementoModel {
     required this.qtde,
     required this.createdAt,
     required this.posicoes,
+    required this.arquivos,
   });
 
   /// Peso total calculado (soma das posições * qtde)
@@ -92,9 +95,13 @@ class ElementoModel {
   factory ElementoModel.fromSupabaseMap(
     Map<String, dynamic> map, {
     List<Map<String, dynamic>>? posicoesRaw,
+    List<Map<String, dynamic>>? arquivosRaw,
   }) {
     final posicoes = (posicoesRaw ?? [])
         .map((p) => ElementoPosicaoModel.fromSupabaseMap(p))
+        .toList();
+    final arquivos = (arquivosRaw ?? [])
+        .map((a) => ElementoArquivoModel.fromMap(a))
         .toList();
     return ElementoModel(
       id: (map['id'] ?? '').toString(),
@@ -105,6 +112,7 @@ class ElementoModel {
           ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
       posicoes: posicoes,
+      arquivos: arquivos,
     );
   }
 
