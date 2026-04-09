@@ -39,42 +39,39 @@ class PedidoProdutosWidget extends StatelessWidget {
             children: [
               Text('${produto.produto.nome} - ${produto.produto.descricao}'),
               const W(16),
-              if (produto.status.status.index >=
-                  PedidoProdutoStatus.aguardandoProducao.index) ...[
-                StreamOut(
-                  stream: FirestoreClient.ordens.dataStream.listen,
-                  builder: (context, _) {
-                    final ordem = pedidoCtrl.getOrdemByProduto(produto, true);
-                    
-                    if (ordem == null) return const SizedBox();
-                    return InkWell(
-                      onTap: () async {
-                        await push(context, OrdemPage(ordem.id));
-                        pedidoCtrl.pedidoStream.update();
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          ordem.localizator,
-                          style: AppCss.mediumRegular.copyWith(
-                            fontSize: 12,
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
+              StreamOut(
+                stream: FirestoreClient.ordens.dataStream.listen,
+                builder: (context, _) {
+                  final ordem = pedidoCtrl.getOrdemByProduto(produto, true);
+
+                  if (ordem == null) return const SizedBox();
+                  return InkWell(
+                    onTap: () async {
+                      await push(context, OrdemPage(ordem.id));
+                      pedidoCtrl.pedidoStream.update();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        ordem.localizator,
+                        style: AppCss.mediumRegular.copyWith(
+                          fontSize: 12,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    );
-                  },
-                ),
-                const W(4),
-              ],
+                    ),
+                  );
+                },
+              ),
+              const W(4),
               if (!pedido.isAguardandoEntradaProducao())
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -82,10 +79,7 @@ class PedidoProdutosWidget extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: produto.status
-                        .getStatusView()
-                        .color
-                        .withValues(alpha: 0.4),
+                    color: produto.status.getStatusView().color.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -95,9 +89,7 @@ class PedidoProdutosWidget extends StatelessWidget {
                 ),
             ],
           ),
-          trailing: pedido.isAguardandoEntradaProducao()
-              ? const SizedBox()
-              : null,
+          trailing: pedido.isAguardandoEntradaProducao() ? const SizedBox() : null,
           childrenPadding: const EdgeInsets.all(16),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
