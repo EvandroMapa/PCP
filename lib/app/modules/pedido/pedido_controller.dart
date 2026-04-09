@@ -341,7 +341,7 @@ class PedidoController {
     return ([
       ...FirestoreClient.ordens.data,
       if (isArquivada) ...FirestoreClient.ordens.ordensArquivadas,
-    ]).firstWhereOrNull((e) => e.produtos.any((p) => p.id == produto.id));
+    ]).firstWhereOrNull((e) => e.hasProduto(produto.id));
   }
 
   void onChangePedidoStatus(PedidoModel pedido) async {

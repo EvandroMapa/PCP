@@ -174,6 +174,14 @@ class OrdemModel {
     }
   }
 
+  bool hasProduto(String produtoId) {
+    if (produtoId.isEmpty) return false;
+    return idPedidosProdutosRefs.any((x) {
+      final idRef = x['produtoId'] ?? x['produto_id'] ?? '';
+      return idRef.trim() == produtoId.trim();
+    });
+  }
+
   OrdemDurationsModel? get durations => OrdemDurationsModel.getByOrdem(this);
 
   OrdemModel({
