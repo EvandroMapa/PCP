@@ -12,7 +12,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/enums/obra_status.dart';
-import 'package:aco_plus/app/core/services/hash_service.dart';
+
 import 'package:collection/collection.dart';
 
 class PedidoProdutoTurno {
@@ -210,7 +210,7 @@ class PedidoProdutoModel {
   }
 
   factory PedidoProdutoModel.empty(PedidoModel pedido) => PedidoProdutoModel(
-    id: HashService.get,
+    id: '',
     pedidoId: pedido.id,
     clienteId: pedido.cliente.id,
     obraId: pedido.obra.id,

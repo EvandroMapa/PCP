@@ -370,13 +370,9 @@ class PedidoSupabaseCollection extends PedidoCollection {
   Future<List<String>> _syncRelationships(PedidoModel model) async {
     final List<String> syncErrors = [];
     try {
-      // 1. Delete existing for update
-      log('Supabase (Sync): Cleaning old relationships...');
+      // 1. Delete existing for update (Only non-primary key tables or controlled sync)
+      log('Supabase (Sync): Cleaning history tables...');
       await Future.wait([
-        SupabaseService.client
-            .from('pedido_produtos')
-            .delete()
-            .eq('pedido_id', model.id),
         SupabaseService.client
             .from('pedido_status_history')
             .delete()
@@ -385,26 +381,43 @@ class PedidoSupabaseCollection extends PedidoCollection {
             .from('pedido_steps_history')
             .delete()
             .eq('pedido_id', model.id),
-        SupabaseService.client
-            .from('pedido_tags')
-            .delete()
-            .eq('pedido_id', model.id),
       ]);
     } catch (e) {
-      syncErrors.add('Erro ao limpar relações antigas: $e');
+      syncErrors.add('Erro ao limpar histórico: $e');
     }
 
-    // 2. Insert new relationships (Granular)
+    // 2. Sync Products (Atomic-ish)
     try {
-      // Products
-      if (model.produtos.isNotEmpty) {
+      final idsToKeep = model.produtos.map((e) => e.id).toList();
+      if (idsToKeep.isNotEmpty) {
         final payload = model.produtos.map((p) => p.toSupabaseMap(model.id)).toList();
-        await SupabaseService.client.from('pedido_produtos').insert(payload);
+        await SupabaseService.client.from('pedido_produtos').upsert(payload);
+        // Exclui o que não está mais no modelo
+        await SupabaseService.client
+            .from('pedido_produtos')
+            .delete()
+            .eq('pedido_id', model.id)
+            .filter('id', 'not.in', '(${idsToKeep.join(",")})');
+      } else {
+        await SupabaseService.client.from('pedido_produtos').delete().eq('pedido_id', model.id);
       }
     } catch (e) {
-      syncErrors.add('Erro Produtos: $e');
+      syncErrors.add('Erro sincronia Produtos: $e');
     }
 
+    // 3. Sync Tags (Atomic-ish)
+    try {
+      await SupabaseService.client.from('pedido_tags').delete().eq('pedido_id', model.id);
+      if (model.tags.isNotEmpty) {
+        await SupabaseService.client.from('pedido_tags').insert(model.tags
+            .map((t) => {'pedido_id': model.id, 'tag_id': t.id})
+            .toList());
+      }
+    } catch (e) {
+      syncErrors.add('Erro sincronia Tags: $e');
+    }
+
+    // 4. Insert history (already cleaned)
     try {
       // Status History
       if (model.statusess.isNotEmpty) {
@@ -423,18 +436,6 @@ class PedidoSupabaseCollection extends PedidoCollection {
       }
     } catch (e) {
       syncErrors.add('Erro Etapas: $e');
-    }
-
-    try {
-      // Tags
-      if (model.tags.isNotEmpty) {
-        log('Supabase (Sync): Inserting ${model.tags.length} tags...');
-        await SupabaseService.client.from('pedido_tags').insert(model.tags
-            .map((t) => {'pedido_id': model.id, 'tag_id': t.id})
-            .toList());
-      }
-    } catch (e) {
-      syncErrors.add('Erro na sincronia de Tags: $e');
     }
 
     try {

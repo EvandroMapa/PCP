@@ -6,7 +6,7 @@ import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
-import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/materia_prima/ui/materia_prima_bottom.dart';
 import 'package:aco_plus/app/modules/materia_prima/ui/materias_primas_create_page.dart';
@@ -20,7 +20,6 @@ class PedidoProdutosWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Adicionando uma pequena alteração para testar o commit e deploy
     return IgnorePointer(
       ignoring: pedido.isAguardandoEntradaProducao(),
       child: Column(
@@ -44,16 +43,6 @@ class PedidoProdutosWidget extends StatelessWidget {
                 Builder(
                   builder: (context) {
                     final ordem = pedidoCtrl.getOrdemByProduto(produto, true);
-                    
-                    if (ordem == null) {
-                      print('DEBUG UI: Produto ${produto.produto.nome} (${produto.id}) NÃO encontrou ordem.');
-                      print('DEBUG UI: Total de Ordens em FirestoreClient: ${FirestoreClient.ordens.data.length}');
-                      if (FirestoreClient.ordens.data.isNotEmpty) {
-                         print('DEBUG UI: Primeira Ordem em cache: ${FirestoreClient.ordens.data.first.id} - Refs: ${FirestoreClient.ordens.data.first.idPedidosProdutosRefs}');
-                      }
-                    } else {
-                      print('DEBUG UI: Produto ${produto.produto.nome} VINCULADO à Ordem ${ordem.localizator}');
-                    }
                     
                     if (ordem == null) return const SizedBox();
                     return InkWell(

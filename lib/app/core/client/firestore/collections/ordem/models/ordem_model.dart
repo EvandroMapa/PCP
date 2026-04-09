@@ -176,15 +176,10 @@ class OrdemModel {
 
   bool hasProduto(String produtoId) {
     if (produtoId.isEmpty) return false;
-    final match = idPedidosProdutosRefs.any((x) {
+    return idPedidosProdutosRefs.any((x) {
       final idRef = (x['produtoId'] ?? x['produto_id'] ?? '').toString();
-      final isEqual = idRef.trim() == produtoId.trim();
-      if (isEqual) {
-        print('DEBUG ID MATCH: Encontrou vínculo direto! ID: $produtoId na Ordem: $id');
-      }
-      return isEqual;
+      return idRef.trim() == produtoId.trim();
     });
-    return match;
   }
 
   OrdemDurationsModel? get durations => OrdemDurationsModel.getByOrdem(this);
