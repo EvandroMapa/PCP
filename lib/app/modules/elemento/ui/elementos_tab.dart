@@ -7,6 +7,7 @@ import 'package:aco_plus/app/modules/elemento/elemento_controller.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/elemento/ui/elemento_comparativo_dialog.dart';
 import 'package:aco_plus/app/modules/elemento/ui/elemento_form_dialog.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -49,6 +50,31 @@ class _ElementosTabState extends State<ElementosTab> {
                   ),
                   Row(
                     children: [
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: AppColors.primaryMain,
+                          side: BorderSide(color: AppColors.primaryMain),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                        ),
+                        icon:
+                            const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                        label: const Text('Importar PDF'),
+                        onPressed: () async {
+                          final result = await FilePicker.platform.pickFiles(
+                            type: FileType.custom,
+                            allowedExtensions: ['pdf'],
+                          );
+                          if (result != null &&
+                              result.files.single.bytes != null) {
+                            await elementoCtrl.onImportPDF(
+                                result.files.single.bytes!, widget.pedido);
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 8),
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryMain,

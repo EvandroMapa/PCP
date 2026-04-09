@@ -3,6 +3,9 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
+import 'dart:typed_data';
+import 'package:collection/collection.dart';
 
 final elementoCtrl = ElementoController();
 
@@ -112,6 +115,86 @@ class ElementoController {
       await onFetch(elemento.pedidoId);
     } catch (e) {
       print('ElementoController.onDeleteElemento erro: $e');
+    }
+  }
+
+  // ─── IMPORTAR PDF ─────────────────────────────────────────────────────────
+  Future<void> onImportPDF(Uint8List bytes, PedidoModel pedido) async {
+    try {
+      final PdfDocument document = PdfDocument(inputBytes: bytes);
+      final String text = PdfTextExtractor(document).extractText();
+      document.dispose();
+
+      final lines = text.split('\n');
+      String? currentElementName;
+      List<ElementoPosicaoCreateModel> currentPosicoes = [];
+      final List<ElementoCreateModel> novosElementos = [];
+
+      for (var line in lines) {
+        line = line.trim();
+        if (line.isEmpty) continue;
+
+        // 1. Identificar Header de Elemento (ex: "Elemento EP301")
+        final elementMatch = RegExp(r'Elemento\s+([A-Z0-9.\-_]+)', caseSensitive: false).firstMatch(line);
+        if (elementMatch != null) {
+          if (currentElementName != null && currentPosicoes.isNotEmpty) {
+            final el = ElementoCreateModel()..nome.text = currentElementName;
+            el.posicoes = List.from(currentPosicoes);
+            novosElementos.add(el);
+          }
+          currentElementName = elementMatch.group(1);
+          currentPosicoes = [];
+          continue;
+        }
+
+        // 2. Identificar Linha de Posição
+        // Padrão esperado: Pos Bitola Aço Qtde Compr Peso [Outros] OS
+        final parts = line.split(RegExp(r'\s+'));
+        if (parts.length >= 6) {
+          final bitolaStr = parts[1].replaceAll(',', '.');
+          final bitola = double.tryParse(bitolaStr);
+          
+          if (bitola != null) {
+            final pesoStr = parts[parts.length - 2].replaceAll(',', '.');
+            final peso = double.tryParse(pesoStr);
+            final osStr = parts.last;
+            
+            if (peso != null) {
+              final pos = ElementoPosicaoCreateModel();
+              pos.nome.text = parts[0];
+              pos.numeroOs.text = osStr;
+              pos.pesoKg.text = peso.toStringAsFixed(3);
+              
+              // Tentar encontrar o produto correspondente pela bitola (número contido no nome)
+              final bitolaSemZero = bitola.toString().replaceAll(RegExp(r'\.0$'), '');
+              pos.produto = pedido.getProdutos()
+                  .map((e) => e.produto)
+                  .where((p) => p.nome.contains(bitolaSemZero))
+                  .firstOrNull;
+
+              if (pos.produto != null) {
+                currentPosicoes.add(pos);
+              }
+            }
+          }
+        }
+      }
+
+      // Adicionar o último elemento capturado
+      if (currentElementName != null && currentPosicoes.isNotEmpty) {
+        final el = ElementoCreateModel()..nome.text = currentElementName;
+        el.posicoes = List.from(currentPosicoes);
+        novosElementos.add(el);
+      }
+
+      // Salvar no Banco
+      for (final el in novosElementos) {
+        await onSaveElemento(el, pedido.id);
+      }
+      
+      await onFetch(pedido.id);
+    } catch (e) {
+      print('ElementoController.onImportPDF erro: $e');
     }
   }
 
