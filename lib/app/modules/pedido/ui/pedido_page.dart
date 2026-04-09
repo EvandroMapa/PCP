@@ -13,7 +13,6 @@ import 'package:aco_plus/app/modules/pedido/ui/components/pai/pai_pedido_corte_d
 import 'package:aco_plus/app/modules/pedido/ui/components/pai/pai_pedido_filho_sinalizador_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pai/pai_pedido_produtos_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pai/pai_pedido_sinalizador_widget.dart';
-import 'package:aco_plus/app/modules/pedido/ui/components/debug_pedido_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_anexos_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_armacao_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_checks_widget.dart';
@@ -159,7 +158,6 @@ class _PedidoPageState extends State<PedidoPage>
   Widget _detalhesBody(PedidoModel pedido) {
     return ListView(
       children: [
-        DebugPedidoWidget(pedido),
         if (pedido.getPedidosFilhos().isNotEmpty)
           PaiPedidoSinalizadorWidget(),
         if (pedido.pai != null && pedido.pai != '')
