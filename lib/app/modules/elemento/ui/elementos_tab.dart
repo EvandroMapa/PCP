@@ -5,6 +5,7 @@ import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_controller.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
+import 'package:aco_plus/app/modules/elemento/ui/elemento_comparativo_dialog.dart';
 import 'package:aco_plus/app/modules/elemento/ui/elemento_form_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -34,9 +35,7 @@ class _ElementosTabState extends State<ElementosTab> {
         final validacao = elementoCtrl.getValidacaoBitola(widget.pedido);
         return Column(
           children: [
-            // ── Cabeçalho de totais + status ──────────────────────────────
-            _HeaderWidget(validacao: validacao, fmt: _fmt),
-            const Divisor(),
+            const SizedBox(height: 8),
 
             // ── Botão adicionar ───────────────────────────────────────────
             Padding(
@@ -48,20 +47,66 @@ class _ElementosTabState extends State<ElementosTab> {
                     'Elementos (${elementos.length})',
                     style: AppCss.mediumBold,
                   ),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryMain,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                    ),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Novo Elemento'),
-                    onPressed: () => showElementoFormDialog(
-                      context,
-                      pedido: widget.pedido,
-                    ),
+                  Row(
+                    children: [
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryMain,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                        ),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('Novo Elemento'),
+                        onPressed: () => showElementoFormDialog(
+                          context,
+                          pedido: widget.pedido,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Botão de Comparativo (Status)
+                      InkWell(
+                        onTap: () => showElementoComparativoDialog(
+                          context,
+                          validacao: validacao,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: validacao.isOk
+                                ? Colors.green.withOpacity(0.1)
+                                : Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: validacao.isOk
+                                  ? Colors.green.withOpacity(0.2)
+                                  : Colors.red.withOpacity(0.2),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                validacao.isOk
+                                    ? Icons.check_circle_rounded
+                                    : Icons.warning_rounded,
+                                color: validacao.isOk ? Colors.green : Colors.red,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Comparativo',
+                                style: AppCss.smallBold.copyWith(
+                                  color: validacao.isOk
+                                      ? Colors.green.shade700
+                                      : Colors.red.shade700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -104,106 +149,6 @@ class _ElementosTabState extends State<ElementosTab> {
           ],
         );
       },
-    );
-  }
-}
-
-// ─── HEADER COM TOTAIS ────────────────────────────────────────────────────────
-class _HeaderWidget extends StatelessWidget {
-  final ElementoValidacaoResult validacao;
-  final String Function(double) fmt;
-  const _HeaderWidget({required this.validacao, required this.fmt});
-
-  @override
-  Widget build(BuildContext context) {
-    final ok = validacao.isOk;
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: ok ? Colors.green.shade50 : Colors.red.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color: ok ? Colors.green.shade200 : Colors.red.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                ok ? Icons.check_circle_rounded : Icons.warning_rounded,
-                color: ok ? Colors.green : Colors.red,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                ok
-                    ? 'Elementos conferem com o pedido ✓'
-                    : 'Divergência encontrada nos pesos',
-                style: AppCss.mediumBold.copyWith(
-                    color: ok ? Colors.green.shade800 : Colors.red.shade800),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _TotalChip(
-                  label: 'Total do pedido',
-                  value: '${fmt(validacao.totalPedidoKg)} kg',
-                  color: Colors.blueGrey),
-              const SizedBox(width: 8),
-              _TotalChip(
-                  label: 'Total dos elementos',
-                  value: '${fmt(validacao.totalElementosKg)} kg',
-                  color: ok ? Colors.green : Colors.red),
-            ],
-          ),
-          if (validacao.divergencias.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text('Divergências por bitola:',
-                style: AppCss.smallBold.copyWith(color: Colors.red.shade700)),
-            ...validacao.divergencias.map((d) => Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    '• ${d.produto.produto.labelMinified}: esperado ${fmt(d.esperadoKg)} kg — calculado ${fmt(d.calculadoKg)} kg (Δ ${fmt(d.diferencaKg)} kg)',
-                    style: AppCss.smallRegular
-                        .copyWith(color: Colors.red.shade700),
-                  ),
-                )),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _TotalChip extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-  const _TotalChip(
-      {required this.label, required this.value, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: AppCss.smallRegular.copyWith(color: color, fontSize: 10)),
-          Text(value,
-              style: AppCss.mediumBold.copyWith(color: color, fontSize: 14)),
-        ],
-      ),
     );
   }
 }
