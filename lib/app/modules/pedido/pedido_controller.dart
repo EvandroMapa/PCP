@@ -78,6 +78,7 @@ class PedidoController {
         final updated = await BackendClient.pedidos.getByIdSupabase(pedidoStream.value.id);
         if (updated != null) {
           await BackendClient.ordens.fetch();
+          await BackendClient.ordens.startOnlyArquivadas();
           pedidoStream.add(updated);
           SchedulerBinding.instance.scheduleFrame();
         }
@@ -90,6 +91,7 @@ class PedidoController {
         final updated = await BackendClient.pedidos.getByIdSupabase(pedidoStream.value.id);
         if (updated != null) {
           await BackendClient.ordens.fetch();
+          await BackendClient.ordens.startOnlyArquivadas();
           pedidoStream.add(updated);
           SchedulerBinding.instance.scheduleFrame();
         }
