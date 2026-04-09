@@ -479,7 +479,8 @@ class _ElementoTileState extends State<_ElementoTile> {
                 ],
               ),
             ),
-        ],
+          ],
+        ),
       );
     }
 
