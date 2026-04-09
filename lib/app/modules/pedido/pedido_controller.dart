@@ -72,6 +72,7 @@ class PedidoController {
     pedidoStream.add(pedido);
     // Forçar atualização das ordens para garantir que vínculos editados recentemente sejam refletidos
     FirestoreClient.ordens.fetch();
+    FirestoreClient.ordens.startOnlyArquivadas();
     _pagePollingTimer?.cancel();
     _pagePollingTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
       if (pedidoStream.hasValue) {
