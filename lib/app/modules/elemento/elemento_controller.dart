@@ -153,28 +153,30 @@ class ElementoController {
         }
 
         // 2. Identificar Linha de Posição
-        // Tenta capturar 6+ blocos que pareçam uma linha de tabela
+        // Padrão esperado: Pos Bitola Aço Qtde Compr Peso [Outros] OS
+        // Tenta capturar 6+ blocos que pareçam uma linha de tabela, mesmo se estiverem um pouco grudados
+        // Ex: "01  20,00  CA50  8  120  24,000  (O)  1"
         final parts = line.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+        
         if (parts.length >= 6) {
-          // Posição costuma ser o primeiro (ex: "01")
-          // Bitola costuma ser o segundo (ex: "20,00")
+          // Heurística para bitola: Geralmente é o segundo campo e tem "," ou ".00"
           final bitolaStr = parts[1].replaceAll(',', '.');
           final bitola = double.tryParse(bitolaStr);
           
           if (bitola != null) {
-            // Peso costuma ser o penúltimo ou antepenúltimo
-            // Procura um valor numérico que pareça peso perto do fim
+            // Peso: Geralmente é um dos últimos valores numéricos
             double? peso;
             String? osStr;
             
+            // Varre do fim para o início para achar OS e Peso
             for (int i = parts.length - 1; i >= 4; i--) {
-                final p = parts[i].replaceAll(',', '.');
-                final val = double.tryParse(p);
+                final cleaned = parts[i].replaceAll(',', '.');
+                final val = double.tryParse(cleaned);
                 if (val != null) {
                     if (osStr == null) {
-                        osStr = parts[i]; // Assume o último número como OS
+                        osStr = parts[i]; 
                     } else if (peso == null) {
-                        peso = val; // Assume o número anterior como Peso
+                        peso = val;
                         break;
                     }
                 }
@@ -186,7 +188,7 @@ class ElementoController {
               pos.numeroOs.text = osStr ?? '';
               pos.pesoKg.text = peso.toStringAsFixed(3);
               
-              // Mapeia bitola. Ex: 20.0 -> "20"
+              // Mapeia bitola: remove ".0" para facilitar o "contains"
               final bMatch = bitola.toString().replaceAll(RegExp(r'\.0$'), '');
               pos.produto = pedido.getProdutos()
                   .map((e) => e.produto)
