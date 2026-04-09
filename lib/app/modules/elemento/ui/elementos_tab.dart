@@ -360,7 +360,6 @@ class _ElementosTabState extends State<ElementosTab> {
                 child: TextButton(
                   onPressed: () {
                     elementoCtrl.cancelImport();
-                    Navigator.pop(context);
                   },
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.red,
