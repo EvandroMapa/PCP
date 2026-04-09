@@ -5,13 +5,17 @@ import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
-import 'package:syncfusion_flutter_pdf/pdf.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart' as syncfusion;
 import 'dart:typed_data';
 import 'package:collection/collection.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
+import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
+import 'package:aco_plus/app/core/services/notification_service.dart';
+import 'package:aco_plus/app/core/extensions/date_ext.dart';
+import 'package:aco_plus/app/core/extensions/string_ext.dart';
 
 final elementoCtrl = ElementoController();
 
@@ -274,7 +278,7 @@ class ElementoController {
         children: [
           pw.Row(children: [
             _pdfInfoCell('CLIENTE:', pedido.cliente.nome, flex: 2),
-            _pdfInfoCell('OBRA:', pedido.obra.nome, flex: 2),
+            _pdfInfoCell('OBRA:', pedido.obra.descricao, flex: 2),
           ]),
           pw.SizedBox(height: 5),
           pw.Row(children: [
@@ -335,8 +339,8 @@ class ElementoController {
                       p.nome,
                       p.numeroOs,
                       p.produto?.labelMinified ?? p.produtoId,
-                      '${fmt.format(p.weightKg)} kg',
-                      '${fmt.format(p.weightKg * el.qtde)} kg',
+                      '${fmt.format(p.pesoKg)} kg',
+                      '${fmt.format(p.pesoKg * el.qtde)} kg',
                     ])
                 .toList(),
             headerStyle:
@@ -389,7 +393,7 @@ class ElementoController {
     );
   }
 
-  Future<void> onImportPDF(
+  Future<Map<String, dynamic>> onImportPDF(
       Uint8List bytes, PedidoModel pedido) async {
     String rawText = '';
     _cancelImport = false;
@@ -398,8 +402,8 @@ class ElementoController {
     try {
       importProgressStream.add(ImportProgress(status: 'Extraindo texto do PDF...'));
       
-      final PdfDocument document = PdfDocument(inputBytes: bytes);
-      rawText = PdfTextExtractor(document).extractText();
+      final syncfusion.PdfDocument document = syncfusion.PdfDocument(inputBytes: bytes);
+      rawText = syncfusion.PdfTextExtractor(document).extractText();
       document.dispose();
 
       if (rawText.trim().isEmpty) {
@@ -556,7 +560,7 @@ class ElementoController {
             await SupabaseService.client
                 .from('elementos')
                 .delete()
-                .in_('id', createdElementIds);
+                .filter('id', 'in', createdElementIds);
           }
           await onFetch(pedido.id);
           importProgressStream.add(null);
