@@ -83,18 +83,19 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
       title: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.primaryMain.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.primaryMain.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primaryMain.withOpacity(0.1)),
             ),
             child: Icon(Icons.layers_rounded,
-                color: AppColors.primaryMain, size: 20),
+                color: AppColors.primaryMain, size: 24),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Text(
             widget.elemento == null ? 'Novo Elemento' : 'Editar Elemento',
-            style: AppCss.largeBold,
+            style: AppCss.largeBold.setSize(20),
           ),
         ],
       ),
@@ -155,14 +156,15 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
               // ── Cabeçalho posições ─────────────────────────────────────
               Row(
                 children: [
-                  Text('Posições / OS', style: AppCss.mediumBold),
+                  Text('Posições e OS', style: AppCss.mediumBold.setSize(15)),
                   const Spacer(),
                   TextButton.icon(
                     onPressed: _addPosicao,
-                    icon: const Icon(Icons.add, size: 16),
-                    label: const Text('Adicionar'),
+                    icon: const Icon(Icons.add_circle_outline, size: 18),
+                    label: const Text('Adicionar Posição'),
                     style: TextButton.styleFrom(
-                        foregroundColor: AppColors.primaryMain),
+                        foregroundColor: AppColors.primaryMain,
+                        textStyle: AppCss.minimumBold),
                   ),
                 ],
               ),
@@ -304,17 +306,20 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
           child: Text('Cancelar',
               style: TextStyle(
                   color: Colors.grey[600],
-                  fontWeight: FontWeight.w500)),
+                  fontWeight: FontWeight.w600)),
         ),
         ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryMain,
             foregroundColor: Colors.white,
-            elevation: 0,
+            disabledBackgroundColor: Colors.grey[200],
+            disabledForegroundColor: Colors.grey[500],
+            elevation: _form.isValid ? 2 : 0,
+            shadowColor: AppColors.primaryMain.withOpacity(0.3),
             padding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
+                borderRadius: BorderRadius.circular(12)),
           ),
           icon: const Icon(Icons.save_rounded, size: 18),
           label: Text(
@@ -344,19 +349,25 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
         isDense: true,
+        fillColor: Colors.grey.shade50,
+        filled: true,
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: Colors.grey.shade300),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey.shade200),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppColors.primaryMain),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: AppColors.primaryMain, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.red),
         ),
         counterText: '',
       );

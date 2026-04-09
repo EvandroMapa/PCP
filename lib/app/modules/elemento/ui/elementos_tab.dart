@@ -51,14 +51,13 @@ class _ElementosTabState extends State<ElementosTab> {
                   ),
                   Row(
                     children: [
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
                           foregroundColor: AppColors.primaryMain,
-                          side: BorderSide(color: AppColors.primaryMain),
-                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
+                              borderRadius: BorderRadius.circular(10),
+                              side: BorderSide(color: AppColors.primaryMain.withOpacity(0.2))),
                         ),
                         icon:
                             const Icon(Icons.picture_as_pdf_outlined, size: 18),
@@ -158,12 +157,14 @@ class _ElementosTabState extends State<ElementosTab> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryMain,
                           foregroundColor: Colors.white,
-                          elevation: 0,
+                          elevation: 2,
+                          shadowColor: AppColors.primaryMain.withOpacity(0.4),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
+                              borderRadius: BorderRadius.circular(10)),
                         ),
-                        icon: const Icon(Icons.add, size: 18),
-                        label: const Text('Novo Elemento'),
+                        icon: const Icon(Icons.add_rounded, size: 20),
+                        label: const Text('Novo Elemento', style: TextStyle(fontWeight: FontWeight.bold)),
                         onPressed: () => showElementoFormDialog(
                           context,
                           pedido: widget.pedido,
@@ -240,14 +241,16 @@ class _ElementosTabState extends State<ElementosTab> {
               )
             else
               Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.only(bottom: 24),
+                child: ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
                   itemCount: elementos.length,
-                  separatorBuilder: (_, __) => const Divisor(),
-                  itemBuilder: (_, i) => _ElementoTile(
-                    elemento: elementos[i],
-                    pedido: widget.pedido,
-                    fmt: _fmt,
+                  itemBuilder: (_, i) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _ElementoTile(
+                      elemento: elementos[i],
+                      pedido: widget.pedido,
+                      fmt: _fmt,
+                    ),
                   ),
                 ),
               ),
@@ -276,201 +279,218 @@ class _ElementoTileState extends State<_ElementoTile> {
   @override
   Widget build(BuildContext context) {
     final el = widget.elemento;
-    return Column(
-      children: [
-        // ── Linha do elemento ─────────────────────────────────────────────
-        InkWell(
-          onTap: () => setState(() => _expanded = !_expanded),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                Icon(
-                  _expanded ? Icons.expand_less : Icons.expand_more,
-                  color: AppColors.neutralDark,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          // ── Linha do elemento ─────────────────────────────────────────────
+          InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: IntrinsicHeight(
+              child: Row(
+                children: [
+                  // Indicador lateral
+                  Container(
+                    width: 4,
+                    color: AppColors.primaryMain.withOpacity(_expanded ? 1.0 : 0.3),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(el.nome, style: AppCss.mediumBold),
-                          if (el.qtde > 1)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 6),
-                              child: Text('[x${el.qtde}]',
-                                  style: AppCss.mediumBold
-                                      .setColor(AppColors.primaryMain)),
-                            ),
+                          Row(
+                            children: [
+                              Text(el.nome, style: AppCss.mediumBold.setSize(16)),
+                              if (el.qtde > 1)
+                                Container(
+                                  margin: const EdgeInsets.only(left: 8),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryMain.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text('x${el.qtde}',
+                                      style: AppCss.minimumBold
+                                          .setColor(AppColors.primaryMain)
+                                          .setSize(11)),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${el.posicoes.length} posição(ões) · Unit: ${widget.fmt(el.pesoUnitario)} kg',
+                            style: AppCss.minimumRegular
+                                .copyWith(color: Colors.grey[600]),
+                          ),
                         ],
                       ),
-                      Text(
-                        '${el.posicoes.length} posição(ões) · Unit: ${widget.fmt(el.pesoUnitario)} kg · Total: ${widget.fmt(el.pesoTotal)} kg',
-                        style: AppCss.smallRegular
-                            .copyWith(color: Colors.grey[600]),
+                    ),
+                  ),
+                  // Peso total em destaque
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryMain.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '${widget.fmt(el.pesoTotal)} kg',
+                          style: AppCss.mediumBold
+                              .setColor(AppColors.primaryMain)
+                              .setSize(14),
+                        ),
                       ),
                     ],
                   ),
-                ),
-                // Peso total em destaque
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryMain.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(8),
+                  const SizedBox(width: 8),
+                  // Ações
+                  PopupMenuButton<String>(
+                    icon: Icon(Icons.more_vert_rounded, color: Colors.grey[400], size: 20),
+                    onSelected: (action) async {
+                      if (action == 'edit') {
+                        await showElementoFormDialog(context,
+                            pedido: widget.pedido, elemento: el);
+                      } else if (action == 'delete') {
+                        await elementoCtrl.onDeleteElemento(el);
+                      }
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                          value: 'edit',
+                          child: Row(children: [
+                            Icon(Icons.edit_rounded, size: 18, color: Colors.grey[700]),
+                            const SizedBox(width: 12),
+                            const Text('Editar')
+                          ])),
+                      const PopupMenuDivider(),
+                      PopupMenuItem(
+                          value: 'delete',
+                          child: Row(children: [
+                            const Icon(Icons.delete_outline_rounded,
+                                size: 18, color: Colors.red),
+                            const SizedBox(width: 12),
+                            const Text('Excluir',
+                                style: TextStyle(color: Colors.red))
+                          ])),
+                    ],
                   ),
-                  child: Text(
-                    '${widget.fmt(el.pesoTotal)} kg',
-                    style: AppCss.mediumBold
-                        .setColor(AppColors.primaryMain),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Ações
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, size: 20),
-                  onSelected: (action) async {
-                    if (action == 'edit') {
-                      await showElementoFormDialog(context,
-                          pedido: widget.pedido, elemento: el);
-                    } else if (action == 'delete') {
-                      await elementoCtrl.onDeleteElemento(el);
-                    }
-                  },
-                  itemBuilder: (_) => [
-                    const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(children: [
-                          Icon(Icons.edit_outlined, size: 18),
-                          SizedBox(width: 8),
-                          Text('Editar')
-                        ])),
-                    const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(children: [
-                          Icon(Icons.delete_outline,
-                              size: 18, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text('Excluir',
-                              style: TextStyle(color: Colors.red))
-                        ])),
-                  ],
-                ),
-              ],
+                  const SizedBox(width: 4),
+                ],
+              ),
             ),
           ),
-        ),
 
-        // ── Posições expandidas ───────────────────────────────────────────
-        if (_expanded)
-          Container(
-            color: Colors.grey.shade50,
-            child: Column(
-              children: [
-                // Cabeçalho das colunas
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 6),
-                  child: Row(
+          // ── Posições expandidas ───────────────────────────────────────────
+          if (_expanded)
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              color: Colors.grey.shade50.withOpacity(0.5),
+              child: Column(
+                children: [
+                  const Divisor(height: 1),
+                  const SizedBox(height: 12),
+                  // Cabeçalho das colunas
+                  Row(
                     children: [
-                      Expanded(
-                          flex: 2,
-                          child: Text('Posição',
-                              style: AppCss.smallBold.copyWith(
-                                  color: Colors.grey[500]))),
-                      Expanded(
-                          flex: 2,
-                          child: Text('OS',
-                              style: AppCss.smallBold.copyWith(
-                                  color: Colors.grey[500]))),
-                      Expanded(
-                          flex: 2,
-                          child: Text('Bitola',
-                              style: AppCss.smallBold.copyWith(
-                                  color: Colors.grey[500]))),
-                      Expanded(
-                          flex: 1,
-                          child: Text('Peso Un.',
-                              style: AppCss.smallBold
-                                  .copyWith(color: Colors.grey[500]),
-                              textAlign: TextAlign.end)),
-                      Expanded(
-                          flex: 1,
-                          child: Text('Peso Total',
-                              style: AppCss.smallBold
-                                  .copyWith(color: Colors.grey[500]),
-                              textAlign: TextAlign.end)),
+                      _colHead('Posição', 2),
+                      _colHead('OS', 2),
+                      _colHead('Bitola', 3),
+                      _colHead('Peso Un.', 2, isEnd: true),
+                      _colHead('T. Item', 2, isEnd: true),
                     ],
                   ),
-                ),
-                const Divisor(),
-                ...el.posicoes.map((p) => Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      child: Row(
-                        children: [
-                          Expanded(
+                  const SizedBox(height: 8),
+                  ...el.posicoes.map((p) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Row(
+                          children: [
+                            Expanded(
+                                flex: 2,
+                                child: Text(p.nome,
+                                    style: AppCss.minimumRegular)),
+                            Expanded(
+                                flex: 2,
+                                child: Text(p.numeroOs,
+                                    style: AppCss.minimumRegular.copyWith(color: Colors.grey[600]))),
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                p.produto?.labelMinified ?? p.produtoId,
+                                style: AppCss.minimumBold.setSize(12),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Expanded(
                               flex: 2,
-                              child: Text(p.nome,
-                                  style: AppCss.smallRegular)),
-                          Expanded(
+                              child: Text(
+                                '${widget.fmt(p.pesoKg)}',
+                                style: AppCss.minimumRegular,
+                                textAlign: TextAlign.end,
+                              ),
+                            ),
+                            Expanded(
                               flex: 2,
-                              child: Text(p.numeroOs,
-                                  style: AppCss.smallRegular)),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              p.produto?.labelMinified ?? p.produtoId,
-                              style: AppCss.smallRegular,
-                              overflow: TextOverflow.ellipsis,
+                              child: Text(
+                                '${widget.fmt(p.pesoKg * el.qtde)}',
+                                style: AppCss.minimumBold
+                                    .setColor(AppColors.primaryMain),
+                                textAlign: TextAlign.end,
+                              ),
                             ),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              widget.fmt(p.pesoKg),
-                              style: AppCss.smallRegular,
-                              textAlign: TextAlign.end,
-                            ),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              widget.fmt(p.pesoKg * el.qtde),
-                              style: AppCss.smallBold
-                                  .setColor(AppColors.primaryMain),
-                              textAlign: TextAlign.end,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )),
-                // Subtotal
-                const Divisor(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
-                  child: Row(
+                          ],
+                        ),
+                      )),
+                  // Subtotal
+                  const SizedBox(height: 8),
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text('Subtotal: ',
-                          style: AppCss.smallBold
+                      Text('Total do Elemento: ',
+                          style: AppCss.minimumRegular
                               .copyWith(color: Colors.grey[600])),
                       Text(
                         '${widget.fmt(el.pesoTotal)} kg',
                         style: AppCss.mediumBold
-                            .setColor(AppColors.primaryMain),
+                            .setColor(AppColors.primaryMain)
+                            .setSize(15),
                       ),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-      ],
+        ],
+      );
+    }
+
+  Widget _colHead(String label, int flex, {bool isEnd = false}) {
+    return Expanded(
+      flex: flex,
+      child: Text(
+        label,
+        style: AppCss.minimumBold.copyWith(color: Colors.grey[400], fontSize: 11),
+        textAlign: isEnd ? TextAlign.end : TextAlign.start,
+      ),
     );
   }
 }
