@@ -39,9 +39,8 @@ class PedidoProdutosWidget extends StatelessWidget {
             children: [
               Text('${produto.produto.nome} - ${produto.produto.descricao}'),
               const W(16),
-              StreamOut(
-                stream: FirestoreClient.ordens.dataStream.listen,
-                builder: (context, _) {
+              Builder(
+                builder: (context) {
                   final ordem = pedidoCtrl.getOrdemByProduto(produto, true);
 
                   if (ordem == null) return const SizedBox();
