@@ -286,7 +286,7 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Total do Elemento:',
-                        style: AppCss.mediumBold),
+                        style: AppCss.mediumBold.setColor(AppColors.primaryMain)),
                     Text(
                       '${_form.pesoTotal.toStringAsFixed(3)} kg',
                       style: AppCss.largeBold
@@ -326,7 +326,8 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
             widget.elemento == null
                 ? 'Criar Elemento'
                 : 'Salvar Alterações',
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, color: Colors.white),
           ),
           onPressed: _form.isValid ? _save : null,
         ),

@@ -61,7 +61,9 @@ class _ElementosTabState extends State<ElementosTab> {
                         ),
                         icon:
                             const Icon(Icons.picture_as_pdf_outlined, size: 18),
-                        label: const Text('Importar PDF'),
+                        label: Text('Importar PDF',
+                            style: AppCss.minimumBold
+                                .setColor(AppColors.primaryMain)),
                         onPressed: () async {
                           final result = await FilePicker.platform.pickFiles(
                             type: FileType.custom,
@@ -142,6 +144,10 @@ class _ElementosTabState extends State<ElementosTab> {
                                   ),
                                   actions: [
                                     TextButton(
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: AppColors.primaryMain,
+                                        textStyle: AppCss.mediumBold,
+                                      ),
                                       onPressed: () => Navigator.pop(context),
                                       child: const Text('Fechar'),
                                     ),
