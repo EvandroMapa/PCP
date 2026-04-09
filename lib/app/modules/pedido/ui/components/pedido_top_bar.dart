@@ -70,12 +70,22 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ),
         const W(12),
-        Tooltip(
-          message: 'Gerar Relatório do Pedido',
-          child: IconButton(
-            onPressed: () => pedidoCtrl.onGeneratePDF(pedido),
-            icon: Icon(Icons.picture_as_pdf, color: AppColors.white),
-          ),
+        StreamOut<int>(
+          stream: pedidoCtrl.activeTabStream.listen,
+          builder: (_, index) {
+            final isElementos = index == 1;
+            return Tooltip(
+              message: isElementos
+                  ? 'Gerar Relatório de Elementos'
+                  : 'Gerar Relatório do Pedido',
+              child: IconButton(
+                onPressed: () => isElementos
+                    ? elementoCtrl.onGeneratePDF(pedido)
+                    : pedidoCtrl.onGeneratePDF(pedido),
+                icon: Icon(Icons.picture_as_pdf, color: AppColors.white),
+              ),
+            );
+          },
         ),
         const W(12),
         if (pedido.step.isArchivedAvailable && !pedido.isArchived) ...[
@@ -152,12 +162,22 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
           icon: Icon(Icons.local_shipping, color: AppColors.white),
         ),
       ),
-      Tooltip(
-        message: 'Gerar Relatório do Pedido',
-        child: IconButton(
-          onPressed: () => pedidoCtrl.onGeneratePDF(pedido),
-          icon: Icon(Icons.picture_as_pdf, color: AppColors.white),
-        ),
+      StreamOut<int>(
+        stream: pedidoCtrl.activeTabStream.listen,
+        builder: (_, index) {
+          final isElementos = index == 1;
+          return Tooltip(
+            message: isElementos
+                ? 'Gerar Relatório de Elementos'
+                : 'Gerar Relatório do Pedido',
+            child: IconButton(
+              onPressed: () => isElementos
+                  ? elementoCtrl.onGeneratePDF(pedido)
+                  : pedidoCtrl.onGeneratePDF(pedido),
+              icon: Icon(Icons.picture_as_pdf, color: AppColors.white),
+            ),
+          );
+        },
       ),
       if (pedido.step.isArchivedAvailable && !pedido.isArchived)
         Tooltip(

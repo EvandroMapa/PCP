@@ -47,6 +47,8 @@ class PedidoController {
 
   factory PedidoController() => _instance;
 
+  final AppStream<int> activeTabStream = AppStream<int>.seed(0);
+
   final AppStream<PedidoUtils> utilsStream = AppStream<PedidoUtils>.seed(
     PedidoUtils(),
   );

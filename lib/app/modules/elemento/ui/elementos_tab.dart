@@ -70,8 +70,11 @@ class _ElementosTabState extends State<ElementosTab> {
                           );
                           if (result != null &&
                               result.files.single.bytes != null) {
+                            _showProgressDialog(context);
                             final res = await elementoCtrl.onImportPDF(
                                 result.files.single.bytes!, widget.pedido);
+                            
+                            if (mounted) Navigator.pop(context); // Fecha progresso
 
                             if (!res['success'] && context.mounted) {
                               showDialog(
@@ -155,6 +158,37 @@ class _ElementosTabState extends State<ElementosTab> {
                               );
                             }
                           }
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      // Botão Borracha (Apagar Tudo)
+                      StreamOut<List<ElementoModel>>(
+                        stream: elementoCtrl.elementosStream.listen,
+                        builder: (_, elementos) {
+                          if (elementos.isEmpty) return const SizedBox();
+                          return Tooltip(
+                            message: 'Apagar todos os elementos',
+                            child: InkWell(
+                              onTap: () async {
+                                if (await showConfirmDialog(
+                                  'Apagar TODOS os elementos?',
+                                  'Esta ação não pode ser desfeita. Deseja continuar?',
+                                )) {
+                                  await elementoCtrl.onDeleteAllElementos(widget.pedido.id);
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.red.withOpacity(0.2)),
+                                ),
+                                child: const Icon(Icons.auto_fix_normal_rounded,
+                                    color: Colors.red, size: 18),
+                              ),
+                            ),
+                          );
                         },
                       ),
                       const SizedBox(width: 8),
@@ -262,6 +296,82 @@ class _ElementosTabState extends State<ElementosTab> {
           ],
         );
       },
+    );
+  }
+
+  void _showProgressDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => StreamOut<ImportProgress?>(
+        stream: elementoCtrl.importProgressStream.listen,
+        builder: (_, progress) {
+          final p = progress;
+          return AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            content: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondary.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.cloud_upload_rounded,
+                        color: AppColors.secondary, size: 32),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    p?.status ?? 'Iniciando importação...',
+                    style: AppCss.mediumBold,
+                    textAlign: TextAlign.center,
+                  ),
+                  if (p != null && p.total > 0) ...[
+                    const SizedBox(height: 16),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: LinearProgressIndicator(
+                        value: p.percent,
+                        minHeight: 8,
+                        backgroundColor: AppColors.secondary.withOpacity(0.1),
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(AppColors.secondary),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${(p.percent * 100).toInt()}% concluído',
+                      style: AppCss.minimumRegular
+                          .copyWith(color: Colors.grey[600]),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () {
+                    elementoCtrl.cancelImport();
+                    Navigator.pop(context);
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Cancelar Importação',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

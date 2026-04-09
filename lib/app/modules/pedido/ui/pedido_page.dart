@@ -60,6 +60,9 @@ class _PedidoPageState extends State<PedidoPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: usuario.temAcessoElementos ? 2 : 1, vsync: this);
+    _tabController.addListener(() {
+      pedidoCtrl.activeTabStream.add(_tabController.index);
+    });
     if (widget.reason != PedidoInitReason.kanban) {
       setWebTitle('Pedido ${widget.pedido.localizador}');
     }
