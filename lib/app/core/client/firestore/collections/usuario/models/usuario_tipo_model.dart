@@ -35,12 +35,17 @@ class UsuarioTipoModel {
     );
   }
 
-  Map<String, dynamic> toSupabaseMap() => {
-        'id': id,
-        'nome': nome,
-        'permitir_elementos': isPermitirElementos,
-        'is_operador': isOperador,
-      };
+  Map<String, dynamic> toSupabaseMap() {
+    final map = {
+      'nome': nome,
+      'permitir_elementos': isPermitirElementos,
+      'is_operador': isOperador,
+    };
+    if (id.isNotEmpty) {
+      map['id'] = id;
+    }
+    return map;
+  }
 
   @override
   String toString() {
