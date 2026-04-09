@@ -8,7 +8,7 @@ enum OrdemHistoryTypeEnum {
   editada, // OK
   congelada, // OK
   descongelada, // OK
-  statusProdutoAlterada, // OK
+  statusProdutoAlterada, // OKtf
   materiaPrimaEditada, // OK
   statusOrdem, // OK
   arquivada, // OK
