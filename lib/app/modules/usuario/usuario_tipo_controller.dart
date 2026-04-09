@@ -39,7 +39,7 @@ class UsuarioTipoController {
 
       pop(context);
       NotificationService.showPositive(
-        'Tipo de Usuário ${form.isEdit ? 'Editado' : 'Adicionado'}',
+        'Perfil de Usuário ${form.isEdit ? 'Editado' : 'Adicionado'}',
         'Operação realizada com sucesso',
         position: NotificationPosition.bottom,
       );
@@ -57,13 +57,13 @@ class UsuarioTipoController {
       // Verificar se há usuários vinculados
       final usuariosComEsteTipo = BackendClient.usuarios.data.where((u) => u.usuarioTipoId == tipo.id);
       if (usuariosComEsteTipo.isNotEmpty) {
-        throw Exception('Não é possível excluir um tipo que possui usuários vinculados.');
+        throw Exception('Não é possível excluir um perfil que possui usuários vinculados.');
       }
 
       await BackendClient.usuarioTipos.delete(tipo);
       
       NotificationService.showPositive(
-        'Tipo Excluído',
+        'Perfil Excluído',
         'Operação realizada com sucesso',
         position: NotificationPosition.bottom,
       );
@@ -84,7 +84,7 @@ class UsuarioTipoCreateModel {
   bool isOperador = false;
   bool isEdit = false;
 
-  UsuarioTipoCreateModel();
+  UsuarioTipoCreateModel() : id = '', isEdit = false;
 
   UsuarioTipoCreateModel.edit(UsuarioTipoModel m)
       : id = m.id,

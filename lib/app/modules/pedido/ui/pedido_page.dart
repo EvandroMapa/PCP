@@ -8,6 +8,7 @@ import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/elemento/ui/elementos_tab.dart';
 import 'package:aco_plus/app/modules/notificacao/notificacao_controller.dart';
+import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pai/pai_pedido_corte_dobra_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pai/pai_pedido_filho_sinalizador_widget.dart';

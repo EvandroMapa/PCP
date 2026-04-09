@@ -1,3 +1,4 @@
+import 'package:aco_plus/app/core/client/supabase/collections/usuario/usuario_tipo_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_produto_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 

@@ -28,7 +28,7 @@ class _UsuarioTipoFormDialogState extends State<UsuarioTipoFormDialog> {
     return StreamOut<UsuarioTipoCreateModel>(
       stream: usuarioTipoCtrl.formStream.listen,
       builder: (_, form) => AlertDialog(
-        title: Text('${form.isEdit ? 'Editar' : 'Novo'} Tipo de Usuário'),
+        title: Text('${form.isEdit ? 'Editar' : 'Novo'} Perfil de Usuário'),
         content: SizedBox(
           width: 400,
           child: Column(
@@ -37,7 +37,7 @@ class _UsuarioTipoFormDialogState extends State<UsuarioTipoFormDialog> {
               TextFormField(
                 controller: form.nome,
                 decoration: const InputDecoration(
-                  labelText: 'Nome do Tipo',
+                  labelText: 'Nome do Perfil',
                   hintText: 'Ex: Admin, Operador, Vendedor...',
                 ),
                 onChanged: (_) => setState(() {}),

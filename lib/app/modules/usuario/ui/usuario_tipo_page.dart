@@ -19,7 +19,7 @@ class UsuarioTipoPage extends StatefulWidget {
 class _UsuarioTipoPageState extends State<UsuarioTipoPage> {
   @override
   void initState() {
-    setWebTitle('Tipos de Usuário');
+    setWebTitle('Perfis de Usuário');
     super.initState();
   }
 
@@ -27,7 +27,7 @@ class _UsuarioTipoPageState extends State<UsuarioTipoPage> {
   Widget build(BuildContext context) {
     return AppScaffold(
       appBar: AppBar(
-        title: const Text('Tipos de Usuário'),
+        title: const Text('Perfis de Usuário'),
       ),
       body: StreamOut<List<UsuarioTipoModel>>(
         stream: usuarioTipoCtrl.tiposStream.listen,
@@ -61,7 +61,7 @@ class _UsuarioTipoPageState extends State<UsuarioTipoPage> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
+      fab: FloatingActionButton(
         backgroundColor: AppColors.primaryMain,
         onPressed: () => showUsuarioTipoFormDialog(context),
         child: const Icon(Icons.add, color: Colors.white),
@@ -73,8 +73,8 @@ class _UsuarioTipoPageState extends State<UsuarioTipoPage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Excluir Tipo'),
-        content: Text('Deseja realmente excluir o tipo "${tipo.nome}"?'),
+        title: const Text('Excluir Perfil'),
+        content: Text('Deseja realmente excluir o perfil "${tipo.nome}"?'),
         actions: [
           TextButton(onPressed: () => pop(context), child: const Text('Cancelar')),
           TextButton(

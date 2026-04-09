@@ -49,7 +49,7 @@ class _ConfigPageState extends State<ConfigPage> {
           const Divisor(),
           ListTile(
             onTap: () => push(context, const UsuarioTipoPage()),
-            title: const Text('Tipos de Usuário'),
+            title: const Text('Perfis de Acesso'),
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: 16,
