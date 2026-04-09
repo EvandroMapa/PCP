@@ -24,13 +24,14 @@ class ElementoComparativoDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final ok = validacao.isOk;
     final color = ok ? Colors.green : Colors.red;
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return AlertDialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
       contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
-      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
       title: Row(
         children: [
           Container(
@@ -47,14 +48,20 @@ class ElementoComparativoDialog extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 14),
-          Text(
-            ok ? 'Comparativo OK' : 'Divergência de Pesos',
-            style: AppCss.largeBold.setSize(20).setColor(color.shade800),
+          Expanded(
+            child: Text(
+              ok ? 'Comparativo OK' : 'Divergência de Pesos',
+              style: AppCss.largeBold.setSize(20).setColor(color.shade800),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),
-      content: SizedBox(
-        width: 480,
+      content: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 500,
+          minWidth: screenWidth * 0.4 > 450 ? 450 : screenWidth * 0.8,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,19 +106,19 @@ class ElementoComparativoDialog extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Container(
-                constraints: const BoxConstraints(maxHeight: 220),
+                constraints: const BoxConstraints(maxHeight: 250),
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: validacao.divergencias.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (_, i) {
                     final d = validacao.divergencias[i];
                     return Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: Colors.red.shade50.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.red.shade100),
+                        border: Border.all(color: Colors.red.shade100, width: 1.2),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,10 +131,10 @@ class ElementoComparativoDialog extends StatelessWidget {
                                 style: AppCss.mediumBold.setColor(Colors.red.shade900),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: Colors.red.shade100,
-                                  borderRadius: BorderRadius.circular(6),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
                                   'Dif: ${_fmt(d.diferencaKg)} kg',
@@ -136,7 +143,7 @@ class ElementoComparativoDialog extends StatelessWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 12),
                           Row(
                             children: [
                               Expanded(
@@ -154,20 +161,27 @@ class ElementoComparativoDialog extends StatelessWidget {
                 ),
               ),
             ],
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
           ],
         ),
       ),
       actions: [
-        TextButton(
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          ),
-          onPressed: () => Navigator.pop(context),
-          child: Text(
-            'Fechar',
-            style: AppCss.mediumBold.setColor(AppColors.primaryMain),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryMain,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              elevation: 4,
+              shadowColor: AppColors.primaryMain.withOpacity(0.4),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Fechar Comparativo',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
           ),
         ),
       ],
