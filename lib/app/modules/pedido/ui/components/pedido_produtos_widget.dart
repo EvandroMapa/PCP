@@ -1,12 +1,13 @@
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/divisor.dart';
+import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
-
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/materia_prima/ui/materia_prima_bottom.dart';
 import 'package:aco_plus/app/modules/materia_prima/ui/materias_primas_create_page.dart';
@@ -40,8 +41,9 @@ class PedidoProdutosWidget extends StatelessWidget {
               const W(16),
               if (produto.status.status.index >=
                   PedidoProdutoStatus.aguardandoProducao.index) ...[
-                Builder(
-                  builder: (context) {
+                StreamOut(
+                  stream: FirestoreClient.ordens.dataStream.listen,
+                  builder: (context, _) {
                     final ordem = pedidoCtrl.getOrdemByProduto(produto, true);
                     
                     if (ordem == null) return const SizedBox();
