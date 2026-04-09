@@ -85,9 +85,34 @@ class _ElementosTabState extends State<ElementosTab> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          Text('Erro: ${res['error']}',
-                                              style: AppCss.mediumBold
-                                                  .copyWith(color: Colors.red)),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                    'Erro: ${res['error']}',
+                                                    style: AppCss.mediumBold
+                                                        .copyWith(
+                                                            color: Colors.red)),
+                                              ),
+                                              IconButton(
+                                                tooltip: 'Copiar Texto',
+                                                onPressed: () {
+                                                  Clipboard.setData(ClipboardData(
+                                                      text: res['rawText']));
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    const SnackBar(
+                                                        content: Text(
+                                                            'Texto copiado!')),
+                                                  );
+                                                },
+                                                icon: const Icon(Icons.copy,
+                                                    size: 18),
+                                              ),
+                                            ],
+                                          ),
                                           const SizedBox(height: 16),
                                           const Text(
                                               'Abaixo está o texto que o sistema conseguiu ler do PDF. Se estiver vazio ou ilegível, o PDF pode ser bloqueado ou ser uma imagem:'),
