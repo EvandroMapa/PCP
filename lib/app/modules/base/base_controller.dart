@@ -21,7 +21,7 @@ class BaseController {
 
   Future<void> onInit() async {
     _updateInitialModule();
-    usuarioCtrl.usuarioStream.listen((user) {
+    usuarioCtrl.usuarioStream.listen.listen((user) {
       if (user != null) {
         _updateInitialModule();
       }
