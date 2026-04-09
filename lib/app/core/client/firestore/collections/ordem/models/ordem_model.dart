@@ -175,10 +175,9 @@ class OrdemModel {
   }
 
   bool hasProduto(String produtoId) {
-    if (produtoId.isEmpty) return false;
-    return idPedidosProdutosRefs.any((x) {
-      final idRef = (x['produtoId'] ?? x['produto_id'] ?? '').toString();
-      return idRef.trim() == produtoId.trim();
+    return idPedidosProdutosRefs.any((ref) {
+      final id = ref['produtoId'] ?? ref['produto_id'] ?? '';
+      return id == produtoId;
     });
   }
 
