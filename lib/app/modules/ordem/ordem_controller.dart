@@ -241,8 +241,9 @@ class OrdemController {
       }
     }
 
+    // Ordens PRIMEIRO — garante que ordens.data está atualizado antes de pedidos.fetch()
+    await FirestoreClient.ordens.fetch();
     await FirestoreClient.pedidos.fetch();
-    await FirestoreClient.ordens.fetch(); // Refresh list immediately
     onReorder(FirestoreClient.ordens.ordensNaoCongeladas);
     await automatizacaoCtrl.onSetStepByPedidoStatus(
       ordemCriada.pedidos
