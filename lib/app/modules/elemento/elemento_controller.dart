@@ -267,11 +267,11 @@ class ElementoController {
   /// corresponde ao total de cada bitola no pedido.
   ElementoValidacaoResult getValidacaoBitola(PedidoModel pedido) {
     // Soma de peso por produto_id em TODAS as posições de todos os elementos
-    final Map<String, double> pesoNasPosicoesMap = {};
     for (final elemento in elementos) {
       for (final posicao in elemento.posicoes) {
+        final pesoTotalDaPosicao = posicao.pesoKg * elemento.qtde;
         pesoNasPosicoesMap[posicao.produtoId] =
-            (pesoNasPosicoesMap[posicao.produtoId] ?? 0.0) + posicao.pesoKg;
+            (pesoNasPosicoesMap[posicao.produtoId] ?? 0.0) + pesoTotalDaPosicao;
       }
     }
 
