@@ -32,7 +32,7 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     try {
-      final response = await SupabaseService.client.from(tableName).select();
+      final response = await SupabaseService.client.from(tableName).select('*, usuario_tipos(*)');
       final usuarios = List<Map<String, dynamic>>.from(response)
           .map((e) => UsuarioModel.fromSupabaseMap(e))
           .toList();

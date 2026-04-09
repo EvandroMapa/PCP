@@ -21,9 +21,7 @@ class BaseController {
 
   Future<void> onInit() async {
     moduleStream.add(
-      usuario.role == UsuarioRole.operador
-          ? AppModule.ordens
-          : AppModule.values.first,
+      usuario.isOperador ? AppModule.ordens : AppModule.values.first,
     );
   }
 }

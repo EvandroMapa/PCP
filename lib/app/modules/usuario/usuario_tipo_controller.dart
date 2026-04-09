@@ -1,0 +1,104 @@
+import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_tipo_model.dart';
+import 'package:aco_plus/app/core/models/app_stream.dart';
+import 'package:aco_plus/app/core/services/notification_service.dart';
+import 'package:aco_plus/app/core/utils/global_resource.dart';
+import 'package:flutter/material.dart';
+import 'package:overlay_support/overlay_support.dart';
+
+final usuarioTipoCtrl = UsuarioTipoController();
+
+class UsuarioTipoController {
+  static final UsuarioTipoController _instance = UsuarioTipoController._();
+  UsuarioTipoController._();
+  factory UsuarioTipoController() => _instance;
+
+  final AppStream<List<UsuarioTipoModel>> tiposStream = BackendClient.usuarioTipos.dataStream;
+  List<UsuarioTipoModel> get tipos => tiposStream.value;
+
+  final AppStream<UsuarioTipoCreateModel> formStream = AppStream<UsuarioTipoCreateModel>();
+  UsuarioTipoCreateModel get form => formStream.value;
+
+  void init(UsuarioTipoModel? tipo) {
+    formStream.add(
+      tipo != null ? UsuarioTipoCreateModel.edit(tipo) : UsuarioTipoCreateModel(),
+    );
+  }
+
+  Future<void> onConfirm(BuildContext context) async {
+    try {
+      if (form.nome.text.trim().isEmpty) {
+        throw Exception('O nome do tipo é obrigatório');
+      }
+
+      if (form.isEdit) {
+        await BackendClient.usuarioTipos.update(form.toModel());
+      } else {
+        await BackendClient.usuarioTipos.add(form.toModel());
+      }
+
+      pop(context);
+      NotificationService.showPositive(
+        'Tipo de Usuário ${form.isEdit ? 'Editado' : 'Adicionado'}',
+        'Operação realizada com sucesso',
+        position: NotificationPosition.bottom,
+      );
+    } catch (e) {
+      NotificationService.showNegative(
+        'Erro ao salvar',
+        e.toString(),
+        position: NotificationPosition.bottom,
+      );
+    }
+  }
+
+  Future<void> onDelete(BuildContext context, UsuarioTipoModel tipo) async {
+    try {
+      // Verificar se há usuários vinculados
+      final usuariosComEsteTipo = BackendClient.usuarios.data.where((u) => u.usuarioTipoId == tipo.id);
+      if (usuariosComEsteTipo.isNotEmpty) {
+        throw Exception('Não é possível excluir um tipo que possui usuários vinculados.');
+      }
+
+      await BackendClient.usuarioTipos.delete(tipo);
+      
+      NotificationService.showPositive(
+        'Tipo Excluído',
+        'Operação realizada com sucesso',
+        position: NotificationPosition.bottom,
+      );
+    } catch (e) {
+      NotificationService.showNegative(
+        'Erro ao excluir',
+        e.toString(),
+        position: NotificationPosition.bottom,
+      );
+    }
+  }
+}
+
+class UsuarioTipoCreateModel {
+  final String id;
+  final TextEditingController nome = TextEditingController();
+  bool isPermitirElementos = false;
+  bool isOperador = false;
+  bool isEdit = false;
+
+  UsuarioTipoCreateModel();
+
+  UsuarioTipoCreateModel.edit(UsuarioTipoModel m)
+      : id = m.id,
+        isEdit = true {
+    nome.text = m.nome;
+    isPermitirElementos = m.isPermitirElementos;
+    isOperador = m.isOperador;
+  }
+
+  UsuarioTipoModel toModel() => UsuarioTipoModel(
+        id: isEdit ? id : '',
+        nome: nome.text.trim(),
+        isPermitirElementos: isPermitirElementos,
+        isOperador: isOperador,
+        createdAt: DateTime.now(),
+      );
+}

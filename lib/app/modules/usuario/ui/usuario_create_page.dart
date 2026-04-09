@@ -1,6 +1,7 @@
-import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/user_permission_type.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/usuario_role.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_tipo_model.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/app_drop_down.dart';
 import 'package:aco_plus/app/core/components/app_drop_down_list.dart';
@@ -83,30 +84,32 @@ class _UsuarioCreatePageState extends State<UsuarioCreatePage> {
             onChanged: (_) => usuarioCtrl.formStream.update(),
           ),
           const H(16),
-          AppDropDown<UsuarioRole?>(
-            label: 'Tipo',
-            item: form.role,
-            itens: UsuarioRole.values,
-            itemLabel: (e) => e?.label ?? 'Selecione',
+          AppDropDown<UsuarioTipoModel?>(
+            label: 'Tipo de Usuário',
+            item: BackendClient.usuarioTipos.getById(form.usuarioTipoId),
+            itens: BackendClient.usuarioTipos.data,
+            itemLabel: (e) => e?.nome ?? 'Selecione',
             onSelect: (e) {
-              form.role = e;
-              if (e == UsuarioRole.operador) {
-                form.permission.cliente = [];
-                form.permission.pedido = [];
-                form.permission.ordem = [
-                  UserPermissionType.read,
-                  UserPermissionType.update,
-                ];
-              } else {
-                form.permission.cliente = UserPermissionType.values;
-                form.permission.pedido = UserPermissionType.values;
-                form.permission.ordem = UserPermissionType.values;
+              if (e != null) {
+                form.usuarioTipoId = e.id;
+                if (e.isOperador) {
+                  form.permission.cliente = [];
+                  form.permission.pedido = [];
+                  form.permission.ordem = [
+                    UserPermissionType.read,
+                    UserPermissionType.update,
+                  ];
+                } else {
+                  form.permission.cliente = UserPermissionType.values.toList();
+                  form.permission.pedido = UserPermissionType.values.toList();
+                  form.permission.ordem = UserPermissionType.values.toList();
+                }
               }
               usuarioCtrl.formStream.update();
             },
           ),
           const H(16),
-          if (form.role != UsuarioRole.operador) ...[
+          if (!BackendClient.usuarioTipos.getById(form.usuarioTipoId).isOperador) ...[
             AppDropDownList<UserPermissionType>(
               label: 'Permissões de Cliente',
               itens: UserPermissionType.values,
@@ -137,7 +140,7 @@ class _UsuarioCreatePageState extends State<UsuarioCreatePage> {
               itemLabel: (e) => e.label,
             ),
           ],
-          if (form.role == UsuarioRole.operador) ...[
+          if (BackendClient.usuarioTipos.getById(form.usuarioTipoId).isOperador) ...[
             Container(
               width: 500,
               padding: const EdgeInsets.all(16),

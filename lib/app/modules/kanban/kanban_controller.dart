@@ -230,6 +230,7 @@ class StepController {
       final isAdmin = usuario.role == UsuarioRole.administrador;
       final destAllowed = step.moveRoles.isEmpty || step.moveRoles.contains(usuario.role);
       final origAllowed = pedido.step.moveRoles.isEmpty || pedido.step.moveRoles.contains(usuario.role);
+      
       if (!isAdmin && (!destAllowed || !origAllowed)) {
         NotificationService.showNegative(
           'Operação não permitida',

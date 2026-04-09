@@ -8,6 +8,7 @@ import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_arqu
 import 'package:aco_plus/app/core/client/supabase/collections/produto/produto_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/step/step_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/usuario/usuario_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/usuario/usuario_tipo_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/tag/tag_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/checklist/checklist_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/automatizacao/automatizacao_supabase_collection.dart';
@@ -21,6 +22,7 @@ class AppSupabaseClient {
   static PedidoProdutoSupabaseCollection pedidoProdutos = PedidoProdutoSupabaseCollection();
   static PedidoArquivoSupabaseCollection pedidoArquivos = PedidoArquivoSupabaseCollection();
   static UsuarioSupabaseCollection usuarios = UsuarioSupabaseCollection();
+  static UsuarioTipoSupabaseCollection usuarioTipos = UsuarioTipoSupabaseCollection();
   static ClienteSupabaseCollection clientes = ClienteSupabaseCollection();
   static StepSupabaseCollection steps = StepSupabaseCollection();
   static ProdutoSupabaseCollection produtos = ProdutoSupabaseCollection();
@@ -35,6 +37,7 @@ class AppSupabaseClient {
     try {
       // Start all collections with individual error handling to be resilient
       final futures = [
+        usuarioTipos.start().catchError((e) => print('Error starting usuarioTipos: $e')),
         usuarios.start().catchError((e) => print('Error starting usuarios: $e')),
         clientes.start().catchError((e) => print('Error starting clientes: $e')),
         steps.start().catchError((e) => print('Error starting steps: $e')),
@@ -56,6 +59,7 @@ class AppSupabaseClient {
       await pedidos.start().catchError((e) => print('Error starting pedidos: $e'));
 
       // Start real-time listeners
+      usuarioTipos.listen();
       usuarios.listen();
       clientes.listen();
       steps.listen();

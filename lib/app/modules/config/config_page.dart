@@ -7,6 +7,7 @@ import 'package:aco_plus/app/modules/checklist/ui/checklists_page.dart';
 import 'package:aco_plus/app/modules/step/ui/steps_page.dart';
 import 'package:aco_plus/app/modules/tag/ui/tags_page.dart';
 import 'package:aco_plus/app/modules/usuario/ui/usuarios_page.dart';
+import 'package:aco_plus/app/modules/usuario/ui/usuario_tipo_page.dart';
 import 'package:aco_plus/app/modules/config/ui/layout_settings_page.dart';
 import 'package:aco_plus/app/modules/automatizacao/ui/automatizacao_page.dart';
 import 'package:flutter/material.dart';
@@ -39,6 +40,16 @@ class _ConfigPageState extends State<ConfigPage> {
           ListTile(
             onTap: () => push(context, const UsuariosPage()),
             title: const Text('Usuários'),
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Colors.grey[400]!,
+            ),
+          ),
+          const Divisor(),
+          ListTile(
+            onTap: () => push(context, const UsuarioTipoPage()),
+            title: const Text('Tipos de Usuário'),
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: 16,

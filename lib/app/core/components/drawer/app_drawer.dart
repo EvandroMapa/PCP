@@ -46,7 +46,7 @@ class AppDrawer extends StatelessWidget {
                     child: ListView(
                       children: [
                         AppDrawerHeader(notificacoes: notificacoes),
-                        usuario.role != UsuarioRole.operador
+                        !usuario.isOperador
                             ? AppDrawerNotOperatorList(
                                 module: module,
                                 notificacoes: notificacoes,
@@ -256,7 +256,7 @@ class AppDrawerHeader extends StatelessWidget {
             ],
           ),
         ),
-        if (usuario.role != UsuarioRole.operador)
+        if (!usuario.isOperador)
           Positioned(
             bottom: 0,
             right: 0,
@@ -356,7 +356,7 @@ class AppDrawerItem extends StatelessWidget {
     return Builder(
       builder: (context) {
         bool isEnabled = true;
-        if (usuario.role != UsuarioRole.operador) {
+        if (!usuario.isOperador) {
           switch (item) {
             case AppModule.cliente:
               isEnabled = usuario.permission.cliente.contains(

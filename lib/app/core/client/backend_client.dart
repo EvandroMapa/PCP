@@ -24,6 +24,8 @@ class BackendClient {
       ? UsuarioCollection() 
       : AppSupabaseClient.usuarios;
 
+  static UsuarioTipoSupabaseCollection get usuarioTipos => AppSupabaseClient.usuarioTipos;
+
   static ClienteCollection get clientes => type == BackendType.firestore 
       ? ClienteCollection() 
       : AppSupabaseClient.clientes;

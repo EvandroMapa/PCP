@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/usuario_role.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_permission_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_tipo_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 
 class UsuarioModel {
@@ -10,13 +11,17 @@ class UsuarioModel {
   final String nome;
   final String email;
   final String senha;
-  final UsuarioRole role;
+  final UsuarioRole role; // Temporário para retrocompatibilidade
+  final String usuarioTipoId;
+  final UsuarioTipoModel? tipo;
   final UserPermissionModel permission;
   final List<StepModel> steps;
   final List<String> deviceTokens;
 
-  bool get isOperador => role == UsuarioRole.operador;
-  bool get isNotOperador => role != UsuarioRole.operador;
+  bool get isOperador => tipo?.isOperador ?? role == UsuarioRole.operador;
+  bool get isNotOperador => !isOperador;
+
+  bool get temAcessoElementos => tipo?.isPermitirElementos ?? role == UsuarioRole.administrador;
 
   static UsuarioModel get system => UsuarioModel(
     id: 'system',
@@ -24,6 +29,8 @@ class UsuarioModel {
     email: 'system@pcpm2.com',
     senha: 'system',
     role: UsuarioRole.administrador,
+    usuarioTipoId: '',
+    tipo: null,
     permission: UserPermissionModel.all(),
     steps: FirestoreClient.steps.data.map((e) => e.copyWith()).toList(),
     deviceTokens: [],
@@ -35,6 +42,8 @@ class UsuarioModel {
     required this.email,
     required this.senha,
     required this.role,
+    required this.usuarioTipoId,
+    this.tipo,
     required this.permission,
     required this.steps,
     required this.deviceTokens,
@@ -46,6 +55,8 @@ class UsuarioModel {
     String? email,
     String? senha,
     UsuarioRole? role,
+    String? usuarioTipoId,
+    UsuarioTipoModel? tipo,
     UserPermissionModel? permission,
     List<StepModel>? steps,
     List<String>? deviceTokens,
@@ -56,6 +67,8 @@ class UsuarioModel {
       email: email ?? this.email,
       senha: senha ?? this.senha,
       role: role ?? this.role,
+      usuarioTipoId: usuarioTipoId ?? this.usuarioTipoId,
+      tipo: tipo ?? this.tipo,
       permission: permission ?? this.permission,
       steps: steps ?? this.steps,
       deviceTokens: deviceTokens ?? this.deviceTokens,
@@ -69,6 +82,7 @@ class UsuarioModel {
       'email': email,
       'senha': senha,
       'role': role.index,
+      'usuario_tipo_id': usuarioTipoId,
       'permission': permission.toMap(),
       'steps': steps.map((x) => x.toMap()).toList(),
       'deviceTokens': deviceTokens,
@@ -87,6 +101,8 @@ class UsuarioModel {
     email: '',
     senha: '',
     role: UsuarioRole.operador,
+    usuarioTipoId: '',
+    tipo: null,
     permission: UserPermissionModel.all(),
     steps: [],
     deviceTokens: [],
@@ -116,6 +132,10 @@ class UsuarioModel {
       email: map['email'] ?? '',
       senha: map['senha'] ?? '',
       role: _parseRole(map['role']),
+      usuarioTipoId: (map['usuario_tipo_id'] ?? '').toString(),
+      tipo: map['usuario_tipos'] != null
+          ? UsuarioTipoModel.fromSupabaseMap(map['usuario_tipos'])
+          : null,
       permission: map['permission'] != null
           ? UserPermissionModel.fromMap(map['permission'] is String
               ? json.decode(map['permission'])
@@ -155,6 +175,7 @@ class UsuarioModel {
         'email': email,
         'senha': senha,
         'role': role.index,
+        'usuario_tipo_id': usuarioTipoId,
         'permission': json.encode(permission.toMap()),
         'steps': json.encode(steps.map((x) => x.toMap()).toList()),
         'deviceTokens': json.encode(deviceTokens),
