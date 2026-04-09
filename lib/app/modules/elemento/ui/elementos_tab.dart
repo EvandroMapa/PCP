@@ -69,8 +69,61 @@ class _ElementosTabState extends State<ElementosTab> {
                           );
                           if (result != null &&
                               result.files.single.bytes != null) {
-                            await elementoCtrl.onImportPDF(
+                            final res = await elementoCtrl.onImportPDF(
                                 result.files.single.bytes!, widget.pedido);
+
+                            if (!res['success'] && context.mounted) {
+                              showDialog(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                  title: const Text('Resultado da Importação'),
+                                  content: SizedBox(
+                                    width: 500,
+                                    child: SingleChildScrollView(
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text('Erro: ${res['error']}',
+                                              style: AppCss.mediumBold
+                                                  .copyWith(color: Colors.red)),
+                                          const SizedBox(height: 16),
+                                          const Text(
+                                              'Abaixo está o texto que o sistema conseguiu ler do PDF. Se estiver vazio ou ilegível, o PDF pode ser bloqueado ou ser uma imagem:'),
+                                          const SizedBox(height: 8),
+                                          Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.shade100,
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              border: Border.all(
+                                                  color: Colors.grey.shade300),
+                                            ),
+                                            child: Text(
+                                              res['rawText'].isEmpty
+                                                  ? '(Nenhum texto extraído)'
+                                                  : res['rawText'],
+                                              style: const TextStyle(
+                                                  fontFamily: 'monospace',
+                                                  fontSize: 10),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('Fechar'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
                           }
                         },
                       ),

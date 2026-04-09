@@ -119,13 +119,18 @@ class ElementoController {
   }
 
   // ─── IMPORTAR PDF ─────────────────────────────────────────────────────────
-  Future<void> onImportPDF(Uint8List bytes, PedidoModel pedido) async {
+  Future<Map<String, dynamic>> onImportPDF(Uint8List bytes, PedidoModel pedido) async {
+    String rawText = '';
     try {
       final PdfDocument document = PdfDocument(inputBytes: bytes);
-      final String text = PdfTextExtractor(document).extractText();
+      rawText = PdfTextExtractor(document).extractText();
       document.dispose();
 
-      final lines = text.split('\n');
+      if (rawText.trim().isEmpty) {
+        return {'success': false, 'error': 'PDF parece estar sem texto (pode ser uma imagem).', 'rawText': ''};
+      }
+
+      final lines = rawText.split('\n');
       String? currentElementName;
       List<ElementoPosicaoCreateModel> currentPosicoes = [];
       final List<ElementoCreateModel> novosElementos = [];
@@ -148,28 +153,44 @@ class ElementoController {
         }
 
         // 2. Identificar Linha de Posição
-        // Padrão esperado: Pos Bitola Aço Qtde Compr Peso [Outros] OS
-        final parts = line.split(RegExp(r'\s+'));
+        // Tenta capturar 6+ blocos que pareçam uma linha de tabela
+        final parts = line.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
         if (parts.length >= 6) {
+          // Posição costuma ser o primeiro (ex: "01")
+          // Bitola costuma ser o segundo (ex: "20,00")
           final bitolaStr = parts[1].replaceAll(',', '.');
           final bitola = double.tryParse(bitolaStr);
           
           if (bitola != null) {
-            final pesoStr = parts[parts.length - 2].replaceAll(',', '.');
-            final peso = double.tryParse(pesoStr);
-            final osStr = parts.last;
+            // Peso costuma ser o penúltimo ou antepenúltimo
+            // Procura um valor numérico que pareça peso perto do fim
+            double? peso;
+            String? osStr;
             
-            if (peso != null) {
+            for (int i = parts.length - 1; i >= 4; i--) {
+                final p = parts[i].replaceAll(',', '.');
+                final val = double.tryParse(p);
+                if (val != null) {
+                    if (osStr == null) {
+                        osStr = parts[i]; // Assume o último número como OS
+                    } else if (peso == null) {
+                        peso = val; // Assume o número anterior como Peso
+                        break;
+                    }
+                }
+            }
+            
+            if (peso != null && currentElementName != null) {
               final pos = ElementoPosicaoCreateModel();
               pos.nome.text = parts[0];
-              pos.numeroOs.text = osStr;
+              pos.numeroOs.text = osStr ?? '';
               pos.pesoKg.text = peso.toStringAsFixed(3);
               
-              // Tentar encontrar o produto correspondente pela bitola (número contido no nome)
-              final bitolaSemZero = bitola.toString().replaceAll(RegExp(r'\.0$'), '');
+              // Mapeia bitola. Ex: 20.0 -> "20"
+              final bMatch = bitola.toString().replaceAll(RegExp(r'\.0$'), '');
               pos.produto = pedido.getProdutos()
                   .map((e) => e.produto)
-                  .where((p) => p.nome.contains(bitolaSemZero))
+                  .where((p) => p.nome.contains(bMatch) || p.labelMinified.contains(bMatch))
                   .firstOrNull;
 
               if (pos.produto != null) {
@@ -187,14 +208,20 @@ class ElementoController {
         novosElementos.add(el);
       }
 
+      if (novosElementos.isEmpty) {
+        return {'success': false, 'error': 'Nenhum elemento ou posição válida foi identificado.', 'rawText': rawText};
+      }
+
       // Salvar no Banco
       for (final el in novosElementos) {
         await onSaveElemento(el, pedido.id);
       }
       
       await onFetch(pedido.id);
+      return {'success': true, 'elementsFound': novosElementos.length, 'rawText': rawText};
     } catch (e) {
       print('ElementoController.onImportPDF erro: $e');
+      return {'success': false, 'error': e.toString(), 'rawText': rawText};
     }
   }
 
