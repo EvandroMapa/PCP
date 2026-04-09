@@ -533,13 +533,19 @@ class PedidoModel {
         pai: null,
         isFilho: false,
         romaneio: null,
-        valorSubtotal: (map['valor_subtotal'] ?? 0.0).toDouble(),
-        valorTaxas: (map['valor_taxas'] ?? 0.0).toDouble(),
-        valorDesconto: (map['valor_desconto'] ?? 0.0).toDouble(),
-        valorTotal: (map['valor_total'] ?? 0.0).toDouble(),
+        valorSubtotal: _parseNum(map['valor_subtotal']),
+        valorTaxas: _parseNum(map['valor_taxas']),
+        valorDesconto: _parseNum(map['valor_desconto']),
+        valorTotal: _parseNum(map['valor_total']),
     );
     
     return pedido;
+  }
+
+  static double _parseNum(dynamic val) {
+    if (val == null) return 0.0;
+    if (val is num) return val.toDouble();
+    return double.tryParse(val.toString()) ?? 0.0;
   }
 
   static DateTime _parseDate(dynamic val) {
