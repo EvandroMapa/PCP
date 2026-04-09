@@ -58,7 +58,13 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
                       itemBuilder: (context, index) {
                         final pedido = pedidos[index];
                         return ListTile(
-                          onTap: () => push(context, PedidoPage(pedido: pedido)),
+                          onTap: () => push(
+                            context,
+                            PedidoPage(
+                              pedido: pedido,
+                              reason: PedidoInitReason.page,
+                            ),
+                          ),
                           title: Text(
                             pedido.localizador,
                             style: AppCss.mediumBold,
