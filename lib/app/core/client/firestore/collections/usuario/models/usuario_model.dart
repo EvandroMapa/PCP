@@ -176,7 +176,7 @@ class UsuarioModel {
         'email': email,
         'senha': senha,
         'role': role.index,
-        'perfil_id': usuarioTipoId,
+        'perfil_id': usuarioTipoId.isEmpty ? null : usuarioTipoId,
         'permission': json.encode(permission.toMap()),
         'steps': json.encode(steps.map((x) => x.toMap()).toList()),
         'deviceTokens': json.encode(deviceTokens),

@@ -89,7 +89,7 @@ class _UsuariosPageState extends State<UsuariosPage> {
       onTap: () => push(context, UsuarioCreatePage(usuario: usuario)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       title: Text(usuario.nome, style: AppCss.mediumBold),
-      subtitle: Text(usuario.role.label ?? ''),
+      subtitle: Text(usuario.tipo?.nome ?? usuario.role.label ?? 'Sem Perfil'),
       trailing: Icon(
         Icons.arrow_forward_ios,
         size: 14,
