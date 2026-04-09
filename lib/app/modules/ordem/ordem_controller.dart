@@ -118,7 +118,7 @@ class OrdemController {
     for (final pedido
         in FirestoreClient.pedidos.data
             .where(
-              (e) => e.pedidosFilhos.isEmpty,
+              (e) => e.pedidosFilhos.isEmpty && e.step.isPermiteProducao,
             )
             .toList()) {
       final pedidoProdutos = pedido.produtos
