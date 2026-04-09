@@ -144,31 +144,49 @@ class PedidoSupabaseCollection extends PedidoCollection {
   @override
   Future<PedidoModel?> getByIdSupabase(String id) async {
     try {
-      final res = await SupabaseService.client
+      final pRaw = await SupabaseService.client
           .from(tableName)
-          .select('*, pedido_produtos(*), pedido_status_history(*), pedido_steps_history(*), pedido_tags(*)')
+          .select()
           .eq('id', id)
           .maybeSingle();
 
-      if (res == null) return null;
+      if (pRaw == null) return null;
 
-      final pMap = res as Map<String, dynamic>;
-      
-      final List<Map<String, dynamic>> pProdutos = 
-          List<Map<String, dynamic>>.from(pMap['pedido_produtos'] ?? []);
-      final List<Map<String, dynamic>> statusRaw = 
-          List<Map<String, dynamic>>.from(pMap['pedido_status_history'] ?? []);
-      final List<Map<String, dynamic>> stepsRaw = 
-          List<Map<String, dynamic>>.from(pMap['pedido_steps_history'] ?? []);
-      final List<Map<String, dynamic>> tagsRaw = 
-          List<Map<String, dynamic>>.from(pMap['pedido_tags'] ?? []);
+      final pMap = pRaw as Map<String, dynamic>;
+
+      Future<List<Map<String, dynamic>>> safeFetch(String table) async {
+        try {
+          final res = await SupabaseService.client
+              .from(table)
+              .select()
+              .eq('pedido_id', id);
+          final list = res as List;
+          return list.map((item) {
+            try {
+              if (item is Map) {
+                return item.map((key, value) => MapEntry(key.toString(), value));
+              }
+            } catch (_) {}
+            return <String, dynamic>{};
+          }).toList();
+        } catch (_) {
+          return [];
+        }
+      }
+
+      final results = await Future.wait([
+        safeFetch('pedido_produtos'),
+        safeFetch('pedido_status_history'),
+        safeFetch('pedido_steps_history'),
+        safeFetch('pedido_tags'),
+      ]);
 
       return PedidoModel.fromSupabaseMap(
         pMap,
-        produtosRaw: pProdutos,
-        statusRaw: statusRaw,
-        stepsRaw: stepsRaw,
-        tagsIds: tagsRaw.map((t) => (t['tag_id'] ?? '').toString()).toList(),
+        produtosRaw: results[0],
+        statusRaw: results[1],
+        stepsRaw: results[2],
+        tagsIds: results[3].map((t) => (t['tag_id'] ?? '').toString()).toList(),
       );
     } catch (e) {
       log('Supabase Error (Pedido.getByIdSupabase): $e');
