@@ -47,12 +47,12 @@ class _ElementosTabState extends State<ElementosTab> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
             Text('Aguarde, carregando elementos...', style: AppCss.mediumRegular),
           ],
         ),
