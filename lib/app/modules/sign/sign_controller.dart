@@ -17,7 +17,7 @@ class SignController {
 
   final GlobalKey<ScaffoldState> key = GlobalKey<ScaffoldState>();
 
-  void onClickLogin(String email, String senha) {
+  void onClickLogin(String email, String senha, bool rememberMe) {
     try {
       final user = BackendClient.usuarios.data.firstWhereOrNull(
         (e) =>
@@ -26,7 +26,7 @@ class SignController {
       );
       if (user == null) throw Exception('Usuário não encontrado');
 
-      usuarioCtrl.setCurrentUser(user);
+      usuarioCtrl.setCurrentUser(user, rememberMe);
     } catch (value) {
       NotificationService.showNegative('Erro', value.toString());
     }

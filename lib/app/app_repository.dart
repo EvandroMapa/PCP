@@ -18,6 +18,11 @@ class AppRepository {
     return UsuarioModel.fromMap(map);
   }
 
+  static Future<void> removeUser() async {
+    final sharedPrefs = await SharedPreferences.getInstance();
+    sharedPrefs.remove('usuario');
+  }
+
   static Future<void> clear() async {
     final sharedPrefs = await SharedPreferences.getInstance();
     sharedPrefs.clear();

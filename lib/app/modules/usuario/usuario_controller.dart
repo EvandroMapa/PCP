@@ -149,16 +149,20 @@ class UsuarioController {
     }
   }
 
-  Future<void> setCurrentUser(UsuarioModel usuario) async {
-    await AppRepository.add(usuario);
-    await getCurrentUser();
+  Future<void> setCurrentUser(UsuarioModel usuario, bool rememberMe) async {
+    if (rememberMe) {
+      await AppRepository.add(usuario);
+    } else {
+      await AppRepository.removeUser();
+    }
+    usuarioStream.add(usuario);
     FCMProvider.putToken();
   }
 
   Future<void> clearCurrentUser() async {
     usuario?.deviceTokens.removeWhere((e) => e == deviceToken);
     BackendClient.usuarios.update(usuario!);
-    await AppRepository.clear();
-    getCurrentUser();
+    await AppRepository.removeUser();
+    usuarioStream.add(null);
   }
 }

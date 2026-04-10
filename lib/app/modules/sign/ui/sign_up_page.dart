@@ -18,6 +18,8 @@ class SignUpPageState extends State<SignUpPage> {
   final TextController email = TextController();
   final TextController senha = TextController();
 
+  bool _rememberMe = false;
+
   @override
   Widget build(BuildContext context) {
     return body();
@@ -41,7 +43,7 @@ class SignUpPageState extends State<SignUpPage> {
                 controller: email,
                 label: 'Login',
               ),
-              const H(20),
+              const H(12),
               AppField(
                 controller: senha,
                 label: 'Senha',
@@ -49,10 +51,25 @@ class SignUpPageState extends State<SignUpPage> {
                 maxLines: 1,
                 minLines: 1,
               ),
-              const H(20),
+              const H(8),
+              Theme(
+                data: Theme.of(context).copyWith(
+                  unselectedWidgetColor: Colors.grey[400],
+                ),
+                child: CheckboxListTile(
+                  value: _rememberMe,
+                  onChanged: (v) => setState(() => _rememberMe = v ?? false),
+                  title: Text('Manter conectado', style: AppCss.minimumRegular),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  activeColor: AppColors.primaryMain,
+                ),
+              ),
+              const H(12),
               AppTextButton(
                 label: 'Entrar',
-                onPressed: () => signCtrl.onClickLogin(email.text, senha.text),
+                onPressed: () => signCtrl.onClickLogin(email.text, senha.text, _rememberMe),
               ),
             ],
           ),

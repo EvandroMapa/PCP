@@ -88,9 +88,7 @@ class _PedidoArmacaoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resumo = pedido.armacaoResumo['details'] ?? {};
-    final double totalQtd = (pedido.armacaoResumo['total_qtd'] ?? 0).toDouble();
-    final double totalPeso = (pedido.armacaoResumo['total_peso'] ?? 0).toDouble();
-
+    
     return InkWell(
       onTap: () => push(context, ArmacaoElementosPage(pedido: pedido)),
       borderRadius: BorderRadius.circular(20),
@@ -108,28 +106,34 @@ class _PedidoArmacaoCard extends StatelessWidget {
           ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(),
-            const Spacer(),
-            _buildSection(
-              'PRODUÇÃO (Peças)',
-              totalQtd.toInt().toString(),
-              resumo['aguardando']?['qtd'] ?? 0,
-              resumo['armando']?['qtd'] ?? 0,
-              resumo['pronto']?['qtd'] ?? 0,
-              totalQtd,
-            ),
             const SizedBox(height: 16),
             const Divider(height: 1, color: Color(0xFFEEEEEE)),
-            const SizedBox(height: 16),
-            _buildSection(
-              'CARGA (KG)',
-              totalPeso.toStringAsFixed(1),
-              resumo['aguardando']?['peso'] ?? 0,
-              resumo['armando']?['peso'] ?? 0,
-              resumo['pronto']?['peso'] ?? 0,
-              totalPeso,
+            const Spacer(),
+            Row(
+              children: [
+                _buildColumn(
+                  'AGUARDANDO',
+                  '${resumo['aguardando']?['qtd'] ?? 0} pc',
+                  '${(resumo['aguardando']?['peso'] ?? 0).toStringAsFixed(1)} kg',
+                  Colors.blue,
+                ),
+                _vDivider(),
+                _buildColumn(
+                  'ARMANDO',
+                  '${resumo['armando']?['qtd'] ?? 0} pc',
+                  '${(resumo['armando']?['peso'] ?? 0).toStringAsFixed(1)} kg',
+                  Colors.orange,
+                ),
+                _vDivider(),
+                _buildColumn(
+                  'PRONTO',
+                  '${resumo['pronto']?['qtd'] ?? 0} pc',
+                  '${(resumo['pronto']?['peso'] ?? 0).toStringAsFixed(1)} kg',
+                  Colors.green,
+                ),
+              ],
             ),
             const Spacer(),
           ],
@@ -138,23 +142,26 @@ class _PedidoArmacaoCard extends StatelessWidget {
     );
   }
 
+  Widget _vDivider() {
+    return Container(
+      width: 1,
+      height: 40,
+      color: Colors.grey.withOpacity(0.1),
+    );
+  }
+
   Widget _buildHeader() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              pedido.localizador,
-              style: AppCss.largeBold.setSize(22).setColor(AppColors.primaryDark),
-            ),
-            Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey[300]),
-          ],
+        Text(
+          pedido.localizador,
+          style: AppCss.largeBold.setSize(24).setColor(AppColors.primaryDark),
         ),
+        const SizedBox(height: 4),
         Text(
           pedido.cliente.nome.toUpperCase(),
           style: AppCss.minimumBold.setSize(10).setColor(Colors.grey[400]!),
+          textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -162,96 +169,25 @@ class _PedidoArmacaoCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSection(String title, String total, dynamic agu, dynamic prod,
-      dynamic ok, double totalVal) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(title, style: AppCss.minimumBold.setSize(9).setColor(Colors.grey[500]!)),
-            Text(total, style: AppCss.mediumBold.setSize(16).setColor(AppColors.secondary)),
-          ],
-        ),
-        const SizedBox(height: 8),
-        _SegmentedBar(
-          agu: (agu is num ? agu.toDouble() : 0.0),
-          prod: (prod is num ? prod.toDouble() : 0.0),
-          ok: (ok is num ? ok.toDouble() : 0.0),
-          total: totalVal,
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _statusInfo(agu.toString(), 'AGU', Colors.blue),
-            _statusInfo(prod.toString(), 'PROD', Colors.orange),
-            _statusInfo(ok.toString(), 'PRONTAS', Colors.green),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _statusInfo(String value, String label, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          value,
-          style: AppCss.mediumBold.setSize(13).setColor(color),
-        ),
-        Text(
-          label,
-          style: AppCss.minimumBold.setSize(8).setColor(color.withOpacity(0.7)),
-        ),
-      ],
-    );
-  }
-}
-
-class _SegmentedBar extends StatelessWidget {
-  final double agu;
-  final double prod;
-  final double ok;
-  final double total;
-
-  const _SegmentedBar({
-    required this.agu,
-    required this.prod,
-    required this.ok,
-    required this.total,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(4),
-      child: SizedBox(
-        height: 12,
-        width: double.infinity,
-        child: total == 0
-            ? Container(color: Colors.grey[100])
-            : Row(
-                children: [
-                  if (agu > 0)
-                    Expanded(
-                      flex: (agu * 1000).toInt(),
-                      child: Container(color: Colors.blue),
-                    ),
-                  if (prod > 0)
-                    Expanded(
-                      flex: (prod * 1000).toInt(),
-                      child: Container(color: Colors.orange),
-                    ),
-                  if (ok > 0)
-                    Expanded(
-                      flex: (ok * 1000).toInt(),
-                      child: Container(color: Colors.green),
-                    ),
-                ],
-              ),
+  Widget _buildColumn(String title, String pc, String kg, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            title,
+            style: AppCss.minimumBold.setSize(9).setColor(color.withOpacity(0.8)),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            pc,
+            style: AppCss.mediumBold.setSize(16).setColor(color),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            kg,
+            style: AppCss.mediumBold.setSize(13).setColor(color.withOpacity(0.7)),
+          ),
+        ],
       ),
     );
   }
