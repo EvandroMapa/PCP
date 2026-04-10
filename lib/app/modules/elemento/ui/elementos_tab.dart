@@ -672,7 +672,7 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
     );
 
     if (result != null && result.files.single.bytes != null) {
-      await elementoCtrl.onUploadArquivo(
+      await elementoCtrl.onAddArquivo(
         result.files.single.bytes!,
         result.files.single.name,
         widget.elemento,
