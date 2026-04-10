@@ -672,11 +672,16 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
     );
 
     if (result != null && result.files.single.bytes != null) {
+      final name = result.files.single.name;
+      final bytes = result.files.single.bytes!;
+      final extension = name.split('.').last.toLowerCase();
+      final mimeType = extension == 'pdf' ? 'application/pdf' : 'image/$extension';
+
       await elementoCtrl.onAddArquivo(
-        result.files.single.bytes!,
-        result.files.single.name,
         widget.elemento,
-        widget.pedido.id,
+        name,
+        bytes,
+        mimeType,
       );
       setState(() {});
     }
