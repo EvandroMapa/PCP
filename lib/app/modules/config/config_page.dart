@@ -8,7 +8,7 @@ import 'package:aco_plus/app/modules/step/ui/steps_page.dart';
 import 'package:aco_plus/app/modules/tag/ui/tags_page.dart';
 import 'package:aco_plus/app/modules/usuario/ui/usuarios_page.dart';
 import 'package:aco_plus/app/modules/usuario/ui/usuario_tipo_page.dart';
-import 'package:aco_plus/app/modules/config/ui/layout_settings_page.dart';
+import 'package:aco_plus/app/modules/config/ui/general_settings_page.dart';
 import 'package:aco_plus/app/modules/automatizacao/ui/automatizacao_page.dart';
 import 'package:flutter/material.dart';
 
@@ -109,8 +109,8 @@ class _ConfigPageState extends State<ConfigPage> {
           ),
           const Divisor(),
           ListTile(
-            onTap: () => push(context, const LayoutSettingsPage()),
-            title: const Text('Configurações de Layout'),
+            onTap: () => push(context, const GeneralSettingsPage()),
+            title: const Text('Configurações Gerais'),
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: 16,
