@@ -26,16 +26,38 @@ class ElementosTab extends StatefulWidget {
 }
 
 class _ElementosTabState extends State<ElementosTab> {
+  bool _isLoading = false;
+
   @override
   void initState() {
     super.initState();
-    elementoCtrl.onInit(widget.pedido.id);
+    _init();
+  }
+
+  Future<void> _init() async {
+    setState(() => _isLoading = true);
+    await elementoCtrl.onInit(widget.pedido.id);
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
 
   String _fmt(double v) => NumberFormat('#,##0.000', 'pt_BR').format(v);
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Aguarde, carregando elementos...', style: AppCss.mediumRegular),
+          ],
+        ),
+      );
+    }
     return StreamOut<List<ElementoModel>>(
       stream: elementoCtrl.elementosStream.listen,
       builder: (_, elementos) {
