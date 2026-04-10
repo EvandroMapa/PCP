@@ -58,7 +58,7 @@ class GeneralSettingsPage extends StatelessWidget {
         side: BorderSide(color: Colors.grey[200]!),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -75,35 +75,36 @@ class GeneralSettingsPage extends StatelessWidget {
             StreamOut<int>(
               stream: PreferencesService.maxElementosProducao.listen,
               builder: (context, value) {
-                return Column(
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Row(
-                      children: [
-                        const Text('0', style: TextStyle(fontWeight: FontWeight.bold)),
-                        Expanded(
-                          child: Slider(
-                            value: value.toDouble(),
-                            min: 0,
-                            max: 99,
-                            divisions: 99,
-                            label: value.toString(),
-                            onChanged: (v) => PreferencesService.maxElementosProducao.add(v.round()),
-                          ),
-                        ),
-                        const Text('99', style: TextStyle(fontWeight: FontWeight.bold)),
-                      ],
+                    _numericButton(
+                      icon: Icons.remove,
+                      onPressed: value > 0 
+                          ? () => PreferencesService.maxElementosProducao.add(value - 1)
+                          : null,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(width: 24),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      width: 100,
+                      height: 60,
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: AppColors.secondary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.secondary.withOpacity(0.3)),
                       ),
                       child: Text(
-                        'LIMITE ATUAL: $value ELEMENTOS',
-                        style: AppCss.mediumBold.setColor(AppColors.secondary),
+                        value.toString(),
+                        style: AppCss.largeBold.setSize(28).setColor(AppColors.secondary),
                       ),
+                    ),
+                    const SizedBox(width: 24),
+                    _numericButton(
+                      icon: Icons.add,
+                      onPressed: value < 99 
+                          ? () => PreferencesService.maxElementosProducao.add(value + 1)
+                          : null,
                     ),
                   ],
                 );
@@ -115,49 +116,95 @@ class GeneralSettingsPage extends StatelessWidget {
     );
   }
 
+  Widget _numericButton({required IconData icon, VoidCallback? onPressed}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: IconButton(
+        icon: Icon(icon, color: AppColors.primaryMain),
+        onPressed: onPressed,
+        iconSize: 28,
+        padding: const EdgeInsets.all(12),
+      ),
+    );
+  }
+
   Widget _layoutSettings() {
-    return ExpansionTile(
-      leading: const Icon(Icons.dashboard_customize_outlined),
-      title: const Text('Ajustes de Layout'),
-      subtitle: const Text('Personalize a visualização do sistema'),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      childrenPadding: const EdgeInsets.all(16),
-      children: [
-        const Text(
-          'Largura das Colunas do Kanban',
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        StreamOut<double>(
-          stream: PreferencesService.kanbanColumnWidth.listen,
-          builder: (context, width) {
-            return Column(
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey[200]!),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Row(
-                  children: [
-                    const Text('200px', style: TextStyle(fontSize: 12)),
-                    Expanded(
-                      child: Slider(
-                        value: width,
-                        min: 200,
-                        max: 600,
-                        divisions: 40,
-                        label: '${width.round()} px',
-                        onChanged: (value) => PreferencesService.kanbanColumnWidth.add(value),
-                      ),
-                    ),
-                    const Text('600px', style: TextStyle(fontSize: 12)),
-                  ],
-                ),
-                Text(
-                  'Tamanho atual: ${width.round()} px',
-                  style: AppCss.smallBold.setColor(AppColors.primaryMain),
+                const Icon(Icons.dashboard_customize_outlined, color: Colors.blue),
+                const SizedBox(width: 12),
+                const Text(
+                  'Largura das Colunas do Kanban',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ],
-            );
-          },
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Ajuste a largura padrão das etapas no painel do Kanban.',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 16),
+            StreamOut<double>(
+              stream: PreferencesService.kanbanColumnWidth.listen,
+              builder: (context, width) {
+                return Column(
+                  children: [
+                    Row(
+                      children: [
+                        const Text('200px', style: TextStyle(fontSize: 12)),
+                        Expanded(
+                          child: Slider(
+                            value: width,
+                            min: 200,
+                            max: 600,
+                            divisions: 40,
+                            label: '${width.round()} px',
+                            onChanged: (value) => PreferencesService.kanbanColumnWidth.add(value),
+                          ),
+                        ),
+                        const Text('600px', style: TextStyle(fontSize: 12)),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'TAMANHO: ${width.round()} PX',
+                        style: AppCss.smallBold.setColor(Colors.blue[800]!),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
