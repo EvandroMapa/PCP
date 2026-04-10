@@ -140,6 +140,9 @@ class ArmacaoController {
         ));
       }
       
+      // Ordenar alfabeticamente pelo nome
+      result.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
+      
       pedido.elementos.clear();
       pedido.elementos.addAll(result);
       

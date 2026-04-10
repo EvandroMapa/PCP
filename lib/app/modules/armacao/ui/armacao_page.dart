@@ -117,26 +117,26 @@ class _PedidoArmacaoCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: AppColors.primaryMain.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 pedido.localizador,
-                style: AppCss.largeBold.setSize(42).setColor(AppColors.primaryDark),
+                style: AppCss.largeBold.setSize(30).setColor(AppColors.primaryDark),
                 textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.inventory_2_outlined, color: Colors.grey[600]!, size: 24),
+                Icon(Icons.inventory_2_outlined, color: Colors.grey[600]!, size: 18),
                 const SizedBox(width: 8),
                 Text(
                   '${summary.totalElementos} ELEMENTOS',
-                  style: AppCss.mediumBold.setSize(22).setColor(Colors.grey[700]!),
+                  style: AppCss.mediumBold.setSize(20).setColor(Colors.grey[700]!),
                 ),
               ],
             ),

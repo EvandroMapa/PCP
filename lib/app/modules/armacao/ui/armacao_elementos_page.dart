@@ -16,7 +16,8 @@ class ArmacaoElementosPage extends StatefulWidget {
 }
 
 class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
-  bool _isLoading = true;
+  bool _isLoading = false;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -24,11 +25,49 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
     super.initState();
   }
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   Future<void> _init() async {
     await armacaoCtrl.onFetchElementos(widget.pedido);
     if (mounted) {
       setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _showImageDialog(ElementoModel elemento) async {
+    if (elemento.arquivos.isEmpty) return;
+    
+    await showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(20),
+        child: Stack(
+          alignment: Alignment.topRight,
+          children: [
+            InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.network(
+                elemento.arquivos.first.url,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(child: CircularProgressIndicator());
+                },
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close, color: Colors.white, size: 30),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -69,25 +108,32 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                 Expanded(
                   child: widget.pedido.elementos.isEmpty
                       ? const EmptyData(message: 'Nenhum elemento cadastrado!')
-                      : GridView.builder(
-                          padding: const EdgeInsets.all(24),
-                          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 350,
-                            mainAxisExtent: 150,
-                            crossAxisSpacing: 20,
-                            mainAxisSpacing: 20,
+                      : Scrollbar(
+                          controller: _scrollController,
+                          thumbVisibility: true,
+                          trackVisibility: true,
+                          child: GridView.builder(
+                            controller: _scrollController,
+                            padding: const EdgeInsets.all(24),
+                            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                              maxCrossAxisExtent: 350,
+                              mainAxisExtent: 160,
+                              crossAxisSpacing: 20,
+                              mainAxisSpacing: 20,
+                            ),
+                            itemCount: widget.pedido.elementos.length,
+                            itemBuilder: (context, index) {
+                              final elemento = widget.pedido.elementos[index];
+                              return _ElementoArmacaoCard(
+                                elemento: elemento,
+                                onStatusPressed: () async {
+                                  await _showStatusPicker(elemento);
+                                  setState(() {});
+                                },
+                                onImagePressed: () => _showImageDialog(elemento),
+                              );
+                            },
                           ),
-                          itemCount: widget.pedido.elementos.length,
-                          itemBuilder: (context, index) {
-                            final elemento = widget.pedido.elementos[index];
-                            return _ElementoArmacaoCard(
-                              elemento: elemento,
-                              onPressed: () async {
-                                await _showStatusPicker(elemento);
-                                setState(() {});
-                              },
-                            );
-                          },
                         ),
                 ),
               ],
@@ -96,7 +142,6 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
   }
 
   Future<void> _showStatusPicker(ElementoModel elemento) async {
-    // Regra: Não pode pular de Aguardando para Pronto e vice-versa. Tem que passar por Armando.
     final allowedStatuses = <ElementoStatus>[];
     if (elemento.status == ElementoStatus.aguardando) {
       allowedStatuses.addAll([ElementoStatus.aguardando, ElementoStatus.armando]);
@@ -172,10 +217,14 @@ class _ResumoProducaoBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resumo = pedido.armacaoResumo;
-    if (resumo.isEmpty) return const SizedBox.shrink();
-
-    final details = resumo['details'] as Map<String, dynamic>;
-
+    final Map<String, dynamic> details = resumo.containsKey('details')
+        ? resumo['details'] as Map<String, dynamic>
+        : {
+            'aguardando': {'qtd': 0, 'peso': 0.0, 'prcnt_qtd': 0.0, 'prcnt_peso': 0.0},
+            'armando': {'qtd': 0, 'peso': 0.0, 'prcnt_qtd': 0.0, 'prcnt_peso': 0.0},
+            'pronto': {'qtd': 0, 'peso': 0.0, 'prcnt_qtd': 0.0, 'prcnt_peso': 0.0},
+          };
+    
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -273,108 +322,107 @@ class _ResumoProducaoBar extends StatelessWidget {
 
 class _ElementoArmacaoCard extends StatelessWidget {
   final ElementoModel elemento;
-  final VoidCallback onPressed;
-  const _ElementoArmacaoCard({required this.elemento, required this.onPressed});
+  final VoidCallback onStatusPressed;
+  final VoidCallback onImagePressed;
+
+  const _ElementoArmacaoCard({
+    required this.elemento,
+    required this.onStatusPressed,
+    required this.onImagePressed,
+  });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onPressed,
+      onTap: onStatusPressed,
       borderRadius: BorderRadius.circular(16),
       child: Container(
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: elemento.status.backgroundColor,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: elemento.status == ElementoStatus.aguardando 
-                ? Colors.grey[200]! 
-                : elemento.status.color.withOpacity(0.5), 
-            width: 2,
+            color: elemento.status.color.withOpacity(0.3),
+            width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
-        padding: const EdgeInsets.all(16),
-        child: Stack(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
+            Row(
               children: [
-                Text(
-                  elemento.nome,
-                  style: AppCss.largeBold.setSize(18).setColor(
-                    elemento.status == ElementoStatus.aguardando 
-                        ? AppColors.primaryMain 
-                        : AppColors.primaryDark
+                Expanded(
+                  child: Text(
+                    elemento.nome.toUpperCase(),
+                    style: AppCss.mediumBold.setSize(14).setColor(AppColors.primaryDark),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.scale_rounded, size: 18, color: Colors.grey[600]!),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${elemento.pesoTotal.toStringAsFixed(2)} kg',
-                      style: AppCss.largeBold.setSize(18).setColor(Colors.grey[800]!),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.confirmation_number_outlined, size: 18, color: Colors.grey[600]!),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${elemento.posicoes.length} ETIQUETAS (OS)',
-                      style: AppCss.mediumBold.setSize(14).setColor(Colors.grey[700]!),
-                    ),
-                  ],
-                ),
-                if (elemento.qtde > 1)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
+                if (elemento.arquivos.isNotEmpty)
+                  GestureDetector(
+                    onTap: onImagePressed,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: AppColors.secondary.withOpacity(0.12),
+                        color: AppColors.secondary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Text(
-                        'Qtde: ${elemento.qtde}',
-                        style: AppCss.mediumBold.setColor(AppColors.secondary).setSize(12),
-                      ),
+                      child: Icon(Icons.image_outlined, color: AppColors.secondary, size: 18),
                     ),
                   ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: elemento.status.color,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    elemento.status.label.toUpperCase(),
+                    style: AppCss.minimumBold.setColor(
+                      elemento.status == ElementoStatus.armando ? Colors.black87 : Colors.white
+                    ).setSize(9),
+                  ),
+                ),
               ],
             ),
-            Positioned(
-              top: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: elemento.status.color,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  elemento.status.label.toUpperCase(),
-                  style: AppCss.minimumBold.setColor(
-                    elemento.status == ElementoStatus.armando ? Colors.black87 : Colors.white
-                  ).setSize(10),
-                ),
-              ),
+            const Spacer(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildInfo('QTDE', '${elemento.qtde} pç'),
+                _buildInfo('PESO TOTAL', '${elemento.pesoTotal.toStringAsFixed(1)} kg'),
+                _buildInfo('ETIQUETAS', '${elemento.posicoes.length} os'),
+              ],
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInfo(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppCss.minimumBold.setSize(8).setColor(Colors.grey[500]!),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: AppCss.mediumBold.setSize(12).setColor(AppColors.primaryMain),
+        ),
+      ],
     );
   }
 }
