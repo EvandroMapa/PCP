@@ -47,10 +47,15 @@ class _UsuarioTipoPageState extends State<UsuarioTipoPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
                       icon: const Icon(Icons.edit_outlined, size: 20),
                       onPressed: () => showUsuarioTipoFormDialog(context, tipo: tipo),
                     ),
+                    const SizedBox(width: 8),
                     IconButton(
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
                       icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
                       onPressed: () => _confirmDelete(context, tipo),
                     ),

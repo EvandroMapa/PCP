@@ -46,61 +46,78 @@ class PedidoPdfParser {
     data['desconto'] = _extractValue(text, r'Desconto\s*[:\-]?\s*([\d,.]+)');
     data['total'] = _extractValue(text, r'Total\s*(?:Geral|Líquido)?\s*[:\-]?\s*([\d,.]+)');
 
-    // 4. Extrair Planilhamento e Romaneio (Novo)
+    // 4. Extrair Planilhamento e Romaneio
     data['planilhamento'] = _extractString(text, r'(?:Planilhamento|Plan\.)\s*[:\-]?\s*([^\n\r]+)');
     data['romaneio'] = _extractString(text, r'(?:Romaneio|Rom\.)\s*[:\-]?\s*([^\n\r]+)');
 
-    // 5. Extrair Produtos da Tabela
+    // 5. Extrair Produtos da Tabela (Suporte a multi-linha e Shop9)
     final List<String> units = ['KG', 'UN', 'PC', 'MT', 'PÇ', 'BAR', 'PCT', 'M2', 'CJ', 'UNID', 'Pç', 'FL', 'RL'];
     final String unitsPattern = units.join('|');
 
-    for (var line in text.split('\n')) {
-      line = line.trim();
-      if (line.isEmpty) continue;
+    // Identificar blocos de produtos: [Código de 5-6 dígitos] seguido de texto e unidade
+    final productBlockRegExp = RegExp(r'(\d{4,7})\s+([\s\S]+?)\s+(' + unitsPattern + r')\s+([\d,.\s]+)', caseSensitive: false);
+    final matches = productBlockRegExp.allMatches(text);
 
-      // Procura o padrão: [Código de 5-6 dígitos][Descrição...][UNIDADE][Lixo Numérico]
-      // Ex: 109499VERGALHAO 10,0 MM 3/8 PA CD CDA13.FAT2-CDAKG181,448,901.614,82
-      final rowMatch = RegExp('^(\\d{4,7})(.+?)($unitsPattern)([\\d,.]+)', caseSensitive: false).firstMatch(line);
+    for (final match in matches) {
+      final codigo = match.group(1)!;
+      String rawDesc = match.group(2)!.trim();
+      final unidade = match.group(3)!.toUpperCase();
+      final numericTail = match.group(4)!.trim();
+
+      // Limpar a descrição de quebras de linha e excesso de espaços
+      String descricao = rawDesc.replaceAll('\n', ' ').replaceAll(RegExp(r'\s+'), ' ');
       
-      if (rowMatch != null) {
-        final codigo = rowMatch.group(1)!;
-        String descricao = rowMatch.group(2)!.trim();
-        final unidade = rowMatch.group(3)!.toUpperCase();
-        final numericTail = rowMatch.group(4)!;
+      // Tentar desmembrar os valores numéricos (Qtde, Unitário, Total)
+      // No Shop9 multi-linha, eles costumam vir separados por espaços ou quebras de linha
+      final allNumbers = RegExp(r'[\d.]*,\d{2}').allMatches(numericTail).map((m) => m.group(0)!).toList();
+      
+      double qtde = 0;
+      double unitario = 0;
+      double total = 0;
 
-        // Tenta desmembrar a "cauda numérica" (Ex: 181,448,901.614,82)
-        // Regra: Os últimos caracteres costumam ser o Total (com 2 casas decimais e separador de milhar opcional)
-        // Usamos uma regex para pegar 3 grupos de números com vírgula
-        final valuesMatch = RegExp(r'(\d+,\d{2})(\d+,\d{2})([\d.]*,\d{2})$').firstMatch(numericTail);
-        
-        double qtde = 0;
-        double unitario = 0;
-        double total = 0;
+      if (allNumbers.length >= 3) {
+        qtde = _parseDecimal(allNumbers[0]);
+        unitario = _parseDecimal(allNumbers[1]);
+        total = _parseDecimal(allNumbers[2]);
+      } else if (allNumbers.length == 2) {
+        qtde = _parseDecimal(allNumbers[0]);
+        total = _parseDecimal(allNumbers[1]);
+      }
 
-        if (valuesMatch != null) {
-            qtde = _parseDecimal(valuesMatch.group(1)!);
-            unitario = _parseDecimal(valuesMatch.group(2)!);
-            total = _parseDecimal(valuesMatch.group(3)!);
-        } else {
-            // Fallback se não conseguir quebrar em 3 perfeitamente
-            // Tenta pegar o último valor como total e o primeiro como qtde
-            final allNumbers = RegExp(r'\d+,\d{2}').allMatches(numericTail).map((m) => m.group(0)!).toList();
-            if (allNumbers.length >= 2) {
-                qtde = _parseDecimal(allNumbers.first);
-                total = _parseDecimal(allNumbers.last);
-                if (allNumbers.length >= 3) unitario = _parseDecimal(allNumbers[1]);
-            }
-        }
+      if (qtde > 0) {
+        data['produtos'].add({
+          'codigo': codigo,
+          'descricao': descricao,
+          'unidade': unidade,
+          'qtde': qtde,
+          'unitario': unitario,
+          'total': total,
+        });
+      }
+    }
 
-        if (qtde > 0) {
-          data['produtos'].add({
-            'codigo': codigo,
-            'descricao': descricao,
-            'unidade': unidade,
-            'qtde': qtde,
-            'unitario': unitario,
-            'total': total,
-          });
+    // Fallback: Se não achou nada pelo bloco, tenta por linha (o método antigo era melhor para layouts lineares)
+    if (data['produtos'].isEmpty) {
+      for (var line in text.split('\n')) {
+        line = line.trim();
+        if (line.isEmpty) continue;
+        final rowMatch = RegExp('^(\\d{4,7})(.+?)($unitsPattern)([\\d,.]+)', caseSensitive: false).firstMatch(line);
+        if (rowMatch != null) {
+          final codigo = rowMatch.group(1)!;
+          final descricao = rowMatch.group(2)!.trim();
+          final unidade = rowMatch.group(3)!.toUpperCase();
+          final numericTail = rowMatch.group(4)!;
+          final allNumbers = RegExp(r'\d+,\d{2}').allMatches(numericTail).map((m) => m.group(0)!).toList();
+          if (allNumbers.length >= 2) {
+            data['produtos'].add({
+              'codigo': codigo,
+              'descricao': descricao,
+              'unidade': unidade,
+              'qtde': _parseDecimal(allNumbers.first),
+              'unitario': allNumbers.length >= 3 ? _parseDecimal(allNumbers[1]) : 0.0,
+              'total': _parseDecimal(allNumbers.last),
+            });
+          }
         }
       }
     }
@@ -110,10 +127,16 @@ class PedidoPdfParser {
 
   static double _extractValue(String text, String pattern) {
     try {
-      final regExp = RegExp(pattern, caseSensitive: false, dotAll: true);
-      final matches = regExp.allMatches(text);
-      if (matches.isNotEmpty) {
-        return _parseDecimal(matches.last.group(1) ?? '0');
+      final regExp = RegExp(pattern, caseSensitive: false);
+      final match = regExp.firstMatch(text);
+      if (match != null) {
+        // Se o valor não estiver na mesma linha, tenta pegar o que vem logo após a quebra de linha
+        final index = match.end;
+        final remainingText = text.substring(index);
+        final valueMatch = RegExp(r'\s*([\d,.]+)').firstMatch(remainingText);
+        if (valueMatch != null) {
+           return _parseDecimal(valueMatch.group(1) ?? '0');
+        }
       }
     } catch (_) {}
     return 0.0;
@@ -132,8 +155,6 @@ class PedidoPdfParser {
 
   static double _parseDecimal(String value) {
     if (value.isEmpty) return 0.0;
-    
-    // Remove pontos de milhar e troca vírgula por ponto
     String clean = value.replaceAll('.', '').replaceAll(',', '.');
     return double.tryParse(clean) ?? 0.0;
   }
