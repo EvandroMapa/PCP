@@ -254,8 +254,7 @@ class ArmacaoController {
           .eq('id', pedido.id);
 
       // Atualizar localmente no objeto pedido para UI refletir
-      // pedido.armacaoResumo.clear(); // Map is final, but we can update content if it's mutable
-      // Wait, PedidoModel has it as final Map. We should probably use update content.
+      pedido.armacaoResumo.clear();
       pedido.armacaoResumo.addAll(resume);
       
     } catch (e) {

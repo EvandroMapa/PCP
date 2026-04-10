@@ -193,7 +193,7 @@ class PedidoModel {
     this.valorTaxas = 0.0,
     this.valorDesconto = 0.0,
     this.valorTotal = 0.0,
-    this.armacaoResumo = const {},
+    required this.armacaoResumo,
   });
 
 
@@ -633,6 +633,7 @@ class PedidoModel {
     double? valorTaxas,
     double? valorDesconto,
     double? valorTotal,
+    Map<String, dynamic>? armacaoResumo,
     List<ElementoModel>? elementos,
   }) {
     return PedidoModel(
@@ -662,6 +663,7 @@ class PedidoModel {
       instrucoesEntrega: instrucoesEntrega ?? this.instrucoesEntrega,
       instrucoesFinanceiras:
           instrucoesFinanceiras ?? this.instrucoesFinanceiras,
+      armacaoResumo: Map<String, dynamic>.from(armacaoResumo ?? this.armacaoResumo),
 
       pedidosVinculados: pedidosVinculados ?? this.pedidosVinculados,
       pedidosFilhos: pedidosFilhos ?? this.pedidosFilhos,
