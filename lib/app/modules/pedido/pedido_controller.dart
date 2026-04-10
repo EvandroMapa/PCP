@@ -47,6 +47,8 @@ class PedidoController {
 
   factory PedidoController() => _instance;
 
+  final AppStream<int> activeTabStream = AppStream<int>.seed(0);
+
   final AppStream<PedidoUtils> utilsStream = AppStream<PedidoUtils>.seed(
     PedidoUtils(),
   );
@@ -74,10 +76,27 @@ class PedidoController {
     FirestoreClient.ordens.fetch();
     FirestoreClient.ordens.startOnlyArquivadas();
     _pagePollingTimer?.cancel();
-    _pagePollingTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+
+    // Primeira atualização rápida após 1 segundo da abertura
+    Future.delayed(const Duration(seconds: 1), () async {
       if (pedidoStream.hasValue) {
         final updated = await BackendClient.pedidos.getByIdSupabase(pedidoStream.value.id);
         if (updated != null) {
+          await BackendClient.ordens.fetch();
+          await BackendClient.ordens.startOnlyArquivadas();
+          pedidoStream.add(updated);
+          SchedulerBinding.instance.scheduleFrame();
+        }
+      }
+    });
+
+    // Manutenção periódica a cada 3 segundos
+    _pagePollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+      if (pedidoStream.hasValue) {
+        final updated = await BackendClient.pedidos.getByIdSupabase(pedidoStream.value.id);
+        if (updated != null) {
+          await BackendClient.ordens.fetch();
+          await BackendClient.ordens.startOnlyArquivadas();
           pedidoStream.add(updated);
           SchedulerBinding.instance.scheduleFrame();
         }
@@ -99,6 +118,16 @@ class PedidoController {
           pedidoStream.add(updatedPedido);
           SchedulerBinding.instance.scheduleFrame();
         }
+      }
+    });
+
+    // Quando ordens mudam (add/edit/remove), o número da ordem e a matéria-prima
+    // exibidos no pedido precisam ser recalculados.
+    // getOrdemByProduto lê FirestoreClient.ordens.data em memória — precisamos de rebuild.
+    FirestoreClient.ordens.dataStream.listen.listen((_) {
+      if (pedidoStream.hasValue) {
+        pedidoStream.update();
+        SchedulerBinding.instance.scheduleFrame();
       }
     });
   }
@@ -334,7 +363,7 @@ class PedidoController {
     return ([
       ...FirestoreClient.ordens.data,
       if (isArquivada) ...FirestoreClient.ordens.ordensArquivadas,
-    ]).firstWhereOrNull((e) => e.produtos.any((p) => p.id == produto.id));
+    ]).firstWhereOrNull((e) => e.hasProduto(produto.id));
   }
 
   void onChangePedidoStatus(PedidoModel pedido) async {

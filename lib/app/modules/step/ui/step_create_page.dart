@@ -161,6 +161,15 @@ class _StepCreatePageState extends State<StepCreatePage> {
             stepCtrl.formStream.update();
           },
         ),
+        const H(8),
+        AppCheckbox(
+          value: form.isExibirArmacao,
+          label: 'Mostrar conteúdo no perfil de armação',
+          onChanged: (e) {
+            form.isExibirArmacao = !form.isExibirArmacao;
+            stepCtrl.formStream.update();
+          },
+        ),
         const H(24),
         if (form.isEdit)
           TextButton.icon(

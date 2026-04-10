@@ -60,7 +60,7 @@ class _UsuariosPageState extends State<UsuariosPage> {
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: AppField(
-                    hint: 'Pesquisar',
+                    hint: 'Pesquisar Login / Nome',
                     controller: utils.search,
                     suffixIcon: Icons.search,
                     onChanged: (_) => usuarioCtrl.utilsStream.update(),
@@ -89,7 +89,7 @@ class _UsuariosPageState extends State<UsuariosPage> {
       onTap: () => push(context, UsuarioCreatePage(usuario: usuario)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       title: Text(usuario.nome, style: AppCss.mediumBold),
-      subtitle: Text(usuario.role.label ?? ''),
+      subtitle: usuario.tipo != null ? Text(usuario.tipo!.nome) : null,
       trailing: Icon(
         Icons.arrow_forward_ios,
         size: 14,

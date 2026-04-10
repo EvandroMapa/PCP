@@ -200,6 +200,8 @@ class PedidoCreateModel {
       pai: pai,
       isFilho: isFilho,
       romaneio: romaneio.text.isEmpty ? null : romaneio.text,
+      valorTotal: 0.0,
+      elementos: pedido?.elementos ?? [],
     );
   }
 }

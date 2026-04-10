@@ -38,7 +38,7 @@ class _BasePageState extends State<BasePage> {
       builder: (context, module) => Scaffold(
         key: _scaffoldKey,
         drawer: const AppDrawer(),
-        bottomNavigationBar: usuario.role == UsuarioRole.operador
+        bottomNavigationBar: usuario.isOperador
             ? const AppBottomNav()
             : null,
         appBar: module.appBar(context) ??

@@ -12,7 +12,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/enums/obra_status.dart';
-import 'package:aco_plus/app/core/services/hash_service.dart';
+
 import 'package:collection/collection.dart';
 
 class PedidoProdutoTurno {
@@ -210,7 +210,7 @@ class PedidoProdutoModel {
   }
 
   factory PedidoProdutoModel.empty(PedidoModel pedido) => PedidoProdutoModel(
-    id: HashService.get,
+    id: '',
     pedidoId: pedido.id,
     clienteId: pedido.cliente.id,
     obraId: pedido.obra.id,
@@ -326,11 +326,7 @@ class PedidoProdutoModel {
   }
 
   factory PedidoProdutoModel.fromSupabaseMap(Map<String, dynamic> map) {
-    // qtde pode vir como double, int ou String dependendo do ambiente
-    final qtdeRaw = map['quantidade'] ?? map['qtde'] ?? 0;
-    final double qtde = qtdeRaw is num 
-        ? qtdeRaw.toDouble() 
-        : double.tryParse(qtdeRaw.toString()) ?? 0.0;
+
 
     // produto_raw é prioritário; se não existir, busca pelo produto_id no cache local
     ProdutoModel produto = ProdutoModel.empty();
@@ -380,16 +376,22 @@ class PedidoProdutoModel {
 
     return PedidoProdutoModel(
       id: (map['id'] ?? map['id_id'] ?? '').toString(),
-      qtde: qtde,
+      qtde: _parseNum(map['quantidade'] ?? map['qtde']),
       produto: produto,
       materiaPrima: materiaPrima,
       pedidoId: (map['pedido_id'] ?? '').toString(),
       clienteId: (map['cliente_id'] ?? '').toString(),
       obraId: (map['obra_id'] ?? '').toString(),
       statusess: statusess.isNotEmpty ? statusess : [PedidoProdutoStatusModel.empty()],
-      valorUnitario: (map['valor_unitario'] ?? 0.0).toDouble(),
-      valorTotal: (map['valor_total'] ?? 0.0).toDouble(),
+      valorUnitario: _parseNum(map['valor_unitario']),
+      valorTotal: _parseNum(map['valor_total']),
     );
+  }
+
+  static double _parseNum(dynamic val) {
+    if (val == null) return 0.0;
+    if (val is num) return val.toDouble();
+    return double.tryParse(val.toString()) ?? 0.0;
   }
 
   PedidoProdutoModel copyWith({

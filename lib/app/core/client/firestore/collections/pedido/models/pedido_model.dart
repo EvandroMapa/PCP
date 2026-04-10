@@ -14,6 +14,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_
 import 'package:aco_plus/app/core/client/firestore/collections/tag/models/tag_model.dart';
 import 'package:aco_plus/app/core/components/archive/archive_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
+import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/components/checklist/check_item_model.dart';
@@ -54,12 +55,14 @@ class PedidoModel {
   String? pai;
   bool isFilho = false;
   String? romaneio;
+  final List<ElementoModel> elementos;
 
   // New financial fields
   final double valorSubtotal;
   final double valorTaxas;
   final double valorDesconto;
   final double valorTotal;
+  final Map<String, dynamic> armacaoResumo;
 
   factory PedidoModel.empty() => PedidoModel(
     id: HashService.get,
@@ -80,6 +83,7 @@ class PedidoModel {
     index: 10000000,
     histories: [],
     isArchived: false,
+    elementos: [],
     archives: [],
     checklistId: '',
     planilhamento: '',
@@ -96,6 +100,7 @@ class PedidoModel {
     valorTaxas: 0.0,
     valorDesconto: 0.0,
     valorTotal: 0.0,
+    armacaoResumo: {},
   );
 
   String get filtro => localizador + pedidoFinanceiro;
@@ -183,11 +188,13 @@ class PedidoModel {
     required this.pai,
     required this.isFilho,
     required this.romaneio,
+    required this.elementos,
     this.valorSubtotal = 0.0,
     this.valorTaxas = 0.0,
     this.valorDesconto = 0.0,
     this.valorTotal = 0.0,
-  });
+    Map<String, dynamic>? armacaoResumo,
+  }) : armacaoResumo = armacaoResumo ?? {};
 
 
   double getQtdeDirecionada(PedidoProdutoModel produto) {
@@ -408,6 +415,8 @@ class PedidoModel {
       valorTaxas: (map['valor_taxas'] ?? 0.0).toDouble(),
       valorDesconto: (map['valor_desconto'] ?? 0.0).toDouble(),
       valorTotal: (map['valor_total'] ?? 0.0).toDouble(),
+      armacaoResumo: map['armacao_resumo'] ?? {},
+      elementos: [],
     );
   }
 
@@ -444,6 +453,7 @@ class PedidoModel {
     List<Map<String, dynamic>>? produtosRaw,
     List<String>? tagsIds,
     List<Map<String, dynamic>>? archivesRaw,
+    List<Map<String, dynamic>>? elementosRaw,
   }) {
     late ClienteModel cliente;
     late ObraModel obra;
@@ -468,6 +478,10 @@ class PedidoModel {
     final produtos = produtosRaw != null
         ? produtosRaw.map((p) => PedidoProdutoModel.fromSupabaseMap(p)).toList()
         : <PedidoProdutoModel>[];
+
+    final elementos = elementosRaw != null
+        ? elementosRaw.map((e) => ElementoModel.fromSupabaseMap(e)).toList()
+        : <ElementoModel>[];
 
     final pedido = PedidoModel(
         id: (map['id'] ?? '').toString(),
@@ -533,13 +547,21 @@ class PedidoModel {
         pai: null,
         isFilho: false,
         romaneio: null,
-        valorSubtotal: (map['valor_subtotal'] ?? 0.0).toDouble(),
-        valorTaxas: (map['valor_taxas'] ?? 0.0).toDouble(),
-        valorDesconto: (map['valor_desconto'] ?? 0.0).toDouble(),
-        valorTotal: (map['valor_total'] ?? 0.0).toDouble(),
+        valorSubtotal: _parseNum(map['valor_subtotal']),
+        valorTaxas: _parseNum(map['valor_taxas']),
+        valorDesconto: _parseNum(map['valor_desconto']),
+        valorTotal: _parseNum(map['valor_total']),
+        armacaoResumo: map['armacao_resumo'] ?? {},
+        elementos: elementos,
     );
     
     return pedido;
+  }
+
+  static double _parseNum(dynamic val) {
+    if (val == null) return 0.0;
+    if (val is num) return val.toDouble();
+    return double.tryParse(val.toString()) ?? 0.0;
   }
 
   static DateTime _parseDate(dynamic val) {
@@ -570,6 +592,7 @@ class PedidoModel {
     'valor_taxas': valorTaxas,
     'valor_desconto': valorDesconto,
     'valor_total': valorTotal,
+    'armacao_resumo': armacaoResumo,
     'checks': checks.map((c) => c.toMap()).toList(),
     'archives': archives.map((a) => a.toSupabaseMap()).toList(),
     'comments': comments.map((c) => c.toMap()).toList(),
@@ -611,6 +634,8 @@ class PedidoModel {
     double? valorTaxas,
     double? valorDesconto,
     double? valorTotal,
+    Map<String, dynamic>? armacaoResumo,
+    List<ElementoModel>? elementos,
   }) {
     return PedidoModel(
       id: id ?? this.id,
@@ -623,6 +648,7 @@ class PedidoModel {
       cliente: cliente ?? this.cliente,
       obra: obra ?? this.obra,
       produtos: produtos ?? this.produtos,
+      elementos: elementos ?? this.elementos,
       tipo: tipo ?? this.tipo,
       statusess: statusess ?? this.statusess,
       deliveryAt: deliveryAt ?? this.deliveryAt,
@@ -638,6 +664,7 @@ class PedidoModel {
       instrucoesEntrega: instrucoesEntrega ?? this.instrucoesEntrega,
       instrucoesFinanceiras:
           instrucoesFinanceiras ?? this.instrucoesFinanceiras,
+      armacaoResumo: Map<String, dynamic>.from(armacaoResumo ?? this.armacaoResumo),
 
       pedidosVinculados: pedidosVinculados ?? this.pedidosVinculados,
       pedidosFilhos: pedidosFilhos ?? this.pedidosFilhos,

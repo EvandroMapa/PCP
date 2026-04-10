@@ -16,6 +16,7 @@ class UsuarioCreateModel {
   TextController senha = TextController();
   UsuarioPermissionCreateModel permission = UsuarioPermissionCreateModel();
   UsuarioRole? role;
+  String usuarioTipoId = '';
   late bool isEdit;
 
   UsuarioCreateModel() : id = HashService.get, isEdit = false;
@@ -24,6 +25,7 @@ class UsuarioCreateModel {
     nome.text = user.nome;
     email.text = user.email;
     role = user.role;
+    usuarioTipoId = user.usuarioTipoId;
     senha.text = user.senha;
     permission = UsuarioPermissionCreateModel.edit(user);
   }
@@ -32,7 +34,8 @@ class UsuarioCreateModel {
     id: id,
     nome: nome.text,
     email: email.text,
-    role: role!,
+    role: role ?? UsuarioRole.operador,
+    usuarioTipoId: usuarioTipoId,
     senha: senha.text,
     permission: permission.toUserPermissionModel(),
     steps: [],

@@ -23,6 +23,7 @@ import 'package:aco_plus/app/modules/cliente/ui/cliente_create_simplify_bottom.d
 import 'package:aco_plus/app/modules/pedido/services/pedido_pdf_parser.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:collection/collection.dart';
 
@@ -555,11 +556,30 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('O robô não conseguiu ler os produtos automaticamente. Por favor, copie o texto abaixo e envie para o suporte:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                          'O robô não conseguiu ler os produtos automaticamente. Por favor, envie o texto abaixo para o suporte:',
+                          style: TextStyle(
+                              fontSize: 11, fontWeight: FontWeight.bold)),
+                      IconButton(
+                        tooltip: 'Copiar Texto para Suporte',
+                        onPressed: () {
+                          Clipboard.setData(
+                              ClipboardData(text: extractedTextDebug));
+                          NotificationService.showPositive(
+                              'Copiado', 'Texto copiado para a área de transferência');
+                        },
+                        icon: const Icon(Icons.copy, size: 18),
+                      ),
+                    ],
+                  ),
                   const H(8),
                   SelectableText(
                     extractedTextDebug,
-                    style: const TextStyle(fontSize: 9, fontFamily: 'monospace'),
+                    style:
+                        const TextStyle(fontSize: 9, fontFamily: 'monospace'),
                   ),
                 ],
               ),

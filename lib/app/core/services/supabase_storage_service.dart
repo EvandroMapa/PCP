@@ -41,4 +41,22 @@ class SupabaseStorageService {
     );
     return SupabaseService.client.storage.from(bucket).getPublicUrl(fullPath);
   }
+
+  /// Remove um arquivo do Supabase Storage.
+  /// [url] = URL pública do arquivo.
+  static Future<void> deleteFile(String url, {String bucket = _bucket}) async {
+    try {
+      // Extrai o path da URL pública
+      // A URL geralmente é: https://.../storage/v1/object/public/pcp-arquivos/path/to/file
+      final uri = Uri.parse(url);
+      final pathParts = uri.pathSegments;
+      final bucketIndex = pathParts.indexOf(bucket);
+      if (bucketIndex != -1 && bucketIndex + 1 < pathParts.length) {
+        final fullPath = pathParts.sublist(bucketIndex + 1).join('/');
+        await SupabaseService.client.storage.from(bucket).remove([fullPath]);
+      }
+    } catch (e) {
+      print('SupabaseStorageService.deleteFile erro: $e');
+    }
+  }
 }

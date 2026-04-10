@@ -21,6 +21,17 @@ class UsuarioController {
   UsuarioController._();
 
   factory UsuarioController() => _instance;
+  
+  void setup() {
+    BackendClient.usuarios.dataStream.listen.listen((list) {
+      if (usuario != null) {
+        final match = list.firstWhereOrNull((e) => e.id == usuario!.id);
+        if (match != null && match != usuario) {
+          usuarioStream.add(match);
+        }
+      }
+    });
+  }
 
   final AppStream<UsuarioModel?> usuarioStream = AppStream<UsuarioModel?>.seed(
     null,
@@ -98,19 +109,22 @@ class UsuarioController {
     if (nomeForm.length < 2) {
       throw Exception('Nome deve conter no mínimo 3 caracteres');
     }
-    if (emailForm.isEmpty || !emailForm.contains('@')) {
-      throw Exception('E-mail inválido');
+    if (emailForm.isEmpty) {
+      throw Exception('Login inválido');
+    }
+    if (form.usuarioTipoId.isEmpty) {
+      throw Exception('É obrigatório selecionar um Perfil de Acesso');
     }
     if (form.isEdit) {
       if (BackendClient.usuarios.data.any((e) =>
           e.email.toLowerCase().trim() == emailForm &&
           e.id.toString().trim() != form.id.toString().trim())) {
-        throw Exception('Já existe um usuário com esse e-mail');
+        throw Exception('Já existe um usuário com esse login');
       }
     } else {
       if (BackendClient.usuarios.data.any(
           (e) => e.email.toLowerCase().trim() == emailForm)) {
-        throw Exception('Já existe um usuário com esse e-mail');
+        throw Exception('Já existe um usuário com esse login');
       }
     }
   }

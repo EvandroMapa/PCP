@@ -118,7 +118,7 @@ class OrdemController {
     for (final pedido
         in FirestoreClient.pedidos.data
             .where(
-              (e) => e.pedidosFilhos.isEmpty,
+              (e) => e.pedidosFilhos.isEmpty && e.step.isPermiteProducao,
             )
             .toList()) {
       final pedidoProdutos = pedido.produtos
@@ -241,8 +241,9 @@ class OrdemController {
       }
     }
 
+    // Ordens PRIMEIRO — garante que ordens.data está atualizado antes de pedidos.fetch()
+    await FirestoreClient.ordens.fetch();
     await FirestoreClient.pedidos.fetch();
-    await FirestoreClient.ordens.fetch(); // Refresh list immediately
     onReorder(FirestoreClient.ordens.ordensNaoCongeladas);
     await automatizacaoCtrl.onSetStepByPedidoStatus(
       ordemCriada.pedidos
@@ -277,6 +278,10 @@ class OrdemController {
         // Se o item foi removido da Ordem, ele volta a ficar 'separado'
         statusUpdates.add((produto, PedidoProdutoStatus.separado));
         pedidosAfetados.add(produto.pedidoId);
+        // Limpa a matéria-prima vinculada ao produto removido
+        if (produto.materiaPrima != null) {
+          mpUpdates.add((produto, null));
+        }
       }
     }
 
@@ -331,9 +336,10 @@ class OrdemController {
       }
     }
 
-    // Pedidos PRIMEIRO, depois ordens (para que ordem.produtos resolva os kilos corretamente)
-    await FirestoreClient.pedidos.fetch();
+    // Ordens PRIMEIRO — garante que ordens.data está atualizado antes de pedidos.fetch()
+    // disparar _listenGlobalPedidos. Evita que getOrdemByProduto retorne null no rebuild.
     await FirestoreClient.ordens.fetch();
+    await FirestoreClient.pedidos.fetch();
     await automatizacaoCtrl.onSetStepByPedidoStatus(ordemEditada.pedidos);
     await OrdemTimelineRegister.editada(ordemEditada, ordem);
     

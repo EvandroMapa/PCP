@@ -8,6 +8,7 @@ import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/elemento/ui/elementos_tab.dart';
 import 'package:aco_plus/app/modules/notificacao/notificacao_controller.dart';
+import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pai/pai_pedido_corte_dobra_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pai/pai_pedido_filho_sinalizador_widget.dart';
@@ -58,7 +59,10 @@ class _PedidoPageState extends State<PedidoPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: usuario.temAcessoElementos ? 2 : 1, vsync: this);
+    _tabController.addListener(() {
+      pedidoCtrl.activeTabStream.add(_tabController.index);
+    });
     if (widget.reason != PedidoInitReason.kanban) {
       setWebTitle('Pedido ${widget.pedido.localizador}');
     }
@@ -130,9 +134,9 @@ class _PedidoPageState extends State<PedidoPage>
             unselectedLabelColor: Colors.grey[500],
             indicatorColor: AppColors.primaryMain,
             indicatorWeight: 2.5,
-            tabs: const [
-              Tab(text: 'Detalhes do Pedido'),
-              Tab(text: 'Elementos'),
+            tabs: [
+              const Tab(text: 'Detalhes do Pedido'),
+              if (usuario.temAcessoElementos) const Tab(text: 'Elementos'),
             ],
           ),
         ),
@@ -146,7 +150,7 @@ class _PedidoPageState extends State<PedidoPage>
               _detalhesBody(pedido),
 
               // Aba 2: Elementos
-              ElementosTab(pedido: pedido),
+              if (usuario.temAcessoElementos) ElementosTab(pedido: pedido),
             ],
           ),
         ),

@@ -1,7 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/notificacao/notificacao_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/user_permission_type.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/usuario_role.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/version/version_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -47,15 +46,21 @@ class AppDrawer extends StatelessWidget {
                     child: ListView(
                       children: [
                         AppDrawerHeader(notificacoes: notificacoes),
-                        usuario.role != UsuarioRole.operador
-                            ? AppDrawerNotOperatorList(
-                                module: module,
-                                notificacoes: notificacoes,
-                              )
-                            : AppDrawerOperatorList(
-                                module: module,
-                                notificacoes: notificacoes,
-                              ),
+                        if (usuario.isArmador)
+                          AppDrawerArmadorList(
+                            module: module,
+                            notificacoes: notificacoes,
+                          )
+                        else if (usuario.isOperador)
+                          AppDrawerOperatorList(
+                            module: module,
+                            notificacoes: notificacoes,
+                          )
+                        else
+                          AppDrawerNotOperatorList(
+                            module: module,
+                            notificacoes: notificacoes,
+                          ),
                       ],
                     ),
                   ),
@@ -70,6 +75,29 @@ class AppDrawer extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class AppDrawerArmadorList extends StatelessWidget {
+  final AppModule module;
+  final List<NotificacaoModel> notificacoes;
+  const AppDrawerArmadorList({
+    super.key,
+    required this.module,
+    required this.notificacoes,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        AppDrawerItem(
+          item: AppModule.armacao,
+          module: module,
+          notificacoes: notificacoes,
+        ),
+      ],
     );
   }
 }
@@ -228,19 +256,7 @@ class AppDrawerHeader extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                'v',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  fontSize: 10,
-                ),
-              ),
-              Text(
-                VersionCollection.version.toString().split('').join('.'),
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
-              ),
               if (usuario.role == UsuarioRole.administrador) ...[
-                const W(8),
                 if (kIsDev)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -269,7 +285,7 @@ class AppDrawerHeader extends StatelessWidget {
             ],
           ),
         ),
-        if (usuario.role != UsuarioRole.operador)
+        if (!usuario.isOperador)
           Positioned(
             bottom: 0,
             right: 0,
@@ -369,7 +385,11 @@ class AppDrawerItem extends StatelessWidget {
     return Builder(
       builder: (context) {
         bool isEnabled = true;
-        if (usuario.role != UsuarioRole.operador) {
+        if (usuario.isArmador) {
+          isEnabled = item == AppModule.armacao;
+        } else if (usuario.isOperador) {
+          isEnabled = item == AppModule.ordens || item == AppModule.materiaPrima;
+        } else {
           switch (item) {
             case AppModule.cliente:
               isEnabled = usuario.permission.cliente.contains(
@@ -398,9 +418,6 @@ class AppDrawerItem extends StatelessWidget {
               break;
             default:
           }
-        } else {
-          isEnabled =
-              item == AppModule.ordens || item == AppModule.materiaPrima;
         }
         if (!isEnabled) return const SizedBox();
         return ListTile(

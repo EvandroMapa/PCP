@@ -213,31 +213,49 @@ class PedidoSupabaseCollection extends PedidoCollection {
   @override
   Future<PedidoModel?> getByIdSupabase(String id) async {
     try {
-      final res = await SupabaseService.client
+      final pRaw = await SupabaseService.client
           .from(tableName)
-          .select('*, pedido_produtos(*), pedido_status_history(*), pedido_steps_history(*), pedido_tags(*)')
+          .select()
           .eq('id', id)
           .maybeSingle();
 
-      if (res == null) return null;
+      if (pRaw == null) return null;
 
-      final pMap = res as Map<String, dynamic>;
-      
-      final List<Map<String, dynamic>> pProdutos = 
-          List<Map<String, dynamic>>.from(pMap['pedido_produtos'] ?? []);
-      final List<Map<String, dynamic>> statusRaw = 
-          List<Map<String, dynamic>>.from(pMap['pedido_status_history'] ?? []);
-      final List<Map<String, dynamic>> stepsRaw = 
-          List<Map<String, dynamic>>.from(pMap['pedido_steps_history'] ?? []);
-      final List<Map<String, dynamic>> tagsRaw = 
-          List<Map<String, dynamic>>.from(pMap['pedido_tags'] ?? []);
+      final pMap = pRaw as Map<String, dynamic>;
+
+      Future<List<Map<String, dynamic>>> safeFetch(String table) async {
+        try {
+          final res = await SupabaseService.client
+              .from(table)
+              .select()
+              .eq('pedido_id', id);
+          final list = res as List;
+          return list.map((item) {
+            try {
+              if (item is Map) {
+                return item.map((key, value) => MapEntry(key.toString(), value));
+              }
+            } catch (_) {}
+            return <String, dynamic>{};
+          }).toList();
+        } catch (_) {
+          return [];
+        }
+      }
+
+      final results = await Future.wait([
+        safeFetch('pedido_produtos'),
+        safeFetch('pedido_status_history'),
+        safeFetch('pedido_steps_history'),
+        safeFetch('pedido_tags'),
+      ]);
 
       return PedidoModel.fromSupabaseMap(
         pMap,
-        produtosRaw: pProdutos,
-        statusRaw: statusRaw,
-        stepsRaw: stepsRaw,
-        tagsIds: tagsRaw.map((t) => (t['tag_id'] ?? '').toString()).toList(),
+        produtosRaw: results[0],
+        statusRaw: results[1],
+        stepsRaw: results[2],
+        tagsIds: results[3].map((t) => (t['tag_id'] ?? '').toString()).toList(),
       );
     } catch (e) {
       log('Supabase Error (Pedido.getByIdSupabase): $e');
@@ -421,13 +439,9 @@ class PedidoSupabaseCollection extends PedidoCollection {
   Future<List<String>> _syncRelationships(PedidoModel model) async {
     final List<String> syncErrors = [];
     try {
-      // 1. Delete existing for update
-      log('Supabase (Sync): Cleaning old relationships...');
+      // 1. Delete existing for update (Only non-primary key tables or controlled sync)
+      log('Supabase (Sync): Cleaning history tables...');
       await Future.wait([
-        SupabaseService.client
-            .from('pedido_produtos')
-            .delete()
-            .eq('pedido_id', model.id),
         SupabaseService.client
             .from('pedido_status_history')
             .delete()
@@ -436,26 +450,43 @@ class PedidoSupabaseCollection extends PedidoCollection {
             .from('pedido_steps_history')
             .delete()
             .eq('pedido_id', model.id),
-        SupabaseService.client
-            .from('pedido_tags')
-            .delete()
-            .eq('pedido_id', model.id),
       ]);
     } catch (e) {
-      syncErrors.add('Erro ao limpar relações antigas: $e');
+      syncErrors.add('Erro ao limpar histórico: $e');
     }
 
-    // 2. Insert new relationships (Granular)
+    // 2. Sync Products (Atomic-ish)
     try {
-      // Products
-      if (model.produtos.isNotEmpty) {
+      final idsToKeep = model.produtos.map((e) => e.id).toList();
+      if (idsToKeep.isNotEmpty) {
         final payload = model.produtos.map((p) => p.toSupabaseMap(model.id)).toList();
-        await SupabaseService.client.from('pedido_produtos').insert(payload);
+        await SupabaseService.client.from('pedido_produtos').upsert(payload);
+        // Exclui o que não está mais no modelo
+        await SupabaseService.client
+            .from('pedido_produtos')
+            .delete()
+            .eq('pedido_id', model.id)
+            .filter('id', 'not.in', '(${idsToKeep.join(",")})');
+      } else {
+        await SupabaseService.client.from('pedido_produtos').delete().eq('pedido_id', model.id);
       }
     } catch (e) {
-      syncErrors.add('Erro Produtos: $e');
+      syncErrors.add('Erro sincronia Produtos: $e');
     }
 
+    // 3. Sync Tags (Atomic-ish)
+    try {
+      await SupabaseService.client.from('pedido_tags').delete().eq('pedido_id', model.id);
+      if (model.tags.isNotEmpty) {
+        await SupabaseService.client.from('pedido_tags').insert(model.tags
+            .map((t) => {'pedido_id': model.id, 'tag_id': t.id})
+            .toList());
+      }
+    } catch (e) {
+      syncErrors.add('Erro sincronia Tags: $e');
+    }
+
+    // 4. Insert history (already cleaned)
     try {
       // Status History
       if (model.statusess.isNotEmpty) {
@@ -474,18 +505,6 @@ class PedidoSupabaseCollection extends PedidoCollection {
       }
     } catch (e) {
       syncErrors.add('Erro Etapas: $e');
-    }
-
-    try {
-      // Tags
-      if (model.tags.isNotEmpty) {
-        log('Supabase (Sync): Inserting ${model.tags.length} tags...');
-        await SupabaseService.client.from('pedido_tags').insert(model.tags
-            .map((t) => {'pedido_id': model.id, 'tag_id': t.id})
-            .toList());
-      }
-    } catch (e) {
-      syncErrors.add('Erro na sincronia de Tags: $e');
     }
 
     try {

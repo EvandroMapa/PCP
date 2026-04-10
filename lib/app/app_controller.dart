@@ -20,6 +20,7 @@ class AppController {
     try {
       if (isInitialized) return;
       isInitialized = true;
+      usuarioCtrl.setup();
       await usuarioCtrl.getCurrentUser();
       await kanbanCtrl.onInit();
       pedidoCtrl.onInit();

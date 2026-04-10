@@ -3,7 +3,9 @@ import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/divisor.dart';
+import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
@@ -21,7 +23,6 @@ class PedidoProdutosWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Adicionando uma pequena alteração para testar o commit e deploy
     return IgnorePointer(
       ignoring: pedido.isAguardandoEntradaProducao(),
       child: Column(
@@ -40,6 +41,7 @@ class PedidoProdutosWidget extends StatelessWidget {
             children: [
               Text('${produto.produto.nome} - ${produto.produto.descricao}'),
               const W(16),
+<<<<<<< HEAD
               if (produto.status.status.index >=
                   PedidoProdutoStatus.aguardandoProducao.index) ...[
                 StreamOut(
@@ -68,13 +70,40 @@ class PedidoProdutosWidget extends StatelessWidget {
                             color: Colors.black,
                             fontWeight: FontWeight.bold,
                           ),
+=======
+              Builder(
+                builder: (context) {
+                  final ordem = pedidoCtrl.getOrdemByProduto(produto, true);
+
+                  if (ordem == null) return const SizedBox();
+                  return InkWell(
+                    onTap: () async {
+                      await push(context, OrdemPage(ordem.id));
+                      pedidoCtrl.pedidoStream.update();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        ordem.localizator,
+                        style: AppCss.mediumRegular.copyWith(
+                          fontSize: 12,
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+>>>>>>> desenvolvimento
                         ),
                       ),
-                    );
-                  },
-                ),
-                const W(4),
-              ],
+                    ),
+                  );
+                },
+              ),
+              const W(4),
               if (!pedido.isAguardandoEntradaProducao())
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -82,10 +111,7 @@ class PedidoProdutosWidget extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: produto.status
-                        .getStatusView()
-                        .color
-                        .withValues(alpha: 0.4),
+                    color: produto.status.getStatusView().color.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -95,9 +121,7 @@ class PedidoProdutosWidget extends StatelessWidget {
                 ),
             ],
           ),
-          trailing: pedido.isAguardandoEntradaProducao()
-              ? const SizedBox()
-              : null,
+          trailing: pedido.isAguardandoEntradaProducao() ? const SizedBox() : null,
           childrenPadding: const EdgeInsets.all(16),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

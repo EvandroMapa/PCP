@@ -83,18 +83,19 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
       title: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.primaryMain.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.primaryMain.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primaryMain.withOpacity(0.1)),
             ),
             child: Icon(Icons.layers_rounded,
-                color: AppColors.primaryMain, size: 20),
+                color: AppColors.primaryMain, size: 24),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Text(
             widget.elemento == null ? 'Novo Elemento' : 'Editar Elemento',
-            style: AppCss.largeBold,
+            style: AppCss.largeBold.setSize(20),
           ),
         ],
       ),
@@ -107,15 +108,47 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
             children: [
               const SizedBox(height: 8),
 
-              // ── Nome do elemento ────────────────────────────────────────
-              Text('Nome do Elemento', style: AppCss.mediumBold),
-              const SizedBox(height: 6),
-              TextFormField(
-                controller: _form.nome.controller,
-
-                maxLength: 30,
-                decoration: _inputDecor('Ex: Bloco B1, Pilar P2...'),
-                onChanged: (_) => setState(() {}),
+              // ── Nome e Quantidade do elemento ──────────────────────────
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Nome do Elemento', style: AppCss.mediumBold),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          controller: _form.nome.controller,
+                          maxLength: 30,
+                          decoration: _inputDecor('Ex: Bloco B1, Pilar P2...'),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 1,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Qtde', style: AppCss.mediumBold),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          controller: _form.qtde.controller,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly
+                          ],
+                          decoration: _inputDecor('1'),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 16),
@@ -123,14 +156,20 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
               // ── Cabeçalho posições ─────────────────────────────────────
               Row(
                 children: [
-                  Text('Posições / OS', style: AppCss.mediumBold),
+                  Text('Posições e OS', style: AppCss.mediumBold.setSize(15)),
                   const Spacer(),
                   TextButton.icon(
                     onPressed: _addPosicao,
-                    icon: const Icon(Icons.add, size: 16),
-                    label: const Text('Adicionar'),
+                    icon: const Icon(Icons.add_circle_outline, size: 18),
+                    label: const Text('Adicionar Posição',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                     style: TextButton.styleFrom(
-                        foregroundColor: AppColors.primaryMain),
+                        foregroundColor: AppColors.secondary,
+                        backgroundColor: AppColors.secondary.withOpacity(0.05),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8))),
                   ),
                 ],
               ),
@@ -252,7 +291,7 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Total do Elemento:',
-                        style: AppCss.mediumBold),
+                        style: AppCss.mediumBold.setColor(AppColors.primaryMain)),
                     Text(
                       '${_form.pesoTotal.toStringAsFixed(3)} kg',
                       style: AppCss.largeBold
@@ -272,24 +311,28 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
           child: Text('Cancelar',
               style: TextStyle(
                   color: Colors.grey[600],
-                  fontWeight: FontWeight.w500)),
+                  fontWeight: FontWeight.w600)),
         ),
         ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryMain,
             foregroundColor: Colors.white,
-            elevation: 0,
+            disabledBackgroundColor: Colors.grey[200],
+            disabledForegroundColor: Colors.grey[500],
+            elevation: _form.isValid ? 2 : 0,
+            shadowColor: AppColors.primaryMain.withOpacity(0.3),
             padding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
+                borderRadius: BorderRadius.circular(12)),
           ),
           icon: const Icon(Icons.save_rounded, size: 18),
           label: Text(
             widget.elemento == null
                 ? 'Criar Elemento'
                 : 'Salvar Alterações',
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, color: Colors.white),
           ),
           onPressed: _form.isValid ? _save : null,
         ),
@@ -312,19 +355,25 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
         isDense: true,
+        fillColor: Colors.grey.shade50,
+        filled: true,
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide(color: Colors.grey.shade300),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey.shade200),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppColors.primaryMain),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: AppColors.primaryMain, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.red),
         ),
         counterText: '',
       );

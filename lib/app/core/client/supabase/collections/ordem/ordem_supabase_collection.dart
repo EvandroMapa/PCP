@@ -24,6 +24,9 @@ class OrdemSupabaseCollection extends OrdemCollection {
   @override
   List<OrdemModel> get data => dataStream.value;
 
+  @override
+  List<OrdemModel> get ordensArquivadas => ordensArquivadasStream.value;
+
   bool _isStarted = false;
 
   @override
@@ -50,6 +53,24 @@ class OrdemSupabaseCollection extends OrdemCollection {
       _updateStreams(ordens);
     } catch (e) {
       print('Supabase Error (Ordem.start): $e');
+    }
+  }
+
+  @override
+  Future<void> startOnlyArquivadas() async {
+    try {
+      final response = await SupabaseService.client
+          .from(tableName)
+          .select()
+          .eq('is_archived', true);
+      
+      final ordens = List<Map<String, dynamic>>.from(response)
+          .map((e) => OrdemModel.fromSupabaseMap(e))
+          .toList();
+      
+      ordensArquivadasStream.add(ordens);
+    } catch (e) {
+      print('Supabase Error (Ordem.startOnlyArquivadas): $e');
     }
   }
 

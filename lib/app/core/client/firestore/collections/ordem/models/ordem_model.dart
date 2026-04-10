@@ -31,9 +31,7 @@ class OrdemModel {
           if (pedidoId.isEmpty || produtoId.isEmpty) continue;
 
           final produto = BackendClient.pedidos.getProdutoByPedidoId(pedidoId, produtoId);
-          if (produto.cliente.id.isNotEmpty) {
-            result.add(produto);
-          }
+          result.add(produto);
         } catch (_) {
           // Ignora produtos que falham ao carregar para evitar trava na UI
         }
@@ -176,6 +174,14 @@ class OrdemModel {
     }
   }
 
+  bool hasProduto(String produtoId) {
+    if (produtoId.isEmpty) return false;
+    return idPedidosProdutosRefs.any((ref) {
+      final id = (ref['produtoId'] ?? ref['produto_id'] ?? '').toString().trim();
+      return id == produtoId.trim();
+    });
+  }
+
   OrdemDurationsModel? get durations => OrdemDurationsModel.getByOrdem(this);
 
   OrdemModel({
@@ -257,8 +263,8 @@ class OrdemModel {
           return list.map((x) {
             final mapx = Map<String, dynamic>.from(x);
             return {
-              'pedidoId': (mapx['pedidoId'] ?? mapx['pedido_id'] ?? '').toString(),
-              'produtoId': (mapx['produtoId'] ?? mapx['produto_id'] ?? '').toString(),
+              'pedidoId': (mapx['pedidoId'] ?? mapx['pedido_id'] ?? '').toString().trim(),
+              'produtoId': (mapx['produtoId'] ?? mapx['produto_id'] ?? '').toString().trim(),
             };
           }).toList();
         } catch (_) {
@@ -410,4 +416,4 @@ class OrdemFreezedModel {
   int get hashCode => isFreezed.hashCode ^ reason.hashCode;
 }
 
-// v-supabase-stable-v1.1
+// v-supabase-stable-v1.1 2

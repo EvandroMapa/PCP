@@ -23,6 +23,7 @@ class ElementoComparativoDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ok = validacao.isOk;
+<<<<<<< HEAD
     return AlertDialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -38,43 +39,105 @@ class ElementoComparativoDialog extends StatelessWidget {
             ok ? 'Comparativo OK' : 'Divergência de Pesos',
             style: AppCss.largeBold.copyWith(
               color: ok ? Colors.green.shade800 : Colors.red.shade800,
+=======
+    final color = ok ? Colors.green : Colors.red;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    return AlertDialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: color.withOpacity(0.1)),
+            ),
+            child: Icon(
+              ok ? Icons.check_circle_rounded : Icons.warning_rounded,
+              color: color,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              ok ? 'Comparativo OK' : 'Divergência de Pesos',
+              style: AppCss.largeBold.setSize(20).setColor(color.shade800),
+              overflow: TextOverflow.ellipsis,
+>>>>>>> desenvolvimento
             ),
           ),
         ],
       ),
+<<<<<<< HEAD
       content: SizedBox(
         width: 450,
+=======
+      content: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 500,
+          minWidth: screenWidth * 0.4 > 450 ? 450 : screenWidth * 0.8,
+        ),
+>>>>>>> desenvolvimento
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               ok
+<<<<<<< HEAD
                   ? 'O somatório dos pesos dos elementos coincide com o total planejado no pedido.'
                   : 'O somatório dos pesos dos elementos difere do total planejado no pedido.',
               style: AppCss.mediumRegular.copyWith(color: Colors.grey[700]),
             ),
             const SizedBox(height: 20),
+=======
+                  ? 'Excelente! O somatório dos elementos coincide perfeitamente com o total planejado no pedido.'
+                  : 'Atenção! Foram encontradas divergências entre o planejado no pedido e a soma dos elementos cadastrados.',
+              style: AppCss.mediumRegular.copyWith(color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 24),
+>>>>>>> desenvolvimento
             Row(
               children: [
                 Expanded(
                   child: _TotalBox(
+<<<<<<< HEAD
                     label: 'Total Pedido',
+=======
+                    label: 'TOTAL DO PEDIDO',
+>>>>>>> desenvolvimento
                     value: '${_fmt(validacao.totalPedidoKg)} kg',
                     color: Colors.blueGrey,
                   ),
                 ),
+<<<<<<< HEAD
                 const SizedBox(width: 12),
                 Expanded(
                   child: _TotalBox(
                     label: 'Total Elementos',
                     value: '${_fmt(validacao.totalElementosKg)} kg',
                     color: ok ? Colors.green : Colors.red,
+=======
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _TotalBox(
+                    label: 'TOTAL ELEMENTOS',
+                    value: '${_fmt(validacao.totalElementosKg)} kg',
+                    color: color,
+>>>>>>> desenvolvimento
                   ),
                 ),
               ],
             ),
             if (validacao.divergencias.isNotEmpty) ...[
+<<<<<<< HEAD
               const SizedBox(height: 20),
               Text(
                 'Divergências por Bitola:',
@@ -115,25 +178,126 @@ class ElementoComparativoDialog extends StatelessWidget {
                           style: AppCss.smallBold.copyWith(color: Colors.red),
                         ),
                       ],
+=======
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  const Icon(Icons.list_alt_rounded, size: 18, color: Colors.red),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Divergências por Bitola:',
+                    style: AppCss.mediumBold.setColor(Colors.red.shade700),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                constraints: const BoxConstraints(maxHeight: 250),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: validacao.divergencias.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (_, i) {
+                    final d = validacao.divergencias[i];
+                    return Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red.shade100, width: 1.2),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                d.produto.produto.labelMinified,
+                                style: AppCss.mediumBold.setColor(Colors.red.shade900),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade100,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  'Dif: ${_fmt(d.diferencaKg)} kg',
+                                  style: AppCss.minimumBold.setColor(Colors.red.shade900),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _miniLabel('Esperado', _fmt(d.esperadoKg)),
+                              ),
+                              Expanded(
+                                child: _miniLabel('Calculado', _fmt(d.calculadoKg)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+>>>>>>> desenvolvimento
                     );
                   },
                 ),
               ),
             ],
+<<<<<<< HEAD
+=======
+            const SizedBox(height: 8),
+>>>>>>> desenvolvimento
           ],
         ),
       ),
       actions: [
+<<<<<<< HEAD
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text(
             'Fechar',
             style: AppCss.mediumBold.setColor(AppColors.primaryMain),
+=======
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryMain,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              elevation: 4,
+              shadowColor: AppColors.primaryMain.withOpacity(0.4),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Fechar Comparativo',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+>>>>>>> desenvolvimento
           ),
         ),
       ],
     );
   }
+<<<<<<< HEAD
+=======
+
+  Widget _miniLabel(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppCss.minimumRegular.copyWith(color: Colors.grey[500], fontSize: 10)),
+        Text('$value kg', style: AppCss.smallBold.copyWith(color: Colors.grey[800])),
+      ],
+    );
+  }
+>>>>>>> desenvolvimento
 }
 
 class _TotalBox extends StatelessWidget {
@@ -145,18 +309,42 @@ class _TotalBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+<<<<<<< HEAD
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color.withOpacity(0.08),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: color.withOpacity(0.2)),
+=======
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.15), width: 1.2),
+>>>>>>> desenvolvimento
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+<<<<<<< HEAD
           Text(label, style: AppCss.smallRegular.copyWith(color: color, fontSize: 11)),
           const SizedBox(height: 4),
           Text(value, style: AppCss.largeBold.copyWith(color: color, fontSize: 16)),
+=======
+          Text(label,
+              style: AppCss.minimumBold.copyWith(
+                color: color.withOpacity(0.6),
+                letterSpacing: 0.5,
+                fontSize: 10,
+              )),
+          const SizedBox(height: 6),
+          Text(value,
+              style: AppCss.largeBold.copyWith(
+                color: color,
+                fontSize: 18,
+                letterSpacing: -0.5,
+              )),
+>>>>>>> desenvolvimento
         ],
       ),
     );
