@@ -42,12 +42,9 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
     return AppScaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: Text(
-          'MÓDULO DE ARMAÇÃO',
-          style: AppCss.largeBold.setColor(AppColors.white).setSize(18),
-        ),
         backgroundColor: AppColors.secondary,
         elevation: 0,
+        title: const SizedBox.shrink(), // Remove o título redundante conforme solicitado
       ),
       body: StreamOut<bool>(
         stream: armacaoCtrl.loadingStream.listen,
@@ -70,9 +67,9 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
                 ? const EmptyData(message: 'Nenhum lote para armação encontrado!')
                 : GridView.builder(
                     padding: const EdgeInsets.all(24),
-                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 400,
-                      mainAxisExtent: 220,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3, // Força layout 3x2 conforme solicitado
+                      mainAxisExtent: 380, // Aumentado para cartões maiores
                       crossAxisSpacing: 24,
                       mainAxisSpacing: 24,
                     ),
@@ -118,17 +115,17 @@ class _PedidoArmacaoCard extends StatelessWidget {
 
     return InkWell(
       onTap: () => push(context, ArmacaoElementosPage(pedido: pedido)),
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(24),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 15,
-              offset: const Offset(0, 6),
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
@@ -136,23 +133,23 @@ class _PedidoArmacaoCard extends StatelessWidget {
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.primaryMain.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+                color: AppColors.primaryMain.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 pedido.localizador,
-                style: AppCss.largeBold.setSize(20).setColor(AppColors.primaryDark),
+                style: AppCss.largeBold.setSize(28).setColor(AppColors.primaryDark),
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
               pedido.cliente.nome.toUpperCase(),
-              style: AppCss.minimumBold.setSize(10).setColor(Colors.grey[400]!),
+              style: AppCss.minimumBold.setSize(12).setColor(Colors.grey[400]!),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -160,10 +157,12 @@ class _PedidoArmacaoCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(child: _buildChart('PEÇAS', qtdData, totalQtd.toInt().toString())),
-                const SizedBox(width: 8),
+                const SizedBox(width: 16),
                 Expanded(child: _buildChart('PESO (KG)', pesoData, totalPeso.toStringAsFixed(0))),
               ],
             ),
+            const SizedBox(height: 16),
+            _buildLegend(),
             const Spacer(),
           ],
         ),
@@ -175,7 +174,7 @@ class _PedidoArmacaoCard extends StatelessWidget {
     return Column(
       children: [
         SizedBox(
-          height: 100,
+          height: 140, // Aumentado para melhor visibilidade
           child: SfCircularChart(
             margin: EdgeInsets.zero,
             series: <CircularSeries>[
@@ -192,13 +191,44 @@ class _PedidoArmacaoCard extends StatelessWidget {
               CircularChartAnnotation(
                 widget: Text(
                   total,
-                  style: AppCss.mediumBold.setSize(14).setColor(AppColors.secondary),
+                  style: AppCss.largeBold.setSize(24).setColor(AppColors.secondary),
                 ),
               ),
             ],
           ),
         ),
-        Text(title, style: AppCss.minimumBold.setSize(9).setColor(Colors.grey[500]!)),
+        const SizedBox(height: 8),
+        Text(title, style: AppCss.mediumBold.setSize(10).setColor(Colors.grey[600]!)),
+      ],
+    );
+  }
+
+  Widget _buildLegend() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _legendItem('AGUARD.', Colors.blue),
+        const SizedBox(width: 16),
+        _legendItem('ARMANDO', Colors.orange),
+        const SizedBox(width: 16),
+        _legendItem('PRONTO', Colors.green),
+      ],
+    );
+  }
+
+  Widget _legendItem(String label, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: AppCss.minimumBold.setSize(10).setColor(Colors.grey[700]!),
+        ),
       ],
     );
   }
