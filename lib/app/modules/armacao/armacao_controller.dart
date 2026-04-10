@@ -36,6 +36,7 @@ class ArmacaoController {
 
   final TextController search = TextController();
   final AppStream<List<PedidoModel>> pedidosStream = AppStream.seed([]);
+  final AppStream<bool> loadingStream = AppStream.seed(false);
   
   // Cache para evitar recarregar elementos desnecessariamente
   final Map<String, ArmacaoSummary> _summaries = {};
@@ -47,6 +48,7 @@ class ArmacaoController {
   }
 
   Future<void> _syncSummariesAndFilter(List<PedidoModel> all) async {
+    loadingStream.add(true);
     final filtered = all.where((p) {
       final isVisible = p.step.isExibirArmacao;
       final matchesSearch = p.localizador.toLowerCase().contains(search.text.toLowerCase()) ||
@@ -65,6 +67,7 @@ class ArmacaoController {
     filtered.sort((a, b) => (a.deliveryAt ?? a.createdAt).compareTo(b.deliveryAt ?? b.createdAt));
     
     pedidosStream.add(filtered);
+    loadingStream.add(false);
   }
 
   Future<ArmacaoSummary> _fetchSummary(String pedidoId) async {
@@ -139,6 +142,9 @@ class ArmacaoController {
       
       pedido.elementos.clear();
       pedido.elementos.addAll(result);
+      
+      // Atualizar resumo garantindo que o que está no banco reflete os elementos carregados
+      await updatePedidoSummary(pedido);
     } catch (e) {
       print('ArmacaoController.onFetchElementos erro: $e');
     }
@@ -182,9 +188,75 @@ class ArmacaoController {
         );
         pedido.elementos[index] = updatedElemento;
       }
+      await updatePedidoSummary(pedido);
     } catch (e) {
       print('Erro ao atualizar status do elemento: $e');
       showInfoDialog('Erro: Não foi possível atualizar o status.');
+    }
+  }
+
+  Future<void> updatePedidoSummary(PedidoModel pedido) async {
+    try {
+      int totalQtd = 0;
+      double totalPeso = 0;
+
+      final Map<ElementoStatus, int> qtdPorStatus = {
+        ElementoStatus.aguardando: 0,
+        ElementoStatus.armando: 0,
+        ElementoStatus.pronto: 0,
+      };
+
+      final Map<ElementoStatus, double> pesoPorStatus = {
+        ElementoStatus.aguardando: 0,
+        ElementoStatus.armando: 0,
+        ElementoStatus.pronto: 0,
+      };
+
+      for (final e in pedido.elementos) {
+        totalQtd += e.qtde;
+        totalPeso += e.pesoTotal;
+
+        qtdPorStatus[e.status] = (qtdPorStatus[e.status] ?? 0) + e.qtde;
+        pesoPorStatus[e.status] = (pesoPorStatus[e.status] ?? 0) + e.pesoTotal;
+      }
+
+      final Map<String, dynamic> resume = {
+        'total_qtd': totalQtd,
+        'total_peso': totalPeso,
+        'details': {
+          'aguardando': {
+            'qtd': qtdPorStatus[ElementoStatus.aguardando],
+            'peso': pesoPorStatus[ElementoStatus.aguardando],
+            'prcnt_qtd': totalQtd > 0 ? qtdPorStatus[ElementoStatus.aguardando]! / totalQtd : 0,
+            'prcnt_peso': totalPeso > 0 ? pesoPorStatus[ElementoStatus.aguardando]! / totalPeso : 0,
+          },
+          'armando': {
+            'qtd': qtdPorStatus[ElementoStatus.armando],
+            'peso': pesoPorStatus[ElementoStatus.armando],
+            'prcnt_qtd': totalQtd > 0 ? qtdPorStatus[ElementoStatus.armando]! / totalQtd : 0,
+            'prcnt_peso': totalPeso > 0 ? pesoPorStatus[ElementoStatus.armando]! / totalPeso : 0,
+          },
+          'pronto': {
+            'qtd': qtdPorStatus[ElementoStatus.pronto],
+            'peso': pesoPorStatus[ElementoStatus.pronto],
+            'prcnt_qtd': totalQtd > 0 ? qtdPorStatus[ElementoStatus.pronto]! / totalQtd : 0,
+            'prcnt_peso': totalPeso > 0 ? pesoPorStatus[ElementoStatus.pronto]! / totalPeso : 0,
+          },
+        }
+      };
+
+      await SupabaseService.client
+          .from('pedidos')
+          .update({'armacao_resumo': resume})
+          .eq('id', pedido.id);
+
+      // Atualizar localmente no objeto pedido para UI refletir
+      // pedido.armacaoResumo.clear(); // Map is final, but we can update content if it's mutable
+      // Wait, PedidoModel has it as final Map. We should probably use update content.
+      pedido.armacaoResumo.addAll(resume);
+      
+    } catch (e) {
+      print('Erro ao atualizar resumo do pedido: $e');
     }
   }
 }

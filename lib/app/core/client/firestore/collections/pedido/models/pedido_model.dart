@@ -62,6 +62,7 @@ class PedidoModel {
   final double valorTaxas;
   final double valorDesconto;
   final double valorTotal;
+  final Map<String, dynamic> armacaoResumo;
 
   factory PedidoModel.empty() => PedidoModel(
     id: HashService.get,
@@ -99,6 +100,7 @@ class PedidoModel {
     valorTaxas: 0.0,
     valorDesconto: 0.0,
     valorTotal: 0.0,
+    armacaoResumo: {},
   );
 
   String get filtro => localizador + pedidoFinanceiro;
@@ -191,6 +193,7 @@ class PedidoModel {
     this.valorTaxas = 0.0,
     this.valorDesconto = 0.0,
     this.valorTotal = 0.0,
+    this.armacaoResumo = const {},
   });
 
 
@@ -412,6 +415,7 @@ class PedidoModel {
       valorTaxas: (map['valor_taxas'] ?? 0.0).toDouble(),
       valorDesconto: (map['valor_desconto'] ?? 0.0).toDouble(),
       valorTotal: (map['valor_total'] ?? 0.0).toDouble(),
+      armacaoResumo: map['armacao_resumo'] ?? {},
       elementos: [],
     );
   }
@@ -587,6 +591,7 @@ class PedidoModel {
     'valor_taxas': valorTaxas,
     'valor_desconto': valorDesconto,
     'valor_total': valorTotal,
+    'armacao_resumo': armacaoResumo,
     'checks': checks.map((c) => c.toMap()).toList(),
     'archives': archives.map((a) => a.toSupabaseMap()).toList(),
     'comments': comments.map((c) => c.toMap()).toList(),

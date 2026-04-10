@@ -13,7 +13,7 @@ class GeneralSettingsPage extends StatelessWidget {
     return AppScaffold(
       appBar: AppBar(
         title: const Text('Configurações Gerais', style: TextStyle(color: Colors.white)),
-        backgroundColor: AppColors.primaryMain,
+        backgroundColor: AppColors.secondary,
       ),
       body: ListView(
         padding: const EdgeInsets.all(24.0),
@@ -37,14 +37,14 @@ class GeneralSettingsPage extends StatelessWidget {
           width: 4,
           height: 24,
           decoration: BoxDecoration(
-            color: AppColors.primaryMain,
+            color: AppColors.secondary,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
         const SizedBox(width: 12),
         Text(
           title.toUpperCase(),
-          style: AppCss.mediumBold.setSize(16).setColor(AppColors.primaryDark),
+          style: AppCss.mediumBold.setSize(16).setColor(AppColors.secondary),
         ),
       ],
     );
@@ -119,18 +119,14 @@ class GeneralSettingsPage extends StatelessWidget {
   Widget _numericButton({required IconData icon, VoidCallback? onPressed}) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: onPressed != null ? AppColors.secondary.withOpacity(0.1) : Colors.grey[100],
         borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(
+          color: onPressed != null ? AppColors.secondary.withOpacity(0.3) : Colors.grey[300]!,
+        ),
       ),
       child: IconButton(
-        icon: Icon(icon, color: AppColors.primaryMain),
+        icon: Icon(icon, color: onPressed != null ? AppColors.secondary : Colors.grey[400]),
         onPressed: onPressed,
         iconSize: 28,
         padding: const EdgeInsets.all(12),

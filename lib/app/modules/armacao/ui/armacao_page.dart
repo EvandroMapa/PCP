@@ -46,11 +46,14 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
           'MÓDULO DE ARMAÇÃO',
           style: AppCss.largeBold.setColor(AppColors.white).setSize(18),
         ),
-        backgroundColor: AppColors.primaryMain,
+        backgroundColor: AppColors.secondary,
         elevation: 0,
       ),
-      body: _isLoading
-          ? Center(
+      body: StreamOut<bool>(
+        stream: armacaoCtrl.loadingStream.listen,
+        builder: (_, isLoading) {
+          if (isLoading) {
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -59,27 +62,30 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
                   Text('Aguarde, carregando pedidos...', style: AppCss.mediumRegular),
                 ],
               ),
-            )
-          : StreamOut<List<PedidoModel>>(
-              stream: armacaoCtrl.pedidosStream.listen,
-              builder: (_, pedidos) => pedidos.isEmpty
-                  ? const EmptyData(message: 'Nenhum lote para armação encontrado!')
-                  : GridView.builder(
-                      padding: const EdgeInsets.all(24),
-                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 400,
-                        mainAxisExtent: 220,
-                        crossAxisSpacing: 24,
-                        mainAxisSpacing: 24,
-                      ),
-                      itemCount: pedidos.length,
-                      itemBuilder: (context, index) {
-                        final pedido = pedidos[index];
-                        final summary = armacaoCtrl.getSummary(pedido.id);
-                        return _PedidoArmacaoCard(pedido: pedido, summary: summary);
-                      },
+            );
+          }
+          return StreamOut<List<PedidoModel>>(
+            stream: armacaoCtrl.pedidosStream.listen,
+            builder: (_, pedidos) => pedidos.isEmpty
+                ? const EmptyData(message: 'Nenhum lote para armação encontrado!')
+                : GridView.builder(
+                    padding: const EdgeInsets.all(24),
+                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 400,
+                      mainAxisExtent: 220,
+                      crossAxisSpacing: 24,
+                      mainAxisSpacing: 24,
                     ),
-            ),
+                    itemCount: pedidos.length,
+                    itemBuilder: (context, index) {
+                      final pedido = pedidos[index];
+                      final summary = armacaoCtrl.getSummary(pedido.id);
+                      return _PedidoArmacaoCard(pedido: pedido, summary: summary);
+                    },
+                  ),
+          );
+        },
+      ),
     );
   }
 }

@@ -49,7 +49,7 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
             ),
           ],
         ),
-        backgroundColor: AppColors.primaryMain,
+        backgroundColor: AppColors.secondary,
         elevation: 0,
       ),
       body: _isLoading
@@ -63,54 +63,207 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                 ],
               ),
             )
-          : widget.pedido.elementos.isEmpty
-              ? const EmptyData(message: 'Nenhum elemento cadastrado!')
-              : GridView.builder(
-                  padding: const EdgeInsets.all(24),
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 350,
-                    mainAxisExtent: 150,
-                    crossAxisSpacing: 20,
-                    mainAxisSpacing: 20,
-                  ),
-                  itemCount: widget.pedido.elementos.length,
-                  itemBuilder: (context, index) {
-                    final elemento = widget.pedido.elementos[index];
-                    return _ElementoArmacaoCard(
-                      elemento: elemento,
-                      onPressed: () => _showStatusPicker(elemento),
-                    );
-                  },
+          : Column(
+              children: [
+                _ResumoProducaoBar(pedido: widget.pedido),
+                Expanded(
+                  child: widget.pedido.elementos.isEmpty
+                      ? const EmptyData(message: 'Nenhum elemento cadastrado!')
+                      : GridView.builder(
+                          padding: const EdgeInsets.all(24),
+                          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 350,
+                            mainAxisExtent: 150,
+                            crossAxisSpacing: 20,
+                            mainAxisSpacing: 20,
+                          ),
+                          itemCount: widget.pedido.elementos.length,
+                          itemBuilder: (context, index) {
+                            final elemento = widget.pedido.elementos[index];
+                            return _ElementoArmacaoCard(
+                              elemento: elemento,
+                              onPressed: () async {
+                                await _showStatusPicker(elemento);
+                                setState(() {});
+                              },
+                            );
+                          },
+                        ),
                 ),
+              ],
+            ),
     );
   }
 
   void _showStatusPicker(ElementoModel elemento) {
-    showModalBottomSheet(
+    // Regra: Não pode pular de Aguardando para Pronto e vice-versa. Tem que passar por Armando.
+    final allowedStatuses = <ElementoStatus>[];
+    if (elemento.status == ElementoStatus.aguardando) {
+      allowedStatuses.addAll([ElementoStatus.aguardando, ElementoStatus.armando]);
+    } else if (elemento.status == ElementoStatus.armando) {
+      allowedStatuses.addAll([ElementoStatus.aguardando, ElementoStatus.armando, ElementoStatus.pronto]);
+    } else if (elemento.status == ElementoStatus.pronto) {
+      allowedStatuses.addAll([ElementoStatus.armando, ElementoStatus.pronto]);
+    }
+
+    showDialog(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'ALTERAR STATUS: ${elemento.nome}',
-              style: AppCss.mediumBold.setSize(16),
-            ),
-            const SizedBox(height: 24),
-            ...ElementoStatus.values.map((status) => ListTile(
-                  leading: CircleAvatar(backgroundColor: status.color, radius: 12),
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          width: 400,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'ALTERAR STATUS: ${elemento.nome}',
+                style: AppCss.mediumBold.setSize(18).setColor(AppColors.primaryMain),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'O fluxo deve obrigatoriamente passar por "Armando"',
+                style: AppCss.minimumRegular.setColor(Colors.grey[600]!),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ...allowedStatuses.map((status) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: ListTile(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: elemento.status == status ? status.color : Colors.grey[200]!,
+                      width: 1.5,
+                    ),
+                  ),
+                  tileColor: elemento.status == status ? status.backgroundColor : Colors.transparent,
+                  leading: CircleAvatar(
+                    backgroundColor: status.color,
+                    radius: 12,
+                    child: elemento.status == status ? const Icon(Icons.check, size: 14, color: Colors.white) : null,
+                  ),
                   title: Text(status.label, style: AppCss.mediumBold),
-                  selected: elemento.status == status,
                   onTap: () async {
                     Navigator.pop(context);
                     await armacaoCtrl.updateElementoStatus(widget.pedido, elemento, status);
                     setState(() {});
                   },
-                )),
+                ),
+              )),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('CANCELAR', style: AppCss.mediumBold.setColor(Colors.grey)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ResumoProducaoBar extends StatelessWidget {
+  final PedidoModel pedido;
+  const _ResumoProducaoBar({required this.pedido});
+
+  @override
+  Widget build(BuildContext context) {
+    final resumo = pedido.armacaoResumo;
+    if (resumo.isEmpty) return const SizedBox.shrink();
+
+    final details = resumo['details'] as Map<String, dynamic>;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      child: Row(
+        children: [
+          _buildResumoItem(
+            'AGUARDANDO',
+            ElementoStatus.aguardando,
+            details['aguardando'],
+          ),
+          const SizedBox(width: 16),
+          _buildResumoItem(
+            'ARMANDO',
+            ElementoStatus.armando,
+            details['armando'],
+          ),
+          const SizedBox(width: 16),
+          _buildResumoItem(
+            'PRONTO',
+            ElementoStatus.pronto,
+            details['pronto'],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResumoItem(String label, ElementoStatus status, Map<String, dynamic> data) {
+    final double prcntQtd = (data['prcnt_qtd'] ?? 0.0) * 100;
+    final double prcntPeso = (data['prcnt_peso'] ?? 0.0) * 100;
+
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: status.backgroundColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: status.color.withOpacity(0.3), width: 1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(backgroundColor: status.color, radius: 4),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: AppCss.minimumBold.setColor(status.color).setSize(11),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Elementos', style: AppCss.minimumRegular.setSize(10).setColor(Colors.grey[600]!)),
+                    Text(
+                      '${data['qtd']} (${prcntQtd.toStringAsFixed(0)}%)',
+                      style: AppCss.mediumBold.setSize(13),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('Peso (Kg)', style: AppCss.minimumRegular.setSize(10).setColor(Colors.grey[600]!)),
+                    Text(
+                      '${data['peso'].toStringAsFixed(1)} (${prcntPeso.toStringAsFixed(0)}%)',
+                      style: AppCss.mediumBold.setSize(13),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ],
         ),
       ),
