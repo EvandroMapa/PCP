@@ -335,76 +335,77 @@ class _ElementoArmacaoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onStatusPressed,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: elemento.status.backgroundColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: elemento.status.color.withOpacity(0.3),
-            width: 1.5,
-          ),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.black, width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
             ),
           ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    elemento.nome.toUpperCase(),
-                    style: AppCss.mediumBold.setSize(14).setColor(AppColors.primaryDark),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                if (elemento.arquivos.isNotEmpty)
-                  GestureDetector(
-                    onTap: onImagePressed,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: AppColors.secondary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Icon(Icons.image_outlined, color: AppColors.secondary, size: 18),
-                    ),
-                  ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: elemento.status.color,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
+            _buildHeader(),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
                     elemento.status.label.toUpperCase(),
-                    style: AppCss.minimumBold.setColor(
-                      elemento.status == ElementoStatus.armando ? Colors.black87 : Colors.white
-                    ).setSize(9),
+                    style: AppCss.largeBold.setSize(18).setColor(elemento.status.color).copyWith(letterSpacing: 1),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-            const Spacer(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildInfo('QTDE', '${elemento.qtde} pç'),
-                _buildInfo('PESO TOTAL', '${elemento.pesoTotal.toStringAsFixed(1)} kg'),
-                _buildInfo('ETIQUETAS', '${elemento.posicoes.length} os'),
-              ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildInfo('QTDE', '${elemento.qtde} pç'),
+                  _buildInfo('PESO TOTAL', '${elemento.pesoTotal.toStringAsFixed(1)} kg'),
+                  _buildInfo('ETIQUETAS', '${elemento.posicoes.length} os'),
+                ],
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      margin: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              elemento.nome.toUpperCase(),
+              style: AppCss.mediumBold.setSize(13).setColor(Colors.white),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (elemento.arquivos.isNotEmpty) ...[
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: onImagePressed,
+              child: const Icon(Icons.image_outlined, color: Colors.white70, size: 16),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -415,12 +416,12 @@ class _ElementoArmacaoCard extends StatelessWidget {
       children: [
         Text(
           label,
-          style: AppCss.minimumBold.setSize(8).setColor(Colors.grey[500]!),
+          style: AppCss.minimumBold.setSize(7).setColor(Colors.grey[500]!),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 1),
         Text(
           value,
-          style: AppCss.mediumBold.setSize(12).setColor(AppColors.primaryMain),
+          style: AppCss.mediumBold.setSize(13).setColor(Colors.black),
         ),
       ],
     );
