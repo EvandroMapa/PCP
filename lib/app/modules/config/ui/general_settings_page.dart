@@ -55,7 +55,7 @@ class GeneralSettingsPage extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: Border.all(color: Colors.grey[200]!),
+        side: BorderSide(color: Colors.grey[200]!),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
