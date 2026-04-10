@@ -488,7 +488,6 @@ class PedidoModel {
         cliente: cliente,
         obra: obra,
         produtos: produtos,
-        elementos: elementos,
         tipo: PedidoTipo.values.firstWhere(
             (e) => e.name == (map['tipo'] ?? 'cd'),
             orElse: () => PedidoTipo.cd),
