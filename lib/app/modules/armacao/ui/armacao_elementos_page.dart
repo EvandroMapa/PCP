@@ -385,6 +385,7 @@ class _ElementoArmacaoCard extends StatelessWidget {
 
   Widget _buildHeader() {
     return Container(
+      width: double.infinity,
       margin: const EdgeInsets.all(6),
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
@@ -396,7 +397,7 @@ class _ElementoArmacaoCard extends StatelessWidget {
         children: [
           Text(
             elemento.nome.toUpperCase(),
-            style: AppCss.largeBold.setSize(22).setColor(Colors.white),
+            style: AppCss.largeBold.setSize(20).setColor(Colors.white),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
