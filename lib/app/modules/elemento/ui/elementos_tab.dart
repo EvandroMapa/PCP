@@ -5,10 +5,7 @@ import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_controller.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
-<<<<<<< HEAD
-=======
 import 'package:aco_plus/app/modules/elemento/elemento_arquivo_model.dart';
->>>>>>> desenvolvimento
 import 'package:aco_plus/app/modules/elemento/ui/elemento_comparativo_dialog.dart';
 import 'package:aco_plus/app/modules/elemento/ui/elemento_form_dialog.dart';
 import 'package:file_picker/file_picker.dart';
@@ -216,114 +213,72 @@ class _ElementosTabState extends State<ElementosTab> {
                                 ),
                                 child: const Icon(Icons.auto_fix_normal_rounded,
                                     color: Colors.red, size: 18),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryMain,
-                          foregroundColor: Colors.white,
-                          elevation: 2,
-                          shadowColor: AppColors.primaryMain.withOpacity(0.4),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                        ),
-                        icon: const Icon(Icons.add_rounded, size: 20),
-                        label: const Text('Novo Elemento', style: TextStyle(fontWeight: FontWeight.bold)),
-                        onPressed: () => showElementoFormDialog(
-                          context,
-                          pedido: widget.pedido,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Botão de Comparativo (Status)
-                      InkWell(
-                        onTap: () => showElementoComparativoDialog(
-                          context,
-                          validacao: validacao,
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: validacao.isOk
-                                ? Colors.green.withOpacity(0.1)
-                                : Colors.red.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: validacao.isOk
-                                  ? Colors.green.withOpacity(0.2)
-                                  : Colors.red.withOpacity(0.2),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                validacao.isOk
-                                    ? Icons.check_circle_rounded
-                                    : Icons.warning_rounded,
-                                color: validacao.isOk ? Colors.green : Colors.red,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                'Comparativo',
-                                style: AppCss.smallBold.copyWith(
-                                  color: validacao.isOk
-                                      ? Colors.green.shade700
-                                      : Colors.red.shade700,
                                 ),
                               ),
-                            ],
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryMain,
+                            foregroundColor: Colors.white,
+                            elevation: 2,
+                            shadowColor: AppColors.primaryMain.withOpacity(0.4),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                          ),
+                          icon: const Icon(Icons.add_rounded, size: 20),
+                          label: const Text('Novo Elemento', style: TextStyle(fontWeight: FontWeight.bold)),
+                          onPressed: () => showElementoFormDialog(
+                            context,
+                            pedido: widget.pedido,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 8),
-                  // Botão de Comparativo (Status)
-                  InkWell(
-                    onTap: () => showElementoComparativoDialog(
-                      context,
-                      validacao: validacao,
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: validacao.isOk
-                            ? Colors.green.withOpacity(0.1)
-                            : Colors.red.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: validacao.isOk
-                              ? Colors.green.withOpacity(0.2)
-                              : Colors.red.withOpacity(0.2),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            validacao.isOk
-                                ? Icons.check_circle_rounded
-                                : Icons.warning_rounded,
-                            color: validacao.isOk ? Colors.green : Colors.red,
-                            size: 18,
+                        const SizedBox(width: 8),
+                        // Botão de Comparativo (Status)
+                        InkWell(
+                          onTap: () => showElementoComparativoDialog(
+                            context,
+                            validacao: validacao,
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Comparativo',
-                            style: AppCss.smallBold.copyWith(
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
                               color: validacao.isOk
-                                  ? Colors.green.shade700
-                                  : Colors.red.shade700,
+                                  ? Colors.green.withOpacity(0.1)
+                                  : Colors.red.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: validacao.isOk
+                                    ? Colors.green.withOpacity(0.2)
+                                    : Colors.red.withOpacity(0.2),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  validacao.isOk
+                                      ? Icons.check_circle_rounded
+                                      : Icons.warning_rounded,
+                                  color: validacao.isOk ? Colors.green : Colors.red,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Comparativo',
+                                  style: AppCss.smallBold.copyWith(
+                                    color: validacao.isOk
+                                        ? Colors.green.shade700
+                                        : Colors.red.shade700,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
+                    ],
                   ),
                 ],
               ),
@@ -371,8 +326,6 @@ class _ElementosTabState extends State<ElementosTab> {
     );
   }
 
-<<<<<<< HEAD
-=======
   void _showProgressDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -446,7 +399,6 @@ class _ElementosTabState extends State<ElementosTab> {
         },
       ),
     );
->>>>>>> desenvolvimento
   }
 }
 
@@ -713,6 +665,23 @@ class _ElementoArquivosDialog extends StatefulWidget {
 }
 
 class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
+  void _onUpload() async {
+     final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+    );
+
+    if (result != null && result.files.single.bytes != null) {
+      await elementoCtrl.onUploadArquivo(
+        result.files.single.bytes!,
+        result.files.single.name,
+        widget.elemento,
+        widget.pedido.id,
+      );
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -803,34 +772,5 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
         ),
       ],
     );
-  }
-
-  Future<void> _onUpload() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-    );
-
-    if (result != null && result.files.single.bytes != null) {
-      final file = result.files.single;
-      await elementoCtrl.onAddArquivo(
-        widget.elemento,
-        file.name,
-        file.bytes!,
-        _getMimeType(file.extension!),
-      );
-      setState(() {});
-      if (mounted) Navigator.pop(context);
-    }
-  }
-
-  String _getMimeType(String ext) {
-    switch (ext.toLowerCase()) {
-      case 'pdf': return 'application/pdf';
-      case 'jpg':
-      case 'jpeg': return 'image/jpeg';
-      case 'png': return 'image/png';
-      default: return 'application/octet-stream';
-    }
   }
 }

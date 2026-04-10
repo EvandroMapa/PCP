@@ -3,9 +3,7 @@ import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
-import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/divisor.dart';
-import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
@@ -41,36 +39,6 @@ class PedidoProdutosWidget extends StatelessWidget {
             children: [
               Text('${produto.produto.nome} - ${produto.produto.descricao}'),
               const W(16),
-<<<<<<< HEAD
-              if (produto.status.status.index >=
-                  PedidoProdutoStatus.aguardandoProducao.index) ...[
-                StreamOut(
-                  stream: FirestoreClient.ordens.dataStream.listen,
-                  builder: (_, __) {
-                    final ordem = pedidoCtrl.getOrdemByProduto(produto, true);
-                    if (ordem == null) return const SizedBox();
-                    return InkWell(
-                      onTap: () async {
-                        await push(contextGlobal, OrdemPage(ordem.id));
-                        pedidoCtrl.pedidoStream.update();
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          ordem.localizator,
-                          style: AppCss.mediumRegular.copyWith(
-                            fontSize: 12,
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-=======
               Builder(
                 builder: (context) {
                   final ordem = pedidoCtrl.getOrdemByProduto(produto, true);
@@ -96,7 +64,6 @@ class PedidoProdutosWidget extends StatelessWidget {
                           fontSize: 12,
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
->>>>>>> desenvolvimento
                         ),
                       ),
                     ),

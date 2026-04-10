@@ -23,23 +23,6 @@ class ElementoComparativoDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ok = validacao.isOk;
-<<<<<<< HEAD
-    return AlertDialog(
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Row(
-        children: [
-          Icon(
-            ok ? Icons.check_circle_rounded : Icons.warning_rounded,
-            color: ok ? Colors.green : Colors.red,
-            size: 24,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            ok ? 'Comparativo OK' : 'Divergência de Pesos',
-            style: AppCss.largeBold.copyWith(
-              color: ok ? Colors.green.shade800 : Colors.red.shade800,
-=======
     final color = ok ? Colors.green : Colors.red;
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -70,115 +53,46 @@ class ElementoComparativoDialog extends StatelessWidget {
               ok ? 'Comparativo OK' : 'Divergência de Pesos',
               style: AppCss.largeBold.setSize(20).setColor(color.shade800),
               overflow: TextOverflow.ellipsis,
->>>>>>> desenvolvimento
             ),
           ),
         ],
       ),
-<<<<<<< HEAD
-      content: SizedBox(
-        width: 450,
-=======
       content: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: 500,
           minWidth: screenWidth * 0.4 > 450 ? 450 : screenWidth * 0.8,
         ),
->>>>>>> desenvolvimento
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               ok
-<<<<<<< HEAD
-                  ? 'O somatório dos pesos dos elementos coincide com o total planejado no pedido.'
-                  : 'O somatório dos pesos dos elementos difere do total planejado no pedido.',
-              style: AppCss.mediumRegular.copyWith(color: Colors.grey[700]),
-            ),
-            const SizedBox(height: 20),
-=======
                   ? 'Excelente! O somatório dos elementos coincide perfeitamente com o total planejado no pedido.'
                   : 'Atenção! Foram encontradas divergências entre o planejado no pedido e a soma dos elementos cadastrados.',
               style: AppCss.mediumRegular.copyWith(color: Colors.grey[700]),
             ),
             const SizedBox(height: 24),
->>>>>>> desenvolvimento
             Row(
               children: [
                 Expanded(
                   child: _TotalBox(
-<<<<<<< HEAD
-                    label: 'Total Pedido',
-=======
                     label: 'TOTAL DO PEDIDO',
->>>>>>> desenvolvimento
                     value: '${_fmt(validacao.totalPedidoKg)} kg',
                     color: Colors.blueGrey,
                   ),
                 ),
-<<<<<<< HEAD
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _TotalBox(
-                    label: 'Total Elementos',
-                    value: '${_fmt(validacao.totalElementosKg)} kg',
-                    color: ok ? Colors.green : Colors.red,
-=======
                 const SizedBox(width: 16),
                 Expanded(
                   child: _TotalBox(
                     label: 'TOTAL ELEMENTOS',
                     value: '${_fmt(validacao.totalElementosKg)} kg',
                     color: color,
->>>>>>> desenvolvimento
                   ),
                 ),
               ],
             ),
             if (validacao.divergencias.isNotEmpty) ...[
-<<<<<<< HEAD
-              const SizedBox(height: 20),
-              Text(
-                'Divergências por Bitola:',
-                style: AppCss.mediumBold.copyWith(color: Colors.red.shade700),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                maxHeight: 200,
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red.shade100),
-                ),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.all(12),
-                  itemCount: validacao.divergencias.length,
-                  separatorBuilder: (_, __) => Divider(color: Colors.red.shade100),
-                  itemBuilder: (_, i) {
-                    final d = validacao.divergencias[i];
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          d.produto.produto.labelMinified,
-                          style: AppCss.smallBold.copyWith(color: Colors.red.shade900),
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Esperado: ${_fmt(d.esperadoKg)} kg', style: AppCss.smallRegular),
-                            Text('Calculado: ${_fmt(d.calculadoKg)} kg', style: AppCss.smallRegular),
-                          ],
-                        ),
-                        Text(
-                          'Diferença: ${_fmt(d.diferencaKg)} kg',
-                          style: AppCss.smallBold.copyWith(color: Colors.red),
-                        ),
-                      ],
-=======
               const SizedBox(height: 24),
               Row(
                 children: [
@@ -242,27 +156,16 @@ class ElementoComparativoDialog extends StatelessWidget {
                           ),
                         ],
                       ),
->>>>>>> desenvolvimento
                     );
                   },
                 ),
               ),
             ],
-<<<<<<< HEAD
-=======
             const SizedBox(height: 8),
->>>>>>> desenvolvimento
           ],
         ),
       ),
       actions: [
-<<<<<<< HEAD
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(
-            'Fechar',
-            style: AppCss.mediumBold.setColor(AppColors.primaryMain),
-=======
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
@@ -279,14 +182,11 @@ class ElementoComparativoDialog extends StatelessWidget {
               'Fechar Comparativo',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
->>>>>>> desenvolvimento
           ),
         ),
       ],
     );
   }
-<<<<<<< HEAD
-=======
 
   Widget _miniLabel(String label, String value) {
     return Column(
@@ -297,7 +197,6 @@ class ElementoComparativoDialog extends StatelessWidget {
       ],
     );
   }
->>>>>>> desenvolvimento
 }
 
 class _TotalBox extends StatelessWidget {
@@ -309,28 +208,15 @@ class _TotalBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-<<<<<<< HEAD
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.2)),
-=======
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
         color: color.withOpacity(0.04),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withOpacity(0.15), width: 1.2),
->>>>>>> desenvolvimento
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-<<<<<<< HEAD
-          Text(label, style: AppCss.smallRegular.copyWith(color: color, fontSize: 11)),
-          const SizedBox(height: 4),
-          Text(value, style: AppCss.largeBold.copyWith(color: color, fontSize: 16)),
-=======
           Text(label,
               style: AppCss.minimumBold.copyWith(
                 color: color.withOpacity(0.6),
@@ -344,7 +230,6 @@ class _TotalBox extends StatelessWidget {
                 fontSize: 18,
                 letterSpacing: -0.5,
               )),
->>>>>>> desenvolvimento
         ],
       ),
     );
