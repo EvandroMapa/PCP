@@ -3,6 +3,38 @@ import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_arquivo_model.dart';
+import 'package:flutter/material.dart';
+
+// ─── STATUS DO ELEMENTO ───────────────────────────────────────────────────────
+enum ElementoStatus {
+  aguardando,
+  armando,
+  pronto;
+
+  String get label {
+    switch (this) {
+      case ElementoStatus.aguardando: return 'Aguardando';
+      case ElementoStatus.armando: return 'Armando';
+      case ElementoStatus.pronto: return 'Pronto';
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case ElementoStatus.aguardando: return Colors.grey[400]!;
+      case ElementoStatus.armando: return Colors.yellow[700]!;
+      case ElementoStatus.pronto: return Colors.green[600]!;
+    }
+  }
+
+  Color get backgroundColor {
+    switch (this) {
+      case ElementoStatus.aguardando: return Colors.grey[100]!;
+      case ElementoStatus.armando: return Colors.yellow[50]!;
+      case ElementoStatus.pronto: return Colors.green[50]!;
+    }
+  }
+}
 
 // ─── POSIÇÃO / OS ─────────────────────────────────────────────────────────────
 class ElementoPosicaoModel {
@@ -61,6 +93,7 @@ class ElementoModel {
   final String nome;
   final int qtde;
   final DateTime createdAt;
+  final ElementoStatus status;
   List<ElementoPosicaoModel> posicoes;
   List<ElementoArquivoModel> arquivos;
 
@@ -72,6 +105,7 @@ class ElementoModel {
     required this.createdAt,
     required this.posicoes,
     required this.arquivos,
+    this.status = ElementoStatus.aguardando,
   });
 
   /// Peso total calculado (soma das posições * qtde)
@@ -113,6 +147,9 @@ class ElementoModel {
           : DateTime.now(),
       posicoes: posicoes,
       arquivos: arquivos,
+      status: ElementoStatus.values.firstWhere(
+          (e) => e.name == (map['status'] ?? 'aguardando'),
+          orElse: () => ElementoStatus.aguardando),
     );
   }
 
@@ -121,6 +158,7 @@ class ElementoModel {
         'pedido_id': pedidoId,
         'nome': nome,
         'qtde': qtde,
+        'status': status.name,
       };
 }
 

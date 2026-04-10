@@ -80,7 +80,7 @@ class GeneralSettingsPage extends StatelessWidget {
                   children: [
                     _numericButton(
                       icon: Icons.remove,
-                      onPressed: value > 0 
+                      onPressed: value > 1 
                           ? () => PreferencesService.maxElementosProducao.add(value - 1)
                           : null,
                     ),
@@ -102,7 +102,7 @@ class GeneralSettingsPage extends StatelessWidget {
                     const SizedBox(width: 24),
                     _numericButton(
                       icon: Icons.add,
-                      onPressed: value < 99 
+                      onPressed: value < 30 
                           ? () => PreferencesService.maxElementosProducao.add(value + 1)
                           : null,
                     ),

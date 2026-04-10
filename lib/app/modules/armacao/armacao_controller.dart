@@ -144,4 +144,52 @@ class ArmacaoController {
   void onSearch(String val) {
     _syncSummariesAndFilter(AppSupabaseClient.pedidos.data);
   }
+
+  Future<void> updateElementoStatus(
+      PedidoModel pedido, ElementoModel elemento, ElementoStatus newStatus) async {
+    try {
+      // Regra de negócio: Limite de produção simultânea
+      if (newStatus == ElementoStatus.armando) {
+        final countArmando =
+            pedido.elementos.where((e) => e.status == ElementoStatus.armando).length;
+        final limit = PreferencesService.maxElementosProducao.value;
+
+        if (countArmando >= limit) {
+          showSnackbar(
+            title: 'Limite Atingido',
+            message: 'Você só pode armar até $limit elementos simultaneamente.',
+            type: SnackbarType.warning,
+          );
+          return;
+        }
+      }
+
+      await SupabaseService.client
+          .from('elementos')
+          .update({'status': newStatus.name}).eq('id', elemento.id);
+
+      // Atualizar localmente
+      final index = pedido.elementos.indexWhere((e) => e.id == elemento.id);
+      if (index != -1) {
+        final updatedElemento = ElementoModel(
+          id: elemento.id,
+          pedidoId: elemento.pedidoId,
+          nome: elemento.nome,
+          qtde: elemento.qtde,
+          createdAt: elemento.createdAt,
+          posicoes: elemento.posicoes,
+          arquivos: elemento.arquivos,
+          status: newStatus,
+        );
+        pedido.elementos[index] = updatedElemento;
+      }
+    } catch (e) {
+      print('Erro ao atualizar status do elemento: $e');
+      showSnackbar(
+        title: 'Erro',
+        message: 'Não foi possível atualizar o status.',
+        type: SnackbarType.error,
+      );
+    }
+  }
 }

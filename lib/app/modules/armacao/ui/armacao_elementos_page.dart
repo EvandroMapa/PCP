@@ -76,81 +76,151 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                   itemCount: widget.pedido.elementos.length,
                   itemBuilder: (context, index) {
                     final elemento = widget.pedido.elementos[index];
-                    return _ElementoArmacaoCard(elemento: elemento);
+                    return _ElementoArmacaoCard(
+                      elemento: elemento,
+                      onPressed: () => _showStatusPicker(elemento),
+                    );
                   },
                 ),
+    );
+  }
+
+  void _showStatusPicker(ElementoModel elemento) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'ALTERAR STATUS: ${elemento.nome}',
+              style: AppCss.mediumBold.setSize(16),
+            ),
+            const SizedBox(height: 24),
+            ...ElementoStatus.values.map((status) => ListTile(
+                  leading: CircleAvatar(backgroundColor: status.color, radius: 12),
+                  title: Text(status.label, style: AppCss.mediumBold),
+                  selected: elemento.status == status,
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await armacaoCtrl.updateElementoStatus(widget.pedido, elemento, status);
+                    setState(() {});
+                  },
+                )),
+          ],
+        ),
+      ),
     );
   }
 }
 
 class _ElementoArmacaoCard extends StatelessWidget {
   final ElementoModel elemento;
-  const _ElementoArmacaoCard({required this.elemento});
+  final VoidCallback onPressed;
+  const _ElementoArmacaoCard({required this.elemento, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: elemento.status.backgroundColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: elemento.status == ElementoStatus.aguardando 
+                ? Colors.grey[200]! 
+                : elemento.status.color.withOpacity(0.5), 
+            width: 2,
           ),
-        ],
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            elemento.nome,
-            style: AppCss.largeBold.setSize(18).setColor(AppColors.primaryMain),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Icon(Icons.scale_rounded, size: 18, color: Colors.grey[500]!),
-              const SizedBox(width: 8),
-              Text(
-                '${elemento.pesoTotal.toStringAsFixed(2)} kg',
-                style: AppCss.largeBold.setSize(20).setColor(Colors.grey[800]!),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.confirmation_number_outlined, size: 18, color: Colors.grey[500]!),
-              const SizedBox(width: 8),
-              Text(
-                '${elemento.posicoes.length} ETIQUETAS (OS)',
-                style: AppCss.mediumBold.setSize(16).setColor(Colors.grey[700]!),
-              ),
-            ],
-          ),
-          if (elemento.qtde > 1)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  elemento.nome,
+                  style: AppCss.largeBold.setSize(18).setColor(
+                    elemento.status == ElementoStatus.aguardando 
+                        ? AppColors.primaryMain 
+                        : AppColors.primaryDark
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.scale_rounded, size: 18, color: Colors.grey[600]!),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${elemento.pesoTotal.toStringAsFixed(2)} kg',
+                      style: AppCss.largeBold.setSize(18).setColor(Colors.grey[800]!),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.confirmation_number_outlined, size: 18, color: Colors.grey[600]!),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${elemento.posicoes.length} ETIQUETAS (OS)',
+                      style: AppCss.mediumBold.setSize(14).setColor(Colors.grey[700]!),
+                    ),
+                  ],
+                ),
+                if (elemento.qtde > 1)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.secondary.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Qtde: ${elemento.qtde}',
+                        style: AppCss.mediumBold.setColor(AppColors.secondary).setSize(12),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            Positioned(
+              top: 0,
+              right: 0,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.secondary.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(6),
+                  color: elemento.status.color,
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  'Qtde: ${elemento.qtde}',
-                  style: AppCss.mediumBold.setColor(AppColors.secondary).setSize(12),
+                  elemento.status.label.toUpperCase(),
+                  style: AppCss.minimumBold.setColor(
+                    elemento.status == ElementoStatus.armando ? Colors.black87 : Colors.white
+                  ).setSize(10),
                 ),
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
