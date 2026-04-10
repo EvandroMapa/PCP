@@ -14,6 +14,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_
 import 'package:aco_plus/app/core/client/firestore/collections/tag/models/tag_model.dart';
 import 'package:aco_plus/app/core/components/archive/archive_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
+import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/components/checklist/check_item_model.dart';
@@ -54,6 +55,7 @@ class PedidoModel {
   String? pai;
   bool isFilho = false;
   String? romaneio;
+  final List<ElementoModel> elementos;
 
   // New financial fields
   final double valorSubtotal;
@@ -80,6 +82,7 @@ class PedidoModel {
     index: 10000000,
     histories: [],
     isArchived: false,
+    elementos: [],
     archives: [],
     checklistId: '',
     planilhamento: '',
@@ -408,6 +411,7 @@ class PedidoModel {
       valorTaxas: (map['valor_taxas'] ?? 0.0).toDouble(),
       valorDesconto: (map['valor_desconto'] ?? 0.0).toDouble(),
       valorTotal: (map['valor_total'] ?? 0.0).toDouble(),
+      elementos: [],
     );
   }
 
@@ -444,6 +448,7 @@ class PedidoModel {
     List<Map<String, dynamic>>? produtosRaw,
     List<String>? tagsIds,
     List<Map<String, dynamic>>? archivesRaw,
+    List<Map<String, dynamic>>? elementosRaw,
   }) {
     late ClienteModel cliente;
     late ObraModel obra;
@@ -469,6 +474,10 @@ class PedidoModel {
         ? produtosRaw.map((p) => PedidoProdutoModel.fromSupabaseMap(p)).toList()
         : <PedidoProdutoModel>[];
 
+    final elementos = elementosRaw != null
+        ? elementosRaw.map((e) => ElementoModel.fromSupabaseMap(e)).toList()
+        : <ElementoModel>[];
+
     final pedido = PedidoModel(
         id: (map['id'] ?? '').toString(),
         localizador: (map['localizador'] ?? '').toString(),
@@ -478,6 +487,7 @@ class PedidoModel {
         cliente: cliente,
         obra: obra,
         produtos: produtos,
+        elementos: elementos,
         tipo: PedidoTipo.values.firstWhere(
             (e) => e.name == (map['tipo'] ?? 'cd'),
             orElse: () => PedidoTipo.cd),
@@ -617,6 +627,7 @@ class PedidoModel {
     double? valorTaxas,
     double? valorDesconto,
     double? valorTotal,
+    List<ElementoModel>? elementos,
   }) {
     return PedidoModel(
       id: id ?? this.id,
@@ -629,6 +640,7 @@ class PedidoModel {
       cliente: cliente ?? this.cliente,
       obra: obra ?? this.obra,
       produtos: produtos ?? this.produtos,
+      elementos: elementos ?? this.elementos,
       tipo: tipo ?? this.tipo,
       statusess: statusess ?? this.statusess,
       deliveryAt: deliveryAt ?? this.deliveryAt,
