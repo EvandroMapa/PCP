@@ -193,8 +193,8 @@ class PedidoModel {
     this.valorTaxas = 0.0,
     this.valorDesconto = 0.0,
     this.valorTotal = 0.0,
-    required this.armacaoResumo,
-  });
+    Map<String, dynamic>? armacaoResumo,
+  }) : armacaoResumo = armacaoResumo ?? {};
 
 
   double getQtdeDirecionada(PedidoProdutoModel produto) {
@@ -551,6 +551,7 @@ class PedidoModel {
         valorTaxas: _parseNum(map['valor_taxas']),
         valorDesconto: _parseNum(map['valor_desconto']),
         valorTotal: _parseNum(map['valor_total']),
+        armacaoResumo: map['armacao_resumo'] ?? {},
         elementos: elementos,
     );
     
