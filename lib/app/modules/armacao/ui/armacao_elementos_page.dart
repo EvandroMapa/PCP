@@ -53,7 +53,16 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
         elevation: 0,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text('Aguarde, carregando elementos...', style: AppCss.mediumRegular),
+                ],
+              ),
+            )
           : widget.pedido.elementos.isEmpty
               ? const EmptyData(message: 'Nenhum elemento cadastrado!')
               : GridView.builder(
