@@ -369,9 +369,9 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.bug_report, color: Colors.white, size: 14),
+                    const Icon(Icons.history, color: Colors.white, size: 14),
                     const W(4),
-                    Text('DEBUG PDF', style: AppCss.minimumBold.setSize(10).setColor(Colors.white)),
+                    Text('MEMÓRIA DE IMPORTAÇÃO', style: AppCss.minimumBold.setSize(10).setColor(Colors.white)),
                   ],
                 ),
               ),

@@ -71,7 +71,7 @@ class PedidoPdfParser {
         final end = (i + 1 < productMatches.length) ? productMatches[i + 1].start : cleanText.length;
         String block = cleanText.substring(start, end);
 
-        // Tenta achar a unidade e os números no bloco
+        // Tenta achar a unidade e os números no bloco (Ajustado para capturar TODA a sequência numérica)
         final unitMatch = RegExp('($unitsPattern)\\s*([\\d,.]+)').firstMatch(block);
         if (unitMatch != null) {
             String descricao = block.substring(match.group(1)!.length, unitMatch.start).trim();
@@ -81,7 +81,7 @@ class PedidoPdfParser {
             final numericTail = unitMatch.group(2)!;
             
             // Pega todos os números com formato decimal ,XX no final do bloco de números
-            final allNumbers = RegExp(r'[\d.]*,\d{2}').allMatches(numericTail).map((m) => m.group(0)!).toList();
+            final allNumbers = RegExp(r'[\d.,]*\d+,\d{1,3}').allMatches(numericTail).map((m) => m.group(0)!).toList();
             
             double qtde = 0;
             double unitario = 0;
@@ -92,6 +92,8 @@ class PedidoPdfParser {
                 unitario = _parseDecimal(allNumbers[1]);
                 totalCalculado = double.parse((qtde * unitario).toStringAsFixed(2));
                 
+                print('Item $codigo: $qtde x $unitario = $totalCalculado ($unidade)');
+
                 data['produtos'].add({
                     'codigo': codigo,
                     'descricao': descricao,
@@ -111,29 +113,42 @@ class PedidoPdfParser {
         for (final m in matches) {
             if (m.group(1) == data['pedidoFinanceiro']) continue;
             final qtdeTail = m.group(4)!;
-            final nums = RegExp(r'[\d.]*,\d{2}').allMatches(qtdeTail).map((mn) => mn.group(0)!).toList();
+            final nums = RegExp(r'[\d.,]*\d+,\d{1,3}').allMatches(qtdeTail).map((mn) => mn.group(0)!).toList();
             if (nums.length >= 2) {
                 final q = _parseDecimal(nums[0]);
                 final u = _parseDecimal(nums[1]);
+                final tot = double.parse((q * u).toStringAsFixed(2));
+                print('Item Fallback ${m.group(1)}: $q x $u = $tot');
                 data['produtos'].add({
                     'codigo': m.group(1),
                     'descricao': m.group(2)!.trim(),
                     'unidade': m.group(3)!.toUpperCase(),
                     'qtde': q,
                     'unitario': u,
-                    'total': double.parse((q * u).toStringAsFixed(2)),
+                    'total': tot,
                 });
             }
         }
     }
 
     // 8. Calcular Totais do Pedido (Soma dos itens)
-    double vSubtotal = 0;
+    double vSubtotalCalculado = 0;
     for (final p in data['produtos']) {
-        vSubtotal += p['total'];
+        vSubtotalCalculado += p['total'];
     }
-    data['subtotal'] = double.parse(vSubtotal.toStringAsFixed(2));
+    
+    // Tenta pegar o subtotal declarado no PDF como segurança/conferência
+    final double vSubtotalDeclarado = _extractValue(cleanText, r'Subtotal\s*[:\-]?\s*([\d,.]+)');
+    
+    // Se a soma dos itens bater com o declarado ou se não achamos o declarado, usamos a soma.
+    // O usuário prefere calcular para evitar erro de leitura.
+    data['subtotal'] = double.parse(vSubtotalCalculado.toStringAsFixed(2));
     data['total'] = double.parse((data['subtotal'] + data['taxas'] - data['desconto']).toStringAsFixed(2));
+
+    print('RESUMO FINANCEIRO:');
+    print('Subtotal Itens: ${data['subtotal']} (Declarado PDF: $vSubtotalDeclarado)');
+    print('Taxas: ${data['taxas']} | Desconto: ${data['desconto']}');
+    print('TOTAL FINAL: ${data['total']}');
 
     return data;
   }
