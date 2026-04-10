@@ -43,9 +43,9 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
       appBar: AppBar(
         title: const Text('ARMAÇÃO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.black, // Estilo industrial
-        actions: const [
+        actions: [
           FullscreenButton(),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
         ],
       ),
       body: StreamOut<bool>(

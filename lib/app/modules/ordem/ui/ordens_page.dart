@@ -41,9 +41,9 @@ class _OrdensPageState extends State<OrdensPage> {
     if (!widget.standalone) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         baseCtrl.appBarActionsStream.add(usuario.isOperador
-            ? [const FullscreenButton()]
+            ? [FullscreenButton()]
             : [
-                const FullscreenButton(),
+                FullscreenButton(),
                 IconButton(
                   onPressed: () => openInNewTab('/ordens'),
                   icon: const Icon(Icons.open_in_new, color: Colors.white),
@@ -91,7 +91,7 @@ class _OrdensPageState extends State<OrdensPage> {
           title: const Text('Ordens de Produção', style: TextStyle(color: Colors.white)),
           backgroundColor: AppColors.primaryMain,
           actions: [
-            if (usuario.isOperador) const FullscreenButton(),
+            if (usuario.isOperador) FullscreenButton(),
             if (!usuario.isOperador) ...[
               IconButton(
                 onPressed: () => push(context, const OrdensArquivadasPage()),

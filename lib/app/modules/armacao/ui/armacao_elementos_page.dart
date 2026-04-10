@@ -90,9 +90,9 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
         ),
         backgroundColor: AppColors.secondary,
         elevation: 0,
-        actions: const [
+        actions: [
           FullscreenButton(),
-          SizedBox(width: 8),
+          const SizedBox(width: 8),
         ],
       ),
       body: _isLoading
