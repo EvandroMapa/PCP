@@ -186,17 +186,17 @@ class _PedidoArmacaoCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: AppCss.minimumBold.setSize(13).setColor(color).copyWith(letterSpacing: 1),
+            style: AppCss.largeBold.setSize(15).setColor(color).copyWith(letterSpacing: 1),
           ),
           const SizedBox(height: 16),
           Text(
             pc,
-            style: AppCss.largeBold.setSize(26).setColor(Colors.black),
+            style: AppCss.largeBold.setSize(29).setColor(Colors.black),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
             kg,
-            style: AppCss.largeBold.setSize(18).setColor(Colors.black),
+            style: AppCss.largeBold.setSize(20).setColor(Colors.black),
           ),
         ],
       ),
