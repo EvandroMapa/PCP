@@ -107,11 +107,11 @@ class _ElementoArmacaoCard extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              Icon(Icons.scale_rounded, size: 18, color: Colors.grey[500]),
+              Icon(Icons.scale_rounded, size: 18, color: Colors.grey[500]!),
               const SizedBox(width: 8),
               Text(
                 '${elemento.pesoTotal.toStringAsFixed(2)} kg',
-                style: AppCss.largeBold.setSize(20).setColor(Colors.grey[800]),
+                style: AppCss.largeBold.setSize(20).setColor(Colors.grey[800]!),
               ),
             ],
           ),

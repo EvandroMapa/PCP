@@ -3,7 +3,8 @@ import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:flutter/material.dart';
 
 class EmptyData extends StatelessWidget {
-  const EmptyData({super.key});
+  final String? message;
+  const EmptyData({this.message, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +13,7 @@ class EmptyData extends StatelessWidget {
       children: [
         const Icon(Icons.drafts, color: Colors.black, size: 48),
         const H(16),
-        Text('Nenhum dado encontrado', style: AppCss.mediumRegular),
+        Text(message ?? 'Nenhum dado encontrado', style: AppCss.mediumRegular),
       ],
     );
   }

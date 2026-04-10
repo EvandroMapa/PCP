@@ -38,7 +38,7 @@ class ArmacaoController {
   final Map<String, ArmacaoSummary> _summaries = {};
 
   void onInit() {
-    AppSupabaseClient.pedidos.stream.listen((pedidos) {
+    AppSupabaseClient.pedidos.dataStream.listen((pedidos) {
       _syncSummariesAndFilter(pedidos);
     });
   }

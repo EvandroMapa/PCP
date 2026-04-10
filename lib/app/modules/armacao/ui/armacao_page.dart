@@ -48,7 +48,6 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
               controller: armacaoCtrl.search,
               suffixIcon: Icons.search,
               onChanged: armacaoCtrl.onSearch,
-              color: AppColors.white,
             ),
           ),
           Expanded(
@@ -164,7 +163,7 @@ class _PedidoArmacaoCard extends StatelessWidget {
                             ),
                             child: Text(
                               '${produto.labelMinified}: ${e.value.toStringAsFixed(1)}kg',
-                              style: AppCss.mediumBold.setSize(12).setColor(Colors.grey[800]),
+                              style: AppCss.mediumBold.setSize(12).setColor(Colors.grey[800]!),
                             ),
                           );
                         }).toList(),
@@ -176,7 +175,7 @@ class _PedidoArmacaoCard extends StatelessWidget {
                       children: [
                         Text(
                           'TOTAL:',
-                          style: AppCss.minimumBold.setColor(Colors.grey[500]),
+                          style: AppCss.minimumBold.setColor(Colors.grey[500]!),
                         ),
                         const SizedBox(width: 8),
                         Text(

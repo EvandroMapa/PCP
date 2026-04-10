@@ -8,6 +8,7 @@ class AppScaffold extends StatelessWidget {
   final GlobalKey<ScaffoldState>? scaffoldKey;
   final Widget? drawer;
   final bool resizeAvoid;
+  final Color? backgroundColor;
 
   const AppScaffold({
     super.key,
@@ -18,6 +19,7 @@ class AppScaffold extends StatelessWidget {
     this.scaffoldKey,
     this.drawer,
     this.resizeAvoid = false,
+    this.backgroundColor,
   });
 
   @override
@@ -29,6 +31,7 @@ class AppScaffold extends StatelessWidget {
       bottomNavigationBar: bottomNav,
       floatingActionButton: fab,
       resizeToAvoidBottomInset: resizeAvoid,
+      backgroundColor: backgroundColor,
       body: body,
     );
   }

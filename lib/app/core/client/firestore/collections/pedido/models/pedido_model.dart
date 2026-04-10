@@ -186,6 +186,7 @@ class PedidoModel {
     required this.pai,
     required this.isFilho,
     required this.romaneio,
+    required this.elementos,
     this.valorSubtotal = 0.0,
     this.valorTaxas = 0.0,
     this.valorDesconto = 0.0,
@@ -547,6 +548,7 @@ class PedidoModel {
         valorTaxas: _parseNum(map['valor_taxas']),
         valorDesconto: _parseNum(map['valor_desconto']),
         valorTotal: _parseNum(map['valor_total']),
+        elementos: elementos,
     );
     
     return pedido;
