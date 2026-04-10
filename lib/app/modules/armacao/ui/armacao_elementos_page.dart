@@ -391,23 +391,24 @@ class _ElementoArmacaoCard extends StatelessWidget {
         color: Colors.black,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Row(
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          Expanded(
-            child: Text(
-              elemento.nome.toUpperCase(),
-              style: AppCss.largeBold.setSize(18).setColor(Colors.white),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+          Text(
+            elemento.nome.toUpperCase(),
+            style: AppCss.largeBold.setSize(22).setColor(Colors.white),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          if (elemento.arquivos.isNotEmpty) ...[
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: onImagePressed,
-              child: const Icon(Icons.image_outlined, color: Colors.white, size: 20),
+          if (elemento.arquivos.isNotEmpty)
+            Positioned(
+              right: 0,
+              child: GestureDetector(
+                onTap: onImagePressed,
+                child: const Icon(Icons.image_outlined, color: Colors.white, size: 20),
+              ),
             ),
-          ],
         ],
       ),
     );
