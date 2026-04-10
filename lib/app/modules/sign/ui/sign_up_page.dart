@@ -5,6 +5,7 @@ import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/modules/sign/sign_controller.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class SignUpPage extends StatefulWidget {
