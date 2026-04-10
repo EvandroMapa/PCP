@@ -1,5 +1,4 @@
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/components/app_field.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -10,6 +9,7 @@ import 'package:aco_plus/app/modules/armacao/armacao_controller.dart';
 import 'package:aco_plus/app/modules/armacao/ui/armacao_elementos_page.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:flutter/material.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
 
 class ArmacaoPage extends StatefulWidget {
   const ArmacaoPage({super.key});
@@ -79,8 +79,7 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
                     itemCount: pedidos.length,
                     itemBuilder: (context, index) {
                       final pedido = pedidos[index];
-                      final summary = armacaoCtrl.getSummary(pedido.id);
-                      return _PedidoArmacaoCard(pedido: pedido, summary: summary);
+                      return _PedidoArmacaoCard(pedido: pedido);
                     },
                   ),
           );
@@ -92,16 +91,36 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
 
 class _PedidoArmacaoCard extends StatelessWidget {
   final PedidoModel pedido;
-  final ArmacaoSummary summary;
 
-  const _PedidoArmacaoCard({required this.pedido, required this.summary});
+  const _PedidoArmacaoCard({required this.pedido});
 
   @override
   Widget build(BuildContext context) {
+    final resumo = pedido.armacaoResumo['details'] ?? {};
+    final double totalQtd = (pedido.armacaoResumo['total_qtd'] ?? 0).toDouble();
+    final double totalPeso = (pedido.armacaoResumo['total_peso'] ?? 0).toDouble();
+
+    final List<_ChartData> qtdData = [
+      _ChartData('Aguardando', (resumo['aguardando']?['qtd'] ?? 0).toDouble(), Colors.blue),
+      _ChartData('Armando', (resumo['armando']?['qtd'] ?? 0).toDouble(), Colors.orange),
+      _ChartData('Pronto', (resumo['pronto']?['qtd'] ?? 0).toDouble(), Colors.green),
+    ];
+
+    if (totalQtd == 0) qtdData.add(_ChartData('Vazio', 1, Colors.grey[200]!));
+
+    final List<_ChartData> pesoData = [
+      _ChartData('Aguardando', (resumo['aguardando']?['peso'] ?? 0).toDouble(), Colors.blue),
+      _ChartData('Armando', (resumo['armando']?['peso'] ?? 0).toDouble(), Colors.orange),
+      _ChartData('Pronto', (resumo['pronto']?['peso'] ?? 0).toDouble(), Colors.green),
+    ];
+
+    if (totalPeso == 0) pesoData.add(_ChartData('Vazio', 1, Colors.grey[200]!));
+
     return InkWell(
       onTap: () => push(context, ArmacaoElementosPage(pedido: pedido)),
       borderRadius: BorderRadius.circular(20),
       child: Container(
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: BorderRadius.circular(20),
@@ -114,42 +133,80 @@ class _PedidoArmacaoCard extends StatelessWidget {
           ],
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
                 color: AppColors.primaryMain.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 pedido.localizador,
-                style: AppCss.largeBold.setSize(30).setColor(AppColors.primaryDark),
+                style: AppCss.largeBold.setSize(20).setColor(AppColors.primaryDark),
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.inventory_2_outlined, color: Colors.grey[600]!, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  '${summary.totalElementos} ELEMENTOS',
-                  style: AppCss.mediumBold.setSize(20).setColor(Colors.grey[700]!),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
               pedido.cliente.nome.toUpperCase(),
-              style: AppCss.minimumBold.setSize(12).setColor(Colors.grey[400]!),
+              style: AppCss.minimumBold.setSize(10).setColor(Colors.grey[400]!),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
+            const Spacer(),
+            Row(
+              children: [
+                Expanded(child: _buildChart('PEÇAS', qtdData, totalQtd.toInt().toString())),
+                const SizedBox(width: 8),
+                Expanded(child: _buildChart('PESO (KG)', pesoData, totalPeso.toStringAsFixed(0))),
+              ],
+            ),
+            const Spacer(),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildChart(String title, List<_ChartData> data, String total) {
+    return Column(
+      children: [
+        SizedBox(
+          height: 100,
+          child: SfCircularChart(
+            margin: EdgeInsets.zero,
+            series: <CircularSeries>[
+              DoughnutSeries<_ChartData, String>(
+                dataSource: data,
+                xValueMapper: (_ChartData data, _) => data.x,
+                yValueMapper: (_ChartData data, _) => data.y,
+                pointColorMapper: (_ChartData data, _) => data.color,
+                innerRadius: '70%',
+                animationDuration: 1000,
+              ),
+            ],
+            annotations: <CircularChartAnnotation>[
+              CircularChartAnnotation(
+                widget: Text(
+                  total,
+                  style: AppCss.mediumBold.setSize(14).setColor(AppColors.secondary),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Text(title, style: AppCss.minimumBold.setSize(9).setColor(Colors.grey[500]!)),
+      ],
+    );
+  }
+}
+
+class _ChartData {
+  _ChartData(this.x, this.y, this.color);
+  final String x;
+  final double y;
+  final Color color;
 }
