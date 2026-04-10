@@ -91,17 +91,16 @@ class _PedidoArmacaoCard extends StatelessWidget {
     
     return InkWell(
       onTap: () => push(context, ArmacaoElementosPage(pedido: pedido)),
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(30),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.grey.withOpacity(0.15), width: 1),
+          borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primaryDark.withOpacity(0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 30,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
@@ -152,7 +151,7 @@ class _PedidoArmacaoCard extends StatelessWidget {
 
   Widget _vDivider() {
     return Container(
-      width: 1.5,
+      width: 1,
       height: 45,
       color: Colors.grey.withOpacity(0.1),
     );
@@ -161,16 +160,9 @@ class _PedidoArmacaoCard extends StatelessWidget {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-      decoration: BoxDecoration(
-        color: AppColors.primaryDark,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      decoration: const BoxDecoration(
+        color: Color(0xFF0F172A), // Deep Navy do Mockup
       ),
       child: Column(
         children: [
@@ -178,10 +170,10 @@ class _PedidoArmacaoCard extends StatelessWidget {
             pedido.localizador,
             style: AppCss.largeBold.setSize(32).setColor(Colors.white).copyWith(letterSpacing: 1.5),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
             pedido.cliente.nome.toUpperCase(),
-            style: AppCss.minimumBold.setSize(12).setColor(Colors.white.withOpacity(0.7)),
+            style: AppCss.minimumBold.setSize(12).setColor(Colors.white70),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -196,17 +188,17 @@ class _PedidoArmacaoCard extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(6),
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               title,
-              style: AppCss.minimumBold.setSize(12).setColor(color),
+              style: AppCss.minimumBold.setSize(11).setColor(color),
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
           Text(
             pc,
             style: AppCss.largeBold.setSize(24).setColor(color),
@@ -214,7 +206,7 @@ class _PedidoArmacaoCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             kg,
-            style: AppCss.mediumBold.setSize(18).setColor(Colors.grey[700]!),
+            style: AppCss.mediumBold.setSize(18).setColor(const Color(0xFF64748B)),
           ),
         ],
       ),
