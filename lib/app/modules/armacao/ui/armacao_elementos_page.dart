@@ -124,6 +124,17 @@ class _ElementoArmacaoCard extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.confirmation_number_outlined, size: 18, color: Colors.grey[500]!),
+              const SizedBox(width: 8),
+              Text(
+                '${elemento.posicoes.length} ETIQUETAS (OS)',
+                style: AppCss.mediumBold.setSize(16).setColor(Colors.grey[700]!),
+              ),
+            ],
+          ),
           if (elemento.qtde > 1)
             Padding(
               padding: const EdgeInsets.only(top: 8),
