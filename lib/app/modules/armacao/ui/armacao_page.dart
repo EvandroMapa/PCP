@@ -9,6 +9,7 @@ import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/armacao/armacao_controller.dart';
 import 'package:aco_plus/app/modules/armacao/ui/armacao_elementos_page.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
+import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:flutter/material.dart';
 
 class ArmacaoPage extends StatefulWidget {
@@ -25,6 +26,9 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
   void initState() {
     setWebTitle('Armação');
     _init();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      baseCtrl.appBarActionsStream.add([FullscreenButton()]);
+    });
     super.initState();
   }
 
@@ -41,14 +45,6 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
   Widget build(BuildContext context) {
     return AppScaffold(
       backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text('ARMAÇÃO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
-        backgroundColor: Colors.black, // Estilo industrial
-        actions: [
-          FullscreenButton(),
-          const SizedBox(width: 8),
-        ],
-      ),
       body: StreamOut<bool>(
         stream: armacaoCtrl.loadingStream.listen,
         builder: (_, isLoading) {
@@ -195,7 +191,7 @@ class _PedidoArmacaoCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: AppCss.largeBold.setSize(12).setColor(color).copyWith(letterSpacing: 1),
+            style: AppCss.largeBold.setSize(11).setColor(color),
           ),
           const SizedBox(height: 16),
           Text(
