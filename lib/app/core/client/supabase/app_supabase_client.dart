@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:aco_plus/app/core/client/supabase/collections/cliente/cliente_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/fabricante/fabricante_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/materia_prima/materia_prima_supabase_collection.dart';
@@ -39,28 +40,28 @@ class AppSupabaseClient {
     try {
       // Start all collections with individual error handling to be resilient
       final futures = [
-        usuarioTipos.start().catchError((e) => print('Error starting usuarioTipos: $e')),
-        usuarios.start().catchError((e) => print('Error starting usuarios: $e')),
-        clientes.start().catchError((e) => print('Error starting clientes: $e')),
-        steps.start().catchError((e) => print('Error starting steps: $e')),
-        ordens.start().catchError((e) => print('Error starting ordens: $e')),
-        produtos.start().catchError((e) => print('Error starting produtos: $e')),
-        fabricantes.start().catchError((e) => print('Error starting fabricantes: $e')),
-        materiaPrima.start().catchError((e) => print('Error starting materiaPrima: $e')),
-        pedidoArquivos.start().catchError((e) => print('Error starting pedidoArquivos: $e')),
-        pedidoProdutos.start().catchError((e) => print('Error starting pedidoProdutos: $e')),
-        tags.start().catchError((e) => print('Error starting tags: $e')),
-        checklists.start().catchError((e) => print('Error starting checklists: $e')),
-        automatizacao.start().catchError((e) => print('Error starting automatizacao: $e')),
-        notificacoes.start().catchError((e) => print('Error starting notificacoes: $e')),
-        elementoArquivos.start().catchError((e) => print('Error starting elementoArquivos: $e')),
+        usuarioTipos.start().catchError((e) => log('Error starting usuarioTipos: $e')),
+        usuarios.start().catchError((e) => log('Error starting usuarios: $e')),
+        clientes.start().catchError((e) => log('Error starting clientes: $e')),
+        steps.start().catchError((e) => log('Error starting steps: $e')),
+        ordens.start().catchError((e) => log('Error starting ordens: $e')),
+        produtos.start().catchError((e) => log('Error starting produtos: $e')),
+        fabricantes.start().catchError((e) => log('Error starting fabricantes: $e')),
+        materiaPrima.start().catchError((e) => log('Error starting materiaPrima: $e')),
+        pedidoArquivos.start().catchError((e) => log('Error starting pedidoArquivos: $e')),
+        pedidoProdutos.start().catchError((e) => log('Error starting pedidoProdutos: $e')),
+        tags.start().catchError((e) => log('Error starting tags: $e')),
+        checklists.start().catchError((e) => log('Error starting checklists: $e')),
+        automatizacao.start().catchError((e) => log('Error starting automatizacao: $e')),
+        notificacoes.start().catchError((e) => log('Error starting notificacoes: $e')),
+        elementoArquivos.start().catchError((e) => log('Error starting elementoArquivos: $e')),
       ];
 
       await Future.wait(futures);
       await ordens.startOnlyArquivadas();
 
       // Pedidos depends on clientes/steps for mapping, so start it after
-      await pedidos.start().catchError((e) => print('Error starting pedidos: $e'));
+      await pedidos.start().catchError((e) => log('Error starting pedidos: $e'));
       await pedidos.startOnlyArquivadas();
 
       // Start real-time listeners
@@ -79,7 +80,7 @@ class AppSupabaseClient {
       notificacoes.listen();
       elementoArquivos.listen();
     } catch (e) {
-      print('AppSupabaseClient: Critical error during init: $e');
+      log('AppSupabaseClient: Critical error during init: $e');
     }
   }
 }

@@ -81,11 +81,11 @@ class _ElementosTabState extends State<ElementosTab> {
                       TextButton.icon(
                         style: TextButton.styleFrom(
                           foregroundColor: AppColors.secondary,
-                          backgroundColor: AppColors.secondary.withOpacity(0.05),
+                          backgroundColor: AppColors.secondary.withValues(alpha: 0.05),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
-                              side: BorderSide(color: AppColors.secondary.withOpacity(0.1))),
+                              side: BorderSide(color: AppColors.secondary.withValues(alpha: 0.1))),
                         ),
                         icon:
                             const Icon(Icons.picture_as_pdf_outlined, size: 18),
@@ -207,9 +207,9 @@ class _ElementosTabState extends State<ElementosTab> {
                               child: Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: Colors.red.withOpacity(0.1),
+                                  color: Colors.red.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.red.withOpacity(0.2)),
+                                  border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
                                 ),
                                 child: const Icon(Icons.auto_fix_normal_rounded,
                                     color: Colors.red, size: 18),
@@ -224,7 +224,7 @@ class _ElementosTabState extends State<ElementosTab> {
                             backgroundColor: AppColors.primaryMain,
                             foregroundColor: Colors.white,
                             elevation: 2,
-                            shadowColor: AppColors.primaryMain.withOpacity(0.4),
+                            shadowColor: AppColors.primaryMain.withValues(alpha: 0.4),
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10)),
@@ -247,13 +247,13 @@ class _ElementosTabState extends State<ElementosTab> {
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
                               color: validacao.isOk
-                                  ? Colors.green.withOpacity(0.1)
-                                  : Colors.red.withOpacity(0.1),
+                                  ? Colors.green.withValues(alpha: 0.1)
+                                  : Colors.red.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                 color: validacao.isOk
-                                    ? Colors.green.withOpacity(0.2)
-                                    : Colors.red.withOpacity(0.2),
+                                    ? Colors.green.withValues(alpha: 0.2)
+                                    : Colors.red.withValues(alpha: 0.2),
                               ),
                             ),
                             child: Row(
@@ -345,7 +345,7 @@ class _ElementosTabState extends State<ElementosTab> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.secondary.withOpacity(0.1),
+                      color: AppColors.secondary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.cloud_upload_rounded,
@@ -364,7 +364,7 @@ class _ElementosTabState extends State<ElementosTab> {
                       child: LinearProgressIndicator(
                         value: p.percent,
                         minHeight: 8,
-                        backgroundColor: AppColors.secondary.withOpacity(0.1),
+                        backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
                         valueColor:
                             AlwaysStoppedAnimation<Color>(AppColors.secondary),
                       ),
@@ -427,7 +427,7 @@ class _ElementoTileState extends State<_ElementoTile> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -446,7 +446,7 @@ class _ElementoTileState extends State<_ElementoTile> {
                   // Indicador lateral
                   Container(
                     width: 4,
-                    color: AppColors.primaryMain.withOpacity(_expanded ? 1.0 : 0.3),
+                    color: AppColors.primaryMain.withValues(alpha: _expanded ? 1.0 : 0.3),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -463,7 +463,7 @@ class _ElementoTileState extends State<_ElementoTile> {
                                   margin: const EdgeInsets.only(left: 8),
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primaryMain.withOpacity(0.1),
+                                    color: AppColors.primaryMain.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text('x${el.qtde}',
@@ -491,7 +491,7 @@ class _ElementoTileState extends State<_ElementoTile> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryMain.withOpacity(0.05),
+                          color: AppColors.primaryMain.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
@@ -555,7 +555,7 @@ class _ElementoTileState extends State<_ElementoTile> {
           if (_expanded)
             Container(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              color: Colors.grey.shade50.withOpacity(0.5),
+              color: Colors.grey.shade50.withValues(alpha: 0.5),
               child: Column(
                 children: [
                   const Divisor(height: 1),
@@ -758,7 +758,7 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
               child: ElevatedButton.icon(
                 onPressed: _onUpload,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.secondary.withOpacity(0.1),
+                  backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
                   foregroundColor: AppColors.secondary,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 12),

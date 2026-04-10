@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:async';
 import 'package:collection/collection.dart';
 
@@ -75,7 +76,7 @@ class StepController {
 
       onMount();
     } catch (e) {
-      print('StepController: Erro no onInit: $e');
+      log('StepController: Erro no onInit', error: e);
     }
   }
 
@@ -111,7 +112,7 @@ class StepController {
       }
       return kanban;
     } catch (e) {
-      print('StepController: Erro no mountKanban: $e');
+      log('StepController: Erro no mountKanban', error: e);
       return {};
     }
   }

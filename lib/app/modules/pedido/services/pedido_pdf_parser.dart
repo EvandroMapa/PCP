@@ -7,10 +7,10 @@ import 'package:aco_plus/app/core/services/hash_service.dart';
 
 class PedidoPdfParser {
   static Map<String, dynamic> parse(String text) {
-    print('--- INÍCIO EXTRAÇÃO PDF PEDIDO ---');
-    print('CONTEÚDO BRUTO EXTRAÍDO:');
-    print(text);
-    print('--- FIM CONTEÚDO BRUTO ---');
+    log('--- INÍCIO EXTRAÇÃO PDF PEDIDO ---');
+    log('CONTEÚDO BRUTO EXTRAÍDO:');
+    log(text);
+    log('--- FIM CONTEÚDO BRUTO ---');
 
     final Map<String, dynamic> data = {
       'pedidoFinanceiro': '',
@@ -26,129 +26,73 @@ class PedidoPdfParser {
       'rawText': text,
     };
 
-    // 1. Limpeza inicial: Remover underlines que quebram a leitura de blocos
     final cleanText = text.replaceAll(RegExp(r'_{10,}'), '\n');
 
-    // 2. Extrair Pedido Financeiro
-    final pedidoRegExp = RegExp(r'Pedido\s*[:\-]?\s*(\d+)', caseSensitive: false);
-    final pedidoMatch = pedidoRegExp.firstMatch(cleanText);
-    if (pedidoMatch != null) {
-      data['pedidoFinanceiro'] = pedidoMatch.group(1) ?? '';
-    }
-
-    // 3. Extrair Cliente (Melhorado para capturar código e nome mesmo sem traço perfeito)
-    final clienteRegExp = RegExp(r'Cliente\s*[:\-]?\s*(\d+)\s*[-]?\s*([^\n\r]+)', caseSensitive: false);
-    final clienteMatch = clienteRegExp.firstMatch(cleanText);
-    if (clienteMatch != null) {
-      data['clienteCodigo'] = clienteMatch.group(1) ?? '';
-      data['clienteNome'] = (clienteMatch.group(2) ?? '').trim();
-    }
-
-    // 4. Extrair Planilhamento e Romaneio
+    // 2-5. Extração de Metadados e Financeiro
+    data['pedidoFinanceiro'] = _extractString(cleanText, r'Pedido\s*[:\-]?\s*(\d+)');
+    data['clienteCodigo'] = _extractString(cleanText, r'Cliente\s*[:\-]?\s*(\d+)');
+    data['clienteNome'] = _extractString(cleanText, r'Cliente\s*[:\-]?\s*\d+\s*[-]?\s*([^\n\r]+)');
     data['planilhamento'] = _extractString(cleanText, r'(?:Planilhamento|Plan\.)\s*[:\-]?\s*([^\n\r]+)');
     data['romaneio'] = _extractString(cleanText, r'(?:Romaneio|Rom\.)\s*[:\-]?\s*([^\n\r]+)');
-
-    // 5. Extrair Taxas e Descontos (Para cálculo final)
     data['taxas'] = _extractValue(cleanText, r'Taxas\s*[:\-]?\s*([\d,.]+)');
     data['desconto'] = _extractValue(cleanText, r'Desconto\s*[:\-]?\s*([\d,.]+)');
 
-    // 6. Extrair Produtos (Novo algoritmo robusto para Shop9)
+    // 6. Extrair Produtos (Novo Motor de Precisão com Âncora de Unidade)
     final List<String> units = ['KG', 'UN', 'PC', 'MT', 'PÇ', 'BAR', 'PCT', 'M2', 'CJ', 'UNID', 'Pç', 'FL', 'RL'];
     final String unitsPattern = units.join('|');
 
-    // Dividir em blocos por Código (4-7 dígitos)
-    // Procuramos um código que NÃO seja o número do pedido nem data
-    final productSplitRegExp = RegExp(r'(?:\n|\r|^)(\d{4,7})(?=[A-Z\s])');
-    final productMatches = productSplitRegExp.allMatches(cleanText).toList();
+    // Dividir pelo cabeçalho para evitar pegar fones/endereço como códigos
+    int startIndex = cleanText.toLowerCase().indexOf('código');
+    if (startIndex == -1) startIndex = cleanText.toLowerCase().indexOf('descrição');
+    if (startIndex == -1) startIndex = 0;
+    
+    final bodyText = cleanText.substring(startIndex);
+    
+    // Regex para capturar: [CÓDIGO][DESCRIÇÃO][UNIDADE][VALORES]
+    // O pulo do gato: A unidade colada nos números é nossa âncora principal, sem exigir espaços
+    final itemRegExp = RegExp('(\\d{4,7})\\s*([A-Za-z][\\s\\S]+?)($unitsPattern)\\s*([\\d,.]+)', caseSensitive: false);
+    final matches = itemRegExp.allMatches(bodyText);
 
-    for (var i = 0; i < productMatches.length; i++) {
-        final match = productMatches[i];
-        final codigo = match.group(1)!;
+    for (final m in matches) {
+        final codigo = m.group(1)!;
         if (codigo == data['pedidoFinanceiro']) continue;
 
-        // O bloco vai do início deste código até o início do próximo ou até o fim
-        final start = match.start;
-        final end = (i + 1 < productMatches.length) ? productMatches[i + 1].start : cleanText.length;
-        String block = cleanText.substring(start, end);
-
-        // Tenta achar a unidade e os números no bloco (Ajustado para capturar TODA a sequência numérica)
-        final unitMatch = RegExp('($unitsPattern)\\s*([\\d,.]+)').firstMatch(block);
-        if (unitMatch != null) {
-            String descricao = block.substring(match.group(1)!.length, unitMatch.start).trim();
-            descricao = descricao.replaceAll('\n', ' ').replaceAll(RegExp(r'\s+'), ' ');
+        String descricao = m.group(2)!.trim().replaceAll('\n', ' ').replaceAll(RegExp(r'\s+'), ' ');
+        final unidade = m.group(3)!.toUpperCase();
+        final numericTail = m.group(4)!;
+        
+        // Pega todos os números com formato decimal ,X ou ,XX ou .X
+        final allNumbers = RegExp(r'[\d.,]*\d+,\d{1,3}').allMatches(numericTail).map((mn) => mn.group(0)!).toList();
+        
+        if (allNumbers.length >= 2) {
+            final double q = _parseDecimal(allNumbers[0]);
+            final double u = _parseDecimal(allNumbers[1]);
+            final double t = double.parse((q * u).toStringAsFixed(2));
             
-            final unidade = unitMatch.group(1)!.toUpperCase();
-            final numericTail = unitMatch.group(2)!;
-            
-            // Pega todos os números com formato decimal ,XX no final do bloco de números
-            final allNumbers = RegExp(r'[\d.,]*\d+,\d{1,3}').allMatches(numericTail).map((m) => m.group(0)!).toList();
-            
-            double qtde = 0;
-            double unitario = 0;
-            double totalCalculado = 0;
+            log('ITEM DETECTADO: $codigo | $q $unidade x $u = $t');
 
-            if (allNumbers.length >= 2) {
-                qtde = _parseDecimal(allNumbers[0]);
-                unitario = _parseDecimal(allNumbers[1]);
-                totalCalculado = double.parse((qtde * unitario).toStringAsFixed(2));
-                
-                print('Item $codigo: $qtde x $unitario = $totalCalculado ($unidade)');
-
-                data['produtos'].add({
-                    'codigo': codigo,
-                    'descricao': descricao,
-                    'unidade': unidade,
-                    'qtde': qtde,
-                    'unitario': unitario,
-                    'total': totalCalculado,
-                });
-            }
+            data['produtos'].add({
+                'codigo': codigo,
+                'descricao': descricao,
+                'unidade': unidade,
+                'qtde': q,
+                'unitario': u,
+                'total': t,
+            });
         }
     }
 
-    // 7. Fallback: Se não achou nada por blocos, tenta por linha (Regex agressiva)
-    if (data['produtos'].isEmpty) {
-        final fallbackRegExp = RegExp('(\\d{4,7})\\s*(.*?)\\s*($unitsPattern)\\s*([\\d,.]+)', caseSensitive: false);
-        final matches = fallbackRegExp.allMatches(cleanText);
-        for (final m in matches) {
-            if (m.group(1) == data['pedidoFinanceiro']) continue;
-            final qtdeTail = m.group(4)!;
-            final nums = RegExp(r'[\d.,]*\d+,\d{1,3}').allMatches(qtdeTail).map((mn) => mn.group(0)!).toList();
-            if (nums.length >= 2) {
-                final q = _parseDecimal(nums[0]);
-                final u = _parseDecimal(nums[1]);
-                final tot = double.parse((q * u).toStringAsFixed(2));
-                print('Item Fallback ${m.group(1)}: $q x $u = $tot');
-                data['produtos'].add({
-                    'codigo': m.group(1),
-                    'descricao': m.group(2)!.trim(),
-                    'unidade': m.group(3)!.toUpperCase(),
-                    'qtde': q,
-                    'unitario': u,
-                    'total': tot,
-                });
-            }
-        }
-    }
-
-    // 8. Calcular Totais do Pedido (Soma dos itens)
+    // 8. Totais Finais (Soma calculada e Subtotal de conferência)
     double vSubtotalCalculado = 0;
     for (final p in data['produtos']) {
         vSubtotalCalculado += p['total'];
     }
     
-    // Tenta pegar o subtotal declarado no PDF como segurança/conferência
-    final double vSubtotalDeclarado = _extractValue(cleanText, r'Subtotal\s*[:\-]?\s*([\d,.]+)');
-    
-    // Se a soma dos itens bater com o declarado ou se não achamos o declarado, usamos a soma.
-    // O usuário prefere calcular para evitar erro de leitura.
-    data['subtotal'] = double.parse(vSubtotalCalculado.toStringAsFixed(2));
+    final double subPDF = _extractValue(cleanText, r'Subtotal\s*[:\-]?\s*([\d,.]+)');
+    data['subtotal'] = vSubtotalCalculado > 0 ? double.parse(vSubtotalCalculado.toStringAsFixed(2)) : subPDF;
     data['total'] = double.parse((data['subtotal'] + data['taxas'] - data['desconto']).toStringAsFixed(2));
 
-    print('RESUMO FINANCEIRO:');
-    print('Subtotal Itens: ${data['subtotal']} (Declarado PDF: $vSubtotalDeclarado)');
-    print('Taxas: ${data['taxas']} | Desconto: ${data['desconto']}');
-    print('TOTAL FINAL: ${data['total']}');
+    log('RESUMO: Itens=${data['produtos'].length} | Subtotal=${data['subtotal']} | Total=${data['total']}');
 
     return data;
   }

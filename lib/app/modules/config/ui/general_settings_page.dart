@@ -90,9 +90,9 @@ class GeneralSettingsPage extends StatelessWidget {
                       height: 60,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: AppColors.secondary.withOpacity(0.1),
+                        color: AppColors.secondary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.secondary.withOpacity(0.3)),
+                        border: Border.all(color: AppColors.secondary.withValues(alpha: 0.3)),
                       ),
                       child: Text(
                         value.toString(),
@@ -119,10 +119,10 @@ class GeneralSettingsPage extends StatelessWidget {
   Widget _numericButton({required IconData icon, VoidCallback? onPressed}) {
     return Container(
       decoration: BoxDecoration(
-        color: onPressed != null ? AppColors.secondary.withOpacity(0.1) : Colors.grey[100],
+        color: onPressed != null ? AppColors.secondary.withValues(alpha: 0.1) : Colors.grey[100],
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: onPressed != null ? AppColors.secondary.withOpacity(0.3) : Colors.grey[300]!,
+          color: onPressed != null ? AppColors.secondary.withValues(alpha: 0.3) : Colors.grey[300]!,
         ),
       ),
       child: IconButton(
@@ -186,7 +186,7 @@ class GeneralSettingsPage extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
+                        color: Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(

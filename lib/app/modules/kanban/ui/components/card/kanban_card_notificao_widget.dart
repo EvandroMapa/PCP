@@ -24,7 +24,7 @@ class _KanbanCardNotificacaoWidgetState
 
     _colorAnimation = ColorTween(
       begin: Colors.red,
-      end: Colors.red.withOpacity(0.5),
+      end: Colors.red.withValues(alpha: 0.5),
     ).animate(_controller);
   }
 

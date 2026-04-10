@@ -1,8 +1,9 @@
+import 'dart:developer';
+import 'package:cloud_firestore/cloud_firestore.dart' show GetOptions;
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/models/materia_prima_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/materia_prima_collection.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MateriaPrimaSupabaseCollection extends MateriaPrimaCollection {
   static final MateriaPrimaSupabaseCollection _instance = MateriaPrimaSupabaseCollection._();
@@ -12,7 +13,7 @@ class MateriaPrimaSupabaseCollection extends MateriaPrimaCollection {
   factory MateriaPrimaSupabaseCollection() => _instance;
 
   @override
-  final String tableName = 'materia_prima';
+  final String name = 'materia_prima';
 
   @override
   List<MateriaPrimaModel> get data => dataStream.value;
@@ -24,13 +25,13 @@ class MateriaPrimaSupabaseCollection extends MateriaPrimaCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     try {
-      final response = await SupabaseService.client.from(tableName).select();
+      final response = await SupabaseService.client.from(name).select();
       final materiaPrimas = List<Map<String, dynamic>>.from(response)
           .map((e) => MateriaPrimaModel.fromSupabaseMap(e))
           .toList();
       dataStream.add(materiaPrimas);
     } catch (e) {
-      print('Supabase Error (MateriaPrima.start): $e');
+      log('Supabase Error (MateriaPrima.start): $e');
     }
   }
 
@@ -44,11 +45,11 @@ class MateriaPrimaSupabaseCollection extends MateriaPrimaCollection {
   @override
   Future<MateriaPrimaModel?> add(MateriaPrimaModel model) async {
     try {
-      await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      await SupabaseService.client.from(name).insert(model.toSupabaseMap());
       await fetch();
       return model;
     } catch (e) {
-      print('Supabase Error (MateriaPrima.add): $e');
+      log('Supabase Error (MateriaPrima.add): $e');
       return null;
     }
   }
@@ -57,13 +58,13 @@ class MateriaPrimaSupabaseCollection extends MateriaPrimaCollection {
   Future<MateriaPrimaModel?> update(MateriaPrimaModel model) async {
     try {
       await SupabaseService.client
-          .from(tableName)
+          .from(name)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
       await fetch();
       return model;
     } catch (e) {
-      print('Supabase Error (MateriaPrima.update): $e');
+      log('Supabase Error (MateriaPrima.update): $e');
       return null;
     }
   }
@@ -71,10 +72,10 @@ class MateriaPrimaSupabaseCollection extends MateriaPrimaCollection {
   @override
   Future<void> delete(MateriaPrimaModel model) async {
     try {
-      await SupabaseService.client.from(tableName).delete().eq('id', model.id);
+      await SupabaseService.client.from(name).delete().eq('id', model.id);
       await fetch();
     } catch (e) {
-      print('Supabase Error (MateriaPrima.delete): $e');
+      log('Supabase Error (MateriaPrima.delete): $e');
     }
   }
 
@@ -97,7 +98,7 @@ class MateriaPrimaSupabaseCollection extends MateriaPrimaCollection {
     if (_isListen) return;
     _isListen = true;
     SupabaseService.client
-        .from(tableName)
+        .from(name)
         .stream(primaryKey: ['id'])
         .listen((List<Map<String, dynamic>> data) {
           final materiaPrimas = data.map((e) => MateriaPrimaModel.fromSupabaseMap(e)).toList();

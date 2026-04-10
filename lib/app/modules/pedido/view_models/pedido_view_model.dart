@@ -17,7 +17,6 @@ import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:aco_plus/app/modules/pedido/view_models/pedido_produto_view_model.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
 class PedidoUtils {

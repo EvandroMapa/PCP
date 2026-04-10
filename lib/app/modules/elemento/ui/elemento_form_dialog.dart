@@ -85,9 +85,9 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.primaryMain.withOpacity(0.08),
+              color: AppColors.primaryMain.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primaryMain.withOpacity(0.1)),
+              border: Border.all(color: AppColors.primaryMain.withValues(alpha: 0.1)),
             ),
             child: Icon(Icons.layers_rounded,
                 color: AppColors.primaryMain, size: 24),
@@ -165,7 +165,7 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
                         style: TextStyle(fontWeight: FontWeight.bold)),
                     style: TextButton.styleFrom(
                         foregroundColor: AppColors.secondary,
-                        backgroundColor: AppColors.secondary.withOpacity(0.05),
+                        backgroundColor: AppColors.secondary.withValues(alpha: 0.05),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 8),
                         shape: RoundedRectangleBorder(
@@ -282,10 +282,10 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryMain.withOpacity(0.06),
+                  color: AppColors.primaryMain.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                      color: AppColors.primaryMain.withOpacity(0.2)),
+                      color: AppColors.primaryMain.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -320,7 +320,7 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
             disabledBackgroundColor: Colors.grey[200],
             disabledForegroundColor: Colors.grey[500],
             elevation: _form.isValid ? 2 : 0,
-            shadowColor: AppColors.primaryMain.withOpacity(0.3),
+            shadowColor: AppColors.primaryMain.withValues(alpha: 0.3),
             padding:
                 const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
             shape: RoundedRectangleBorder(

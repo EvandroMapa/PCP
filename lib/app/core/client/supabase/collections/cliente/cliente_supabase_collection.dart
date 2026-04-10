@@ -1,8 +1,9 @@
+import 'dart:developer';
+import 'package:cloud_firestore/cloud_firestore.dart' show GetOptions;
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_collection.dart';
 
@@ -14,7 +15,7 @@ class ClienteSupabaseCollection extends ClienteCollection {
   factory ClienteSupabaseCollection() => _instance;
 
   @override
-  final String tableName = 'clientes';
+  final String name = 'clientes';
   final String obraTableName = 'obras';
 
   @override
@@ -34,7 +35,7 @@ class ClienteSupabaseCollection extends ClienteCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     try {
-      final clientesRaw = await SupabaseService.client.from(tableName).select();
+      final clientesRaw = await SupabaseService.client.from(name).select();
       final obrasRaw = await SupabaseService.client.from(obraTableName).select();
 
       final obrasByClienteId = <String, List<Map<String, dynamic>>>{};
@@ -52,7 +53,7 @@ class ClienteSupabaseCollection extends ClienteCollection {
 
       dataStream.add(clientes);
     } catch (e) {
-      print('Supabase Error (Cliente.start): $e');
+      log('Supabase Error (Cliente.start): $e');
     }
   }
 
@@ -76,7 +77,7 @@ class ClienteSupabaseCollection extends ClienteCollection {
     _isListen = true;
     // Basic implementation for now, listening to main table
     SupabaseService.client
-        .from(tableName)
+        .from(name)
         .stream(primaryKey: ['id'])
         .listen((_) => start(lock: false));
   }
@@ -91,7 +92,7 @@ class ClienteSupabaseCollection extends ClienteCollection {
       if (model.codigo == 0) {
         map.remove('codigo');
       }
-      await SupabaseService.client.from(tableName).insert(map);
+      await SupabaseService.client.from(name).insert(map);
       if (model.obras.isNotEmpty) {
         await SupabaseService.client.from(obraTableName).upsert(
             model.obras.map((e) => e.toSupabaseMap(model.id)).toList());
@@ -108,7 +109,7 @@ class ClienteSupabaseCollection extends ClienteCollection {
   Future<ClienteModel?> update(ClienteModel model) async {
     try {
       await SupabaseService.client
-          .from(tableName)
+          .from(name)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
       
@@ -134,10 +135,10 @@ class ClienteSupabaseCollection extends ClienteCollection {
           .from(obraTableName)
           .delete()
           .eq('cliente_id', model.id);
-      await SupabaseService.client.from(tableName).delete().eq('id', model.id);
+      await SupabaseService.client.from(name).delete().eq('id', model.id);
       await fetch();
     } catch (e) {
-      print('Supabase Error (Cliente.delete): $e');
+      log('Supabase Error (Cliente.delete): $e');
     }
   }
 }

@@ -65,7 +65,7 @@ class PedidoController {
       _listenChecklists();
       _listenGlobalPedidos();
     } catch (e) {
-      print('PedidoController: Erro no onInit: $e');
+      log('PedidoController: Erro no onInit', error: e);
     }
   }
 

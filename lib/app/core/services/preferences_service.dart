@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/models/service_model.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
@@ -35,7 +36,7 @@ class PreferencesService implements Service {
         }
       }
     } catch (e) {
-      print('Erro ao carregar limite global: $e');
+      log('Erro ao carregar limite global: $e');
       // Fallback para local se DB falhar no init
       final savedMax = instance.getInt('maxElementosProducao');
       if (savedMax != null) {
@@ -55,7 +56,7 @@ class PreferencesService implements Service {
             .from('configs')
             .upsert({'key': 'max_elementos_producao', 'value': value}, onConflict: 'key');
       } catch (e) {
-        print('Erro ao salvar limite global: $e');
+        log('Erro ao salvar limite global: $e');
       }
     });
   }

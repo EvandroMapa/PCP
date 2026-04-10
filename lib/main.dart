@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:aco_plus/app/app_controller.dart';
 import 'package:aco_plus/app/app_widget.dart';
 import 'package:aco_plus/app/core/models/service_model.dart';
@@ -16,8 +17,8 @@ void main() async {
     await appCtrl.onInit();
     runApp(const App());
   } catch (e, stack) {
-    print('Critical Error during main: $e');
-    print(stack);
+    debugPrint('Critical Error during main: $e');
+    log('Stack Trace', stackTrace: stack);
     // Fallback para não deixar a tela branca e mostrar o erro
     runApp(MaterialApp(
       debugShowCheckedModeBanner: false,

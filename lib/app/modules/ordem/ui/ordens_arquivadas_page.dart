@@ -223,7 +223,7 @@ class _OrdensArquivadasPageState extends State<OrdensArquivadasPage> {
         CircularProgressIndicator(
           value: porcentagem,
           backgroundColor: (isFreezed ? Colors.grey[600]! : status.color)
-              .withOpacity(0.2),
+              .withValues(alpha: 0.2),
           strokeWidth: 2,
           valueColor: AlwaysStoppedAnimation(
             isFreezed ? Colors.grey[600]! : status.color,

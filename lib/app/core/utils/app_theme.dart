@@ -8,7 +8,7 @@ class AppTheme {
     colorSchemeSeed: AppColors.primaryMain,
     textSelectionTheme: TextSelectionThemeData(
       cursorColor: const Color(0xFFBFD0D0),
-      selectionColor: const Color(0xFFBFD0D0).withOpacity(0.3),
+      selectionColor: const Color(0xFFBFD0D0).withValues(alpha: 0.3),
       selectionHandleColor: const Color(0xFFBFD0D0),
     ),
     datePickerTheme: DatePickerThemeData(

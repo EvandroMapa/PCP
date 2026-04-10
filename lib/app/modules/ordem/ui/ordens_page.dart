@@ -1,6 +1,7 @@
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/modules/ordem/view_models/ordem_view_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/user_permission_type.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/app_drop_down.dart';
@@ -21,7 +22,6 @@ import 'package:aco_plus/app/modules/ordem/ordem_controller.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem/ordem_page.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem_create_page.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordens_arquivadas_page.dart';
-import 'package:aco_plus/app/modules/ordem/view_models/ordem_view_model.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -350,7 +350,7 @@ class _OrdensPageState extends State<OrdensPage> {
                     vertical: 2,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryMain.withOpacity(0.5),
+                    color: AppColors.primaryMain.withValues(alpha: 0.5),
                     borderRadius: const BorderRadius.only(
                       bottomRight: Radius.circular(8),
                     ),
@@ -381,7 +381,7 @@ class _OrdensPageState extends State<OrdensPage> {
         CircularProgressIndicator(
           value: porcentagem,
           backgroundColor:
-              (isFreezed ? Colors.grey[600]! : status.color).withOpacity(0.2),
+              (isFreezed ? Colors.grey[600]! : status.color).withValues(alpha: 0.2),
           strokeWidth: 2,
           valueColor: AlwaysStoppedAnimation(
             isFreezed ? Colors.grey[600]! : status.color,

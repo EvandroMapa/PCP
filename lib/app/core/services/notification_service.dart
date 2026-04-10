@@ -26,7 +26,7 @@ class NotificationService {
           title: title,
           subtitle: subtitle,
           color: AppColors.pending,
-          colorOpacity: AppColors.pending.withOpacity(0.13),
+          colorOpacity: AppColors.pending.withValues(alpha: 0.13),
           icon: Icons.warning_rounded,
         ),
         position: NotificationPosition.top,

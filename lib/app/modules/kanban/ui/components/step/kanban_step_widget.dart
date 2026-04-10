@@ -23,7 +23,7 @@ class KanbanStepWidget extends StatelessWidget {
         child: Container(
           width: width,
         decoration: BoxDecoration(
-          color: AppColors.neutralLightest.withOpacity(0.5),
+          color: AppColors.neutralLightest.withValues(alpha: 0.5),
           borderRadius: const BorderRadius.all(Radius.circular(8)),
         ),
         child: Column(

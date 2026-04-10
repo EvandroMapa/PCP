@@ -1,11 +1,11 @@
 import 'dart:async';
-
+import 'dart:developer';
+import 'package:cloud_firestore/cloud_firestore.dart' show GetOptions;
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/ordem_collection.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class OrdemSupabaseCollection extends OrdemCollection {
   static final OrdemSupabaseCollection _instance = OrdemSupabaseCollection._();
@@ -19,7 +19,7 @@ class OrdemSupabaseCollection extends OrdemCollection {
   Timer? _streamDebounce;
 
   @override
-  final String tableName = 'ordens';
+  final String name = 'ordens';
 
   @override
   List<OrdemModel> get data => dataStream.value;
@@ -42,7 +42,7 @@ class OrdemSupabaseCollection extends OrdemCollection {
     _isStarted = true;
     try {
       final response = await SupabaseService.client
-          .from(tableName)
+          .from(name)
           .select()
           .eq('is_archived', false);
       
@@ -52,7 +52,7 @@ class OrdemSupabaseCollection extends OrdemCollection {
       
       _updateStreams(ordens);
     } catch (e) {
-      print('Supabase Error (Ordem.start): $e');
+      log('Supabase Error (Ordem.start): $e');
     }
   }
 
@@ -60,7 +60,7 @@ class OrdemSupabaseCollection extends OrdemCollection {
   Future<void> startOnlyArquivadas() async {
     try {
       final response = await SupabaseService.client
-          .from(tableName)
+          .from(name)
           .select()
           .eq('is_archived', true);
       
@@ -70,7 +70,7 @@ class OrdemSupabaseCollection extends OrdemCollection {
       
       ordensArquivadasStream.add(ordens);
     } catch (e) {
-      print('Supabase Error (Ordem.startOnlyArquivadas): $e');
+      log('Supabase Error (Ordem.startOnlyArquivadas): $e');
     }
   }
 
@@ -107,7 +107,7 @@ class OrdemSupabaseCollection extends OrdemCollection {
     _isListen = true;
     
     SupabaseService.client
-        .from(tableName)
+        .from(name)
         .stream(primaryKey: ['id'])
         .eq('is_archived', false)
         .listen((List<Map<String, dynamic>> data) {
@@ -122,7 +122,7 @@ class OrdemSupabaseCollection extends OrdemCollection {
 
   @override
   Future<OrdemModel?> add(OrdemModel model) async {
-    await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+    await SupabaseService.client.from(name).insert(model.toSupabaseMap());
     // Após adicionar ordem, forçar atualização de pedidos (pois eles agora estão vinculados)
     await BackendClient.pedidos.fetch();
     return model;
@@ -131,7 +131,7 @@ class OrdemSupabaseCollection extends OrdemCollection {
   @override
   Future<OrdemModel?> update(OrdemModel model) async {
     await SupabaseService.client
-        .from(tableName)
+        .from(name)
         .update(model.toSupabaseMap())
         .eq('id', model.id);
     return model;
@@ -140,14 +140,14 @@ class OrdemSupabaseCollection extends OrdemCollection {
   /// Atualiza apenas o beltIndex (usado pelo onReorder) sem recarregar pedidos.
   Future<void> updateBeltIndex(OrdemModel model) async {
     await SupabaseService.client
-        .from(tableName)
+        .from(name)
         .update({'belt_index': model.beltIndex})
         .eq('id', model.id);
   }
 
   @override
   Future<void> delete(OrdemModel model) async {
-    await SupabaseService.client.from(tableName).delete().eq('id', model.id);
+    await SupabaseService.client.from(name).delete().eq('id', model.id);
     // Após deletar ordem, forçar atualização de pedidos
     await BackendClient.pedidos.fetch();
   }

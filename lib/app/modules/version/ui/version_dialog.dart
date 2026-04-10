@@ -1,4 +1,4 @@
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
 
 import 'package:aco_plus/app/core/client/firestore/collections/version/models/version_model.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
@@ -24,8 +24,8 @@ class VersionDialog extends StatefulWidget {
 class _VersionDialogState extends State<VersionDialog> {
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () => Future.value(false),
+    return PopScope(
+      canPop: false,
       child: AlertDialog(
         title: const Text('Versão nova disponível'),
         actions: [
@@ -37,7 +37,7 @@ class _VersionDialogState extends State<VersionDialog> {
                 child: TextButton(
                   onPressed: () {
                     if (kIsWeb) {
-                      html.window.location.reload();
+                      web.window.location.reload();
                     }
                   },
                   child: const Text('Atualizar'),

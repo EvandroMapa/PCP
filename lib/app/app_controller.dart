@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
@@ -31,7 +32,7 @@ class AppController {
         );
       }
     } catch (e) {
-      print('AppController: Erro no onInit: $e');
+      log('AppController: Erro no onInit: $e');
     }
   }
 }

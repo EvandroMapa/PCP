@@ -37,7 +37,7 @@ class SplashPage extends StatelessWidget {
                   height: 4,
                   child: LinearProgressIndicator(
                     color: Colors.red,
-                    backgroundColor: Colors.red.withOpacity(0.1),
+                    backgroundColor: Colors.red.withValues(alpha: 0.1),
                   ),
                 ),
               ],

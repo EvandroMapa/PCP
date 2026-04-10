@@ -12,14 +12,7 @@ extension DoubleExt on double {
   }
 
   String get percent {
-    String stringValue = toString();
     return toStringAsFixed(0);
-
-    if (stringValue.endsWith(".0")) {
-      return stringValue.substring(0, stringValue.length - 2);
-    } else {
-      return toStringAsFixed(1);
-    }
   }
 
   String get percentPDF {

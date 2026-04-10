@@ -1,7 +1,7 @@
+import 'dart:developer';
 import 'package:aco_plus/app/app_repository.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
-import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/client/http/fcm/fcm_provider.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
@@ -144,7 +144,7 @@ class UsuarioController {
       }
       usuarioStream.add(user);
     } catch (e) {
-      print('UsuarioController: Erro no auto-login: $e');
+      log('UsuarioController: Erro no auto-login', error: e);
       usuarioStream.add(null);
     }
   }

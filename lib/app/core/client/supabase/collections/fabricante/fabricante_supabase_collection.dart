@@ -1,8 +1,9 @@
+import 'dart:developer';
+import 'package:cloud_firestore/cloud_firestore.dart' show GetOptions;
 import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_collection.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class FabricanteSupabaseCollection extends FabricanteCollection {
   static final FabricanteSupabaseCollection _instance = FabricanteSupabaseCollection._();
@@ -12,7 +13,7 @@ class FabricanteSupabaseCollection extends FabricanteCollection {
   factory FabricanteSupabaseCollection() => _instance;
 
   @override
-  final String tableName = 'fabricantes';
+  final String name = 'fabricantes';
 
   @override
   List<FabricanteModel> get data => dataStream.value;
@@ -24,13 +25,13 @@ class FabricanteSupabaseCollection extends FabricanteCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     try {
-      final response = await SupabaseService.client.from(tableName).select();
+      final response = await SupabaseService.client.from(name).select();
       final fabricantes = List<Map<String, dynamic>>.from(response)
           .map((e) => FabricanteModel.fromSupabaseMap(e))
           .toList();
       dataStream.add(fabricantes);
     } catch (e) {
-      print('Supabase Error (Fabricante.start): $e');
+      log('Supabase Error (Fabricante.start): $e');
     }
   }
 
@@ -44,11 +45,11 @@ class FabricanteSupabaseCollection extends FabricanteCollection {
   @override
   Future<FabricanteModel?> add(FabricanteModel model) async {
     try {
-      await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      await SupabaseService.client.from(name).insert(model.toSupabaseMap());
       await fetch();
       return model;
     } catch (e) {
-      print('Supabase Error (Fabricante.add): $e');
+      log('Supabase Error (Fabricante.add): $e');
       return null;
     }
   }
@@ -57,13 +58,13 @@ class FabricanteSupabaseCollection extends FabricanteCollection {
   Future<FabricanteModel?> update(FabricanteModel model) async {
     try {
       await SupabaseService.client
-          .from(tableName)
+          .from(name)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
       await fetch();
       return model;
     } catch (e) {
-      print('Supabase Error (Fabricante.update): $e');
+      log('Supabase Error (Fabricante.update): $e');
       return null;
     }
   }
@@ -71,10 +72,10 @@ class FabricanteSupabaseCollection extends FabricanteCollection {
   @override
   Future<void> delete(FabricanteModel model) async {
     try {
-      await SupabaseService.client.from(tableName).delete().eq('id', model.id);
+      await SupabaseService.client.from(name).delete().eq('id', model.id);
       await fetch();
     } catch (e) {
-      print('Supabase Error (Fabricante.delete): $e');
+      log('Supabase Error (Fabricante.delete): $e');
     }
   }
 
@@ -97,7 +98,7 @@ class FabricanteSupabaseCollection extends FabricanteCollection {
     if (_isListen) return;
     _isListen = true;
     SupabaseService.client
-        .from(tableName)
+        .from(name)
         .stream(primaryKey: ['id'])
         .listen((List<Map<String, dynamic>> data) {
           final fabricantes = data.map((e) => FabricanteModel.fromSupabaseMap(e)).toList();

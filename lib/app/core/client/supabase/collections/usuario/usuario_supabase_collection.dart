@@ -1,8 +1,9 @@
+import 'dart:developer';
+import 'package:cloud_firestore/cloud_firestore.dart' show GetOptions;
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'dart:async';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/usuario_collection.dart';
 
@@ -16,7 +17,7 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
   Timer? _streamDebounce;
 
   @override
-  final String tableName = 'usuarios';
+  final String name = 'usuarios';
 
   @override
   List<UsuarioModel> get data => dataStream.value;
@@ -35,13 +36,13 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     try {
-      final response = await SupabaseService.client.from(tableName).select('*, perfis(*)');
+      final response = await SupabaseService.client.from(name).select('*, perfis(*)');
       final usuarios = List<Map<String, dynamic>>.from(response)
           .map((e) => UsuarioModel.fromSupabaseMap(e))
           .toList();
       dataStream.add(usuarios);
     } catch (e) {
-      print('Supabase Error (Usuario.start): $e');
+      log('Supabase Error (Usuario.start): $e');
     }
   }
 
@@ -64,7 +65,7 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
     if (_isListen) return;
     _isListen = true;
     SupabaseService.client
-        .from(tableName)
+        .from(name)
         .stream(primaryKey: ['id'])
         .listen((List<Map<String, dynamic>> data) {
           _streamDebounce?.cancel();
@@ -80,11 +81,11 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
   @override
   Future<UsuarioModel?> add(UsuarioModel model) async {
     try {
-      await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      await SupabaseService.client.from(name).insert(model.toSupabaseMap());
       await fetch();
       return model;
     } catch (e) {
-      print('Supabase Error (Usuario.add): $e');
+      log('Supabase Error (Usuario.add): $e');
       return null;
     }
   }
@@ -93,13 +94,13 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
   Future<UsuarioModel?> update(UsuarioModel model) async {
     try {
       await SupabaseService.client
-          .from(tableName)
+          .from(name)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
       await fetch();
       return model;
     } catch (e) {
-      print('Supabase Error (Usuario.update): $e');
+      log('Supabase Error (Usuario.update): $e');
       return null;
     }
   }
@@ -107,10 +108,10 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
   @override
   Future<void> delete(UsuarioModel model) async {
     try {
-      await SupabaseService.client.from(tableName).delete().eq('id', model.id);
+      await SupabaseService.client.from(name).delete().eq('id', model.id);
       await fetch();
     } catch (e) {
-      print('Supabase Error (Usuario.delete): $e');
+      log('Supabase Error (Usuario.delete): $e');
     }
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
@@ -85,7 +86,7 @@ class ElementoController {
 
       elementosStream.add(result);
     } catch (e) {
-      print('ElementoController.onFetch erro: $e');
+      log('ElementoController.onFetch erro', error: e);
       elementosStream.add([]);
     }
   }
@@ -128,7 +129,7 @@ class ElementoController {
 
       await onFetch(pedidoId);
     } catch (e) {
-      print('ElementoController.onSaveElemento erro: $e');
+      log('ElementoController.onSaveElemento erro: $e');
     }
   }
 
@@ -143,7 +144,7 @@ class ElementoController {
 
       await onFetch(elemento.pedidoId);
     } catch (e) {
-      print('ElementoController.onDeleteElemento erro: $e');
+      log('ElementoController.onDeleteElemento erro: $e');
     }
   }
 
@@ -176,7 +177,7 @@ class ElementoController {
       NotificationService.showPositive('Sucesso', 'Arquivo anexado com sucesso!');
     } catch (e) {
       Navigator.pop(contextGlobal); // Fecha loading
-      print('ElementoController.onAddArquivo erro: $e');
+      log('ElementoController.onAddArquivo erro: $e');
       NotificationService.showNegative('Erro', 'Falha ao anexado arquivo.');
     }
   }
@@ -195,7 +196,7 @@ class ElementoController {
       NotificationService.showPositive('Sucesso', 'Arquivo removido!');
     } catch (e) {
       Navigator.pop(contextGlobal); // Fecha loading
-      print('ElementoController.onDeleteArquivo erro: $e');
+      log('ElementoController.onDeleteArquivo erro: $e');
     }
   }
 
@@ -209,7 +210,7 @@ class ElementoController {
 
       await onFetch(pedidoId);
     } catch (e) {
-      print('ElementoController.onDeleteAllElementos erro: $e');
+      log('ElementoController.onDeleteAllElementos erro: $e');
     }
   }
 
@@ -260,8 +261,8 @@ class ElementoController {
           "elementos_${pedido.localizador.toLowerCase()}_${DateTime.now().toFileName()}.pdf";
       await downloadPDF(name, '/relatorio/elementos/', await pdf.save());
     } catch (e, stack) {
-      print('Erro ao gerar PDF: $e');
-      print(stack);
+      log('Erro ao gerar PDF: $e');
+      log(stack.toString());
       NotificationService.showNegative('Erro', 'Falha ao gerar o PDF: $e');
     }
     Navigator.pop(contextGlobal);
@@ -395,7 +396,7 @@ class ElementoController {
               ],
             ),
           ),
-          pw.Table.fromTextArray(
+          pw.TableHelper.fromTextArray(
             headers: ['POSIÇÃO', 'OS', 'BITOLA', 'PESO UNIT.', 'PESO TOTAL'],
             data: el.posicoes
                 .map((p) => [
@@ -432,7 +433,7 @@ class ElementoController {
         pw.Text('RESUMO POR BITOLA',
             style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
         pw.SizedBox(height: 8),
-        pw.Table.fromTextArray(
+        pw.TableHelper.fromTextArray(
           headers: ['BITOLA', 'PESO TOTAL (KG)'],
           data: [
             ...resumo.entries
@@ -637,7 +638,7 @@ class ElementoController {
         'rawText': rawText
       };
     } catch (e) {
-      print('ElementoController.onImportPDF erro: $e');
+      log('ElementoController.onImportPDF erro: $e');
       importProgressStream.add(null);
       return {'success': false, 'error': e.toString(), 'rawText': rawText};
     }

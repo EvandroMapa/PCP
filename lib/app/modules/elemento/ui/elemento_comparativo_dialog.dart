@@ -37,9 +37,9 @@ class ElementoComparativoDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.08),
+              color: color.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: color.withOpacity(0.1)),
+              border: Border.all(color: color.withValues(alpha: 0.1)),
             ),
             child: Icon(
               ok ? Icons.check_circle_rounded : Icons.warning_rounded,
@@ -116,7 +116,7 @@ class ElementoComparativoDialog extends StatelessWidget {
                     return Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: Colors.red.shade50.withOpacity(0.5),
+                        color: Colors.red.shade50.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.red.shade100, width: 1.2),
                       ),
@@ -174,7 +174,7 @@ class ElementoComparativoDialog extends StatelessWidget {
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               elevation: 4,
-              shadowColor: AppColors.primaryMain.withOpacity(0.4),
+              shadowColor: AppColors.primaryMain.withValues(alpha: 0.4),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(context),
@@ -210,16 +210,16 @@ class _TotalBox extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.04),
+        color: color.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.15), width: 1.2),
+        border: Border.all(color: color.withValues(alpha: 0.15), width: 1.2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(label,
               style: AppCss.minimumBold.copyWith(
-                color: color.withOpacity(0.6),
+                color: color.withValues(alpha: 0.6),
                 letterSpacing: 0.5,
                 fontSize: 10,
               )),

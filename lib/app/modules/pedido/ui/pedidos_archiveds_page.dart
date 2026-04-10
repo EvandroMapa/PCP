@@ -165,7 +165,7 @@ class _PedidoArchivedsPageState extends State<PedidosArchivedsPage> {
 
   Widget _itemPedidoWidget(PedidoModel pedido) {
     return Container(
-      color: Colors.grey.withOpacity(0.07),
+      color: Colors.grey.withValues(alpha: 0.07),
       child: InkWell(
         // onTap: () => pedidoCtrl.onUnArchivePedido(context, pedido),
         onTap: () => push(
@@ -223,11 +223,6 @@ class _PedidoArchivedsPageState extends State<PedidosArchivedsPage> {
                   _progressChartWidget(
                     PedidoProdutoStatus.aguardandoProducao,
                     pedido.getPrcntgAguardandoProducao(),
-                  ),
-                  const W(16),
-                  _progressChartWidget(
-                    PedidoProdutoStatus.produzindo,
-                    pedido.getPrcntgProduzindo(),
                   ),
                   const W(16),
                   _progressChartWidget(

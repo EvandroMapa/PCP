@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_supabase_collection.dart';
@@ -107,7 +108,7 @@ class ArmacaoController {
         pesoPorBitola: pesoPorBitola,
       );
     } catch (e) {
-      print('Erro ao buscar sumário de armação: $e');
+      log('Erro ao buscar sumário de armação: $e');
       return ArmacaoSummary.empty();
     }
   }
@@ -149,7 +150,7 @@ class ArmacaoController {
       // Atualizar resumo garantindo que o que está no banco reflete os elementos carregados
       await updatePedidoSummary(pedido);
     } catch (e) {
-      print('ArmacaoController.onFetchElementos erro: $e');
+      log('ArmacaoController.onFetchElementos erro: $e');
     }
   }
 
@@ -193,7 +194,7 @@ class ArmacaoController {
       }
       await updatePedidoSummary(pedido);
     } catch (e) {
-      print('Erro ao atualizar status do elemento: $e');
+      log('Erro ao atualizar status do elemento: $e');
       showInfoDialog('Erro: Não foi possível atualizar o status.');
     }
   }
@@ -258,7 +259,7 @@ class ArmacaoController {
       pedido.armacaoResumo.addAll(resume);
       
     } catch (e) {
-      print('Erro ao atualizar resumo do pedido: $e');
+      log('Erro ao atualizar resumo do pedido: $e');
     }
   }
 }

@@ -104,7 +104,7 @@ class _PedidoArmacaoCard extends StatelessWidget {
           border: Border.all(color: Colors.black, width: 2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.12),
+              color: Colors.black.withValues(alpha: 0.12),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -152,7 +152,7 @@ class _PedidoArmacaoCard extends StatelessWidget {
     return Container(
       width: 1.5,
       height: 60,
-      color: Colors.black.withOpacity(0.08),
+      color: Colors.black.withValues(alpha: 0.08),
     );
   }
 
@@ -174,7 +174,7 @@ class _PedidoArmacaoCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             pedido.cliente.nome.toUpperCase(),
-            style: AppCss.largeBold.setSize(15).setColor(Colors.white.withOpacity(0.6)),
+            style: AppCss.largeBold.setSize(15).setColor(Colors.white.withValues(alpha: 0.6)),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

@@ -2,6 +2,7 @@ import 'dart:async';
 
 
 import 'dart:developer';
+import 'package:cloud_firestore/cloud_firestore.dart' show GetOptions;
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/models/materia_prima_model.dart';
 
@@ -12,7 +13,6 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_status_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
 
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/pedido_collection.dart';
@@ -29,7 +29,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
   factory PedidoSupabaseCollection() => _instance;
 
   @override
-  final String tableName = 'pedidos';
+  final String name = 'pedidos';
 
   @override
   List<PedidoModel> get data => dataStream.value;
@@ -57,7 +57,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
     try {
       // 1. Fetch main table first (critical)
       final pedidosRaw = await SupabaseService.client
-          .from(tableName)
+          .from(name)
           .select()
           .eq('is_archived', false);
 
@@ -136,7 +136,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
   Future<void> startOnlyArquivadas() async {
     try {
       final pedidosRaw = await SupabaseService.client
-          .from(tableName)
+          .from(name)
           .select()
           .eq('is_archived', true);
 
@@ -214,14 +214,14 @@ class PedidoSupabaseCollection extends PedidoCollection {
   Future<PedidoModel?> getByIdSupabase(String id) async {
     try {
       final pRaw = await SupabaseService.client
-          .from(tableName)
+          .from(name)
           .select()
           .eq('id', id)
           .maybeSingle();
 
       if (pRaw == null) return null;
 
-      final pMap = pRaw as Map<String, dynamic>;
+      final Map<String, dynamic> pMap = pRaw;
 
       Future<List<Map<String, dynamic>>> safeFetch(String table) async {
         try {
@@ -282,7 +282,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
     if (_isListen) return;
     _isListen = true;
     SupabaseService.client
-        .from(tableName)
+        .from(name)
         .stream(primaryKey: ['id'])
         .eq('is_archived', false)
         .listen((List<Map<String, dynamic>> data) {
@@ -297,7 +297,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
       log('Supabase (Pedido.fetchByIds): Fetching ${ids.length} records...');
       // 1. Fetch main table
       final pedidosRaw = await SupabaseService.client
-          .from(tableName)
+          .from(name)
           .select()
           .filter('id', 'in', ids);
 
@@ -375,7 +375,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
     final List<String> errorLogs = [];
     try {
       log('Supabase (Pedido.add): Sending record (upsert)...');
-      await SupabaseService.client.from(tableName).upsert(model.toSupabaseMap());
+      await SupabaseService.client.from(name).upsert(model.toSupabaseMap());
       log('Supabase (Pedido.add): Record saved. Syncing relationships...');
       
       final syncErrors = await _syncRelationships(model);
@@ -402,7 +402,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
       
       final payload = models.map((e) => e.toSupabaseMap()).toList();
       await SupabaseService.client
-          .from(tableName)
+          .from(name)
           .upsert(payload);
           
       // O streaming cuidará de atualizar a UI local.
@@ -418,7 +418,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
   Future<PedidoModel?> update(PedidoModel model) async {
     try {
       await SupabaseService.client
-          .from(tableName)
+          .from(name)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
       
@@ -561,7 +561,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
         for (var pId in pedidoIds) {
           final pedido = getById(pId);
           await SupabaseService.client
-              .from(tableName)
+              .from(name)
               .update({'index': pedido.index})
               .eq('id', pId);
         }
@@ -593,7 +593,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
       // Gatilho: atualiza a tabela pai 'pedidos' com um valor novo (timestamp) para garantir que o stream dispare
       await SupabaseService.client
-          .from(tableName)
+          .from(name)
           .update({'index': pedido.index})
           .eq('id', pedido.id);
       
@@ -656,7 +656,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
         for (var pId in pedidoIds) {
           final pedido = getById(pId);
           await SupabaseService.client
-              .from(tableName)
+              .from(name)
               .update({'index': pedido.index})
               .eq('id', pId);
         }
@@ -691,7 +691,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
       // Gatilho: atualiza a tabela pai 'pedidos' com um valor novo (timestamp) para garantir que o stream dispare
       await SupabaseService.client
-          .from(tableName)
+          .from(name)
           .update({'index': pedido.index})
           .eq('id', pedido.id);
       

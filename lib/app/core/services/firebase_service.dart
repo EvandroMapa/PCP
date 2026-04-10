@@ -1,4 +1,4 @@
-import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'dart:developer';
 import 'package:aco_plus/app/core/models/service_model.dart';
 import 'package:aco_plus/app/core/services/push_notification_service.dart';
 import 'package:aco_plus/firebase_options.dart';
@@ -13,11 +13,11 @@ class FirebaseService implements Service {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
-      await FirestoreClient.init();
+      // await FirestoreClient.init(); // Removed per user rule: no more Firestore/Firebase as DB
       initFirebaseMessaging();
-      print('Firebase: Initialized successfully.');
+      log('Firebase: Initialized successfully.');
     } catch (e) {
-      print('Firebase: Error during initialization: $e');
+      log('Firebase: Error during initialization: $e');
     }
   }
 

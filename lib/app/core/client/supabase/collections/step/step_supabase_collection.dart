@@ -1,9 +1,9 @@
 import 'dart:developer';
+import 'package:cloud_firestore/cloud_firestore.dart' show GetOptions;
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:aco_plus/app/core/client/firestore/collections/step/step_collection.dart';
 
@@ -15,7 +15,7 @@ class StepSupabaseCollection extends StepCollection {
   factory StepSupabaseCollection() => _instance;
 
   @override
-  final String tableName = 'steps';
+  final String name = 'steps';
 
   @override
   List<StepModel> get data => dataStream.value;
@@ -36,7 +36,7 @@ class StepSupabaseCollection extends StepCollection {
     try {
       // 1. Fetch main steps
       final stepsResponse = await SupabaseService.client
-          .from(tableName)
+          .from(name)
           .select()
           .order('index', ascending: true);
       
@@ -98,7 +98,7 @@ class StepSupabaseCollection extends StepCollection {
     if (_isListen) return;
     _isListen = true;
     SupabaseService.client
-        .from(tableName)
+        .from(name)
         .stream(primaryKey: ['id'])
         .listen((_) => start(lock: false));
   }
@@ -110,12 +110,12 @@ class StepSupabaseCollection extends StepCollection {
   Future<StepModel?> add(StepModel model) async {
     try {
       final map = model.toSupabaseMap();
-      await SupabaseService.client.from(tableName).insert(map);
+      await SupabaseService.client.from(name).insert(map);
       await _syncRelationships(model);
       await fetch();
       return model;
     } catch (e) {
-      print('Supabase Error (Step.add): $e');
+      log('Supabase Error (Step.add): $e');
       return null;
     }
   }
@@ -124,12 +124,12 @@ class StepSupabaseCollection extends StepCollection {
   Future<StepModel?> update(StepModel model) async {
     try {
       final map = model.toSupabaseMap();
-      await SupabaseService.client.from(tableName).update(map).eq('id', model.id);
+      await SupabaseService.client.from(name).update(map).eq('id', model.id);
       await _syncRelationships(model);
       await fetch();
       return model;
     } catch (e) {
-      print('Supabase Error (Step.update): $e');
+      log('Supabase Error (Step.update): $e');
       return null;
     }
   }
@@ -161,10 +161,10 @@ class StepSupabaseCollection extends StepCollection {
   @override
   Future<void> delete(StepModel model) async {
     try {
-      await SupabaseService.client.from(tableName).delete().eq('id', model.id);
+      await SupabaseService.client.from(name).delete().eq('id', model.id);
       await fetch();
     } catch (e) {
-      print('Supabase Error (Step.delete): $e');
+      log('Supabase Error (Step.delete): $e');
     }
   }
 }

@@ -87,7 +87,7 @@ class _BackupScheduleDialogState extends State<BackupScheduleDialog> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primaryMain.withOpacity(0.1),
+              color: AppColors.primaryMain.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(Icons.schedule_rounded, color: AppColors.primaryMain, size: 22),
@@ -203,12 +203,12 @@ class _BackupScheduleDialogState extends State<BackupScheduleDialog> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.primaryMain.withOpacity(0.05),
-                      AppColors.primaryMain.withOpacity(0.1),
+                      AppColors.primaryMain.withValues(alpha: 0.05),
+                      AppColors.primaryMain.withValues(alpha: 0.1),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primaryMain.withOpacity(0.3)),
+                  border: Border.all(color: AppColors.primaryMain.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -228,7 +228,7 @@ class _BackupScheduleDialogState extends State<BackupScheduleDialog> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryMain.withOpacity(0.1),
+                        color: AppColors.primaryMain.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -340,7 +340,7 @@ class _DayButton extends StatelessWidget {
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: color.withOpacity(0.3),
+                    color: color.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   )

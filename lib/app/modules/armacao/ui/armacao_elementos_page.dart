@@ -85,7 +85,7 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
             ),
             Text(
               widget.pedido.cliente.nome,
-              style: AppCss.minimumRegular.setColor(AppColors.white.withOpacity(0.8)),
+              style: AppCss.minimumRegular.setColor(AppColors.white.withValues(alpha: 0.8)),
             ),
           ],
         ),
@@ -236,7 +236,7 @@ class _ResumoProducaoBar extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -349,7 +349,7 @@ class _ElementoArmacaoCard extends StatelessWidget {
           border: Border.all(color: Colors.black, width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
+              color: Colors.black.withValues(alpha: 0.08),
               blurRadius: 15,
               offset: const Offset(0, 5),
             ),
@@ -421,7 +421,7 @@ class _ElementoArmacaoCard extends StatelessWidget {
       children: [
         Text(
           label,
-          style: AppCss.largeBold.setSize(15).setColor(Colors.black.withOpacity(0.7)),
+          style: AppCss.largeBold.setSize(15).setColor(Colors.black.withValues(alpha: 0.7)),
         ),
         Text(
           value,
