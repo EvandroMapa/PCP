@@ -50,25 +50,47 @@ class PedidoPdfParser {
     data['planilhamento'] = _extractString(text, r'(?:Planilhamento|Plan\.)\s*[:\-]?\s*([^\n\r]+)');
     data['romaneio'] = _extractString(text, r'(?:Romaneio|Rom\.)\s*[:\-]?\s*([^\n\r]+)');
 
-    // 5. Extrair Produtos da Tabela (Suporte a multi-linha e Shop9)
+    // 6. Extrair Produtos da Tabela (Suporte a multi-linha e Shop9)
+    // SEGURANÇA: Procurar onde começa a tabela de produtos para ignorar o cabeçalho (Endereço, etc)
+    int tableStartIndex = text.toLowerCase().indexOf('código');
+    if (tableStartIndex == -1) tableStartIndex = text.toLowerCase().indexOf('descrição');
+    if (tableStartIndex == -1) tableStartIndex = 0;
+
+    final String tableText = text.substring(tableStartIndex);
+    final String pedidoFinanceiro = data['pedidoFinanceiro'];
+
     final List<String> units = ['KG', 'UN', 'PC', 'MT', 'PÇ', 'BAR', 'PCT', 'M2', 'CJ', 'UNID', 'Pç', 'FL', 'RL'];
     final String unitsPattern = units.join('|');
 
-    // Identificar blocos de produtos: [Código de 5-6 dígitos] seguido de texto e unidade
+    // Identificar blocos de produtos: [Código de 4-7 dígitos] seguido de texto e unidade
+    // Usamos um lookahead negativo para garantir que o código não seja o mesmo que o pedido financeiro
     final productBlockRegExp = RegExp(r'(\d{4,7})\s+([\s\S]+?)\s+(' + unitsPattern + r')\s+([\d,.\s]+)', caseSensitive: false);
-    final matches = productBlockRegExp.allMatches(text);
+    final matches = productBlockRegExp.allMatches(tableText);
 
     for (final match in matches) {
       final codigo = match.group(1)!;
+      
+      // Se o código for igual ao pedido financeiro e estivermos muito no início, ignorar
+      if (codigo == pedidoFinanceiro && match.start < 50) continue;
+
       String rawDesc = match.group(2)!.trim();
       final unidade = match.group(3)!.toUpperCase();
       final numericTail = match.group(4)!.trim();
 
-      // Limpar a descrição de quebras de linha e excesso de espaços
+      // Limpar a descrição: No Shop9 multi-linha, a descrição pode conter lixo se a regex for muito ampla
+      // Limitamos a descrição para não pegar mais de 200 caracteres (evita engolir o documento todo)
+      if (rawDesc.length > 200) {
+        // Tenta achar o código de volta dentro da descrição abusiva
+        final subMatch = RegExp(r'(\d{4,7})').firstMatch(rawDesc);
+        if (subMatch != null) {
+           // Se achou outro código dentro, a regex falhou por ser gananciosa. 
+           // Recortamos a descrição até o próximo código provável.
+           rawDesc = rawDesc.substring(0, subMatch.start).trim();
+        }
+      }
+
       String descricao = rawDesc.replaceAll('\n', ' ').replaceAll(RegExp(r'\s+'), ' ');
       
-      // Tentar desmembrar os valores numéricos (Qtde, Unitário, Total)
-      // No Shop9 multi-linha, eles costumam vir separados por espaços ou quebras de linha
       final allNumbers = RegExp(r'[\d.]*,\d{2}').allMatches(numericTail).map((m) => m.group(0)!).toList();
       
       double qtde = 0;
