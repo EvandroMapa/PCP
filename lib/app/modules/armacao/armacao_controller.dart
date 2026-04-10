@@ -4,6 +4,8 @@ import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_supa
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
+import 'package:aco_plus/app/core/services/preferences_service.dart';
+import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 
 final armacaoCtrl = ArmacaoController();
@@ -155,11 +157,7 @@ class ArmacaoController {
         final limit = PreferencesService.maxElementosProducao.value;
 
         if (countArmando >= limit) {
-          showSnackbar(
-            title: 'Limite Atingido',
-            message: 'Você só pode armar até $limit elementos simultaneamente.',
-            type: SnackbarType.warning,
-          );
+          showInfoDialog('Limite Atingido: Você só pode armar até $limit elementos simultaneamente.');
           return;
         }
       }
@@ -185,11 +183,7 @@ class ArmacaoController {
       }
     } catch (e) {
       print('Erro ao atualizar status do elemento: $e');
-      showSnackbar(
-        title: 'Erro',
-        message: 'Não foi possível atualizar o status.',
-        type: SnackbarType.error,
-      );
+      showInfoDialog('Erro: Não foi possível atualizar o status.');
     }
   }
 }
