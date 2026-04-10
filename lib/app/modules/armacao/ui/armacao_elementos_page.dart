@@ -273,50 +273,51 @@ class _ResumoProducaoBar extends StatelessWidget {
 
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(12),
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: status.backgroundColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: status.color.withOpacity(0.3), width: 1),
+          border: Border.all(color: Colors.black, width: 1.5),
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                CircleAvatar(backgroundColor: status.color, radius: 4),
-                const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: AppCss.minimumBold.setColor(status.color).setSize(11),
-                ),
-              ],
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              color: Colors.grey[800], // Tarja Chumbo
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: AppCss.largeBold.setSize(15).setColor(Colors.white),
+              ),
             ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Elementos', style: AppCss.minimumRegular.setSize(10).setColor(Colors.grey[600]!)),
-                    Text(
-                      '${data['qtd']} (${prcntQtd.toStringAsFixed(0)}%)',
-                      style: AppCss.mediumBold.setSize(13),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text('Peso (Kg)', style: AppCss.minimumRegular.setSize(10).setColor(Colors.grey[600]!)),
-                    Text(
-                      '${data['peso'].toStringAsFixed(1)} (${prcntPeso.toStringAsFixed(0)}%)',
-                      style: AppCss.mediumBold.setSize(13),
-                    ),
-                  ],
-                ),
-              ],
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('ELEMENTOS', style: AppCss.largeBold.setSize(12).setColor(Colors.black)),
+                      Text(
+                        '${data['qtd']} (${prcntQtd.toStringAsFixed(0)}%)',
+                        style: AppCss.largeBold.setSize(18).setColor(Colors.black),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text('PESO (KG)', style: AppCss.largeBold.setSize(12).setColor(Colors.black)),
+                      Text(
+                        '${data['peso'].toStringAsFixed(1)} (${prcntPeso.toStringAsFixed(0)}%)',
+                        style: AppCss.largeBold.setSize(18).setColor(Colors.black),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
