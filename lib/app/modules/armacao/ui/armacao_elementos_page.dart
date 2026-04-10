@@ -95,7 +95,7 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
     );
   }
 
-  void _showStatusPicker(ElementoModel elemento) {
+  Future<void> _showStatusPicker(ElementoModel elemento) async {
     // Regra: Não pode pular de Aguardando para Pronto e vice-versa. Tem que passar por Armando.
     final allowedStatuses = <ElementoStatus>[];
     if (elemento.status == ElementoStatus.aguardando) {
@@ -106,7 +106,7 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
       allowedStatuses.addAll([ElementoStatus.armando, ElementoStatus.pronto]);
     }
 
-    showDialog(
+    await showDialog(
       context: context,
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
