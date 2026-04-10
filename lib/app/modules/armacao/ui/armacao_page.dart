@@ -41,11 +41,7 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
   Widget build(BuildContext context) {
     return AppScaffold(
       backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        backgroundColor: AppColors.secondary,
-        elevation: 0,
-        title: const SizedBox.shrink(), // Remove o título redundante conforme solicitado
-      ),
+      // AppBar removida para liberar espaço vertical conforme solicitado
       body: StreamOut<bool>(
         stream: armacaoCtrl.loadingStream.listen,
         builder: (_, isLoading) {
@@ -68,8 +64,8 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
                 : GridView.builder(
                     padding: const EdgeInsets.all(24),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3, // Força layout 3x2 conforme solicitado
-                      mainAxisExtent: 380, // Aumentado para cartões maiores
+                      crossAxisCount: 3,
+                      mainAxisExtent: 350, // Ajustado para caber 2 linhas sem scroll
                       crossAxisSpacing: 24,
                       mainAxisSpacing: 24,
                     ),
@@ -115,17 +111,17 @@ class _PedidoArmacaoCard extends StatelessWidget {
 
     return InkWell(
       onTap: () => push(context, ArmacaoElementosPage(pedido: pedido)),
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.06),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
+              blurRadius: 15,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -133,23 +129,23 @@ class _PedidoArmacaoCard extends StatelessWidget {
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: AppColors.primaryMain.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 pedido.localizador,
-                style: AppCss.largeBold.setSize(28).setColor(AppColors.primaryDark),
+                style: AppCss.largeBold.setSize(24).setColor(AppColors.primaryDark),
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
               pedido.cliente.nome.toUpperCase(),
-              style: AppCss.minimumBold.setSize(12).setColor(Colors.grey[400]!),
+              style: AppCss.minimumBold.setSize(11).setColor(Colors.grey[400]!),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -157,12 +153,12 @@ class _PedidoArmacaoCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(child: _buildChart('PEÇAS', qtdData, totalQtd.toInt().toString())),
-                const SizedBox(width: 16),
+                const SizedBox(width: 8),
                 Expanded(child: _buildChart('PESO (KG)', pesoData, totalPeso.toStringAsFixed(0))),
               ],
             ),
-            const SizedBox(height: 16),
-            _buildLegend(),
+            const SizedBox(height: 12),
+            _buildLegend(resumo),
             const Spacer(),
           ],
         ),
@@ -174,7 +170,7 @@ class _PedidoArmacaoCard extends StatelessWidget {
     return Column(
       children: [
         SizedBox(
-          height: 140, // Aumentado para melhor visibilidade
+          height: 110,
           child: SfCircularChart(
             margin: EdgeInsets.zero,
             series: <CircularSeries>[
@@ -183,7 +179,7 @@ class _PedidoArmacaoCard extends StatelessWidget {
                 xValueMapper: (_ChartData data, _) => data.x,
                 yValueMapper: (_ChartData data, _) => data.y,
                 pointColorMapper: (_ChartData data, _) => data.color,
-                innerRadius: '70%',
+                innerRadius: '60%', // Engrossado conforme solicitado
                 animationDuration: 1000,
               ),
             ],
@@ -191,43 +187,45 @@ class _PedidoArmacaoCard extends StatelessWidget {
               CircularChartAnnotation(
                 widget: Text(
                   total,
-                  style: AppCss.largeBold.setSize(24).setColor(AppColors.secondary),
+                  style: AppCss.largeBold.setSize(20).setColor(AppColors.secondary),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 8),
-        Text(title, style: AppCss.mediumBold.setSize(10).setColor(Colors.grey[600]!)),
+        Text(title, style: AppCss.minimumBold.setSize(9).setColor(Colors.grey[500]!)),
       ],
     );
   }
 
-  Widget _buildLegend() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _legendItem('AGUARD.', Colors.blue),
-        const SizedBox(width: 16),
-        _legendItem('ARMANDO', Colors.orange),
-        const SizedBox(width: 16),
-        _legendItem('PRONTO', Colors.green),
-      ],
+  Widget _buildLegend(Map<String, dynamic> resumo) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _legendItem('AGU', resumo['aguardando']?['qtd'] ?? 0, Colors.blue),
+          _legendItem('PROD', resumo['armando']?['qtd'] ?? 0, Colors.orange),
+          _legendItem('OK', resumo['pronto']?['qtd'] ?? 0, Colors.green),
+        ],
+      ),
     );
   }
 
-  Widget _legendItem(String label, Color color) {
-    return Row(
+  Widget _legendItem(String label, dynamic count, Color color) {
+    return Column(
       children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        Text(
+          count.toString(),
+          style: AppCss.mediumBold.setSize(14).setColor(color),
         ),
-        const SizedBox(width: 6),
         Text(
           label,
-          style: AppCss.minimumBold.setSize(10).setColor(Colors.grey[700]!),
+          style: AppCss.minimumBold.setSize(8).setColor(color.withOpacity(0.8)),
         ),
       ],
     );
