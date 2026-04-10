@@ -161,7 +161,7 @@ class _PedidoArmacaoCard extends StatelessWidget {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
       decoration: BoxDecoration(
         color: AppColors.primaryDark,
         boxShadow: [
@@ -176,12 +176,12 @@ class _PedidoArmacaoCard extends StatelessWidget {
         children: [
           Text(
             pedido.localizador,
-            style: AppCss.largeBold.setSize(26).setColor(Colors.white).copyWith(letterSpacing: 1.2),
+            style: AppCss.largeBold.setSize(32).setColor(Colors.white).copyWith(letterSpacing: 1.5),
           ),
           const SizedBox(height: 6),
           Text(
             pedido.cliente.nome.toUpperCase(),
-            style: AppCss.minimumBold.setSize(10).setColor(Colors.white.withOpacity(0.7)),
+            style: AppCss.minimumBold.setSize(12).setColor(Colors.white.withOpacity(0.7)),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -196,25 +196,25 @@ class _PedidoArmacaoCard extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
               color: color.withOpacity(0.08),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
               title,
-              style: AppCss.minimumBold.setSize(10).setColor(color),
+              style: AppCss.minimumBold.setSize(12).setColor(color),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           Text(
             pc,
-            style: AppCss.largeBold.setSize(20).setColor(color),
+            style: AppCss.largeBold.setSize(24).setColor(color),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
             kg,
-            style: AppCss.mediumBold.setSize(15).setColor(Colors.grey[700]!),
+            style: AppCss.mediumBold.setSize(18).setColor(Colors.grey[700]!),
           ),
         ],
       ),

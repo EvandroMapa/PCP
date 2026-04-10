@@ -1,6 +1,7 @@
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/usuario_collection.dart';
@@ -11,6 +12,8 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
     dataStream = AppStream.seed([]);
   }
   factory UsuarioSupabaseCollection() => _instance;
+
+  Timer? _streamDebounce;
 
   @override
   final String tableName = 'usuarios';
@@ -64,8 +67,10 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
         .from(tableName)
         .stream(primaryKey: ['id'])
         .listen((List<Map<String, dynamic>> data) {
-          final usuarios = data.map((e) => UsuarioModel.fromSupabaseMap(e)).toList();
-          dataStream.add(usuarios);
+          _streamDebounce?.cancel();
+          _streamDebounce = Timer(const Duration(milliseconds: 500), () {
+            start(lock: false);
+          });
         });
   }
 
