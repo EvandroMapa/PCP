@@ -93,49 +93,57 @@ class _PedidoArmacaoCard extends StatelessWidget {
       onTap: () => push(context, ArmacaoElementosPage(pedido: pedido)),
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey.withOpacity(0.15), width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 15,
-              offset: const Offset(0, 6),
+              color: AppColors.primaryDark.withOpacity(0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
+        clipBehavior: Clip.antiAlias,
         child: Column(
           children: [
             _buildHeader(),
-            const SizedBox(height: 16),
-            const Divider(height: 1, color: Color(0xFFEEEEEE)),
-            const Spacer(),
-            Row(
-              children: [
-                _buildColumn(
-                  'AGUARDANDO',
-                  '${resumo['aguardando']?['qtd'] ?? 0} pc',
-                  '${(resumo['aguardando']?['peso'] ?? 0).toStringAsFixed(1)} kg',
-                  Colors.blue,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                child: Column(
+                  children: [
+                    const Spacer(),
+                    Row(
+                      children: [
+                        _buildColumn(
+                          'AGUARDANDO',
+                          '${resumo['aguardando']?['qtd'] ?? 0} pc',
+                          '${(resumo['aguardando']?['peso'] ?? 0).toStringAsFixed(1)} kg',
+                          Colors.blue.shade700,
+                        ),
+                        _vDivider(),
+                        _buildColumn(
+                          'ARMANDO',
+                          '${resumo['armando']?['qtd'] ?? 0} pc',
+                          '${(resumo['armando']?['peso'] ?? 0).toStringAsFixed(1)} kg',
+                          Colors.orange.shade800,
+                        ),
+                        _vDivider(),
+                        _buildColumn(
+                          'PRONTO',
+                          '${resumo['pronto']?['qtd'] ?? 0} pc',
+                          '${(resumo['pronto']?['peso'] ?? 0).toStringAsFixed(1)} kg',
+                          Colors.green.shade700,
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                  ],
                 ),
-                _vDivider(),
-                _buildColumn(
-                  'ARMANDO',
-                  '${resumo['armando']?['qtd'] ?? 0} pc',
-                  '${(resumo['armando']?['peso'] ?? 0).toStringAsFixed(1)} kg',
-                  Colors.orange,
-                ),
-                _vDivider(),
-                _buildColumn(
-                  'PRONTO',
-                  '${resumo['pronto']?['qtd'] ?? 0} pc',
-                  '${(resumo['pronto']?['peso'] ?? 0).toStringAsFixed(1)} kg',
-                  Colors.green,
-                ),
-              ],
+              ),
             ),
-            const Spacer(),
           ],
         ),
       ),
@@ -144,28 +152,42 @@ class _PedidoArmacaoCard extends StatelessWidget {
 
   Widget _vDivider() {
     return Container(
-      width: 1,
-      height: 40,
+      width: 1.5,
+      height: 45,
       color: Colors.grey.withOpacity(0.1),
     );
   }
 
   Widget _buildHeader() {
-    return Column(
-      children: [
-        Text(
-          pedido.localizador,
-          style: AppCss.largeBold.setSize(24).setColor(AppColors.primaryDark),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          pedido.cliente.nome.toUpperCase(),
-          style: AppCss.minimumBold.setSize(10).setColor(Colors.grey[400]!),
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.primaryDark,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            pedido.localizador,
+            style: AppCss.largeBold.setSize(26).setColor(Colors.white).copyWith(letterSpacing: 1.2),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            pedido.cliente.nome.toUpperCase(),
+            style: AppCss.minimumBold.setSize(10).setColor(Colors.white.withOpacity(0.7)),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 
@@ -173,19 +195,26 @@ class _PedidoArmacaoCard extends StatelessWidget {
     return Expanded(
       child: Column(
         children: [
-          Text(
-            title,
-            style: AppCss.minimumBold.setSize(9).setColor(color.withOpacity(0.8)),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              title,
+              style: AppCss.minimumBold.setSize(10).setColor(color),
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           Text(
             pc,
-            style: AppCss.mediumBold.setSize(16).setColor(color),
+            style: AppCss.largeBold.setSize(20).setColor(color),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             kg,
-            style: AppCss.mediumBold.setSize(13).setColor(color.withOpacity(0.7)),
+            style: AppCss.mediumBold.setSize(15).setColor(Colors.grey[700]!),
           ),
         ],
       ),
