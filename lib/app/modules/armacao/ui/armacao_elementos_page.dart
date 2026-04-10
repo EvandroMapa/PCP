@@ -16,7 +16,7 @@ class ArmacaoElementosPage extends StatefulWidget {
 }
 
 class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
-  bool _isLoading = false;
+  bool _isLoading = true;
   final ScrollController _scrollController = ScrollController();
 
   @override
