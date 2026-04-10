@@ -7,9 +7,10 @@ import 'package:aco_plus/app/core/services/hash_service.dart';
 
 class PedidoPdfParser {
   static Map<String, dynamic> parse(String text) {
-    log('--- RAW PDF START ---');
-    log(text);
-    log('--- RAW PDF END ---');
+    print('--- INÍCIO EXTRAÇÃO PDF PEDIDO ---');
+    print('CONTEÚDO BRUTO EXTRAÍDO:');
+    print(text);
+    print('--- FIM CONTEÚDO BRUTO ---');
 
     final Map<String, dynamic> data = {
       'pedidoFinanceiro': '',

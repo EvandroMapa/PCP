@@ -325,6 +325,59 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
           if (currentStep == 1 && !isUploading) ...[
             const W(16),
             InkWell(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('DEBUG: TEXTO EXTRAÍDO DO PDF'),
+                    content: SizedBox(
+                      width: 600,
+                      height: 500,
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: SingleChildScrollView(
+                              child: SelectableText(
+                                extractedTextDebug,
+                                style: const TextStyle(fontSize: 10, fontFamily: 'monospace'),
+                              ),
+                            ),
+                          ),
+                          const Divider(),
+                          TextButton.icon(
+                            onPressed: () {
+                              Clipboard.setData(ClipboardData(text: extractedTextDebug));
+                              NotificationService.showPositive('Copiado', 'Conteúdo copiado!');
+                            },
+                            icon: const Icon(Icons.copy),
+                            label: const Text('COPIAR TUDO'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(context), child: const Text('FECHAR')),
+                    ],
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
+                  borderRadius: AppCss.radius4,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.bug_report, color: Colors.white, size: 14),
+                    const W(4),
+                    Text('DEBUG PDF', style: AppCss.minimumBold.setSize(10).setColor(Colors.white)),
+                  ],
+                ),
+              ),
+            ),
+            const W(8),
+            InkWell(
               onTap: _handleReimport,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -336,7 +389,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                   children: [
                     const Icon(Icons.refresh, color: Colors.white, size: 14),
                     const W(4),
-                    Text('IMPORTAR NOVO PDF', style: AppCss.minimumBold.setSize(10).setColor(Colors.white)),
+                    Text('NOVO PDF', style: AppCss.minimumBold.setSize(10).setColor(Colors.white)),
                   ],
                 ),
               ),
