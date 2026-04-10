@@ -63,7 +63,7 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
                     padding: const EdgeInsets.all(24),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
-                      mainAxisExtent: 300, // Reduzido em 15% para caber melhor na tela
+                      mainAxisExtent: 290, // Reduzido para caber sem rolar
                       crossAxisSpacing: 24,
                       mainAxisSpacing: 24,
                     ),

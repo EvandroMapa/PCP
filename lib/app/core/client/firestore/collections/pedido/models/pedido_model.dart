@@ -592,7 +592,6 @@ class PedidoModel {
     'valor_taxas': valorTaxas,
     'valor_desconto': valorDesconto,
     'valor_total': valorTotal,
-    'armacao_resumo': armacaoResumo,
     'checks': checks.map((c) => c.toMap()).toList(),
     'archives': archives.map((a) => a.toSupabaseMap()).toList(),
     'comments': comments.map((c) => c.toMap()).toList(),
