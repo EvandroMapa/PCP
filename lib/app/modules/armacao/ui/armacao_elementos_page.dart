@@ -90,6 +90,10 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
         ),
         backgroundColor: AppColors.secondary,
         elevation: 0,
+        actions: const [
+          FullscreenButton(),
+          SizedBox(width: 8),
+        ],
       ),
       body: _isLoading
           ? Center(
@@ -338,7 +342,7 @@ class _ElementoArmacaoCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: elemento.status.backgroundColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Colors.black, width: 1.5),
           boxShadow: [
@@ -353,24 +357,21 @@ class _ElementoArmacaoCard extends StatelessWidget {
           children: [
             _buildHeader(),
             Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    elemento.status.label.toUpperCase(),
-                    style: AppCss.largeBold.setSize(18).setColor(elemento.status.color).copyWith(letterSpacing: 1),
-                  ),
-                ],
+              child: Center(
+                child: Text(
+                  elemento.status.label.toUpperCase(),
+                  style: AppCss.largeBold.setSize(22).setColor(Colors.black).copyWith(letterSpacing: 1.5),
+                ),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildInfo('QTDE', '${elemento.qtde} pç'),
-                  _buildInfo('PESO TOTAL', '${elemento.pesoTotal.toStringAsFixed(1)} kg'),
-                  _buildInfo('ETIQUETAS', '${elemento.posicoes.length} os'),
+                  _buildInfo('PESO', '${elemento.pesoTotal.toStringAsFixed(1)} kg'),
+                  _buildInfo('OS', '${elemento.posicoes.length} os'),
                 ],
               ),
             ),
@@ -382,18 +383,18 @@ class _ElementoArmacaoCard extends StatelessWidget {
 
   Widget _buildHeader() {
     return Container(
-      margin: const EdgeInsets.all(8),
+      margin: const EdgeInsets.all(6),
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.black,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
           Expanded(
             child: Text(
               elemento.nome.toUpperCase(),
-              style: AppCss.mediumBold.setSize(13).setColor(Colors.white),
+              style: AppCss.largeBold.setSize(18).setColor(Colors.white),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -402,7 +403,7 @@ class _ElementoArmacaoCard extends StatelessWidget {
             const SizedBox(width: 8),
             GestureDetector(
               onTap: onImagePressed,
-              child: const Icon(Icons.image_outlined, color: Colors.white70, size: 16),
+              child: const Icon(Icons.image_outlined, color: Colors.white, size: 20),
             ),
           ],
         ],
@@ -412,16 +413,15 @@ class _ElementoArmacaoCard extends StatelessWidget {
 
   Widget _buildInfo(String label, String value) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           label,
-          style: AppCss.minimumBold.setSize(7).setColor(Colors.grey[500]!),
+          style: AppCss.largeBold.setSize(15).setColor(Colors.black.withOpacity(0.7)),
         ),
-        const SizedBox(height: 1),
         Text(
           value,
-          style: AppCss.mediumBold.setSize(13).setColor(Colors.black),
+          style: AppCss.largeBold.setSize(20).setColor(Colors.black),
         ),
       ],
     );

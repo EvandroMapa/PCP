@@ -41,8 +41,9 @@ class _OrdensPageState extends State<OrdensPage> {
     if (!widget.standalone) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         baseCtrl.appBarActionsStream.add(usuario.isOperador
-            ? []
+            ? [const FullscreenButton()]
             : [
+                const FullscreenButton(),
                 IconButton(
                   onPressed: () => openInNewTab('/ordens'),
                   icon: const Icon(Icons.open_in_new, color: Colors.white),
@@ -89,30 +90,30 @@ class _OrdensPageState extends State<OrdensPage> {
         appBar: AppBar(
           title: const Text('Ordens de Produção', style: TextStyle(color: Colors.white)),
           backgroundColor: AppColors.primaryMain,
-          actions: usuario.isOperador
-              ? []
-              : [
-                  IconButton(
-                    onPressed: () => push(context, const OrdensArquivadasPage()),
-                    icon: const Icon(
-                      Icons.domain_verification,
-                      color: Colors.white,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      ordemCtrl.utils.showFilter = !ordemCtrl.utils.showFilter;
-                      ordemCtrl.utilsStream.update();
-                    },
-                    icon: const Icon(Icons.sort, color: Colors.white),
-                  ),
-                  if (usuario.permission.ordem
-                      .contains(UserPermissionType.create))
-                    IconButton(
-                      onPressed: () => push(context, const OrdemCreatePage()),
-                      icon: const Icon(Icons.add, color: Colors.white),
-                    ),
-                ],
+          actions: [
+            if (usuario.isOperador) const FullscreenButton(),
+            if (!usuario.isOperador) ...[
+              IconButton(
+                onPressed: () => push(context, const OrdensArquivadasPage()),
+                icon: const Icon(
+                  Icons.domain_verification,
+                  color: Colors.white,
+                ),
+              ),
+              IconButton(
+                onPressed: () {
+                  ordemCtrl.utils.showFilter = !ordemCtrl.utils.showFilter;
+                  ordemCtrl.utilsStream.update();
+                },
+                icon: const Icon(Icons.sort, color: Colors.white),
+              ),
+              if (usuario.permission.ordem.contains(UserPermissionType.create))
+                IconButton(
+                  onPressed: () => push(context, const OrdemCreatePage()),
+                  icon: const Icon(Icons.add, color: Colors.white),
+                ),
+            ],
+          ],
         ),
         body: body(),
       );

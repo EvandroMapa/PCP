@@ -40,6 +40,14 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
   Widget build(BuildContext context) {
     return AppScaffold(
       backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        title: const Text('ARMAÇÃO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+        backgroundColor: Colors.black, // Estilo industrial
+        actions: const [
+          FullscreenButton(),
+          SizedBox(width: 8),
+        ],
+      ),
       body: StreamOut<bool>(
         stream: armacaoCtrl.loadingStream.listen,
         builder: (_, isLoading) {
@@ -164,12 +172,12 @@ class _PedidoArmacaoCard extends StatelessWidget {
         children: [
           Text(
             pedido.localizador,
-            style: AppCss.largeBold.setSize(32).setColor(Colors.white).copyWith(letterSpacing: 2),
+            style: AppCss.largeBold.setSize(25).setColor(Colors.white).copyWith(letterSpacing: 2),
           ),
           const SizedBox(height: 6),
           Text(
             pedido.cliente.nome.toUpperCase(),
-            style: AppCss.minimumBold.setSize(12).setColor(Colors.white.withOpacity(0.6)),
+            style: AppCss.largeBold.setSize(15).setColor(Colors.white.withOpacity(0.6)),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -186,17 +194,17 @@ class _PedidoArmacaoCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: AppCss.largeBold.setSize(15).setColor(color).copyWith(letterSpacing: 1),
+            style: AppCss.largeBold.setSize(12).setColor(color).copyWith(letterSpacing: 1),
           ),
           const SizedBox(height: 16),
           Text(
             pc,
-            style: AppCss.largeBold.setSize(29).setColor(Colors.black),
+            style: AppCss.largeBold.setSize(24).setColor(Colors.black),
           ),
           const SizedBox(height: 8),
           Text(
             kg,
-            style: AppCss.largeBold.setSize(20).setColor(Colors.black),
+            style: AppCss.largeBold.setSize(18).setColor(Colors.black),
           ),
         ],
       ),
