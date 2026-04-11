@@ -23,6 +23,7 @@ class UsuarioModel {
   bool get isNotOperador => !isOperador && !isArmador;
 
   bool get temAcessoElementos => tipo?.isPermitirElementos ?? role == UsuarioRole.administrador;
+  bool get podeEditarElementos => tipo?.isPermitirEditarElementos ?? role == UsuarioRole.administrador;
 
   static UsuarioModel get system => UsuarioModel(
     id: 'system',

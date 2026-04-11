@@ -3,6 +3,7 @@ class UsuarioTipoModel {
   final String id;
   final String nome;
   final bool isPermitirElementos;
+  final bool isPermitirEditarElementos;
   final bool isOperador;
   final bool isArmador;
   final DateTime createdAt;
@@ -11,6 +12,7 @@ class UsuarioTipoModel {
     required this.id,
     required this.nome,
     required this.isPermitirElementos,
+    required this.isPermitirEditarElementos,
     required this.isOperador,
     required this.isArmador,
     required this.createdAt,
@@ -20,6 +22,7 @@ class UsuarioTipoModel {
         id: '',
         nome: '',
         isPermitirElementos: false,
+        isPermitirEditarElementos: false,
         isOperador: false,
         isArmador: false,
         createdAt: DateTime.now(),
@@ -30,6 +33,7 @@ class UsuarioTipoModel {
       id: map['id'] ?? '',
       nome: map['nome'] ?? '',
       isPermitirElementos: map['permitir_elementos'] ?? false,
+      isPermitirEditarElementos: map['permitir_editar_elementos'] ?? false,
       isOperador: map['is_operador'] ?? false,
       isArmador: map['is_armador'] ?? false,
       createdAt: map['created_at'] != null
@@ -42,6 +46,7 @@ class UsuarioTipoModel {
     final map = {
       'nome': nome,
       'permitir_elementos': isPermitirElementos,
+      'permitir_editar_elementos': isPermitirEditarElementos,
       'is_operador': isOperador,
       'is_armador': isArmador,
     };
@@ -53,7 +58,7 @@ class UsuarioTipoModel {
 
   @override
   String toString() {
-    return 'UsuarioTipoModel(id: $id, nome: $nome, isPermitirElementos: $isPermitirElementos, isOperador: $isOperador, isArmador: $isArmador)';
+    return 'UsuarioTipoModel(id: $id, nome: $nome, isPermitirElementos: $isPermitirElementos, isPermitirEditarElementos: $isPermitirEditarElementos, isOperador: $isOperador, isArmador: $isArmador)';
   }
 
   @override

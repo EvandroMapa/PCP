@@ -49,6 +49,13 @@ class _UsuarioTipoFormDialogState extends State<UsuarioTipoFormDialog> {
                 contentPadding: EdgeInsets.zero,
               ),
               CheckboxListTile(
+                title: const Text('Permite editar elementos'),
+                value: form.isPermitirEditarElementos,
+                onChanged: (v) => setState(() => form.isPermitirEditarElementos = v ?? false),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+              ),
+              CheckboxListTile(
                 title: const Text('Acessa como operador'),
                 value: form.isOperador,
                 onChanged: (v) => setState(() => form.isOperador = v ?? false),

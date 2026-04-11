@@ -37,7 +37,7 @@ class UsuarioTipoController {
         await BackendClient.usuarioTipos.add(form.toModel());
       }
 
-      pop(context);
+      if (context.mounted) pop(context);
       NotificationService.showPositive(
         'Perfil de Usuário ${form.isEdit ? 'Editado' : 'Adicionado'}',
         'Operação realizada com sucesso',
@@ -81,6 +81,7 @@ class UsuarioTipoCreateModel {
   final String id;
   final TextEditingController nome = TextEditingController();
   bool isPermitirElementos = false;
+  bool isPermitirEditarElementos = false;
   bool isOperador = false;
   bool isArmador = false;
   bool isEdit = false;
@@ -92,6 +93,7 @@ class UsuarioTipoCreateModel {
         isEdit = true {
     nome.text = m.nome;
     isPermitirElementos = m.isPermitirElementos;
+    isPermitirEditarElementos = m.isPermitirEditarElementos;
     isOperador = m.isOperador;
     isArmador = m.isArmador;
   }
@@ -100,6 +102,7 @@ class UsuarioTipoCreateModel {
         id: isEdit ? id : '',
         nome: nome.text.trim(),
         isPermitirElementos: isPermitirElementos,
+        isPermitirEditarElementos: isPermitirEditarElementos,
         isOperador: isOperador,
         isArmador: isArmador,
         createdAt: DateTime.now(),

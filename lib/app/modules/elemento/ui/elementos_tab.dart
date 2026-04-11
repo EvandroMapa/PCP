@@ -13,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
+import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 
 class ElementosTab extends StatefulWidget {
   final PedidoModel pedido;
@@ -88,146 +89,148 @@ class _ElementosTabState extends State<ElementosTab> {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      // ── Importar PDF (ghost/outlined) ──
-                      _ActionButton(
-                        icon: Icons.picture_as_pdf_outlined,
-                        label: 'Importar PDF',
-                        color: AppColors.secondary,
-                        variant: _ButtonVariant.outlined,
-                        onTap: () async {
-                          final result = await FilePicker.platform.pickFiles(
-                            type: FileType.custom,
-                            allowedExtensions: ['pdf'],
-                          );
-                          if (result != null &&
-                              result.files.single.bytes != null) {
-                            if (!context.mounted) return;
-                            _showProgressDialog(context);
-                            elementoCtrl.importProgressStream.add(
-                              ImportProgress(status: 'Extraindo texto do PDF...'),
+                      if (usuarioCtrl.usuario?.podeEditarElementos ?? false) ...[
+                        // ── Importar PDF (ghost/outlined) ──
+                        _ActionButton(
+                          icon: Icons.picture_as_pdf_outlined,
+                          label: 'Importar PDF',
+                          color: AppColors.secondary,
+                          variant: _ButtonVariant.outlined,
+                          onTap: () async {
+                            final result = await FilePicker.platform.pickFiles(
+                              type: FileType.custom,
+                              allowedExtensions: ['pdf'],
                             );
-                            await Future.delayed(const Duration(milliseconds: 100));
-                            final res = await elementoCtrl.onImportPDF(
-                                result.files.single.bytes!, widget.pedido);
-                            
-                            if (context.mounted) Navigator.pop(context); // Fecha progresso
-
-                            if (!res['success'] && context.mounted) {
-                              showDialog(
-                                context: context,
-                                builder: (_) => AlertDialog(
-                                  title: const Text('Resultado da Importação'),
-                                  content: SizedBox(
-                                    width: 500,
-                                    child: SingleChildScrollView(
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                    'Erro: ${res['error']}',
-                                                    style: AppCss.mediumBold
-                                                        .copyWith(
-                                                            color: Colors.red)),
-                                              ),
-                                              IconButton(
-                                                tooltip: 'Copiar Texto',
-                                                onPressed: () {
-                                                  Clipboard.setData(ClipboardData(
-                                                      text: res['rawText']));
-                                                  ScaffoldMessenger.of(context)
-                                                      .showSnackBar(
-                                                    const SnackBar(
-                                                        content: Text(
-                                                            'Texto copiado!')),
-                                                  );
-                                                },
-                                                icon: const Icon(Icons.copy,
-                                                    size: 18),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 16),
-                                          const Text(
-                                              'Abaixo está o texto que o sistema conseguiu ler do PDF. Se estiver vazio ou ilegível, o PDF pode ser bloqueado ou ser uma imagem:'),
-                                          const SizedBox(height: 8),
-                                          Container(
-                                            width: double.infinity,
-                                            padding: const EdgeInsets.all(10),
-                                            decoration: BoxDecoration(
-                                              color: Colors.grey.shade100,
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              border: Border.all(
-                                                  color: Colors.grey.shade300),
-                                            ),
-                                            child: Text(
-                                              res['rawText'].isEmpty
-                                                  ? '(Nenhum texto extraído)'
-                                                  : res['rawText'],
-                                              style: const TextStyle(
-                                                  fontFamily: 'monospace',
-                                                  fontSize: 10),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      style: TextButton.styleFrom(
-                                        foregroundColor: AppColors.primaryMain,
-                                        textStyle: AppCss.mediumBold,
-                                      ),
-                                      onPressed: () => Navigator.pop(context),
-                                      child: const Text('Fechar'),
-                                    ),
-                                  ],
-                                ),
+                            if (result != null &&
+                                result.files.single.bytes != null) {
+                              if (!context.mounted) return;
+                              _showProgressDialog(context);
+                              elementoCtrl.importProgressStream.add(
+                                ImportProgress(status: 'Extraindo texto do PDF...'),
                               );
-                            }
-                          }
-                        },
-                      ),
-                      // ── Limpar (danger ghost) ──
-                      StreamOut<List<ElementoModel>>(
-                        stream: elementoCtrl.elementosStream.listen,
-                        builder: (_, elementos) {
-                          if (elementos.isEmpty) return const SizedBox.shrink();
-                          return _ActionButton(
-                            icon: Icons.delete_sweep_rounded,
-                            label: 'Limpar',
-                            color: AppColors.error,
-                            variant: _ButtonVariant.outlined,
-                            onTap: () async {
-                              if (await showConfirmDialog(
-                                'Apagar TODOS os elementos?',
-                                'Esta ação não pode ser desfeita. Deseja continuar?',
-                              )) {
-                                await elementoCtrl.onDeleteAllElementos(widget.pedido.id);
+                              await Future.delayed(const Duration(milliseconds: 100));
+                              final res = await elementoCtrl.onImportPDF(
+                                  result.files.single.bytes!, widget.pedido);
+                              
+                              if (context.mounted) Navigator.pop(context); // Fecha progresso
+
+                              if (!res['success'] && context.mounted) {
+                                showDialog(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                    title: const Text('Resultado da Importação'),
+                                    content: SizedBox(
+                                      width: 500,
+                                      child: SingleChildScrollView(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                      'Erro: ${res['error']}',
+                                                      style: AppCss.mediumBold
+                                                          .copyWith(
+                                                              color: Colors.red)),
+                                                ),
+                                                IconButton(
+                                                  tooltip: 'Copiar Texto',
+                                                  onPressed: () {
+                                                    Clipboard.setData(ClipboardData(
+                                                        text: res['rawText']));
+                                                    ScaffoldMessenger.of(context)
+                                                        .showSnackBar(
+                                                      const SnackBar(
+                                                          content: Text(
+                                                              'Texto copiado!')),
+                                                    );
+                                                  },
+                                                  icon: const Icon(Icons.copy,
+                                                      size: 18),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 16),
+                                            const Text(
+                                                'Abaixo está o texto que o sistema conseguiu ler do PDF. Se estiver vazio ou ilegível, o PDF pode ser bloqueado ou ser uma imagem:'),
+                                            const SizedBox(height: 8),
+                                            Container(
+                                              width: double.infinity,
+                                              padding: const EdgeInsets.all(10),
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey.shade100,
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                border: Border.all(
+                                                    color: Colors.grey.shade300),
+                                              ),
+                                              child: Text(
+                                                res['rawText'].isEmpty
+                                                    ? '(Nenhum texto extraído)'
+                                                    : res['rawText'],
+                                                style: const TextStyle(
+                                                    fontFamily: 'monospace',
+                                                    fontSize: 10),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: AppColors.primaryMain,
+                                          textStyle: AppCss.mediumBold,
+                                        ),
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text('Fechar'),
+                                      ),
+                                    ],
+                                  ),
+                                );
                               }
-                            },
-                          );
-                        },
-                      ),
-                      // ── Novo Elemento (primary solid) ──
-                      _ActionButton(
-                        icon: Icons.add_rounded,
-                        label: 'Novo Elemento',
-                        color: AppColors.primaryMain,
-                        variant: _ButtonVariant.filled,
-                        onTap: () => showElementoFormDialog(
-                          context,
-                          pedido: widget.pedido,
+                            }
+                          },
                         ),
-                      ),
+                        // ── Limpar (danger ghost) ──
+                        StreamOut<List<ElementoModel>>(
+                          stream: elementoCtrl.elementosStream.listen,
+                          builder: (_, elementos) {
+                            if (elementos.isEmpty) return const SizedBox.shrink();
+                            return _ActionButton(
+                              icon: Icons.delete_sweep_rounded,
+                              label: 'Limpar',
+                              color: AppColors.error,
+                              variant: _ButtonVariant.outlined,
+                              onTap: () async {
+                                if (await showConfirmDialog(
+                                  'Apagar TODOS os elementos?',
+                                  'Esta ação não pode ser desfeita. Deseja continuar?',
+                                )) {
+                                  await elementoCtrl.onDeleteAllElementos(widget.pedido.id);
+                                }
+                              },
+                            );
+                          },
+                        ),
+                        // ── Novo Elemento (primary solid) ──
+                        _ActionButton(
+                          icon: Icons.add_rounded,
+                          label: 'Novo Elemento',
+                          color: AppColors.primaryMain,
+                          variant: _ButtonVariant.filled,
+                          onTap: () => showElementoFormDialog(
+                            context,
+                            pedido: widget.pedido,
+                          ),
+                        ),
+                      ],
                       // ── Comparativo (status pill) ──
                       _ActionButton(
                         icon: validacao.isOk
@@ -624,40 +627,41 @@ class _ElementoTileState extends State<_ElementoTile> {
                       ),
                       const SizedBox(width: 4),
                       // Ações
-                      PopupMenuButton<String>(
-                        icon: Icon(Icons.more_vert_rounded, color: Colors.grey[400], size: 20),
-                        tooltip: 'Ações',
-                        padding: EdgeInsets.zero,
-                        splashRadius: 20,
-                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                        onSelected: (action) async {
-                          if (action == 'edit') {
-                            await showElementoFormDialog(context,
-                                pedido: widget.pedido, elemento: el);
-                          } else if (action == 'delete') {
-                            await elementoCtrl.onDeleteElemento(el);
-                          }
-                        },
-                        itemBuilder: (_) => [
-                          PopupMenuItem(
-                              value: 'edit',
-                              child: Row(children: [
-                                Icon(Icons.edit_rounded, size: 18, color: Colors.grey[700]),
-                                const SizedBox(width: 12),
-                                const Text('Editar')
-                              ])),
-                          const PopupMenuDivider(),
-                          PopupMenuItem(
-                              value: 'delete',
-                              child: Row(children: [
-                                const Icon(Icons.delete_outline_rounded,
-                                    size: 18, color: Colors.red),
-                                const SizedBox(width: 12),
-                                const Text('Excluir',
-                                    style: TextStyle(color: Colors.red))
-                              ])),
-                        ],
-                      ),
+                      if (usuarioCtrl.usuario?.podeEditarElementos ?? false)
+                        PopupMenuButton<String>(
+                          icon: Icon(Icons.more_vert_rounded, color: Colors.grey[400], size: 20),
+                          tooltip: 'Ações',
+                          padding: EdgeInsets.zero,
+                          splashRadius: 20,
+                          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                          onSelected: (action) async {
+                            if (action == 'edit') {
+                              await showElementoFormDialog(context,
+                                  pedido: widget.pedido, elemento: el);
+                            } else if (action == 'delete') {
+                              await elementoCtrl.onDeleteElemento(el);
+                            }
+                          },
+                          itemBuilder: (_) => [
+                            PopupMenuItem(
+                                value: 'edit',
+                                child: Row(children: [
+                                  Icon(Icons.edit_rounded, size: 18, color: Colors.grey[700]),
+                                  const SizedBox(width: 12),
+                                  const Text('Editar')
+                                ])),
+                            const PopupMenuDivider(),
+                            PopupMenuItem(
+                                value: 'delete',
+                                child: Row(children: [
+                                  const Icon(Icons.delete_outline_rounded,
+                                      size: 18, color: Colors.red),
+                                  const SizedBox(width: 12),
+                                  const Text('Excluir',
+                                      style: TextStyle(color: Colors.red))
+                                ])),
+                          ],
+                        ),
                     ],
                   ),
                   const SizedBox(width: 4),
