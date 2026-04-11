@@ -446,7 +446,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
       
       await _syncRelationships(model);
 
-      if (!kanbanCtrl.isDragging) {
+      if (!kanbanCtrl.isDropLocked) {
         await fetch(lock: false);
       }
 

@@ -297,9 +297,9 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: AppCss.radius12),
       child: Container(
-        width: 800,
-        height: 850,
-        decoration: BoxDecoration(color: Colors.white, borderRadius: AppCss.radius12),
+        width: 780,
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
+        decoration: BoxDecoration(color: const Color(0xFFF8F9FB), borderRadius: AppCss.radius12),
         child: Column(
           children: [
             _buildHeader(),
@@ -324,7 +324,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
           const W(12),
           Text(
             currentStep == 0 ? 'IMPORTAR PEDIDO (PDF)' : 'CONFERÊNCIA DE DADOS',
-            style: AppCss.mediumBold.setColor(Colors.white),
+            style: AppCss.smallBold.setSize(14).setColor(Colors.white),
           ),
           if (currentStep == 1 && !isUploading) ...[
             const W(16),
@@ -428,9 +428,9 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.cloud_upload_outlined, size: 64, color: AppColors.primaryMain),
-                  const H(16),
-                  Text('Selecione o PDF do pedido', style: AppCss.mediumBold),
+                  Icon(Icons.cloud_upload_outlined, size: 48, color: AppColors.primaryMain),
+                  const H(12),
+                  Text('Selecione o PDF do pedido', style: AppCss.smallBold.setSize(13)),
                 ],
               ),
             ),
@@ -480,7 +480,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Data de Entrega', style: AppCss.minimumBold.setSize(12)),
+                    Text('Data de Entrega', style: AppCss.minimumBold.setSize(11).setColor(Colors.grey.shade700)),
                     const H(4),
                     InkWell(
                       onTap: () async {
@@ -494,12 +494,16 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                        decoration: BoxDecoration(border: Border.all(color: AppColors.neutralLight), borderRadius: AppCss.radius8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: AppCss.radius8,
+                        ),
                         child: Row(
                           children: [
-                            const Icon(Icons.calendar_today, size: 16),
+                            Icon(Icons.calendar_today, size: 14, color: Colors.grey.shade600),
                             const W(8),
-                            Text(DateFormat('dd/MM/yyyy').format(deliveryDate)),
+                            Text(DateFormat('dd/MM/yyyy').format(deliveryDate), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
                           ],
                         ),
                       ),
@@ -516,7 +520,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Cliente', style: AppCss.minimumBold.setSize(12)),
+              Text('Cliente', style: AppCss.minimumBold.setSize(11).setColor(Colors.grey.shade700)),
               const H(4),
               AppDropDown<ClienteModel?>(
                 hasFilter: true,
@@ -553,7 +557,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Obra', style: AppCss.minimumBold.setSize(12)),
+                    Text('Obra', style: AppCss.minimumBold.setSize(11).setColor(Colors.grey.shade700)),
                     const H(4),
                     AppDropDown<ObraModel?>(
                       label: null,
@@ -596,7 +600,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('ITENS (${extractedProducts.length})', style: AppCss.mediumBold),
+              Text('ITENS (${extractedProducts.length})', style: AppCss.smallBold.setSize(13)),
               if (extractedProducts.isEmpty)
                 Text('Nenhum produto detectado!', style: AppCss.minimumBold.setColor(Colors.red)),
             ],
@@ -663,26 +667,32 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                 final String fTotal = NumberFormat.simpleCurrency(locale: 'pt_BR').format(vTotal);
                 
                 return ListTile(
-                  leading: Icon(Icons.shopping_basket_outlined, color: exists ? Colors.green : Colors.red),
+                  dense: true,
+                  visualDensity: VisualDensity.compact,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                  leading: Icon(Icons.shopping_basket_outlined, color: exists ? Colors.green : Colors.red, size: 18),
                   title: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        exists ? '${p['codigo']} - ${produtoBase.nome}' : '${p['codigo']} - ITEM NÃO CADASTRADO NA BASE DE DADOS',
+                        exists ? '${p['codigo']} - ${produtoBase.nome}' : '${p['codigo']} - ITEM NÃO CADASTRADO',
                         style: TextStyle(
-                          color: exists ? Colors.black : Colors.red, 
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                          color: exists ? Colors.black87 : Colors.red, 
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
                         )
                       ),
                       if (pdfName.isNotEmpty)
                         Text(
-                          ' ($pdfName)',
-                          style: AppCss.minimumRegular.setSize(11).setColor(Colors.black),
+                          pdfName,
+                          style: const TextStyle(fontSize: 10, color: Colors.black54),
                         ),
                     ],
                   ),
-                  subtitle: Text('Qtde: ${p['qtde']} | V.Unit: $fUnit | Total: $fTotal'),
+                  subtitle: Text(
+                    'Qtde: ${p['qtde']} | V.Unit: $fUnit | Total: $fTotal',
+                    style: const TextStyle(fontSize: 11),
+                  ),
                 );
               },
             ),
@@ -696,22 +706,24 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Etapa Destino', style: AppCss.minimumBold.setSize(12)),
+        Text('Etapa Destino', style: AppCss.minimumBold.setSize(11).setColor(Colors.grey.shade700)),
         const H(4),
         DropdownButtonFormField<StepModel>(
           initialValue: selectedStep,
           isExpanded: true,
+          style: const TextStyle(fontSize: 12, color: Colors.black87),
           decoration: InputDecoration(
             isDense: true,
             filled: true,
             fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-            border: OutlineInputBorder(borderRadius: AppCss.radius8),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(borderRadius: AppCss.radius8, borderSide: BorderSide(color: Colors.grey.shade300)),
+            enabledBorder: OutlineInputBorder(borderRadius: AppCss.radius8, borderSide: BorderSide(color: Colors.grey.shade300)),
           ),
           onChanged: (e) => setState(() => selectedStep = e),
           items: FirestoreClient.steps.data.map((e) => DropdownMenuItem(
             value: e, 
-            child: Text(e.name, style: AppCss.minimumBold.setSize(14))
+            child: Text(e.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))
           )).toList(),
         ),
       ],
@@ -721,15 +733,17 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   Widget _buildTipoDropdown() {
     return DropdownButtonFormField<PedidoTipo>(
       initialValue: selectedTipo,
+      style: const TextStyle(fontSize: 12, color: Colors.black87),
       decoration: InputDecoration(
         isDense: true,
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-        border: OutlineInputBorder(borderRadius: AppCss.radius8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        border: OutlineInputBorder(borderRadius: AppCss.radius8, borderSide: BorderSide(color: Colors.grey.shade300)),
+        enabledBorder: OutlineInputBorder(borderRadius: AppCss.radius8, borderSide: BorderSide(color: Colors.grey.shade300)),
       ),
       onChanged: (e) => setState(() => selectedTipo = e!),
-      items: PedidoTipo.values.map((e) => DropdownMenuItem(value: e, child: Text(e.name.toUpperCase()))).toList(),
+      items: PedidoTipo.values.map((e) => DropdownMenuItem(value: e, child: Text(e.name.toUpperCase(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)))).toList(),
     );
   }
 
@@ -743,19 +757,25 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppCss.minimumBold.setSize(12)),
+        Text(label, style: AppCss.minimumBold.setSize(11).setColor(Colors.grey.shade700)),
         const H(4),
         dropdown ?? TextField(
           controller: val != null ? TextEditingController(text: val) : ctrl,
-          readOnly: readOnly || val != null, // Campos financeiros formatados ficam somente leitura ou precisam de máscara real
+          readOnly: readOnly || val != null,
           onChanged: onChanged,
-          style: TextStyle(color: color, fontWeight: color != null ? FontWeight.bold : null),
+          style: TextStyle(
+            fontSize: 12,
+            color: color ?? Colors.black87,
+            fontWeight: color != null ? FontWeight.bold : FontWeight.w500,
+          ),
           decoration: InputDecoration(
             isDense: true,
             filled: true,
             fillColor: Colors.white,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            border: OutlineInputBorder(borderRadius: AppCss.radius8),
+            border: OutlineInputBorder(borderRadius: AppCss.radius8, borderSide: BorderSide(color: Colors.grey.shade300)),
+            enabledBorder: OutlineInputBorder(borderRadius: AppCss.radius8, borderSide: BorderSide(color: Colors.grey.shade300)),
+            focusedBorder: OutlineInputBorder(borderRadius: AppCss.radius8, borderSide: BorderSide(color: AppColors.secondary, width: 1.5)),
           ),
         ),
       ],

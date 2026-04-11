@@ -36,6 +36,10 @@ class StepController {
 
   /// Bloqueia rebuilds do stream durante o arrasto de cartoes
   bool isDragging = false;
+  /// Bloqueia fetch do backend por um curto periodo apos o drop,
+  /// evitando que dados antigos sobreescrevam o estado otimista.
+  bool _pendingDrop = false;
+  bool get isDropLocked => isDragging || _pendingDrop;
   StreamSubscription? _pedidosSubscription;
   Timer? _refreshTimer;
 
@@ -43,15 +47,21 @@ class StepController {
   void startDrag() => isDragging = true;
   void endDrag() {
     isDragging = false;
-    // Dispara um fetch após o drag terminar para sincronizar
-    BackendClient.pedidos.fetch();
+    // NÃO faz fetch imediato — o estado local já está correto (optimistic).
+    // Agenda um fetch com delay para dar tempo do update() no Supabase terminar
+    // antes de re-sincronizar os dados com o backend.
+    _pendingDrop = true;
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      _pendingDrop = false;
+      BackendClient.pedidos.fetch();
+    });
   }
 
   Future<void> onInit() async {
     try {
       _pedidosSubscription?.cancel();
       _pedidosSubscription = BackendClient.pedidos.dataStream.listen.listen((_) {
-        if (!isDragging) {
+        if (!isDropLocked) {
           updateKanban();
           SchedulerBinding.instance.addPostFrameCallback((_) {
             SchedulerBinding.instance.ensureVisualUpdate();
@@ -67,7 +77,7 @@ class StepController {
       // Timer de atualização automática a cada 3 segundos
       _refreshTimer?.cancel();
       _refreshTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
-        if (!isDragging) {
+        if (!isDropLocked) {
           BackendClient.pedidos.fetch();
         }
       });
