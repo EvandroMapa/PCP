@@ -73,7 +73,7 @@ class ElementoController {
           .from('elementos')
           .select()
           .eq('pedido_id', pedidoId)
-          .order('created_at')
+          .order('nome')
           .timeout(const Duration(seconds: 15));
 
       log('onFetch: 2 - Elementos retornados: ${elementosRaw.length}');
