@@ -596,6 +596,7 @@ class PedidoModel {
     'archives': archives.map((a) => a.toSupabaseMap()).toList(),
     'comments': comments.map((c) => c.toMap()).toList(),
     'user_ids': users.map((u) => u.id).toList(),
+    'armacao_resumo': armacaoResumo,
   };
 
   PedidoModel copyWith({
