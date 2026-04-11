@@ -331,6 +331,7 @@ class _ElementosTabState extends State<ElementosTab> {
         stream: elementoCtrl.importProgressStream.listen,
         builder: (_, progress) {
           final p = progress;
+          final isCancelling = p?.isCancelling ?? false;
           return AlertDialog(
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -339,22 +340,35 @@ class _ElementosTabState extends State<ElementosTab> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.secondary.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
+                  if (isCancelling) ...[
+                    const SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                      ),
                     ),
-                    child: Icon(Icons.cloud_upload_rounded,
-                        color: AppColors.secondary, size: 32),
-                  ),
+                  ] else ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.secondary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.cloud_upload_rounded,
+                          color: AppColors.secondary, size: 32),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   Text(
                     p?.status ?? 'Iniciando importação...',
-                    style: AppCss.mediumBold,
+                    style: isCancelling 
+                        ? AppCss.mediumBold.copyWith(color: Colors.red)
+                        : AppCss.mediumBold,
                     textAlign: TextAlign.center,
                   ),
-                  if (p != null && p.total > 0) ...[
+                  if (!isCancelling && p != null && p.total > 0) ...[
                     const SizedBox(height: 16),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(10),
@@ -380,15 +394,20 @@ class _ElementosTabState extends State<ElementosTab> {
               SizedBox(
                 width: double.infinity,
                 child: TextButton(
-                  onPressed: () {
+                  onPressed: isCancelling ? null : () {
                     elementoCtrl.cancelImport();
                   },
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.red,
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  child: const Text('Cancelar Importação',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: Text(
+                    isCancelling ? 'Cancelando...' : 'Cancelar Importação',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isCancelling ? Colors.grey : Colors.red,
+                    ),
+                  ),
                 ),
               ),
             ],

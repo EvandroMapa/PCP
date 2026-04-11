@@ -50,7 +50,13 @@ class ElementoController {
     importProgressStream.add(null);
   }
 
-  void cancelImport() => _cancelImport = true;
+  void cancelImport() {
+    _cancelImport = true;
+    importProgressStream.add(ImportProgress(
+      status: 'Cancelando importação...\nAguarde enquanto revertemos os dados.',
+      isCancelling: true,
+    ));
+  }
 
   // ─── BUSCAR ───────────────────────────────────────────────────────────────
   Future<void> onFetch(String pedidoId) async {
@@ -603,8 +609,14 @@ class ElementoController {
       }
 
       // ─── SALVAR NO BANCO (com suporte a cancelamento) ───────────────────────
-      final total = novosElementos.length;
-      for (int i = 0; i < total; i++) {
+      // Calcula total de posições para a barra de progresso
+      int totalPosicoes = 0;
+      for (final el in novosElementos) {
+        totalPosicoes += el.posicoes.length;
+      }
+      int posicaoAtual = 0;
+
+      for (int i = 0; i < novosElementos.length; i++) {
         if (_cancelImport) {
           // Rollback: Remover o que já foi inserido
           importProgressStream
@@ -625,14 +637,38 @@ class ElementoController {
         }
 
         final el = novosElementos[i];
-        importProgressStream.add(ImportProgress(
-          current: i + 1,
-          total: total,
-          status: 'Salvando elemento ${i + 1} de $total...',
-          isSaving: true,
-        ));
 
-        await onSaveElemento(el, pedido.id);
+        // Salva o elemento (header)
+        await SupabaseService.client.from('elementos').upsert({
+          'id': el.id,
+          'pedido_id': pedido.id,
+          'nome': el.nome.text,
+          'qtde': el.qtdeInt,
+        });
+
+        // Salva cada posição individualmente, atualizando progresso
+        for (final posicao in el.posicoes) {
+          if (_cancelImport) break;
+          if (!posicao.isValid) continue;
+
+          posicaoAtual++;
+          importProgressStream.add(ImportProgress(
+            current: posicaoAtual,
+            total: totalPosicoes,
+            status: 'Elemento: ${el.nome.text}\nPosição: ${posicao.nome.text}',
+            isSaving: true,
+          ));
+
+          await SupabaseService.client.from('elemento_posicoes').upsert({
+            'id': posicao.id,
+            'elemento_id': el.id,
+            'nome': posicao.nome.controller.text,
+            'numero_os': posicao.numeroOs.controller.text,
+            'produto_id': posicao.produto!.id,
+            'peso_kg': posicao.pesoDouble,
+          });
+        }
+
         createdElementIds.add(el.id);
       }
 
@@ -729,12 +765,14 @@ class ImportProgress {
   final int total;
   final String status;
   final bool isSaving;
+  final bool isCancelling;
 
   ImportProgress({
     this.current = 0,
     this.total = 0,
     required this.status,
     this.isSaving = false,
+    this.isCancelling = false,
   });
 
   double get percent => total > 0 ? current / total : 0;
