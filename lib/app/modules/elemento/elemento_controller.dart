@@ -6,6 +6,7 @@ import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_arquivo_model.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/services/supabase_storage_service.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart' as syncfusion;
@@ -116,9 +117,78 @@ class ElementoController {
 
       elementosStream.add(result);
       _validacaoDirty = true; // Invalida cache do comparativo
+
+      // Recalcular armacaoResumo e persistir (garante dados para o Kanban)
+      _updateArmacaoResumo(pedidoId, result);
     } catch (e) {
       log('ElementoController.onFetch erro', error: e);
       elementosStream.add(<ElementoModel>[]);
+    }
+  }
+
+  // ─── RECÁLCULO DO RESUMO DE ARMAÇÃO ──────────────────────────────────────
+  Future<void> _updateArmacaoResumo(String pedidoId, List<ElementoModel> elementos) async {
+    try {
+      int totalQtd = 0;
+      double totalPeso = 0;
+      final Map<ElementoStatus, int> qtdPorStatus = {
+        ElementoStatus.aguardando: 0,
+        ElementoStatus.armando: 0,
+        ElementoStatus.pronto: 0,
+      };
+      final Map<ElementoStatus, double> pesoPorStatus = {
+        ElementoStatus.aguardando: 0,
+        ElementoStatus.armando: 0,
+        ElementoStatus.pronto: 0,
+      };
+
+      for (final e in elementos) {
+        totalQtd += e.qtde;
+        totalPeso += e.pesoTotal;
+        qtdPorStatus[e.status] = (qtdPorStatus[e.status] ?? 0) + e.qtde;
+        pesoPorStatus[e.status] = (pesoPorStatus[e.status] ?? 0) + e.pesoTotal;
+      }
+
+      final Map<String, dynamic> resume = {
+        'total_qtd': totalQtd,
+        'total_peso': totalPeso,
+        'details': {
+          'aguardando': {
+            'qtd': qtdPorStatus[ElementoStatus.aguardando],
+            'peso': pesoPorStatus[ElementoStatus.aguardando],
+            'prcnt_qtd': totalQtd > 0 ? qtdPorStatus[ElementoStatus.aguardando]! / totalQtd : 0,
+            'prcnt_peso': totalPeso > 0 ? pesoPorStatus[ElementoStatus.aguardando]! / totalPeso : 0,
+          },
+          'armando': {
+            'qtd': qtdPorStatus[ElementoStatus.armando],
+            'peso': pesoPorStatus[ElementoStatus.armando],
+            'prcnt_qtd': totalQtd > 0 ? qtdPorStatus[ElementoStatus.armando]! / totalQtd : 0,
+            'prcnt_peso': totalPeso > 0 ? pesoPorStatus[ElementoStatus.armando]! / totalPeso : 0,
+          },
+          'pronto': {
+            'qtd': qtdPorStatus[ElementoStatus.pronto],
+            'peso': pesoPorStatus[ElementoStatus.pronto],
+            'prcnt_qtd': totalQtd > 0 ? qtdPorStatus[ElementoStatus.pronto]! / totalQtd : 0,
+            'prcnt_peso': totalPeso > 0 ? pesoPorStatus[ElementoStatus.pronto]! / totalPeso : 0,
+          },
+        }
+      };
+
+      // Persistir no Supabase
+      await SupabaseService.client
+          .from('pedidos')
+          .update({'armacao_resumo': resume})
+          .eq('id', pedidoId);
+
+      // Atualizar localmente no objeto pedido para refletir no Kanban
+      final pedido = BackendClient.pedidos.pepidosUnarchiveds
+          .firstWhere((p) => p.id == pedidoId, orElse: () => throw 'Pedido não encontrado');
+      pedido.armacaoResumo.clear();
+      pedido.armacaoResumo.addAll(resume);
+
+      log('armacaoResumo atualizado: $totalQtd elementos, ${totalPeso.toStringAsFixed(1)} kg');
+    } catch (e) {
+      log('Erro ao atualizar armacaoResumo: $e');
     }
   }
 

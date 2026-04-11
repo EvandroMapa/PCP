@@ -101,6 +101,7 @@ class _ElementosTabState extends State<ElementosTab> {
                           );
                           if (result != null &&
                               result.files.single.bytes != null) {
+                            if (!context.mounted) return;
                             _showProgressDialog(context);
                             elementoCtrl.importProgressStream.add(
                               ImportProgress(status: 'Extraindo texto do PDF...'),
@@ -109,7 +110,7 @@ class _ElementosTabState extends State<ElementosTab> {
                             final res = await elementoCtrl.onImportPDF(
                                 result.files.single.bytes!, widget.pedido);
                             
-                            if (mounted) Navigator.pop(context); // Fecha progresso
+                            if (context.mounted) Navigator.pop(context); // Fecha progresso
 
                             if (!res['success'] && context.mounted) {
                               showDialog(
@@ -246,6 +247,9 @@ class _ElementosTabState extends State<ElementosTab> {
               ),
             ),
 
+            // ── Barra de Resumo de Status ──────────────────────────────────
+            if (elementos.isNotEmpty)
+              _buildStatusSummaryBar(elementos),
             // ── Lista de elementos ────────────────────────────────────────
             if (elementos.isEmpty)
               Expanded(
@@ -285,6 +289,106 @@ class _ElementosTabState extends State<ElementosTab> {
           ],
         );
       },
+    );
+  }
+
+  // ─── BARRA DE RESUMO DE STATUS ──────────────────────────────────────────────
+  Widget _buildStatusSummaryBar(List<ElementoModel> elementos) {
+    int totalQtd = 0;
+    double totalPeso = 0;
+    final Map<ElementoStatus, int> qtdPorStatus = {
+      ElementoStatus.aguardando: 0,
+      ElementoStatus.armando: 0,
+      ElementoStatus.pronto: 0,
+    };
+    final Map<ElementoStatus, double> pesoPorStatus = {
+      ElementoStatus.aguardando: 0,
+      ElementoStatus.armando: 0,
+      ElementoStatus.pronto: 0,
+    };
+
+    for (final e in elementos) {
+      totalQtd += e.qtde;
+      totalPeso += e.pesoTotal;
+      qtdPorStatus[e.status] = (qtdPorStatus[e.status] ?? 0) + e.qtde;
+      pesoPorStatus[e.status] = (pesoPorStatus[e.status] ?? 0) + e.pesoTotal;
+    }
+
+    Widget col(ElementoStatus status) {
+      final qtd = qtdPorStatus[status] ?? 0;
+      final peso = pesoPorStatus[status] ?? 0;
+      final pctQtd = totalQtd > 0 ? (qtd / totalQtd * 100) : 0;
+      final pctPeso = totalPeso > 0 ? (peso / totalPeso * 100) : 0;
+
+      return Expanded(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+          decoration: BoxDecoration(
+            color: status.backgroundColor,
+            border: Border(
+              top: BorderSide(color: status.color, width: 3),
+            ),
+          ),
+          child: Column(
+            children: [
+              Text(
+                status.label.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: status.color,
+                  letterSpacing: 1,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('ELEMENTOS', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w600, color: Colors.grey[500])),
+                        const SizedBox(height: 2),
+                        Text('$qtd (${pctQtd.toStringAsFixed(0)}%)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text('PESO (KG)', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w600, color: Colors.grey[500])),
+                        const SizedBox(height: 2),
+                        Text('${_fmt(peso)} (${pctPeso.toStringAsFixed(0)}%)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.grey.shade300, width: 0.5),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Row(
+          children: [
+            col(ElementoStatus.aguardando),
+            Container(width: 0.5, height: 70, color: Colors.grey.shade300),
+            col(ElementoStatus.armando),
+            Container(width: 0.5, height: 70, color: Colors.grey.shade300),
+            col(ElementoStatus.pronto),
+          ],
+        ),
+      ),
     );
   }
 
@@ -404,7 +508,7 @@ class _ElementoTileState extends State<_ElementoTile> {
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: el.status.backgroundColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -413,7 +517,7 @@ class _ElementoTileState extends State<_ElementoTile> {
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(color: el.status.color.withValues(alpha: 0.3)),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -424,10 +528,10 @@ class _ElementoTileState extends State<_ElementoTile> {
             child: IntrinsicHeight(
               child: Row(
                 children: [
-                  // Indicador lateral
+                  // Indicador lateral colorido pelo status
                   Container(
                     width: 4,
-                    color: AppColors.primaryMain.withValues(alpha: _expanded ? 1.0 : 0.3),
+                    color: el.status.color.withValues(alpha: _expanded ? 1.0 : 0.6),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -452,6 +556,24 @@ class _ElementoTileState extends State<_ElementoTile> {
                                           .setColor(AppColors.primaryMain)
                                           .setSize(11)),
                                 ),
+                              // Badge de status
+                              Container(
+                                margin: const EdgeInsets.only(left: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: el.status.color.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: el.status.color.withValues(alpha: 0.4), width: 0.5),
+                                ),
+                                child: Text(
+                                  el.status.label,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: el.status.color,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 4),

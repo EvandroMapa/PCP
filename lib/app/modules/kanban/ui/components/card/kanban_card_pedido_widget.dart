@@ -14,6 +14,7 @@ import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_notif
 import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_products_widget.dart';
 import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_tags_widget.dart';
 import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_users_widget.dart';
+import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_elementos_widget.dart';
 import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_vinculados_widget.dart';
 import 'package:aco_plus/app/modules/notificacao/notificacao_controller.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
@@ -101,6 +102,8 @@ class KanbanCardPedidoWidget extends StatelessWidget {
                     KanbanCardUsersWidget(pedido, viewMode: viewMode),
                   ],
                 ),
+                // ── Status dos elementos (somente CDA) ──
+                KanbanCardElementosWidget(pedido: pedido),
                 if (viewMode == WidgetViewMode.expanded) ...[
                   KanbanCardProductsWidget(pedido: pedido),
                   Builder(
