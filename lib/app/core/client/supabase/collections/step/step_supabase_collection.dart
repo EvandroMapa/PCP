@@ -103,6 +103,7 @@ class StepSupabaseCollection extends StepCollection {
         .listen((_) => start(lock: false));
   }
 
+  @override
   StepModel getById(String id) =>
       data.firstWhere((e) => e.id == id, orElse: () => StepModel.notFound);
 

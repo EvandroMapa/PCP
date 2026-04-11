@@ -530,7 +530,7 @@ class OrdemController {
     if (updatedOrdem.status != ordem.status) {
       await OrdemTimelineRegister.statusOrdem(updatedOrdem);
     }
-    Navigator.pop(contextGlobal);
+    if (contextGlobal.mounted) Navigator.pop(contextGlobal);
     onReorder(FirestoreClient.ordens.ordensNaoCongeladas);
     onUpdateAt(ordem);
   }
@@ -591,7 +591,7 @@ class OrdemController {
     await onChangeProdutoStatus(produto, status, false);
     onReorder(FirestoreClient.ordens.ordensNaoCongeladas);
     onUpdateAt(ordem);
-    Navigator.pop(contextGlobal);
+    if (contextGlobal.mounted) Navigator.pop(contextGlobal);
   }
 
   Future<void> onChangeProdutoStatus(
@@ -748,8 +748,8 @@ class OrdemController {
     await OrdemTimelineRegister.arquivada(ordem);
     await FirestoreClient.ordens.startOnlyArquivadas();
     onReorder(FirestoreClient.ordens.ordensNaoCongeladas);
-    Navigator.pop(contextGlobal);
-    Navigator.pop(context);
+    if (contextGlobal.mounted) Navigator.pop(contextGlobal);
+    if (context.mounted) Navigator.pop(context);
     NotificationService.showPositive(
       'Ordem Arquivada!',
       'Acesse a lista de ordens arquivadas para visualizar a ordem',
@@ -776,9 +776,9 @@ class OrdemController {
     await FirestoreClient.ordens.update(ordem);
     await FirestoreClient.ordens.fetch();
     await FirestoreClient.ordens.startOnlyArquivadas();
-    Navigator.pop(contextGlobal);
+    if (contextGlobal.mounted) Navigator.pop(contextGlobal);
     for (var i = 0; i < pop; i++) {
-      Navigator.pop(context);
+      if (context.mounted) Navigator.pop(context);
     }
     await OrdemTimelineRegister.desarquivada(ordem);
     NotificationService.showPositive(

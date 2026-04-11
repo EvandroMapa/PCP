@@ -1,4 +1,3 @@
-import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/usuario_role.dart';
 import 'package:aco_plus/app/core/components/app_bottom_nav.dart';
 import 'package:aco_plus/app/core/components/drawer/app_drawer.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -27,9 +26,6 @@ class _BasePageState extends State<BasePage> {
     super.initState();
   }
 
-  void _openDrawer() {
-    _scaffoldKey.currentState?.openDrawer();
-  }
 
   @override
   Widget build(BuildContext context) {

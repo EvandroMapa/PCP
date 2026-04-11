@@ -3,9 +3,6 @@ import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/orde
 
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
-import 'package:aco_plus/app/core/components/app_bottom_nav.dart';
-import 'package:aco_plus/app/core/components/drawer/app_drawer.dart';
-import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -14,7 +11,6 @@ import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
-import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:aco_plus/app/modules/dashboard/dashboard_controller.dart';
 
 import 'package:aco_plus/app/modules/graph/ordem_total/graph_ordem_total_widget.dart';
@@ -24,8 +20,6 @@ import 'package:aco_plus/app/modules/graph/produto_produzido/produto_produzido_w
 import 'package:aco_plus/app/modules/graph/produto_status/produto_status_widget.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem/ordem_page.dart';
 
-import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/usuario_role.dart';
-import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 
 import 'package:material_symbols_icons/symbols.dart';

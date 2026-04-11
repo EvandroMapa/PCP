@@ -26,7 +26,7 @@ class RelatorioOrdemPdfOrdemPage {
                   style: pw.TextStyle(
                     fontSize: 14,
                     fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromInt(AppColors.black.value),
+                    color: PdfColor.fromInt(AppColors.black.toARGB32()),
                   ),
                 ),
                 pw.Text(
@@ -34,7 +34,7 @@ class RelatorioOrdemPdfOrdemPage {
                   style: pw.TextStyle(
                     fontSize: 16,
                     fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromInt(AppColors.primaryMain.value),
+                    color: PdfColor.fromInt(AppColors.primaryMain.toARGB32()),
                   ),
                 ),
               ],
@@ -135,7 +135,7 @@ class RelatorioOrdemPdfOrdemPage {
         color: PdfColors.white,
       ),
       headerDecoration: pw.BoxDecoration(
-        color: PdfColor.fromInt(AppColors.primaryMain.value),
+        color: PdfColor.fromInt(AppColors.primaryMain.toARGB32()),
       ),
       cellStyle: const pw.TextStyle(fontSize: 8.5),
       cellAlignment: pw.Alignment.centerLeft,

@@ -1,9 +1,4 @@
-import 'dart:convert';
 import 'dart:developer';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
-import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
-import 'package:aco_plus/app/core/services/hash_service.dart';
 
 class PedidoPdfParser {
   static Map<String, dynamic> parse(String text) {
@@ -37,49 +32,140 @@ class PedidoPdfParser {
     data['taxas'] = _extractValue(cleanText, r'Taxas\s*[:\-]?\s*([\d,.]+)');
     data['desconto'] = _extractValue(cleanText, r'Desconto\s*[:\-]?\s*([\d,.]+)');
 
-    // 6. Extrair Produtos (Novo Motor de Precisão com Âncora de Unidade)
+    // 6. Extrair Produtos
     final List<String> units = ['KG', 'UN', 'PC', 'MT', 'PÇ', 'BAR', 'PCT', 'M2', 'CJ', 'UNID', 'Pç', 'FL', 'RL'];
-    final String unitsPattern = units.join('|');
 
     // Dividir pelo cabeçalho para evitar pegar fones/endereço como códigos
     int startIndex = cleanText.toLowerCase().indexOf('código');
     if (startIndex == -1) startIndex = cleanText.toLowerCase().indexOf('descrição');
     if (startIndex == -1) startIndex = 0;
-    
+
     final bodyText = cleanText.substring(startIndex);
-    
-    // Regex para capturar: [CÓDIGO][DESCRIÇÃO][UNIDADE][VALORES]
-    // O pulo do gato: A unidade colada nos números é nossa âncora principal, sem exigir espaços
+
+    // ── ESTRATÉGIA 1: Regex concatenado (formato inline) ──────────────────────
+    final String unitsPattern = units.join('|');
     final itemRegExp = RegExp('(\\d{4,7})\\s*([A-Za-z][\\s\\S]+?)($unitsPattern)\\s*([\\d,.]+)', caseSensitive: false);
     final matches = itemRegExp.allMatches(bodyText);
 
     for (final m in matches) {
-        final codigo = m.group(1)!;
+      final codigo = m.group(1)!;
+      if (codigo == data['pedidoFinanceiro']) continue;
+
+      String descricao = m.group(2)!.trim().replaceAll('\n', ' ').replaceAll(RegExp(r'\s+'), ' ');
+      final unidade = m.group(3)!.toUpperCase();
+      final numericTail = m.group(4)!;
+
+      final List<double>? values = _breakConcatenatedNumbers(numericTail);
+
+      if (values != null && values.length == 3) {
+        final double q = values[0];
+        final double u = values[1];
+        final double t = values[2];
+
+        log('ITEM DETECTADO (inline): $codigo | $q $unidade x $u = $t');
+
+        data['produtos'].add({
+          'codigo': codigo,
+          'descricao': descricao,
+          'unidade': unidade,
+          'qtde': q,
+          'unitario': u,
+          'total': t,
+        });
+      }
+    }
+
+    // ── ESTRATÉGIA 2: Parse linha a linha (formato separado por newlines) ──────
+    // Se a Estratégia 1 não encontrou nada, tenta parse sequencial
+    if ((data['produtos'] as List).isEmpty) {
+      log('Estratégia 1 vazia. Tentando parse linha a linha...');
+      final lines = bodyText.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+
+      for (int i = 0; i < lines.length; i++) {
+        final line = lines[i];
+
+        // Procurar código numérico de 4-7 dígitos
+        if (!RegExp(r'^\d{4,7}$').hasMatch(line)) continue;
+        final codigo = line;
         if (codigo == data['pedidoFinanceiro']) continue;
 
-        String descricao = m.group(2)!.trim().replaceAll('\n', ' ').replaceAll(RegExp(r'\s+'), ' ');
-        final unidade = m.group(3)!.toUpperCase();
-        final numericTail = m.group(4)!;
-        
-        // Pega todos os números com formato decimal ,X ou ,XX ou .X
-        final allNumbers = RegExp(r'[\d.,]*\d+,\d{1,3}').allMatches(numericTail).map((mn) => mn.group(0)!).toList();
-        
-        if (allNumbers.length >= 2) {
-            final double q = _parseDecimal(allNumbers[0]);
-            final double u = _parseDecimal(allNumbers[1]);
-            final double t = double.parse((q * u).toStringAsFixed(2));
-            
-            log('ITEM DETECTADO: $codigo | $q $unidade x $u = $t');
+        // Coletar linhas de descrição até achar uma unidade
+        String descricao = '';
+        String unidade = '';
+        int j = i + 1;
 
-            data['produtos'].add({
-                'codigo': codigo,
-                'descricao': descricao,
-                'unidade': unidade,
-                'qtde': q,
-                'unitario': u,
-                'total': t,
-            });
+        while (j < lines.length) {
+          final upper = lines[j].toUpperCase().trim();
+          // Verificar se é uma unidade (pode estar concatenada como "1\nKG")
+          // Primeiro checa se a linha atual é um número puro (quantidade) seguido por unidade na próxima
+          if (units.contains(upper)) {
+            unidade = upper;
+            j++;
+            break;
+          }
+          // Verificar se é "NÚMERO\nUNIDADE" pattern (ex: "1" seguido por "KG")
+          if (RegExp(r'^\d+$').hasMatch(lines[j]) && j + 1 < lines.length && units.contains(lines[j + 1].toUpperCase().trim())) {
+            // O número é a quantidade, a próxima linha é a unidade
+            unidade = lines[j + 1].toUpperCase().trim();
+            j += 2;
+            break;
+          }
+          // Verificar se contém unidade no final (ex: "1 KG")
+          bool foundUnit = false;
+          for (final u in units) {
+            if (upper.endsWith(' $u') || upper == u) {
+              unidade = u;
+              // Texto antes da unidade faz parte da descrição
+              final beforeUnit = lines[j].substring(0, lines[j].toUpperCase().lastIndexOf(u)).trim();
+              if (beforeUnit.isNotEmpty && !RegExp(r'^\d+$').hasMatch(beforeUnit)) {
+                descricao += ' $beforeUnit';
+              }
+              foundUnit = true;
+              j++;
+              break;
+            }
+          }
+          if (foundUnit) break;
+
+          // Senão, é parte da descrição
+          descricao += ' ${lines[j]}';
+          j++;
         }
+
+        descricao = descricao.trim();
+        if (unidade.isEmpty || descricao.isEmpty) continue;
+
+        // Agora esperamos 3 valores numéricos: qtde, unitário, total
+        final List<double> numValues = [];
+        while (j < lines.length && numValues.length < 3) {
+          final val = _parseDecimalOrNull(lines[j]);
+          if (val != null) {
+            numValues.add(val);
+            j++;
+          } else {
+            break;
+          }
+        }
+
+        if (numValues.length == 3) {
+          final double q = numValues[0];
+          final double u = numValues[1];
+          final double t = numValues[2];
+
+          log('ITEM DETECTADO (linhas): $codigo | $descricao | $q $unidade x $u = $t');
+
+          data['produtos'].add({
+            'codigo': codigo,
+            'descricao': descricao,
+            'unidade': unidade,
+            'qtde': q,
+            'unitario': u,
+            'total': t,
+          });
+
+          i = j - 1; // Avança o ponteiro principal
+        }
+      }
     }
 
     // 8. Totais Finais (Soma calculada e Subtotal de conferência)
@@ -95,6 +181,45 @@ class PedidoPdfParser {
     log('RESUMO: Itens=${data['produtos'].length} | Subtotal=${data['subtotal']} | Total=${data['total']}');
 
     return data;
+  }
+
+  static double? _parseDecimalOrNull(String value) {
+    if (value.isEmpty) return null;
+    // Aceita formatos: "300,73" ou "1.984,82" ou "6,60"
+    if (!RegExp(r'^[\d.,]+$').hasMatch(value)) return null;
+    String clean = value.replaceAll('.', '').replaceAll(',', '.');
+    return double.tryParse(clean);
+  }
+
+  static List<double>? _breakConcatenatedNumbers(String numStr) {
+    String clean = numStr.replaceAll('.', '');
+    for (int i = 1; i < clean.length - 1; i++) {
+        for (int j = i + 1; j < clean.length; j++) {
+            String qStr = clean.substring(0, i);
+            String uStr = clean.substring(i, j);
+            String tStr = clean.substring(j);
+
+            int tCommaPos = tStr.indexOf(',');
+            if (tCommaPos == -1 || tStr.length - tCommaPos - 1 != 2) continue;
+            
+            if (uStr.isEmpty || uStr == ',') continue;
+            int uCommaPos = uStr.indexOf(',');
+            if (uCommaPos != -1 && uCommaPos != uStr.lastIndexOf(',')) continue;
+            
+            if (qStr.isEmpty || qStr == ',') continue;
+            int qCommaPos = qStr.indexOf(',');
+            if (qCommaPos != -1 && qCommaPos != qStr.lastIndexOf(',')) continue;
+
+            double qVal = double.parse(qStr.replaceAll(',', '.'));
+            double uVal = double.parse(uStr.replaceAll(',', '.'));
+            double tVal = double.parse(tStr.replaceAll(',', '.'));
+
+            if ((qVal * uVal - tVal).abs() <= 0.05) {
+                return [qVal, uVal, tVal];
+            }
+        }
+    }
+    return null;
   }
 
   static double _extractValue(String text, String pattern) {
@@ -136,4 +261,3 @@ class PedidoPdfParser {
     return double.tryParse(clean) ?? 0.0;
   }
 }
-

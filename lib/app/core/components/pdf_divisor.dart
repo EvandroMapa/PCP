@@ -8,7 +8,7 @@ class PdfDivisor {
     return pw.Container(
       width: double.maxFinite,
       height: height,
-      color: PdfColor.fromInt((color ?? AppColors.neutralLight).value),
+      color: PdfColor.fromInt((color ?? AppColors.neutralLight).toARGB32()),
     );
   }
 }

@@ -202,47 +202,47 @@ class AutomatizacaoModel {
 
   static AutomatizacaoModel get empty => AutomatizacaoModel(
         criacaoPedido: AutomatizacaoItemModel(
-          type: AutomatizacaoItemType.CRIACAO_PEDIDO,
+          type: AutomatizacaoItemType.criacaoPedido,
           step: null,
           steps: [],
         ),
         produtoPedidoSeparado: AutomatizacaoItemModel(
-          type: AutomatizacaoItemType.PRODUTO_PEDIDO_SEPARADO,
+          type: AutomatizacaoItemType.produtoPedidoSeparado,
           step: null,
           steps: [],
         ),
         produzindoCDPedido: AutomatizacaoItemModel(
-          type: AutomatizacaoItemType.PRODUZINDO_CD_PEDIDO,
+          type: AutomatizacaoItemType.produzindoCDPedido,
           step: null,
           steps: [],
         ),
         prontoCDPedido: AutomatizacaoItemModel(
-          type: AutomatizacaoItemType.PRONTO_CD_PEDIDO,
+          type: AutomatizacaoItemType.prontoCDPedido,
           step: null,
           steps: [],
         ),
         aguardandoArmacaoPedido: AutomatizacaoItemModel(
-          type: AutomatizacaoItemType.AGUARDANDO_ARMACAO_PEDIDO,
+          type: AutomatizacaoItemType.aguardandoArmacaoPedido,
           step: null,
           steps: [],
         ),
         produzindoArmacaoPedido: AutomatizacaoItemModel(
-          type: AutomatizacaoItemType.PRODUZINDO_ARMACAO_PEDIDO,
+          type: AutomatizacaoItemType.produzindoArmacaoPedido,
           step: null,
           steps: [],
         ),
         prontoArmacaoPedido: AutomatizacaoItemModel(
-          type: AutomatizacaoItemType.PRONTO_ARMACAO_PEDIDO,
+          type: AutomatizacaoItemType.prontoArmacaoPedido,
           step: null,
           steps: [],
         ),
         naoMostrarNoCalendario: AutomatizacaoItemModel(
-          type: AutomatizacaoItemType.NAO_MOSTRAR_NO_CALENDARIO,
+          type: AutomatizacaoItemType.naoMostrarNoCalendario,
           step: null,
           steps: [],
         ),
         removerListaPrioridade: AutomatizacaoItemModel(
-          type: AutomatizacaoItemType.REMOVER_LISTA_PRIORIDADE,
+          type: AutomatizacaoItemType.removerListaPrioridade,
           step: null,
           steps: [],
         ),

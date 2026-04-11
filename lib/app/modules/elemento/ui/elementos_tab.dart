@@ -5,17 +5,14 @@ import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_controller.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
-import 'package:aco_plus/app/modules/elemento/elemento_arquivo_model.dart';
 import 'package:aco_plus/app/modules/elemento/ui/elemento_comparativo_dialog.dart';
 import 'package:aco_plus/app/modules/elemento/ui/elemento_form_dialog.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
-import 'dart:typed_data';
 
 class ElementosTab extends StatefulWidget {
   final PedidoModel pedido;
@@ -594,7 +591,7 @@ class _ElementoTileState extends State<_ElementoTile> {
                             Expanded(
                               flex: 2,
                               child: Text(
-                                '${widget.fmt(p.pesoKg)}',
+                                widget.fmt(p.pesoKg),
                                 style: AppCss.minimumRegular,
                                 textAlign: TextAlign.end,
                               ),
@@ -602,7 +599,7 @@ class _ElementoTileState extends State<_ElementoTile> {
                             Expanded(
                               flex: 2,
                               child: Text(
-                                '${widget.fmt(p.pesoKg * el.qtde)}',
+                                widget.fmt(p.pesoKg * el.qtde),
                                 style: AppCss.minimumBold
                                     .setColor(AppColors.primaryMain),
                                 textAlign: TextAlign.end,

@@ -20,7 +20,6 @@ class ArmacaoPage extends StatefulWidget {
 }
 
 class _ArmacaoPageState extends State<ArmacaoPage> {
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -33,12 +32,8 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
   }
 
   Future<void> _init() async {
-    setState(() => _isLoading = true);
     armacaoCtrl.onInit();
     await AppSupabaseClient.pedidos.fetch();
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
   }
 
   @override

@@ -82,6 +82,7 @@ class ClienteSupabaseCollection extends ClienteCollection {
         .listen((_) => start(lock: false));
   }
 
+  @override
   ClienteModel getById(String id) =>
       data.firstWhere((e) => e.id == id, orElse: () => ClienteModel.empty());
 

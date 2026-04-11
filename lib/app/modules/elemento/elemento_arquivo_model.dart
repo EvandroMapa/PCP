@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 class ElementoArquivoModel {
   final String id;

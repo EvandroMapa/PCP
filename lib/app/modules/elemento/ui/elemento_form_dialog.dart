@@ -227,7 +227,7 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
                       Expanded(
                         flex: 3,
                         child: DropdownButtonFormField<ProdutoModel>(
-                          value: pos.produto,
+                          initialValue: pos.produto,
                           hint: const Text('Bitola',
                               style: TextStyle(fontSize: 13)),
                           isExpanded: true,

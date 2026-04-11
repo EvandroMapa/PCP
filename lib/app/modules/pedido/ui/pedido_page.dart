@@ -1,8 +1,7 @@
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
-import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
-import 'package:aco_plus/app/core/components/w.dart';
+import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
@@ -124,119 +123,186 @@ class _PedidoPageState extends State<PedidoPage>
 
         // ── TabBar ───────────────────────────────────────────────────────
         Container(
+          width: double.maxFinite,
           color: Colors.white,
-          child: TabBar(
-            controller: _tabController,
-            labelStyle: AppCss.mediumBold.copyWith(fontSize: 13),
-            unselectedLabelStyle:
-                AppCss.mediumRegular.copyWith(fontSize: 13),
-            labelColor: AppColors.primaryMain,
-            unselectedLabelColor: Colors.grey[500],
-            indicatorColor: AppColors.primaryMain,
-            indicatorWeight: 2.5,
-            tabs: [
-              const Tab(text: 'Detalhes do Pedido'),
-              if (usuario.temAcessoElementos) const Tab(text: 'Elementos'),
-            ],
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Container(
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.neutralLight.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              labelStyle: AppCss.mediumBold.copyWith(fontSize: 13),
+              unselectedLabelStyle: AppCss.mediumRegular.copyWith(fontSize: 13),
+              labelColor: AppColors.white,
+              unselectedLabelColor: AppColors.neutralDark,
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent, // remove a linha nativa
+              indicator: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                color: AppColors.primaryMain,
+                boxShadow: [
+                  BoxShadow(color: AppColors.primaryMain.withValues(alpha: 0.2), offset: const Offset(0, 2), blurRadius: 4),
+                ],
+              ),
+              tabs: [
+                const Tab(text: 'DASHBOARD'),
+                if (usuario.temAcessoElementos) const Tab(text: 'ELEMENTOS'),
+              ],
+            ),
           ),
         ),
 
         // ── Conteúdo das abas ─────────────────────────────────────────────
         Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              // Aba 1: Detalhes (igual ao que existia antes)
-              _detalhesBody(pedido),
+          child: Container(
+            color: const Color(0xFFF4F6F8),
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                // Aba 1: Detalhes
+                _detalhesBody(pedido),
 
-              // Aba 2: Elementos
-              if (usuario.temAcessoElementos) ElementosTab(pedido: pedido),
-            ],
+                // Aba 2: Elementos
+                if (usuario.temAcessoElementos) ElementosTab(pedido: pedido),
+              ],
+            ),
           ),
         ),
       ],
     );
   }
 
+  Widget _buildCard({required List<Widget> children, EdgeInsetsGeometry? padding}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: padding ?? const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+    );
+  }
+
   /// Conteúdo original da tela de detalhe do pedido
   Widget _detalhesBody(PedidoModel pedido) {
     return ListView(
+      padding: const EdgeInsets.all(16),
       children: [
         if (pedido.getPedidosFilhos().isNotEmpty)
-          PaiPedidoSinalizadorWidget(),
+          Padding(padding: const EdgeInsets.only(bottom: 12), child: PaiPedidoSinalizadorWidget()),
         if (pedido.pai != null && pedido.pai != '')
-          PaiPedidoFilhoSinalizadorWidget(),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(padding: const EdgeInsets.only(bottom: 12), child: PaiPedidoFilhoSinalizadorWidget()),
+
+        _buildCard(
           children: [
-            Expanded(child: PedidoTagsWidget(pedido)),
-            PedidoUsersWidget(pedido),
-            const W(12),
-          ],
-        ),
-        Column(
-          children: [
-            PedidoDescWidget(pedido),
-            const Divisor(),
-            PedidoStepsWidget(pedido),
-            const Divisor(),
-            if (pedido.pedidosFilhos.isEmpty) ...[
-              PedidoStatusWidget(pedido),
-              const Divisor(),
-              if (pedido.isAguardandoEntradaProducao()) ...[
-                PedidoProdutosWidget(pedido),
-                const Divisor(),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: PedidoTagsWidget(pedido)),
+                PedidoUsersWidget(pedido),
               ],
-              if (!pedido.isAguardandoEntradaProducao())
-                Column(
-                  children: [
-                    PedidoCorteDobraWidget(pedido),
-                    const Divisor(),
-                    PedidoProdutosWidget(pedido),
-                    const Divisor(),
-                    PedidoArmacaoWidget(pedido),
-                    const Divisor(),
-                  ],
-                ),
-            ],
-
-            if (pedido.pedidosFilhos.isNotEmpty) ...[
-              PaiPedidoCorteDobraWidget(pedido),
-              const Divisor(),
-              PaiPedidoProdutosWidget(pedido),
-              const Divisor(),
-              PedidoFilhosWidget(
-                pedido: pedido,
-                filhos: pedido.getPedidosFilhos(),
-              ),
-              const Divisor(),
-            ],
-
-            if (pedido.instrucoesEntrega.isNotEmpty) ...[
-              PedidoEntregaWidget(pedido),
-              const Divisor(),
-            ],
-            if (pedido.instrucoesFinanceiras.isNotEmpty) ...[
-              PedidoFinancWidget(pedido),
-              const Divisor(),
-            ],
-            PedidoAnexosWidget(pedido),
-            const Divisor(),
-            PedidoChecksWidget(pedido),
-            const Divisor(),
-            if (pedido.pedidosFilhos.isEmpty) ...[
-              PedidoVinculadosWidget(
-                pedido: pedido,
-                vinculados: pedido.getPedidosVinculados(),
-              ),
-              const Divisor(),
-            ],
-            PedidoCommentsWidget(pedido),
-            const Divisor(),
-            if (pedido.histories.isNotEmpty)
-              PedidoTimelineWidget(pedido: pedido),
+            ),
+            const H(16),
+            PedidoDescWidget(pedido),
           ],
         ),
+
+        if (pedido.pedidosFilhos.isEmpty)
+          _buildCard(
+            children: [
+              PedidoStatusWidget(pedido),
+              const H(16),
+              PedidoStepsWidget(pedido),
+            ],
+          ),
+
+        if (pedido.pedidosFilhos.isEmpty && pedido.isAguardandoEntradaProducao())
+          _buildCard(
+            children: [
+              PedidoProdutosWidget(pedido),
+            ],
+          ),
+
+        if (pedido.pedidosFilhos.isEmpty && !pedido.isAguardandoEntradaProducao())
+          _buildCard(
+            children: [
+              PedidoCorteDobraWidget(pedido),
+              const H(16),
+              PedidoProdutosWidget(pedido),
+              const H(16),
+              PedidoArmacaoWidget(pedido),
+            ],
+          ),
+
+        if (pedido.pedidosFilhos.isNotEmpty)
+          _buildCard(
+            children: [
+              PaiPedidoCorteDobraWidget(pedido),
+              const H(16),
+              PaiPedidoProdutosWidget(pedido),
+              const H(16),
+              PedidoFilhosWidget(pedido: pedido, filhos: pedido.getPedidosFilhos()),
+            ],
+          ),
+
+        if (pedido.instrucoesEntrega.isNotEmpty || pedido.instrucoesFinanceiras.isNotEmpty)
+          _buildCard(
+            children: [
+              if (pedido.instrucoesEntrega.isNotEmpty) ...[
+                PedidoEntregaWidget(pedido),
+                if (pedido.instrucoesFinanceiras.isNotEmpty) const H(16),
+              ],
+              if (pedido.instrucoesFinanceiras.isNotEmpty)
+                PedidoFinancWidget(pedido),
+            ],
+          ),
+
+        _buildCard(
+          children: [
+            PedidoAnexosWidget(pedido),
+          ],
+        ),
+
+        _buildCard(
+          children: [
+            PedidoChecksWidget(pedido),
+          ],
+        ),
+
+        if (pedido.pedidosFilhos.isEmpty)
+          _buildCard(
+            children: [
+              PedidoVinculadosWidget(pedido: pedido, vinculados: pedido.getPedidosVinculados()),
+            ],
+          ),
+
+        _buildCard(
+          children: [
+            PedidoCommentsWidget(pedido),
+          ],
+        ),
+
+        if (pedido.histories.isNotEmpty)
+          _buildCard(
+            children: [
+              PedidoTimelineWidget(pedido: pedido),
+            ],
+          ),
       ],
     );
   }

@@ -1,5 +1,4 @@
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/user_permission_type.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/usuario_role.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_tipo_model.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';

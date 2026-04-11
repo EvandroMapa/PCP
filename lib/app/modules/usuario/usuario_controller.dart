@@ -135,8 +135,8 @@ class UsuarioController {
       if (user != null) {
         final usuariosData = BackendClient.usuarios.data;
         if (usuariosData.isNotEmpty && usuariosData.any((e) => e.id == user!.id)) {
-          user = BackendClient.usuarios.getById(user!.id);
-          AppRepository.add(user!);
+          user = BackendClient.usuarios.getById(user.id);
+          AppRepository.add(user);
         } else {
           user = null;
           await AppRepository.clear();

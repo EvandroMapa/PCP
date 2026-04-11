@@ -37,9 +37,9 @@ class RelatorioOrdemPdfStatusPage {
     return pw.Container(
       padding: const pw.EdgeInsets.all(16),
       decoration: pw.BoxDecoration(
-        color: PdfColor.fromInt(Colors.white.value),
+        color: PdfColor.fromInt(Colors.white.toARGB32()),
         border: pw.Border.all(
-          color: PdfColor.fromInt(Colors.grey[700]!.value),
+          color: PdfColor.fromInt(Colors.grey[700]!.toARGB32()),
           width: 1,
         ),
       ),
@@ -55,7 +55,7 @@ class RelatorioOrdemPdfStatusPage {
                   style: pw.TextStyle(
                     fontSize: 14,
                     fontWeight: pw.FontWeight.bold,
-                    color: PdfColor.fromInt(AppColors.black.value),
+                    color: PdfColor.fromInt(AppColors.black.toARGB32()),
                   ),
                 ),
               ),
@@ -66,7 +66,7 @@ class RelatorioOrdemPdfStatusPage {
                 style: pw.TextStyle(
                   fontSize: 11,
                   fontWeight: pw.FontWeight.normal,
-                  color: PdfColor.fromInt(AppColors.black.value),
+                  color: PdfColor.fromInt(AppColors.black.toARGB32()),
                 ),
               ),
             ],
@@ -119,9 +119,9 @@ class RelatorioOrdemPdfStatusPage {
     return pw.Container(
       padding: const pw.EdgeInsets.all(16),
       decoration: pw.BoxDecoration(
-        color: PdfColor.fromInt(Colors.white.value),
+        color: PdfColor.fromInt(Colors.white.toARGB32()),
         border: pw.Border.all(
-          color: PdfColor.fromInt(Colors.grey[700]!.value),
+          color: PdfColor.fromInt(Colors.grey[700]!.toARGB32()),
           width: 1,
         ),
       ),
@@ -133,7 +133,7 @@ class RelatorioOrdemPdfStatusPage {
             style: pw.TextStyle(
               fontSize: 11,
               fontWeight: pw.FontWeight.normal,
-              color: PdfColor.fromInt(AppColors.black.value),
+              color: PdfColor.fromInt(AppColors.black.toARGB32()),
             ),
           ),
           pw.SizedBox(height: 8),
@@ -181,7 +181,7 @@ class RelatorioOrdemPdfStatusPage {
               style: pw.TextStyle(
                 fontSize: 12,
                 fontWeight: pw.FontWeight.bold,
-                color: PdfColor.fromInt(Colors.grey[800]!.value),
+                color: PdfColor.fromInt(Colors.grey[800]!.toARGB32()),
               ),
             ),
           ),
@@ -192,7 +192,7 @@ class RelatorioOrdemPdfStatusPage {
               style: pw.TextStyle(
                 fontSize: 12,
                 fontWeight: pw.FontWeight.normal,
-                color: PdfColor.fromInt(Colors.grey[800]!.value),
+                color: PdfColor.fromInt(Colors.grey[800]!.toARGB32()),
               ),
               textAlign: pw.TextAlign.end,
             ),

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/enums/widget_view_mode.dart';
 import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_calendar_widget.dart';
-import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_pedido_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 

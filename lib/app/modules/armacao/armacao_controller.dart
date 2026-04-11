@@ -1,13 +1,11 @@
 import 'dart:developer';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
-import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_supabase_collection.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
 import 'package:aco_plus/app/core/services/preferences_service.dart';
-import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 
 final armacaoCtrl = ArmacaoController();

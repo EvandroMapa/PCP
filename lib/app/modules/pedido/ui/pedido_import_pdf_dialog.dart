@@ -210,12 +210,16 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context, false), 
-                child: Text('CANCELAR', style: AppCss.minimumRegular.setColor(AppColors.neutralDark)),
+                onPressed: () => Navigator.pop(context, false),
+                style: const ButtonStyle(
+                  foregroundColor: WidgetStatePropertyAll(Colors.black),
+                  backgroundColor: WidgetStatePropertyAll(Color(0xFFebeaf3)),
+                ),
+                child: const Text('CANCELAR'),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true), 
-                child: Text('SIM, CRIAR SEM ESTES ITENS', style: AppCss.minimumBold.setColor(AppColors.primaryDark)),
+                child: const Text('SIM, CRIAR SEM ESTES ITENS'),
               ),
             ],
           ),
@@ -695,7 +699,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         Text('Etapa Destino', style: AppCss.minimumBold.setSize(12)),
         const H(4),
         DropdownButtonFormField<StepModel>(
-          value: selectedStep,
+          initialValue: selectedStep,
           isExpanded: true,
           decoration: InputDecoration(
             isDense: true,
@@ -716,7 +720,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
 
   Widget _buildTipoDropdown() {
     return DropdownButtonFormField<PedidoTipo>(
-      value: selectedTipo,
+      initialValue: selectedTipo,
       decoration: InputDecoration(
         isDense: true,
         filled: true,

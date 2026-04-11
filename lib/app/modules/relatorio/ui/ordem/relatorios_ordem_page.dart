@@ -1,11 +1,8 @@
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
-import 'package:aco_plus/app/core/components/app_bottom_nav.dart';
 import 'package:aco_plus/app/core/components/app_drop_down.dart';
-import 'package:aco_plus/app/core/components/drawer/app_drawer.dart';
 import 'package:aco_plus/app/core/components/app_drop_down_list.dart';
 import 'package:aco_plus/app/core/components/app_field.dart';
-import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/app_text_button.dart';
 import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/components/h.dart';
@@ -20,8 +17,6 @@ import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_ordem_view_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/usuario_role.dart';
-import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -133,7 +128,7 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
             },
             itemLabel: (e) => e?.label ?? 'SELECIONE O MODELO',
           ),
-          if (model.type == RelatorioOrdemType.ORDEM) ...{
+          if (model.type == RelatorioOrdemType.ORDEM) ...[
             Row(
               children: [
                 Expanded(
@@ -157,8 +152,8 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
               ],
             ),
             const H(16),
-          },
-          if (model.type == RelatorioOrdemType.STATUS) ...{
+          ],
+          if (model.type == RelatorioOrdemType.STATUS) ...[
             AppDropDownList<RelatorioOrdemStatus?>(
               label: 'Status',
               addeds: model.status,
@@ -239,7 +234,7 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
                 ],
               ),
             ),
-          },
+          ],
         ],
       ),
     );

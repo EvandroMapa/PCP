@@ -362,10 +362,12 @@ class PedidoSupabaseCollection extends PedidoCollection {
     }
   }
 
+  @override
   PedidoModel getById(String id) =>
       ([...data, ...pedidosArchiveds]).firstWhereOrNull((e) => e.id == id) ??
       PedidoModel.empty();
 
+  @override
   PedidoProdutoModel getProdutoByPedidoId(String pedidoId, String produtoId) =>
       getById(pedidoId).produtos.firstWhereOrNull((e) => e.id == produtoId) ??
       PedidoProdutoModel.empty(getById(pedidoId));
@@ -396,6 +398,26 @@ class PedidoSupabaseCollection extends PedidoCollection {
   }
 
   @override
+  Future<void> delete(PedidoModel model) async {
+    try {
+      log('Supabase (Pedido.delete): Deleting pedido ${model.id}...');
+      // Deletar tabelas filhas primeiro
+      await Future.wait([
+        SupabaseService.client.from('pedido_produtos').delete().eq('pedido_id', model.id),
+        SupabaseService.client.from('pedido_status_history').delete().eq('pedido_id', model.id),
+        SupabaseService.client.from('pedido_steps_history').delete().eq('pedido_id', model.id),
+        SupabaseService.client.from('pedido_tags').delete().eq('pedido_id', model.id),
+      ]);
+      // Deletar o pedido principal
+      await SupabaseService.client.from(name).delete().eq('id', model.id);
+      log('Supabase (Pedido.delete): Pedido ${model.id} deleted successfully.');
+      await fetch(lock: false);
+    } catch (e) {
+      log('Supabase Error (Pedido.delete): $e');
+      NotificationService.showNegative('Erro ao Excluir Pedido', e.toString());
+    }
+  }
+
   Future<List<PedidoModel>> updateAll(List<PedidoModel> models) async {
     try {
       if (models.isEmpty) return [];

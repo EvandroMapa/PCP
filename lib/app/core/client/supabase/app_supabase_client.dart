@@ -38,26 +38,21 @@ class AppSupabaseClient {
 
   static Future<void> init() async {
     try {
-      // Start all collections with individual error handling to be resilient
-      final futures = [
-        usuarioTipos.start().catchError((e) => log('Error starting usuarioTipos: $e')),
-        usuarios.start().catchError((e) => log('Error starting usuarios: $e')),
-        clientes.start().catchError((e) => log('Error starting clientes: $e')),
-        steps.start().catchError((e) => log('Error starting steps: $e')),
-        ordens.start().catchError((e) => log('Error starting ordens: $e')),
-        produtos.start().catchError((e) => log('Error starting produtos: $e')),
-        fabricantes.start().catchError((e) => log('Error starting fabricantes: $e')),
-        materiaPrima.start().catchError((e) => log('Error starting materiaPrima: $e')),
-        pedidoArquivos.start().catchError((e) => log('Error starting pedidoArquivos: $e')),
-        pedidoProdutos.start().catchError((e) => log('Error starting pedidoProdutos: $e')),
-        tags.start().catchError((e) => log('Error starting tags: $e')),
-        checklists.start().catchError((e) => log('Error starting checklists: $e')),
-        automatizacao.start().catchError((e) => log('Error starting automatizacao: $e')),
-        notificacoes.start().catchError((e) => log('Error starting notificacoes: $e')),
-        elementoArquivos.start().catchError((e) => log('Error starting elementoArquivos: $e')),
-      ];
-
-      await Future.wait(futures);
+      await usuarioTipos.start().catchError((e) => log('Error starting usuarioTipos: $e'));
+      await usuarios.start().catchError((e) => log('Error starting usuarios: $e'));
+      await clientes.start().catchError((e) => log('Error starting clientes: $e'));
+      await steps.start().catchError((e) => log('Error starting steps: $e'));
+      await ordens.start().catchError((e) => log('Error starting ordens: $e'));
+      await produtos.start().catchError((e) => log('Error starting produtos: $e'));
+      await fabricantes.start().catchError((e) => log('Error starting fabricantes: $e'));
+      await materiaPrima.start().catchError((e) => log('Error starting materiaPrima: $e'));
+      await pedidoArquivos.start().catchError((e) => log('Error starting pedidoArquivos: $e'));
+      await pedidoProdutos.start().catchError((e) => log('Error starting pedidoProdutos: $e'));
+      await tags.start().catchError((e) => log('Error starting tags: $e'));
+      await checklists.start().catchError((e) => log('Error starting checklists: $e'));
+      await automatizacao.start().catchError((e) => log('Error starting automatizacao: $e'));
+      await notificacoes.start().catchError((e) => log('Error starting notificacoes: $e'));
+      await elementoArquivos.start().catchError((e) => log('Error starting elementoArquivos: $e'));
       await ordens.startOnlyArquivadas();
 
       // Pedidos depends on clientes/steps for mapping, so start it after

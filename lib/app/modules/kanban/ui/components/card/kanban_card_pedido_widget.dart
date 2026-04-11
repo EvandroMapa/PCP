@@ -55,67 +55,65 @@ class KanbanCardPedidoWidget extends StatelessWidget {
                 ),
               ],
             ),
-            child: IntrinsicHeight(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
 
-                      if (pedido.comments.any((e) => e.isFixed)) ...[
-                        Icon(Icons.warning, color: Colors.orange, size: 16),
-                        const W(4),
-                      ],
-                      if (pedido.tags.isNotEmpty) ...[
-                        Expanded(
-                          child: KanbanCardTagsWidget(
-                            pedido: pedido,
-                            viewMode: viewMode,
-                          ),
+                    if (pedido.comments.any((e) => e.isFixed)) ...[
+                      Icon(Icons.warning, color: Colors.orange, size: 16),
+                      const W(4),
+                    ],
+                    if (pedido.tags.isNotEmpty) ...[
+                      Expanded(
+                        child: KanbanCardTagsWidget(
+                          pedido: pedido,
+                          viewMode: viewMode,
                         ),
-                      ] else
-                        const Spacer(),
-                      const W(8),
-                      if (pedido.pedidosVinculados.isNotEmpty) ...[
-                        Icon(Icons.link, color: Colors.grey[700], size: 16),
-                        const W(8),
-                      ],
-                      Text(
-                        pedido.getQtdeTotal().toKg(),
-                        style: AppCss.minimumBold.setSize(14),
                       ),
-                      if (notificacoes.isNotEmpty) ...[
-                        const W(8),
-                        KanbanCardNotificacaoWidget(),
-                      ],
+                    ] else
+                      const Spacer(),
+                    const W(8),
+                    if (pedido.pedidosVinculados.isNotEmpty) ...[
+                      Icon(Icons.link, color: Colors.grey[700], size: 16),
+                      const W(8),
                     ],
-                  ),
-                  const H(8),
-                  Text(
-                    pedido.localizador,
-                    style: AppCss.mediumBold.setSize(13.5),
-                  ),
-                  const H(8),
-                  Row(
-                    children: [
-                      Expanded(child: KanbanCardDetailsWidget(pedido)),
-                      KanbanCardUsersWidget(pedido, viewMode: viewMode),
-                    ],
-                  ),
-                  if (viewMode == WidgetViewMode.expanded) ...[
-                    KanbanCardProductsWidget(pedido: pedido),
-                    Builder(
-                      builder: (context) {
-                        final comments =
-                            pedido.comments.where((e) => e.isFixed).toList();
-                        if (comments.isEmpty) return const SizedBox();
-                        return KanbanCardCommentsWidget(comments: comments);
-                      },
+                    Text(
+                      pedido.getQtdeTotal().toKg(),
+                      style: AppCss.minimumBold.setSize(14),
                     ),
-                    KanbanCardVinculadosWidget(pedido: pedido),
+                    if (notificacoes.isNotEmpty) ...[
+                      const W(8),
+                      KanbanCardNotificacaoWidget(),
+                    ],
                   ],
+                ),
+                const H(8),
+                Text(
+                  pedido.localizador,
+                  style: AppCss.mediumBold.setSize(13.5),
+                ),
+                const H(8),
+                Row(
+                  children: [
+                    Expanded(child: KanbanCardDetailsWidget(pedido)),
+                    KanbanCardUsersWidget(pedido, viewMode: viewMode),
+                  ],
+                ),
+                if (viewMode == WidgetViewMode.expanded) ...[
+                  KanbanCardProductsWidget(pedido: pedido),
+                  Builder(
+                    builder: (context) {
+                      final comments =
+                          pedido.comments.where((e) => e.isFixed).toList();
+                      if (comments.isEmpty) return const SizedBox();
+                      return KanbanCardCommentsWidget(comments: comments);
+                    },
+                  ),
+                  KanbanCardVinculadosWidget(pedido: pedido),
                 ],
-              ),
+              ],
             ),
           );
         },

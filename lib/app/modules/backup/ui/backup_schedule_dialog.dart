@@ -157,7 +157,7 @@ class _BackupScheduleDialogState extends State<BackupScheduleDialog> {
                   ),
                   Switch(
                     value: _config!.enabled,
-                    activeColor: Colors.green,
+                    activeThumbColor: Colors.green,
                     onChanged: (v) => setState(() => _config!.enabled = v),
                   ),
                 ],

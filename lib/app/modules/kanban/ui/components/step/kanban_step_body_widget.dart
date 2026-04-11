@@ -4,7 +4,6 @@ import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_view_model.dart';
 import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_draggable_widget.dart';
 import 'package:flutter/material.dart';
-import 'package:separated_column/separated_column.dart';
 
 class KanbanStepBodyWidget extends StatelessWidget {
   final KanbanUtils utils;

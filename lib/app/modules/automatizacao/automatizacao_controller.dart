@@ -41,10 +41,10 @@ class AutomatizacaoController {
               break;
             case PedidoTipo.cda:
               item = automatizacaoConfig.prontoArmacaoPedido;
-            default:
+              break;
           }
           break;
-        default:
+        // arquivado não é um status válido do enum
       }
 
       if (item != null) {

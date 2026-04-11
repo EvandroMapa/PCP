@@ -19,9 +19,11 @@ abstract class Service {
       isInitialized = true;
       // Firebase decoupled - using Supabase only
       // await FirebaseService().initialize();
-      // Initialize remaining services in parallel
-      await Future.wait(
-          _applicationServices.map((service) => service.initialize()));
+      // Initialize services in sequential order to avoid deadlock
+      // Supabase MUST initialize before PreferencesService
+      for (final service in _applicationServices) {
+        await service.initialize();
+      }
     }
   }
 }

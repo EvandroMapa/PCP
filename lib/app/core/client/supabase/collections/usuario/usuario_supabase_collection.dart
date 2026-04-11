@@ -75,6 +75,7 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
         });
   }
 
+  @override
   UsuarioModel getById(String id) =>
       data.firstWhere((e) => e.id == id, orElse: () => UsuarioModel.empty());
 

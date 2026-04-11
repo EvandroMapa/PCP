@@ -480,7 +480,7 @@ class PedidoController {
     pedido.isArchived = !pedido.isArchived;
     await BackendClient.pedidos.update(pedido);
     await BackendClient.pedidos.fetch();
-    Navigator.pop(contextGlobal);
+    if (contextGlobal.mounted) Navigator.pop(contextGlobal);
     if (isPedido) Navigator.pop(value);
     NotificationService.showPositive(
       'Pedido Arquivado!',
@@ -499,7 +499,7 @@ class PedidoController {
       showLoadingDialog();
       await BackendClient.pedidos.update(pedido);
       await BackendClient.pedidos.fetch();
-      Navigator.pop(contextGlobal);
+      if (contextGlobal.mounted) Navigator.pop(contextGlobal);
       for (var i = 0; i < pops; i++) {
         Navigator.pop(value);
       }
@@ -567,7 +567,7 @@ class PedidoController {
       log(e.toString());
       NotificationService.showNegative('Erro ao gerar relatório', e.toString());
     }
-    Navigator.pop(contextGlobal);
+    if (contextGlobal.mounted) Navigator.pop(contextGlobal);
   }
 
 
@@ -682,7 +682,7 @@ class PedidoController {
         e.toString(),
       );
     }
-    Navigator.pop(contextGlobal);
+    if (contextGlobal.mounted) Navigator.pop(contextGlobal);
   }
 
   void verificarTags(PedidoModel edit) {

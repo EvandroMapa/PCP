@@ -8,9 +8,7 @@ import 'package:aco_plus/app/modules/elemento/elemento_arquivo_model.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/services/supabase_storage_service.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
-import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart' as syncfusion;
-import 'dart:typed_data';
 import 'package:collection/collection.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -21,7 +19,6 @@ import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/services/pdf_download_service/pdf_download_service_mobile.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
-import 'package:aco_plus/app/core/extensions/string_ext.dart';
 
 final elementoCtrl = ElementoController();
 
@@ -173,10 +170,10 @@ class ElementoController {
 
       await AppSupabaseClient.elementoArquivos.add(arquivo);
       await onFetch(elemento.pedidoId);
-      Navigator.pop(contextGlobal); // Fecha loading
+      if (contextGlobal.mounted) Navigator.pop(contextGlobal); // Fecha loading
       NotificationService.showPositive('Sucesso', 'Arquivo anexado com sucesso!');
     } catch (e) {
-      Navigator.pop(contextGlobal); // Fecha loading
+      if (contextGlobal.mounted) Navigator.pop(contextGlobal); // Fecha loading
       log('ElementoController.onAddArquivo erro: $e');
       NotificationService.showNegative('Erro', 'Falha ao anexado arquivo.');
     }
@@ -192,10 +189,10 @@ class ElementoController {
       await AppSupabaseClient.elementoArquivos.delete(arquivo.id);
       
       await onFetch(pedidoId);
-      Navigator.pop(contextGlobal); // Fecha loading
+      if (contextGlobal.mounted) Navigator.pop(contextGlobal); // Fecha loading
       NotificationService.showPositive('Sucesso', 'Arquivo removido!');
     } catch (e) {
-      Navigator.pop(contextGlobal); // Fecha loading
+      if (contextGlobal.mounted) Navigator.pop(contextGlobal); // Fecha loading
       log('ElementoController.onDeleteArquivo erro: $e');
     }
   }
@@ -265,7 +262,7 @@ class ElementoController {
       log(stack.toString());
       NotificationService.showNegative('Erro', 'Falha ao gerar o PDF: $e');
     }
-    Navigator.pop(contextGlobal);
+    if (contextGlobal.mounted) Navigator.pop(contextGlobal);
   }
 
   pw.Widget _buildPDFHeader(Uint8List logo, PedidoModel pedido) {
@@ -438,7 +435,7 @@ class ElementoController {
           data: [
             ...resumo.entries
                 .map((e) => [e.key, '${fmt.format(e.value)} kg'])
-                .toList(),
+                ,
             ['TOTAL GERAL', '${fmt.format(totalGeral)} kg'],
           ],
           headerStyle: pw.TextStyle(
@@ -486,12 +483,10 @@ class ElementoController {
       String? pendingOS;
 
       // Lista de termos para ignorar (ruído de cabeçalho)
-      final noiseTerms = ['os', 'qtde', 'compr.', 'posição', 'bitola', 'aço', 'peso', 'página:', 'pedido:', 'pavimento:', 'desenho:'];
 
       for (int i = 0; i < lines.length; i++) {
         final line = lines[i];
         if (line.isEmpty) continue;
-        final lineLower = line.toLowerCase();
 
         // 1. Detectar Início de Elemento (Vertical)
         // Padrão: NomeElemento \n Elemento \n Ok
@@ -504,12 +499,14 @@ class ElementoController {
           }
           
           currentElement = ElementoCreateModel();
-          currentElement.nome.text = line;
           
-          // Tentar extrair Qtde do nome (ex: "V37 X 2")
-          final xMatch = RegExp(r'X\s?(\d+)', caseSensitive: false).firstMatch(line);
+          // Tentar extrair Qtde do nome (ex: "V37 X 2") e descartar o multiplicador do nome
+          final xMatch = RegExp(r'\s*X\s*(\d+)$', caseSensitive: false).firstMatch(line);
           if (xMatch != null) {
             currentElement.qtde.text = xMatch.group(1)!;
+            currentElement.nome.text = line.substring(0, xMatch.start).trim();
+          } else {
+            currentElement.nome.text = line;
           }
           
           i += 2; // Pula "Elemento" e "Ok"
@@ -517,14 +514,14 @@ class ElementoController {
         }
 
         // 2. Identificar possível OS (número isolado)
-        // No PDF da ALA, a OS vem como um número solto de 3-5 dígitos
+        // No PDF da ALA, a OS vem como um número solto, tentamos guardar mas NAO damos continue
         if (RegExp(r'^\d{2,6}$').hasMatch(line)) {
           pendingOS = line;
-          continue;
         }
 
         // 3. Tentar capturar um bloco de posição (Vertical)
-        // Padrão: Qtde(i) -> Compr(i+1) -> Pos(i+2) -> Bitola(i+3) -> Aço(i+4) -> Peso(i+5)
+        // Padrão antigo: Qtde(i) -> Compr(i+1) -> Pos(i+2) -> Bitola(i+3) -> Aço(i+4) -> Peso(i+5)
+        // Padrão novo: ... -> Peso(i+5) -> OS(i+6)
         if (currentElement != null && i + 5 < lines.length) {
           final valQtde = lines[i].replaceAll(',', '.');
           final valPos = lines[i+2];
@@ -538,9 +535,18 @@ class ElementoController {
 
           // Validação: Se bitola e peso são números e o Aço é CA50/CA60, é uma posição
           if (qtdePos != null && bitola != null && (valAco.contains('CA50') || valAco.contains('CA60'))) {
+            
+            bool hasOSInBlock = false;
+            String osValue = pendingOS ?? '';
+
+            if (i + 6 < lines.length && RegExp(r'^\d+$').hasMatch(lines[i+6])) {
+                osValue = lines[i+6];
+                hasOSInBlock = true;
+            }
+
             final pos = ElementoPosicaoCreateModel();
             pos.nome.text = valPos; // Nome da Posição (ex: 01, 02)
-            pos.numeroOs.text = pendingOS ?? '';
+            pos.numeroOs.text = osValue;
             
             // Peso unitário (no PDF o peso é total da posição incluindo Elemento.qtde)
             final elQtde = int.tryParse(currentElement.qtde.text) ?? 1;
@@ -566,7 +572,7 @@ class ElementoController {
               currentElement.posicoes.add(pos);
             }
             
-            i += 5; // Pula o bloco processado
+            i += hasOSInBlock ? 6 : 5; // Pula o bloco processado
             pendingOS = null; 
             continue;
           }

@@ -1,11 +1,8 @@
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/user_permission_type.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
-import 'package:aco_plus/app/core/components/app_bottom_nav.dart';
 import 'package:aco_plus/app/core/components/app_field.dart';
-import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/divisor.dart';
-import 'package:aco_plus/app/core/components/drawer/app_drawer.dart';
 import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
@@ -16,7 +13,6 @@ import 'package:aco_plus/app/modules/cliente/cliente_controller.dart';
 import 'package:aco_plus/app/modules/cliente/cliente_view_model.dart';
 import 'package:aco_plus/app/modules/cliente/ui/cliente_create_page.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/usuario_role.dart';
 import 'package:flutter/material.dart';
 
 class ClientesPage extends StatefulWidget {

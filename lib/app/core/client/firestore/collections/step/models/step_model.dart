@@ -108,7 +108,7 @@ class StepModel {
     return {
       'id': id,
       'name': name,
-      'color': color.value,
+      'color': color.toARGB32(),
       'fromStepsIds': fromStepsIds,
       'moveRoles': moveRoles.map((x) => x.index).toList(),
       'createdAt': createdAt.millisecondsSinceEpoch,
@@ -127,7 +127,7 @@ class StepModel {
     return {
       'id': id,
       'name': name,
-      'color': color.value,
+      'color': color.toARGB32(),
       'isShipping': isShipping,
       'shipping': shipping?.toMap(),
     };
@@ -197,7 +197,7 @@ class StepModel {
       id: map['id'] ?? '',
       name: map['nome'] ?? '',
       index: map['index'] ?? 0,
-      color: Color(map['cor'] ?? Colors.tealAccent.value),
+      color: Color(map['cor'] ?? Colors.tealAccent.toARGB32()),
       fromStepsIds: _parseList(map['de_etapas']),
       moveRoles: _parseRoles(map['perfis_movimentacao']),
       createdAt: map['criado_em'] != null
@@ -256,7 +256,7 @@ class StepModel {
       'id': id,
       'nome': name,
       'index': index,
-      'cor': color.value,
+      'cor': color.toARGB32(),
       'is_padrao': isDefault,
       'is_entrega': isShipping,
       'dados_entrega': shipping?.toMap(),

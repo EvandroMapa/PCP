@@ -51,15 +51,14 @@ class KanbanCardDraggableWidget extends StatelessWidget {
       child: Opacity(
         opacity: 0.8,
         child: Material(
-          child: IntrinsicHeight(
-            child: SizedBox(
-              width: PreferencesService.kanbanColumnWidth.value - 10,
-              child: SingleChildScrollView(
-                physics: const NeverScrollableScrollPhysics(),
-                child: KanbanCardMouseRegionWidget(
-                  pedido,
-                  viewMode: WidgetViewMode.minified,
-                ),
+          color: Colors.transparent,
+          child: SizedBox(
+            width: PreferencesService.kanbanColumnWidth.value - 10,
+            child: SingleChildScrollView(
+              physics: const NeverScrollableScrollPhysics(),
+              child: KanbanCardMouseRegionWidget(
+                pedido,
+                viewMode: WidgetViewMode.minified,
               ),
             ),
           ),

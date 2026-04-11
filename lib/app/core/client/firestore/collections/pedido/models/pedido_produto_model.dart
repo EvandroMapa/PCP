@@ -359,8 +359,8 @@ class PedidoProdutoModel {
             .map((e) => PedidoProdutoStatusModel.fromMap(Map<String, dynamic>.from(e)))
             .toList();
       }
-    } catch (e, stackTrace) {
-      print('CRITICAL: Failed to parse statusess_raw: $e\n$stackTrace');
+    } catch (e) {
+      // Falha silenciosa ou log apropriado
     }
 
     // materia_prima_raw: mesmo padrão robusto
