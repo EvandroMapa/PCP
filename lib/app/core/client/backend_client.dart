@@ -2,7 +2,7 @@ import 'package:aco_plus/app/core/client/supabase/collections/usuario/usuario_ti
 import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_produto_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 
-// Original Firestore collection imports to avoid recursion via FirestoreClient
+// Original Firestore collection imports to avoid recursion via FirestoreClient.
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/pedido_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/step_collection.dart';
@@ -21,22 +21,22 @@ enum BackendType { firestore, supabase }
 class BackendClient {
   static BackendType type = BackendType.supabase;
 
-  static UsuarioCollection get usuarios => type == BackendType.firestore 
-      ? UsuarioCollection() 
+  static UsuarioCollection get usuarios => type == BackendType.firestore
+      ? UsuarioCollection()
       : AppSupabaseClient.usuarios;
 
   static UsuarioTipoSupabaseCollection get usuarioTipos => AppSupabaseClient.usuarioTipos;
 
-  static ClienteCollection get clientes => type == BackendType.firestore 
-      ? ClienteCollection() 
+  static ClienteCollection get clientes => type == BackendType.firestore
+      ? ClienteCollection()
       : AppSupabaseClient.clientes;
 
-  static StepCollection get steps => type == BackendType.firestore 
-      ? StepCollection() 
+  static StepCollection get steps => type == BackendType.firestore
+      ? StepCollection()
       : AppSupabaseClient.steps;
 
-  static PedidoCollection get pedidos => type == BackendType.firestore 
-      ? PedidoCollection() 
+  static PedidoCollection get pedidos => type == BackendType.firestore
+      ? PedidoCollection()
       : AppSupabaseClient.pedidos;
 
   static PedidoProdutoSupabaseCollection get pedidoProdutos => AppSupabaseClient.pedidoProdutos;
