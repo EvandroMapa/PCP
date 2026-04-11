@@ -31,11 +31,16 @@ class ElementoController {
       AppStream<List<ElementoModel>>.seed([]);
   List<ElementoModel> get elementos => elementosStream.value;
 
+  final AppStream<String> loadingMessageStream =
+      AppStream<String>.seed('Aguarde, inicializando...');
+
   final AppStream<ImportProgress?> importProgressStream =
       AppStream<ImportProgress?>.seed(null);
 
   bool _cancelImport = false;
   String? _currentPedidoId;
+  ElementoValidacaoResult? _cachedValidacao;
+  bool _validacaoDirty = true;
 
   // ─── INICIALIZAÇÃO ────────────────────────────────────────────────────────
   Future<void> onInit(String pedidoId) async {
@@ -46,7 +51,7 @@ class ElementoController {
 
   void onDispose() {
     _currentPedidoId = null;
-    elementosStream.add([]);
+    elementosStream.add(<ElementoModel>[]);
     importProgressStream.add(null);
   }
 
@@ -61,36 +66,59 @@ class ElementoController {
   // ─── BUSCAR ───────────────────────────────────────────────────────────────
   Future<void> onFetch(String pedidoId) async {
     try {
+      loadingMessageStream.add('Buscando cabeçalhos dos elementos...');
+      log('onFetch: 1 - Buscando elementos...');
       final elementosRaw = await SupabaseService.client
           .from('elementos')
           .select()
           .eq('pedido_id', pedidoId)
-          .order('created_at');
+          .order('created_at')
+          .timeout(const Duration(seconds: 15));
 
-      final List<ElementoModel> result = [];
-      for (final e in elementosRaw) {
-        final posicoesRaw = await SupabaseService.client
-            .from('elemento_posicoes')
-            .select()
-            .eq('elemento_id', e['id'].toString())
-            .order('created_at');
-
-        final arquivosRaw = await SupabaseService.client
-            .from('elemento_arquivos')
-            .select()
-            .eq('elemento_id', e['id'].toString());
-
-        result.add(ElementoModel.fromSupabaseMap(
-          e,
-          posicoesRaw: List<Map<String, dynamic>>.from(posicoesRaw),
-          arquivosRaw: List<Map<String, dynamic>>.from(arquivosRaw),
-        ));
+      log('onFetch: 2 - Elementos retornados: ${elementosRaw.length}');
+      if (elementosRaw.isEmpty) {
+        elementosStream.add(<ElementoModel>[]);
+        _validacaoDirty = true;
+        return;
       }
 
+      final eIds = elementosRaw.map((e) => e['id'].toString()).toList();
+      loadingMessageStream.add('Montando ${elementosRaw.length} elementos detectados...\nBaixando posições e arquivos...');
+
+      log('onFetch: 3 - Buscando posicoes e arquivos...');
+      // Busca todas as posições e arquivos em paralelo (2 queries em vez de N*2)
+      final results = await Future.wait([
+        SupabaseService.client
+            .from('elemento_posicoes')
+            .select()
+            .filter('elemento_id', 'in', eIds)
+            .timeout(const Duration(seconds: 15)),
+        SupabaseService.client
+            .from('elemento_arquivos')
+            .select()
+            .filter('elemento_id', 'in', eIds)
+            .timeout(const Duration(seconds: 15)),
+      ]);
+      log('onFetch: 4 - Consultas filhas concluidas.');
+      loadingMessageStream.add('Processando dados recebidos...');
+
+      final allPosicoes = List<Map<String, dynamic>>.from(results[0]);
+      final allArquivos = List<Map<String, dynamic>>.from(results[1]);
+
+      final List<ElementoModel> result = elementosRaw.map((e) {
+        final eId = e['id'].toString();
+        return ElementoModel.fromSupabaseMap(
+          e,
+          posicoesRaw: allPosicoes.where((p) => p['elemento_id'].toString() == eId).toList(),
+          arquivosRaw: allArquivos.where((a) => a['elemento_id'].toString() == eId).toList(),
+        );
+      }).toList();
+
       elementosStream.add(result);
+      _validacaoDirty = true; // Invalida cache do comparativo
     } catch (e) {
       log('ElementoController.onFetch erro', error: e);
-      elementosStream.add([]);
+      elementosStream.add(<ElementoModel>[]);
     }
   }
 
@@ -139,15 +167,23 @@ class ElementoController {
   // ─── DELETAR ELEMENTO ─────────────────────────────────────────────────────
   Future<void> onDeleteElemento(ElementoModel elemento) async {
     try {
-      // ON DELETE CASCADE apaga as posições automaticamente
+      showLoadingDialog();
+      // Remove dependências manualmente para evitar violar Foreign Keys caso não haja ON DELETE CASCADE
+      await SupabaseService.client.from('elemento_posicoes').delete().eq('elemento_id', elemento.id);
+      await SupabaseService.client.from('elemento_arquivos').delete().eq('elemento_id', elemento.id);
+
       await SupabaseService.client
           .from('elementos')
           .delete()
           .eq('id', elemento.id);
 
       await onFetch(elemento.pedidoId);
+      if (contextGlobal.mounted) Navigator.pop(contextGlobal); // fecha loading
+      NotificationService.showPositive('Sucesso', 'Elemento excluído!');
     } catch (e) {
+      if (contextGlobal.mounted) Navigator.pop(contextGlobal);
       log('ElementoController.onDeleteElemento erro: $e');
+      NotificationService.showNegative('Erro', e.toString());
     }
   }
 
@@ -206,14 +242,29 @@ class ElementoController {
   // ─── DELETAR TODOS OS ELEMENTOS ───────────────────────────────────────────
   Future<void> onDeleteAllElementos(String pedidoId) async {
     try {
+      showLoadingDialog();
+      
+      // Resgata os IDs para deletar filhos
+      final eRaw = await SupabaseService.client.from('elementos').select('id').eq('pedido_id', pedidoId);
+      final eIds = eRaw.map((e) => e['id'].toString()).toList();
+      
+      if (eIds.isNotEmpty) {
+          await SupabaseService.client.from('elemento_posicoes').delete().filter('elemento_id', 'in', eIds);
+          await SupabaseService.client.from('elemento_arquivos').delete().filter('elemento_id', 'in', eIds);
+      }
+
       await SupabaseService.client
           .from('elementos')
           .delete()
           .eq('pedido_id', pedidoId);
 
       await onFetch(pedidoId);
+      if (contextGlobal.mounted) Navigator.pop(contextGlobal); // fecha loading
+      NotificationService.showPositive('Sucesso', 'Todos os elementos foram removidos.');
     } catch (e) {
+      if (contextGlobal.mounted) Navigator.pop(contextGlobal);
       log('ElementoController.onDeleteAllElementos erro: $e');
+      NotificationService.showNegative('Erro ao deletar', e.toString());
     }
   }
 
@@ -560,18 +611,19 @@ class ElementoController {
             final pesoUnitario = elQtde > 0 ? pesoLido / elQtde : pesoLido;
             pos.pesoKg.text = pesoUnitario.toStringAsFixed(3);
 
-            // Match da bitola no catálogo
-            final bMatch = bitola.toStringAsFixed(2).replaceAll(RegExp(r'\.00$'), '');
-            final bMatchAlt = bitola.toString().replaceAll(RegExp(r'\.0$'), '');
-            
             pos.produto = pedido.getProdutos()
                 .map((e) => e.produto)
-                .where((p) => 
-                  p.nome.contains(bMatch) || 
-                  p.labelMinified.contains(bMatch) ||
-                  p.nome.contains(bMatchAlt) ||
-                  p.labelMinified.contains(bMatchAlt)
-                )
+                .where((p) {
+                  final textToSearch = '${p.nome} ${p.labelMinified}'.replaceAll(',', '.');
+                  // Extrai todos os números (com ou sem casa decimal) do nome do produto ex: "50", "12.5", "5"
+                  final extractedNumbers = RegExp(r'\d+(?:\.\d+)?').allMatches(textToSearch);
+                  
+                  // Verifica se algum dos números extraídos é exatamente igual à bitola lida
+                  return extractedNumbers.any((match) {
+                     final extractedValue = double.tryParse(match.group(0)!);
+                     return extractedValue == bitola;
+                  });
+                })
                 .firstOrNull;
 
             if (pos.produto != null) {
@@ -670,6 +722,8 @@ class ElementoController {
         }
 
         createdElementIds.add(el.id);
+        // Atualiza a lista atrás do dialog em tempo real
+        await onFetch(pedido.id);
       }
 
       await onFetch(pedido.id);
@@ -689,6 +743,14 @@ class ElementoController {
   // ─── VALIDAÇÃO POR BITOLA ─────────────────────────────────────────────────
   /// Verifica se o somatório de peso de cada bitola nas posições
   /// corresponde ao total de cada bitola no pedido.
+  ElementoValidacaoResult getCachedValidacao(PedidoModel pedido) {
+    if (_validacaoDirty || _cachedValidacao == null) {
+      _cachedValidacao = getValidacaoBitola(pedido);
+      _validacaoDirty = false;
+    }
+    return _cachedValidacao!;
+  }
+
   ElementoValidacaoResult getValidacaoBitola(PedidoModel pedido) {
     // Soma de peso por produto_id em TODAS as posições de todos os elementos
     final Map<String, double> pesoNasPosicoesMap = {};

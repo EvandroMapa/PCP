@@ -28,7 +28,7 @@ class PedidoVinculadosWidget extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text('Pedidos Vinculados', style: AppCss.largeBold),
+                child: Text('Pedidos Vinculados', style: AppCss.smallBold.setSize(13)),
               ),
               InkWell(
                 onTap: () async {

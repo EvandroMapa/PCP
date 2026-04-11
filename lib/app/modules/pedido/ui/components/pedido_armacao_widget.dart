@@ -21,7 +21,7 @@ class PedidoArmacaoWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Armação', style: AppCss.largeBold),
+          Text('Armação', style: AppCss.smallBold.setSize(13)),
           const H(16),
           ExpansionTile(
             childrenPadding: EdgeInsets.zero,

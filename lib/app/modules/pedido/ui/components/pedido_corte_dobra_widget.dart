@@ -12,11 +12,11 @@ class PedidoCorteDobraWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Corte e Dobra', style: AppCss.largeBold),
+          Text('Corte e Dobra', style: AppCss.smallBold.setSize(13)),
           const H(8),
           Column(
             children: [
@@ -25,7 +25,7 @@ class PedidoCorteDobraWidget extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Aguardando Produção',
-                      style: AppCss.mediumRegular,
+                      style: AppCss.minimumRegular.setSize(12),
                     ),
                   ),
                   Text(
@@ -50,7 +50,7 @@ class PedidoCorteDobraWidget extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text('Produzindo', style: AppCss.mediumRegular),
+                    child: Text('Produzindo', style: AppCss.minimumRegular.setSize(12)),
                   ),
                   Text(
                     '${pedido.getQtdeProduzindo().toKg()} (${(pedido.getPrcntgProduzindo() * 100).percent}%)',
@@ -73,7 +73,7 @@ class PedidoCorteDobraWidget extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(child: Text('Pronto', style: AppCss.mediumRegular)),
+                  Expanded(child: Text('Pronto', style: AppCss.minimumRegular.setSize(12))),
                   Text(
                     '${pedido.getQtdePronto().toKg()} (${(pedido.getPrcntgPronto() * 100).percent}%)',
                   ),

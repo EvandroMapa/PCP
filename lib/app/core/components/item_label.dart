@@ -98,7 +98,7 @@ class ItemLabel extends StatelessWidget {
               } : null,
               child: Text(
                 value,
-                style: AppCss.mediumRegular
+                style: AppCss.minimumRegular.setSize(13)
                     .setColor(color ?? AppColors.black)
                     .copyWith(
                       decorationColor: isAUrl ? Colors.blue : null,

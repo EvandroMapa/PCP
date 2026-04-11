@@ -158,7 +158,7 @@ class _PedidoPageState extends State<PedidoPage>
         // ── Conteúdo das abas ─────────────────────────────────────────────
         Expanded(
           child: Container(
-            color: const Color(0xFFF4F6F8),
+            color: const Color(0xFFE5E9EE),
             child: TabBarView(
               controller: _tabController,
               children: [
@@ -175,19 +175,110 @@ class _PedidoPageState extends State<PedidoPage>
     );
   }
 
+  // ─── DESIGN SYSTEM: SECTION CARD ─────────────────────────────────────────
+  Widget _sectionCard({
+    required IconData icon,
+    required String title,
+    required List<Widget> children,
+    Color? accentColor,
+    Widget? trailing,
+    EdgeInsetsGeometry? contentPadding,
+  }) {
+    final color = accentColor ?? AppColors.primaryMain;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade400, width: 0.6),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+            spreadRadius: 1,
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── Cabeçalho da seção ──
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.04),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(14),
+                topRight: Radius.circular(14),
+              ),
+              border: Border(
+                bottom: BorderSide(color: color.withValues(alpha: 0.08), width: 1),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, size: 16, color: color),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: AppCss.mediumBold.copyWith(
+                      fontSize: 13,
+                      color: color.withValues(alpha: 0.85),
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ),
+                if (trailing != null) trailing,
+              ],
+            ),
+          ),
+          // ── Corpo da seção ──
+          Padding(
+            padding: contentPadding ?? const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: children,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Compatibility wrapper
   Widget _buildCard({required List<Widget> children, EdgeInsetsGeometry? padding}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: padding ?? const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade400, width: 0.6),
         boxShadow: [
           BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+            spreadRadius: 1,
+          ),
+          BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-            spreadRadius: 2,
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -203,12 +294,17 @@ class _PedidoPageState extends State<PedidoPage>
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        // ── Sinalizadores ──
         if (pedido.getPedidosFilhos().isNotEmpty)
           Padding(padding: const EdgeInsets.only(bottom: 12), child: PaiPedidoSinalizadorWidget()),
         if (pedido.pai != null && pedido.pai != '')
           Padding(padding: const EdgeInsets.only(bottom: 12), child: PaiPedidoFilhoSinalizadorWidget()),
 
-        _buildCard(
+        // ── Identificação ──
+        _sectionCard(
+          icon: Icons.assignment_outlined,
+          title: 'IDENTIFICAÇÃO',
+          accentColor: AppColors.primaryMain,
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,37 +316,69 @@ class _PedidoPageState extends State<PedidoPage>
             const H(16),
             PedidoDescWidget(pedido),
           ],
+          contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
         ),
 
+        // ── Produção (sem filhos) ──
         if (pedido.pedidosFilhos.isEmpty)
-          _buildCard(
+          _sectionCard(
+            icon: Icons.precision_manufacturing_outlined,
+            title: 'PRODUÇÃO',
+            accentColor: const Color(0xFF0369A1), // sky-700
             children: [
               PedidoStatusWidget(pedido),
-              const H(16),
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                height: 1,
+                color: Colors.grey.shade100,
+              ),
               PedidoStepsWidget(pedido),
             ],
+            contentPadding: const EdgeInsets.fromLTRB(0, 4, 0, 4),
           ),
 
+        // ── Produtos (aguardando entrada) ──
         if (pedido.pedidosFilhos.isEmpty && pedido.isAguardandoEntradaProducao())
-          _buildCard(
+          _sectionCard(
+            icon: Icons.inventory_2_outlined,
+            title: 'PRODUTOS',
+            accentColor: const Color(0xFF7C3AED), // violet-600
             children: [
               PedidoProdutosWidget(pedido),
             ],
+            contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           ),
 
+        // ── Corte/Dobra + Produtos + Armação (em produção) ──
         if (pedido.pedidosFilhos.isEmpty && !pedido.isAguardandoEntradaProducao())
-          _buildCard(
+          _sectionCard(
+            icon: Icons.content_cut_outlined,
+            title: 'CORTE, DOBRA & ARMAÇÃO',
+            accentColor: const Color(0xFFD97706), // amber-600
             children: [
               PedidoCorteDobraWidget(pedido),
-              const H(16),
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                height: 1,
+                color: Colors.grey.shade100,
+              ),
               PedidoProdutosWidget(pedido),
-              const H(16),
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                height: 1,
+                color: Colors.grey.shade100,
+              ),
               PedidoArmacaoWidget(pedido),
             ],
+            contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           ),
 
+        // ── Pedido Pai (com filhos) ──
         if (pedido.pedidosFilhos.isNotEmpty)
-          _buildCard(
+          _sectionCard(
+            icon: Icons.account_tree_outlined,
+            title: 'PEDIDOS PARCIAIS',
+            accentColor: const Color(0xFF059669), // emerald-600
             children: [
               PaiPedidoCorteDobraWidget(pedido),
               const H(16),
@@ -258,50 +386,86 @@ class _PedidoPageState extends State<PedidoPage>
               const H(16),
               PedidoFilhosWidget(pedido: pedido, filhos: pedido.getPedidosFilhos()),
             ],
+            contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           ),
 
+        // ── Entrega & Financeiro ──
         if (pedido.instrucoesEntrega.isNotEmpty || pedido.instrucoesFinanceiras.isNotEmpty)
-          _buildCard(
+          _sectionCard(
+            icon: Icons.local_shipping_outlined,
+            title: 'ENTREGA & FINANCEIRO',
+            accentColor: const Color(0xFF2563EB), // blue-600
             children: [
               if (pedido.instrucoesEntrega.isNotEmpty) ...[
                 PedidoEntregaWidget(pedido),
-                if (pedido.instrucoesFinanceiras.isNotEmpty) const H(16),
+                if (pedido.instrucoesFinanceiras.isNotEmpty)
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 12),
+                    height: 1,
+                    color: Colors.grey.shade100,
+                  ),
               ],
               if (pedido.instrucoesFinanceiras.isNotEmpty)
                 PedidoFinancWidget(pedido),
             ],
+            contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           ),
 
-        _buildCard(
+        // ── Anexos ──
+        _sectionCard(
+          icon: Icons.attach_file_rounded,
+          title: 'ANEXOS',
+          accentColor: const Color(0xFF64748B), // slate-500
           children: [
             PedidoAnexosWidget(pedido),
           ],
+          contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         ),
 
-        _buildCard(
+        // ── Checklist ──
+        _sectionCard(
+          icon: Icons.checklist_rounded,
+          title: 'CHECKLIST',
+          accentColor: const Color(0xFF16A34A), // green-600
           children: [
             PedidoChecksWidget(pedido),
           ],
+          contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         ),
 
+        // ── Vinculados ──
         if (pedido.pedidosFilhos.isEmpty)
-          _buildCard(
+          _sectionCard(
+            icon: Icons.link_rounded,
+            title: 'PEDIDOS VINCULADOS',
+            accentColor: const Color(0xFF6366F1), // indigo-500
             children: [
               PedidoVinculadosWidget(pedido: pedido, vinculados: pedido.getPedidosVinculados()),
             ],
+            contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           ),
 
-        _buildCard(
+        // ── Comentários ──
+        _sectionCard(
+          icon: Icons.chat_bubble_outline_rounded,
+          title: 'COMENTÁRIOS',
+          accentColor: const Color(0xFFEC4899), // pink-500
           children: [
             PedidoCommentsWidget(pedido),
           ],
+          contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         ),
 
+        // ── Histórico ──
         if (pedido.histories.isNotEmpty)
-          _buildCard(
+          _sectionCard(
+            icon: Icons.timeline_rounded,
+            title: 'HISTÓRICO',
+            accentColor: const Color(0xFF78716C), // stone-500
             children: [
               PedidoTimelineWidget(pedido: pedido),
             ],
+            contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           ),
       ],
     );

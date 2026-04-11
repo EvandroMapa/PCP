@@ -18,7 +18,7 @@ class PedidoEntregaWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Entrega', style: AppCss.largeBold),
+          Text('Entrega', style: AppCss.smallBold.setSize(13)),
           if (pedido.deliveryAt != null) ...[
             const H(16),
             ItemLabel(

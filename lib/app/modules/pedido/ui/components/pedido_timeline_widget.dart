@@ -38,7 +38,7 @@ class _PedidoTimelineWidgetState extends State<PedidoTimelineWidget> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              Text('Linha do Tempo', style: AppCss.largeBold),
+              Text('Linha do Tempo', style: AppCss.smallBold.setSize(13)),
               const Spacer(),
               Expanded(
                 child: AppDropDown<PedidoHistoryType?>(

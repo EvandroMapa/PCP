@@ -13,23 +13,23 @@ class PedidoStatusWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
-          Expanded(child: Text('Status de Produção', style: AppCss.largeBold)),
+          Expanded(child: Text('Status de Produção', style: AppCss.smallBold.setSize(13))),
           InkWell(
             onTap: pedido.isChangeStatusAvailable
                 ? () => pedidoCtrl.onChangePedidoStatus(pedido)
                 : null,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color:
                     (pedido.isAguardandoEntradaProducao()
                             ? Colors.grey
                             : pedido.status.color)
                         .withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: IntrinsicWidth(
                 child: Row(
@@ -38,13 +38,13 @@ class PedidoStatusWidget extends StatelessWidget {
                       pedido.isAguardandoEntradaProducao()
                           ? 'AGUARDANDO ENTRADA'
                           : pedido.status.label,
-                      style: AppCss.mediumRegular.setSize(12),
+                      style: AppCss.minimumRegular.setSize(11),
                     ),
                     if (pedido.isChangeStatusAvailable) ...{
                       const W(2),
                       Icon(
                         Icons.keyboard_arrow_down,
-                        size: 16,
+                        size: 14,
                         color: AppColors.black.withValues(alpha: 0.6),
                       ),
                     },

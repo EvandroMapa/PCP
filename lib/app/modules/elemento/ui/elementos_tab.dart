@@ -33,7 +33,11 @@ class _ElementosTabState extends State<ElementosTab> {
 
   Future<void> _init() async {
     setState(() => _isLoading = true);
-    await elementoCtrl.onInit(widget.pedido.id);
+    try {
+       await elementoCtrl.onInit(widget.pedido.id).timeout(const Duration(seconds: 15));
+    } catch (_) {
+       // Se deu timeout ou erro, garante que o loader desaparece.
+    }
     if (mounted) {
       setState(() => _isLoading = false);
     }
@@ -50,7 +54,14 @@ class _ElementosTabState extends State<ElementosTab> {
           children: [
             const CircularProgressIndicator(),
             const SizedBox(height: 16),
-            Text('Aguarde, carregando elementos...', style: AppCss.mediumRegular),
+            StreamOut<String>(
+              stream: elementoCtrl.loadingMessageStream.listen,
+              builder: (_, msg) => Text(
+                msg, 
+                style: AppCss.mediumRegular,
+                textAlign: TextAlign.center,
+              ),
+            ),
           ],
         ),
       );
@@ -58,7 +69,7 @@ class _ElementosTabState extends State<ElementosTab> {
     return StreamOut<List<ElementoModel>>(
       stream: elementoCtrl.elementosStream.listen,
       builder: (_, elementos) {
-        final validacao = elementoCtrl.getValidacaoBitola(widget.pedido);
+        final validacao = elementoCtrl.getCachedValidacao(widget.pedido);
         return Column(
           children: [
             const SizedBox(height: 8),
@@ -73,21 +84,17 @@ class _ElementosTabState extends State<ElementosTab> {
                     'Elementos (${elementos.length})',
                     style: AppCss.mediumBold,
                   ),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.secondary,
-                          backgroundColor: AppColors.secondary.withValues(alpha: 0.05),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              side: BorderSide(color: AppColors.secondary.withValues(alpha: 0.1))),
-                        ),
-                        icon:
-                            const Icon(Icons.picture_as_pdf_outlined, size: 18),
-                        label: const Text('Importar PDF', style: TextStyle(fontWeight: FontWeight.bold)),
-                        onPressed: () async {
+                      // ── Importar PDF (ghost/outlined) ──
+                      _ActionButton(
+                        icon: Icons.picture_as_pdf_outlined,
+                        label: 'Importar PDF',
+                        color: AppColors.secondary,
+                        variant: _ButtonVariant.outlined,
+                        onTap: () async {
                           final result = await FilePicker.platform.pickFiles(
                             type: FileType.custom,
                             allowedExtensions: ['pdf'],
@@ -95,6 +102,10 @@ class _ElementosTabState extends State<ElementosTab> {
                           if (result != null &&
                               result.files.single.bytes != null) {
                             _showProgressDialog(context);
+                            elementoCtrl.importProgressStream.add(
+                              ImportProgress(status: 'Extraindo texto do PDF...'),
+                            );
+                            await Future.delayed(const Duration(milliseconds: 100));
                             final res = await elementoCtrl.onImportPDF(
                                 result.files.single.bytes!, widget.pedido);
                             
@@ -184,97 +195,51 @@ class _ElementosTabState extends State<ElementosTab> {
                           }
                         },
                       ),
-                      const SizedBox(width: 8),
-                      // Botão Borracha (Apagar Tudo)
+                      // ── Limpar (danger ghost) ──
                       StreamOut<List<ElementoModel>>(
                         stream: elementoCtrl.elementosStream.listen,
                         builder: (_, elementos) {
-                          if (elementos.isEmpty) return const SizedBox();
-                          return Tooltip(
-                            message: 'Apagar todos os elementos',
-                            child: InkWell(
-                              onTap: () async {
-                                if (await showConfirmDialog(
-                                  'Apagar TODOS os elementos?',
-                                  'Esta ação não pode ser desfeita. Deseja continuar?',
-                                )) {
-                                  await elementoCtrl.onDeleteAllElementos(widget.pedido.id);
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.red.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
-                                ),
-                                child: const Icon(Icons.auto_fix_normal_rounded,
-                                    color: Colors.red, size: 18),
-                                ),
-                              ),
-                            );
-                          },
+                          if (elementos.isEmpty) return const SizedBox.shrink();
+                          return _ActionButton(
+                            icon: Icons.delete_sweep_rounded,
+                            label: 'Limpar',
+                            color: AppColors.error,
+                            variant: _ButtonVariant.outlined,
+                            onTap: () async {
+                              if (await showConfirmDialog(
+                                'Apagar TODOS os elementos?',
+                                'Esta ação não pode ser desfeita. Deseja continuar?',
+                              )) {
+                                await elementoCtrl.onDeleteAllElementos(widget.pedido.id);
+                              }
+                            },
+                          );
+                        },
+                      ),
+                      // ── Novo Elemento (primary solid) ──
+                      _ActionButton(
+                        icon: Icons.add_rounded,
+                        label: 'Novo Elemento',
+                        color: AppColors.primaryMain,
+                        variant: _ButtonVariant.filled,
+                        onTap: () => showElementoFormDialog(
+                          context,
+                          pedido: widget.pedido,
                         ),
-                        const SizedBox(width: 8),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryMain,
-                            foregroundColor: Colors.white,
-                            elevation: 2,
-                            shadowColor: AppColors.primaryMain.withValues(alpha: 0.4),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
-                          ),
-                          icon: const Icon(Icons.add_rounded, size: 20),
-                          label: const Text('Novo Elemento', style: TextStyle(fontWeight: FontWeight.bold)),
-                          onPressed: () => showElementoFormDialog(
-                            context,
-                            pedido: widget.pedido,
-                          ),
+                      ),
+                      // ── Comparativo (status pill) ──
+                      _ActionButton(
+                        icon: validacao.isOk
+                            ? Icons.check_circle_rounded
+                            : Icons.warning_rounded,
+                        label: 'Comparativo',
+                        color: validacao.isOk ? AppColors.success : AppColors.error,
+                        variant: _ButtonVariant.outlined,
+                        onTap: () => showElementoComparativoDialog(
+                          context,
+                          validacao: validacao,
                         ),
-                        const SizedBox(width: 8),
-                        // Botão de Comparativo (Status)
-                        InkWell(
-                          onTap: () => showElementoComparativoDialog(
-                            context,
-                            validacao: validacao,
-                          ),
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: validacao.isOk
-                                  ? Colors.green.withValues(alpha: 0.1)
-                                  : Colors.red.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: validacao.isOk
-                                    ? Colors.green.withValues(alpha: 0.2)
-                                    : Colors.red.withValues(alpha: 0.2),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  validacao.isOk
-                                      ? Icons.check_circle_rounded
-                                      : Icons.warning_rounded,
-                                  color: validacao.isOk ? Colors.green : Colors.red,
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Comparativo',
-                                  style: AppCss.smallBold.copyWith(
-                                    color: validacao.isOk
-                                        ? Colors.green.shade700
-                                        : Colors.red.shade700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -519,46 +484,58 @@ class _ElementoTileState extends State<_ElementoTile> {
                       ),
                     ],
                   ),
-                  const SizedBox(width: 8),
-                  // Botão de Anexos
-                  IconButton(
-                    onPressed: () => _showArquivosDialog(context, el),
-                    tooltip: 'Anexos (${el.arquivos.length})',
-                    icon: Icon(
-                      el.arquivos.isEmpty ? Icons.attach_file_rounded : Icons.attachment_rounded,
-                      color: el.arquivos.isEmpty ? Colors.grey[400] : AppColors.secondary,
-                      size: 20,
-                    ),
-                  ),
-                  // Ações
-                  PopupMenuButton<String>(
-                    icon: Icon(Icons.more_vert_rounded, color: Colors.grey[400], size: 20),
-                    onSelected: (action) async {
-                      if (action == 'edit') {
-                        await showElementoFormDialog(context,
-                            pedido: widget.pedido, elemento: el);
-                      } else if (action == 'delete') {
-                        await elementoCtrl.onDeleteElemento(el);
-                      }
-                    },
-                    itemBuilder: (_) => [
-                      PopupMenuItem(
-                          value: 'edit',
-                          child: Row(children: [
-                            Icon(Icons.edit_rounded, size: 18, color: Colors.grey[700]),
-                            const SizedBox(width: 12),
-                            const Text('Editar')
-                          ])),
-                      const PopupMenuDivider(),
-                      PopupMenuItem(
-                          value: 'delete',
-                          child: Row(children: [
-                            const Icon(Icons.delete_outline_rounded,
-                                size: 18, color: Colors.red),
-                            const SizedBox(width: 12),
-                            const Text('Excluir',
-                                style: TextStyle(color: Colors.red))
-                          ])),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Botão de Anexos
+                      IconButton(
+                        onPressed: () => _showArquivosDialog(context, el),
+                        tooltip: 'Anexos (${el.arquivos.length})',
+                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                        padding: EdgeInsets.zero,
+                        splashRadius: 20,
+                        icon: Icon(
+                          el.arquivos.isEmpty ? Icons.attach_file_rounded : Icons.attachment_rounded,
+                          color: el.arquivos.isEmpty ? Colors.grey[400] : AppColors.secondary,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      // Ações
+                      PopupMenuButton<String>(
+                        icon: Icon(Icons.more_vert_rounded, color: Colors.grey[400], size: 20),
+                        tooltip: 'Ações',
+                        padding: EdgeInsets.zero,
+                        splashRadius: 20,
+                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                        onSelected: (action) async {
+                          if (action == 'edit') {
+                            await showElementoFormDialog(context,
+                                pedido: widget.pedido, elemento: el);
+                          } else if (action == 'delete') {
+                            await elementoCtrl.onDeleteElemento(el);
+                          }
+                        },
+                        itemBuilder: (_) => [
+                          PopupMenuItem(
+                              value: 'edit',
+                              child: Row(children: [
+                                Icon(Icons.edit_rounded, size: 18, color: Colors.grey[700]),
+                                const SizedBox(width: 12),
+                                const Text('Editar')
+                              ])),
+                          const PopupMenuDivider(),
+                          PopupMenuItem(
+                              value: 'delete',
+                              child: Row(children: [
+                                const Icon(Icons.delete_outline_rounded,
+                                    size: 18, color: Colors.red),
+                                const SizedBox(width: 12),
+                                const Text('Excluir',
+                                    style: TextStyle(color: Colors.red))
+                              ])),
+                        ],
+                      ),
                     ],
                   ),
                   const SizedBox(width: 4),
@@ -792,6 +769,67 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
           child: const Text('Fechar'),
         ),
       ],
+    );
+  }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Design System: Action Button Padronizado
+// ═════════════════════════════════════════════════════════════════════════════
+enum _ButtonVariant { filled, outlined }
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final _ButtonVariant variant;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.variant,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isFilled = variant == _ButtonVariant.filled;
+
+    return Material(
+      color: isFilled ? color : color.withValues(alpha: 0.06),
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Container(
+          height: 36,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: isFilled
+                ? null
+                : Border.all(color: color.withValues(alpha: 0.18), width: 1),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: isFilled ? Colors.white : color),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isFilled ? Colors.white : color,
+                  height: 1,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

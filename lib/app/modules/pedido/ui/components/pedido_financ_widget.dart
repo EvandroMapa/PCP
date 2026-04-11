@@ -17,7 +17,7 @@ class PedidoFinancWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Financeiro', style: AppCss.largeBold),
+            Text('Financeiro', style: AppCss.smallBold.setSize(13)),
             if (pedido.pedidoFinanceiro.isNotEmpty) ...[
               const H(16),
               ItemLabel('Pedido Financeiro', pedido.pedidoFinanceiro),

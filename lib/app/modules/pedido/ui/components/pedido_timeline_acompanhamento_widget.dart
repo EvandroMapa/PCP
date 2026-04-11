@@ -33,7 +33,7 @@ class _PedidoTimelinAcompanhamentoeWidgetState
         const H(16),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text('Histórico do Pedido', style: AppCss.largeBold),
+          child: Text('Histórico do Pedido', style: AppCss.smallBold.setSize(13)),
         ),
         const H(16),
         const Divisor(),
