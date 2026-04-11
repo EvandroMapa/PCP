@@ -7,6 +7,7 @@ import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
 import 'package:aco_plus/app/core/services/preferences_service.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
+import 'package:aco_plus/app/modules/automatizacao/automatizacao_controller.dart';
 
 final armacaoCtrl = ArmacaoController();
 
@@ -256,6 +257,8 @@ class ArmacaoController {
       pedido.armacaoResumo.clear();
       pedido.armacaoResumo.addAll(resume);
       
+      // Gatilho de Automação
+      await automatizacaoCtrl.onCheckFinalizacaoArmacao(pedido);
     } catch (e) {
       log('Erro ao atualizar resumo do pedido: $e');
     }

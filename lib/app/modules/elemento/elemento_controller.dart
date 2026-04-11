@@ -4,6 +4,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
+import 'package:aco_plus/app/modules/automatizacao/automatizacao_controller.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_arquivo_model.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
@@ -187,6 +188,9 @@ class ElementoController {
       pedido.armacaoResumo.addAll(resume);
 
       log('armacaoResumo atualizado: $totalQtd elementos, ${totalPeso.toStringAsFixed(1)} kg');
+      
+      // Gatilho de Automação
+      await automatizacaoCtrl.onCheckFinalizacaoArmacao(pedido);
     } catch (e) {
       log('Erro ao atualizar armacaoResumo: $e');
     }

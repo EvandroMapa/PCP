@@ -131,6 +131,15 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                   (step) => setState(() => model = model.copyWith(
                       prontoArmacaoPedido: model.prontoArmacaoPedido.copyWith(step: step))),
                 ),
+                
+                _buildSingleStepRule(
+                  '07.1 - Finalização de Armação (CDA)',
+                  'Quando todos os elementos cadastrados forem finalizados (Prontos), mover para:',
+                  model.finalizacaoArmacaoPedido.step,
+                  steps,
+                  (step) => setState(() => model = model.copyWith(
+                      finalizacaoArmacaoPedido: model.finalizacaoArmacaoPedido.copyWith(step: step))),
+                ),
 
                 const SizedBox(height: 24),
                 _buildSectionHeader('Regras de Filtro / Ocultação'),

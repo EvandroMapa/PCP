@@ -8,6 +8,7 @@ enum AutomatizacaoItemType {
   prontoArmacaoPedido,
   naoMostrarNoCalendario,
   removerListaPrioridade,
+  finalizacaoArmacaoPedido,
 }
 
 extension AutomatizacaoItemTypeExtension on AutomatizacaoItemType {
@@ -31,6 +32,8 @@ extension AutomatizacaoItemTypeExtension on AutomatizacaoItemType {
         return 'Não mostrar no calendário';
       case AutomatizacaoItemType.removerListaPrioridade:
         return 'Remover da lista de prioridade';
+      case AutomatizacaoItemType.finalizacaoArmacaoPedido:
+        return 'Finalização da Armação (CDA)';
     }
   }
 
@@ -54,6 +57,8 @@ extension AutomatizacaoItemTypeExtension on AutomatizacaoItemType {
         return 'Ao cair em alguma das etapas na lista, não será exibido no calendário';
       case AutomatizacaoItemType.removerListaPrioridade:
         return 'Ao cair em alguma das etapas na lista, será removido da lista de prioridade';
+      case AutomatizacaoItemType.finalizacaoArmacaoPedido:
+        return 'Quando todos os elementos cadastrados forem finalizados (Prontos)';
     }
   }
 }

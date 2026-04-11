@@ -74,4 +74,41 @@ class AutomatizacaoController {
       }
     }
   }
+
+  Future<void> onCheckFinalizacaoArmacao(PedidoModel pedido) async {
+    // 1. Validar se é CDA
+    if (pedido.tipo != PedidoTipo.cda) return;
+
+    // 2. Validar se a etapa atual exibe armação (é uma etapa de produção de armador)
+    if (!pedido.step.isExibirArmacao) return;
+
+    // 3. Validar se tem elementos e se todos estão prontos
+    final total = int.tryParse(pedido.armacaoResumo['total_qtd']?.toString() ?? '0') ?? 0;
+    if (total == 0) return;
+
+    final prontoPrcnt = double.tryParse(pedido.armacaoResumo['details']?['pronto']?['prcnt_qtd']?.toString() ?? '0') ?? 0.0;
+    
+    // Se todos (100%) estiverem prontos
+    if (prontoPrcnt >= 1.0) {
+      final config = automatizacaoConfig.finalizacaoArmacaoPedido;
+      final targetStep = config.step;
+
+      // Só move se tiver etapa configurada e se não for mover para "trás" ou para a mesma etapa
+      if (targetStep != null && pedido.step.index < targetStep.index) {
+        final stepById = FirestoreClient.steps.getById(targetStep.id);
+        pedido.steps.add(PedidoStepModel.create(stepById));
+        
+        // Registrar histórico
+        pedidoCtrl.onAddHistory(
+          pedido: pedido,
+          data: stepById,
+          type: PedidoHistoryType.step,
+          action: PedidoHistoryAction.update,
+          isFromAutomatizacao: true,
+        );
+
+        await FirestoreClient.pedidos.update(pedido);
+      }
+    }
+  }
 }

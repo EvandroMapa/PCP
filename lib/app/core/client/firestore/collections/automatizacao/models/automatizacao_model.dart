@@ -13,6 +13,7 @@ class AutomatizacaoModel {
   final AutomatizacaoItemModel prontoArmacaoPedido;
   final AutomatizacaoItemModel naoMostrarNoCalendario;
   final AutomatizacaoItemModel removerListaPrioridade;
+  final AutomatizacaoItemModel finalizacaoArmacaoPedido;
 
 
   List<AutomatizacaoItemModel> get itens => [
@@ -25,6 +26,7 @@ class AutomatizacaoModel {
     prontoArmacaoPedido,
     naoMostrarNoCalendario,
     removerListaPrioridade,
+    finalizacaoArmacaoPedido,
   ];
 
   AutomatizacaoModel({
@@ -37,6 +39,7 @@ class AutomatizacaoModel {
     required this.prontoArmacaoPedido,
     required this.naoMostrarNoCalendario,
     required this.removerListaPrioridade,
+    required this.finalizacaoArmacaoPedido,
   });
 
   AutomatizacaoModel copyWith({
@@ -49,6 +52,7 @@ class AutomatizacaoModel {
     AutomatizacaoItemModel? prontoArmacaoPedido,
     AutomatizacaoItemModel? naoMostrarNoCalendario,
     AutomatizacaoItemModel? removerListaPrioridade,
+    AutomatizacaoItemModel? finalizacaoArmacaoPedido,
   }) {
     return AutomatizacaoModel(
       criacaoPedido: criacaoPedido ?? this.criacaoPedido,
@@ -63,6 +67,7 @@ class AutomatizacaoModel {
       prontoArmacaoPedido: prontoArmacaoPedido ?? this.prontoArmacaoPedido,
       naoMostrarNoCalendario: naoMostrarNoCalendario ?? this.naoMostrarNoCalendario,
       removerListaPrioridade: removerListaPrioridade ?? this.removerListaPrioridade,
+      finalizacaoArmacaoPedido: finalizacaoArmacaoPedido ?? this.finalizacaoArmacaoPedido,
     );
   }
 
@@ -77,6 +82,7 @@ class AutomatizacaoModel {
       'pronto_armacao_pedido': prontoArmacaoPedido.toMap(),
       'nao_mostrar_no_calendario': naoMostrarNoCalendario.toMap(),
       'remover_lista_prioridade': removerListaPrioridade.toMap(),
+      'finalizacao_armacao_pedido': finalizacaoArmacaoPedido.toMap(),
     };
   }
 
@@ -118,6 +124,10 @@ class AutomatizacaoModel {
           map['remover_lista_prioridade'] is String
               ? json.decode(map['remover_lista_prioridade'])
               : map['remover_lista_prioridade']) : empty.removerListaPrioridade,
+      finalizacaoArmacaoPedido: map['finalizacao_armacao_pedido'] != null ? AutomatizacaoItemModel.fromMap(
+          map['finalizacao_armacao_pedido'] is String
+              ? json.decode(map['finalizacao_armacao_pedido'])
+              : map['finalizacao_armacao_pedido']) : empty.finalizacaoArmacaoPedido,
     );
   }
 
@@ -132,6 +142,7 @@ class AutomatizacaoModel {
       'prontoArmacaoPedido': prontoArmacaoPedido.toMap(),
       'naoMostrarNoCalendario': naoMostrarNoCalendario.toMap(),
       'removerListaPrioridade': removerListaPrioridade.toMap(),
+      'finalizacaoArmacaoPedido': finalizacaoArmacaoPedido.toMap(),
     };
   }
 
@@ -160,6 +171,9 @@ class AutomatizacaoModel {
       removerListaPrioridade: AutomatizacaoItemModel.fromMap(
         map['removerListaPrioridade'],
       ),
+      finalizacaoArmacaoPedido: AutomatizacaoItemModel.fromMap(
+        map['finalizacaoArmacaoPedido'] ?? {},
+      ),
     );
   }
 
@@ -170,7 +184,7 @@ class AutomatizacaoModel {
 
   @override
   String toString() {
-    return 'AutomatizacaoModel(criacaoPedido: $criacaoPedido, produzindoCDPedido: $produzindoCDPedido, prontoCDPedido: $prontoCDPedido, aguardandoArmacaoPedido: $aguardandoArmacaoPedido, produzindoArmacaoPedido: $produzindoArmacaoPedido, prontoArmacaoPedido: $prontoArmacaoPedido, naoMostrarNoCalendario: $naoMostrarNoCalendario, removerListaPrioridade: $removerListaPrioridade)';
+    return 'AutomatizacaoModel(criacaoPedido: $criacaoPedido, produzindoCDPedido: $produzindoCDPedido, prontoCDPedido: $prontoCDPedido, aguardandoArmacaoPedido: $aguardandoArmacaoPedido, produzindoArmacaoPedido: $produzindoArmacaoPedido, prontoArmacaoPedido: $prontoArmacaoPedido, naoMostrarNoCalendario: $naoMostrarNoCalendario, removerListaPrioridade: $removerListaPrioridade, finalizacaoArmacaoPedido: $finalizacaoArmacaoPedido)';
   }
 
   @override
@@ -185,7 +199,8 @@ class AutomatizacaoModel {
         other.produzindoArmacaoPedido == produzindoArmacaoPedido &&
         other.prontoArmacaoPedido == prontoArmacaoPedido &&
         other.naoMostrarNoCalendario == naoMostrarNoCalendario &&
-        other.removerListaPrioridade == removerListaPrioridade;
+        other.removerListaPrioridade == removerListaPrioridade &&
+        other.finalizacaoArmacaoPedido == finalizacaoArmacaoPedido;
   }
 
   @override
@@ -197,7 +212,8 @@ class AutomatizacaoModel {
         produzindoArmacaoPedido.hashCode ^
         prontoArmacaoPedido.hashCode ^
         naoMostrarNoCalendario.hashCode ^
-        removerListaPrioridade.hashCode;
+        removerListaPrioridade.hashCode ^
+        finalizacaoArmacaoPedido.hashCode;
   }
 
   static AutomatizacaoModel get empty => AutomatizacaoModel(
@@ -243,6 +259,11 @@ class AutomatizacaoModel {
         ),
         removerListaPrioridade: AutomatizacaoItemModel(
           type: AutomatizacaoItemType.removerListaPrioridade,
+          step: null,
+          steps: [],
+        ),
+        finalizacaoArmacaoPedido: AutomatizacaoItemModel(
+          type: AutomatizacaoItemType.finalizacaoArmacaoPedido,
           step: null,
           steps: [],
         ),
