@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/models/automatizacao_item_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_status.dart';
@@ -59,6 +60,8 @@ class AutomatizacaoController {
           if (pedido.step.index < step.index) {
             final stepById = FirestoreClient.steps.getById(step.id);
             pedido.steps.add(PedidoStepModel.create(stepById));
+
+            // Registrar histórico
             pedidoCtrl.onAddHistory(
               pedido: pedido,
               data: stepById,
