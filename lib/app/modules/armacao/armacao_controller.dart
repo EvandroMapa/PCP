@@ -216,7 +216,7 @@ class ArmacaoController {
         final limit = PreferencesService.maxElementosProducao.value;
 
         if (countArmando >= limit) {
-          showInfoDialog('Limite Atingido', 
+          showInfoDialog('LIMITE ATINGIDO!\n\n' 
             'O limite atual para este pedido é de $limit elementos simultâneos em produção.\n\n'
             'Conclua algum item ou peça ao administrador para aumentar o limite nas configurações.');
           return;
