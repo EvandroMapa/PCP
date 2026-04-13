@@ -511,6 +511,7 @@ class _ElementoArmacaoCard extends StatelessWidget {
           style: AppCss.largeBold.setSize(20).setColor(Colors.black),
         ),
       ],
+    );
   }
 }
 
