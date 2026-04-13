@@ -1,11 +1,11 @@
 {
-    "name": "com.m2.acoplus",
-    "short_name": "com.m2.acoplus",
+    "name": "AçoPlus - Planejamento e Controle de Produção",
+    "short_name": "AçoPlus",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#FFFFFF",
     "theme_color": "#FFFFFF",
-    "description": "A new Flutter project.",
+    "description": "Sistema de Planejamento e Controle de Produção - M2 Ferro e Aço",
     "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
