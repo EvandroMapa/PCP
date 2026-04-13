@@ -8,6 +8,9 @@ import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
 import 'package:aco_plus/app/core/services/preferences_service.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/automatizacao/automatizacao_controller.dart';
+import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
+import 'package:aco_plus/app/core/utils/global_resource.dart';
+import 'package:flutter/material.dart';
 
 final armacaoCtrl = ArmacaoController();
 
@@ -192,6 +195,24 @@ class ArmacaoController {
         pedido.elementos[index] = updatedElemento;
       }
       await updatePedidoSummary(pedido);
+
+      // Verificação de finalização interativa
+      final targetStep = automatizacaoCtrl.checkFinalizacaoArmacaoTargetStep(pedido);
+      if (targetStep != null) {
+        final confirm = await showConfirmDialog(
+          'Finalização de Armação',
+          'Todos os itens já foram marcados como pronto. Deseja arquivar este pedido?',
+        );
+
+        if (confirm) {
+          await automatizacaoCtrl.executeFinalizacaoArmacao(pedido, targetStep);
+          // Voltar para a tela de pedidos do armador
+          Navigator.pop(contextGlobal);
+        } else {
+          // Se responder NÃO, apenas volta para a tela de pedidos
+          Navigator.pop(contextGlobal);
+        }
+      }
     } catch (e) {
       log('Erro ao atualizar status do elemento: $e');
       showInfoDialog('Erro: Não foi possível atualizar o status.');
@@ -256,9 +277,6 @@ class ArmacaoController {
       // Atualizar localmente no objeto pedido para UI refletir
       pedido.armacaoResumo.clear();
       pedido.armacaoResumo.addAll(resume);
-      
-      // Gatilho de Automação
-      await automatizacaoCtrl.onCheckFinalizacaoArmacao(pedido);
     } catch (e) {
       log('Erro ao atualizar resumo do pedido: $e');
     }

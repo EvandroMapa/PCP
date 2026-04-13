@@ -188,9 +188,6 @@ class ElementoController {
       pedido.armacaoResumo.addAll(resume);
 
       log('armacaoResumo atualizado: $totalQtd elementos, ${totalPeso.toStringAsFixed(1)} kg');
-      
-      // Gatilho de Automação
-      await automatizacaoCtrl.onCheckFinalizacaoArmacao(pedido);
     } catch (e) {
       log('Erro ao atualizar armacaoResumo: $e');
     }

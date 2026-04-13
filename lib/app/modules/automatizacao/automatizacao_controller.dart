@@ -78,58 +78,48 @@ class AutomatizacaoController {
     }
   }
 
-  Future<void> onCheckFinalizacaoArmacao(PedidoModel pedido) async {
+  StepModel? checkFinalizacaoArmacaoTargetStep(PedidoModel pedido) {
     // 1. Validar se é CDA
-    log('onCheckFinalizacaoArmacao: Pedido: ${pedido.localizador}, Tipo: ${pedido.tipo.name}');
-    if (pedido.tipo != PedidoTipo.cda) return;
+    if (pedido.tipo != PedidoTipo.cda) return null;
 
     // 2. Validar se a etapa atual exibe armação (é uma etapa de produção de armador)
-    log('onCheckFinalizacaoArmacao: Etapa atual: ${pedido.step.name}, isExibirArmacao: ${pedido.step.isExibirArmacao}');
-    if (!pedido.step.isExibirArmacao) return;
+    if (!pedido.step.isExibirArmacao) return null;
 
     // 3. Validar se tem elementos e se todos estão prontos
     final resumo = pedido.armacaoResumo;
     final total = int.tryParse(resumo['total_qtd']?.toString() ?? '0') ?? 0;
     final pronto = int.tryParse(resumo['details']?['pronto']?['qtd']?.toString() ?? '0') ?? 0;
     
-    log('onCheckFinalizacaoArmacao: Pedido ${pedido.id} - Total: $total, Pronto: $pronto');
-
-    if (total == 0) return;
+    if (total == 0 || pronto < total) return null;
 
     // Se todos estiverem prontos
-    if (pronto >= total) {
-      final config = automatizacaoConfig.finalizacaoArmacaoPedido;
-      final targetStep = config.step;
-      
-      log('onCheckFinalizacaoArmacao: Condição de 100% atingida. Config Target: ${targetStep?.name}');
+    final config = automatizacaoConfig.finalizacaoArmacaoPedido;
+    final targetStep = config.step;
+    
+    if (targetStep == null) return null;
 
-      if (targetStep == null) {
-        log('onCheckFinalizacaoArmacao: AVISO - Nenhuma etapa de destino configurada para Finalização de Armação.');
-        return;
-      }
-
-      log('onCheckFinalizacaoArmacao: Comparando índices - Atual: ${pedido.step.index}, Destino: ${targetStep.index}');
-
-      // Só move se tiver etapa configurada e se não for mover para "trás" ou para a mesma etapa
-      if (pedido.step.index < targetStep.index) {
-        log('onCheckFinalizacaoArmacao: EXECUTANDO MOVIMENTAÇÃO para ${targetStep.name}');
-        final stepById = FirestoreClient.steps.getById(targetStep.id);
-        pedido.steps.add(PedidoStepModel.create(stepById));
-        
-        // Registrar histórico
-        pedidoCtrl.onAddHistory(
-          pedido: pedido,
-          data: stepById,
-          type: PedidoHistoryType.step,
-          action: PedidoHistoryAction.update,
-          isFromAutomatizacao: true,
-        );
-
-        await FirestoreClient.pedidos.update(pedido);
-        log('onCheckFinalizacaoArmacao: Pedido atualizado com sucesso.');
-      } else {
-        log('onCheckFinalizacaoArmacao: Movimentação ignorada (índice destino não é maior que o atual).');
-      }
+    // Só sugere se não for mover para "trás" ou para a mesma etapa
+    if (pedido.step.index < targetStep.index) {
+      return FirestoreClient.steps.getById(targetStep.id);
     }
+    
+    return null;
+  }
+
+  Future<void> executeFinalizacaoArmacao(PedidoModel pedido, StepModel targetStep) async {
+    log('executeFinalizacaoArmacao: EXECUTANDO MOVIMENTAÇÃO para ${targetStep.name}');
+    pedido.steps.add(PedidoStepModel.create(targetStep));
+    
+    // Registrar histórico
+    pedidoCtrl.onAddHistory(
+      pedido: pedido,
+      data: targetStep,
+      type: PedidoHistoryType.step,
+      action: PedidoHistoryAction.update,
+      isFromAutomatizacao: true,
+    );
+
+    await FirestoreClient.pedidos.update(pedido);
+    log('executeFinalizacaoArmacao: Pedido atualizado com sucesso.');
   }
 }
