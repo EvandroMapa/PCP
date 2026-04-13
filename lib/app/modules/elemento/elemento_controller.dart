@@ -188,6 +188,9 @@ class ElementoController {
       pedido.armacaoResumo.addAll(resume);
 
       log('armacaoResumo atualizado: $totalQtd elementos, ${totalPeso.toStringAsFixed(1)} kg');
+      
+      // Sincronizar coleção global
+      AppSupabaseClient.elementos.fetch();
     } catch (e) {
       log('Erro ao atualizar armacaoResumo: $e');
     }

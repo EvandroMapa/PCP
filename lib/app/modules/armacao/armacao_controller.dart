@@ -49,6 +49,11 @@ class ArmacaoController {
   void onInit() {
     AppSupabaseClient.pedidos.dataStream.listen.listen((pedidos) {
       _syncSummariesAndFilter(pedidos);
+      
+      // Ponte de reatividade: se o pedido mudar (ex: resumo), forçamos re-fetch de elementos
+      if (_currentPedidoId != null) {
+        AppSupabaseClient.elementos.fetch();
+      }
     });
 
     // Listener reativo para elementos
