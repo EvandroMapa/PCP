@@ -49,29 +49,56 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
 
   Future<void> _showImageDialog(ElementoModel elemento) async {
     if (elemento.arquivos.isEmpty) return;
+
+    // 1. Restrição de Status: Desenho só visível em produção ou pronto
+    if (elemento.status == ElementoStatus.aguardando) {
+      showInfoDialog(
+        'Visualização Bloqueada',
+        'O desenho técnico só fica disponível após o início da produção.\n\n'
+        'Mude o status para "ARMANDO" para liberar a visualização.',
+      );
+      return;
+    }
     
-    await showDialog(
+    // 2. Visualização em "Telona" Maximazada
+    await showGeneralDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(20),
-        child: Stack(
-          alignment: Alignment.topRight,
+      barrierDismissible: false,
+      barrierColor: Colors.white,
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, _, __) => Scaffold(
+        backgroundColor: Colors.white,
+        body: Stack(
           children: [
-            InteractiveViewer(
-              minScale: 0.5,
-              maxScale: 4.0,
-              child: Image.network(
-                elemento.arquivos.first.url,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return const Center(child: CircularProgressIndicator());
-                },
+            // Imagem Ocupando a tela toda com zoom
+            Positioned.fill(
+              child: InteractiveViewer(
+                minScale: 0.1,
+                maxScale: 15.0,
+                child: Image.network(
+                  elemento.arquivos.first.url,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(child: CircularProgressIndicator());
+                  },
+                  errorBuilder: (context, error, stackTrace) => const Center(
+                    child: Text('Erro ao carregar imagem. Verifique sua conexão.'),
+                  ),
+                ),
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.close, color: Colors.white, size: 30),
-              onPressed: () => Navigator.pop(context),
+            // Botão para Restaurar a tela (Voltar)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 20,
+              right: 20,
+              child: FloatingActionButton.extended(
+                heroTag: 'restore_image',
+                onPressed: () => Navigator.pop(context),
+                backgroundColor: AppColors.secondary,
+                icon: const Icon(Icons.fullscreen_exit, color: Colors.white),
+                label: const Text('RESTAURAR TELA', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
             ),
           ],
         ),
