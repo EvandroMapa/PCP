@@ -11,6 +11,9 @@ import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:flutter/material.dart';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
+import 'dart:ui_web' as ui_web;
 
 class ArmacaoElementosPage extends StatefulWidget {
   final PedidoModel pedido;
@@ -61,59 +64,13 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
       );
       return;
     }
-    
-    final arquivo = elemento.arquivos.first;
-    final isPdf = arquivo.extensao.toLowerCase() == 'pdf' || arquivo.tipo.contains('pdf');
 
-    // Se for PDF, o navegador lida de forma absurdamente melhor com o nativo em uma nova guia
-    if (isPdf) {
-      openInNewTab(arquivo.url);
-      return;
-    }
-
-    // 2. Visualização em "Telona" Maximazada (Apenas para Imagens)
     await showGeneralDialog(
       context: context,
       barrierDismissible: false,
       barrierColor: Colors.white,
       transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, _, __) => Scaffold(
-        backgroundColor: Colors.white,
-        body: Stack(
-          children: [
-            // Imagem Ocupando a tela toda com zoom
-            Positioned.fill(
-              child: InteractiveViewer(
-                minScale: 0.1,
-                maxScale: 15.0,
-                child: Image.network(
-                  arquivo.url,
-                  fit: BoxFit.contain,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const Center(child: CircularProgressIndicator());
-                  },
-                  errorBuilder: (context, error, stackTrace) => const Center(
-                    child: Text('Erro ao carregar imagem. Verifique sua conexão.'),
-                  ),
-                ),
-              ),
-            ),
-            // Botão para Restaurar a tela (Voltar)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 20,
-              right: 20,
-              child: FloatingActionButton.extended(
-                heroTag: 'restore_image',
-                onPressed: () => Navigator.pop(context),
-                backgroundColor: AppColors.secondary,
-                icon: const Icon(Icons.fullscreen_exit, color: Colors.white),
-                label: const Text('RESTAURAR TELA', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ),
-            ),
-          ],
-        ),
-      ),
+      pageBuilder: (context, _, __) => _MediaViewerDialog(elemento: elemento),
     );
   }
 
@@ -554,6 +511,159 @@ class _ElementoArmacaoCard extends StatelessWidget {
           style: AppCss.largeBold.setSize(20).setColor(Colors.black),
         ),
       ],
+  }
+}
+
+class _MediaViewerDialog extends StatefulWidget {
+  final ElementoModel elemento;
+  const _MediaViewerDialog({required this.elemento});
+
+  @override
+  State<_MediaViewerDialog> createState() => _MediaViewerDialogState();
+}
+
+class _MediaViewerDialogState extends State<_MediaViewerDialog> {
+  int _currentIndex = 0;
+  final Map<String, bool> _registeredFactories = {};
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.elemento.arquivos.isEmpty) return const SizedBox();
+    
+    // Garantir bounds do currentIndex
+    if (_currentIndex >= widget.elemento.arquivos.length) {
+      _currentIndex = 0;
+    }
+
+    final currentArq = widget.elemento.arquivos[_currentIndex];
+    final isPdf = currentArq.extensao.toLowerCase() == 'pdf' || currentArq.tipo.contains('pdf');
+
+    Widget mainContent;
+
+    if (isPdf) {
+      final viewId = 'pdf-viewer-${currentArq.id}';
+      if (!_registeredFactories.containsKey(viewId)) {
+        ui_web.platformViewRegistry.registerViewFactory(
+          viewId,
+          (int id) {
+            final iframe = html.IFrameElement();
+            iframe.src = currentArq.url;
+            iframe.style.border = 'none';
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            return iframe;
+          },
+        );
+        _registeredFactories[viewId] = true;
+      }
+      mainContent = HtmlElementView(viewType: viewId);
+    } else {
+      mainContent = InteractiveViewer(
+        minScale: 0.1,
+        maxScale: 15.0,
+        child: Image.network(
+          currentArq.url,
+          fit: BoxFit.contain,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return const Center(child: CircularProgressIndicator());
+          },
+          errorBuilder: (context, error, stackTrace) => const Center(
+            child: Text('Erro ao carregar imagem. Verifique sua conexão.'),
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          Positioned.fill(child: mainContent),
+
+          // Botão para Restaurar a tela (Voltar)
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 20,
+            right: 20,
+            child: FloatingActionButton.extended(
+              heroTag: 'restore_image',
+              onPressed: () => Navigator.pop(context),
+              backgroundColor: AppColors.secondary,
+              icon: const Icon(Icons.fullscreen_exit, color: Colors.white),
+              label: const Text(
+                'RESTAURAR TELA',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+
+          // Galeria de Thumbnails caso haja mais de 1 anexo
+          if (widget.elemento.arquivos.length > 1)
+            Positioned(
+              bottom: 40,
+              left: 40,
+              right: 40,
+              child: Center(
+                child: Container(
+                  height: 90,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    scrollDirection: Axis.horizontal,
+                    itemCount: widget.elemento.arquivos.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 16),
+                    itemBuilder: (ctx, i) {
+                      final arq = widget.elemento.arquivos[i];
+                      final arqIsPdf = arq.extensao.toLowerCase() == 'pdf' || arq.tipo.contains('pdf');
+                      final isSelected = i == _currentIndex;
+
+                      return GestureDetector(
+                        onTap: () => setState(() => _currentIndex = i),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 66,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border.all(
+                              color: isSelected ? AppColors.primaryMain : Colors.transparent,
+                              width: 3,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              if (arqIsPdf)
+                                const Center(
+                                  child: Icon(Icons.picture_as_pdf_rounded, color: Colors.redAccent, size: 36),
+                                )
+                              else
+                                Image.network(arq.url, fit: BoxFit.cover),
+                              if (!isSelected)
+                                Container(color: Colors.white.withValues(alpha: 0.6)),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
