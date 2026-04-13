@@ -3,7 +3,7 @@ void main() {
   String s2 = '84,489,70819,46';
   String s3 = '50,49,20463,68';
   String s4 = '9,4814,90141,25';
-  String s5 = '108,9089,00'; // Q=10 U=8,90 T=89,00
+  String s5 = '108,9089,00'; // Q=10 U=8,90 T=89,00t
 
   void test(String numStr) {
     print('Testing $numStr');
@@ -16,11 +16,11 @@ void main() {
 
             int tCommaPos = tStr.indexOf(',');
             if (tCommaPos == -1 || tStr.length - tCommaPos - 1 != 2) continue;
-            
+
             if (uStr.isEmpty || uStr == ',') continue;
             int uCommaPos = uStr.indexOf(',');
             if (uCommaPos != -1 && uCommaPos != uStr.lastIndexOf(',')) continue;
-            
+
             if (qStr.isEmpty || qStr == ',') continue;
             int qCommaPos = qStr.indexOf(',');
             if (qCommaPos != -1 && qCommaPos != qStr.lastIndexOf(',')) continue;
