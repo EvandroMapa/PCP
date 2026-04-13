@@ -246,7 +246,7 @@ class ArmacaoController {
     required BuildContext context,
     required ElementoModel elemento,
   }) async {
-    int selecionado = elemento.qtdePronto > 0 ? elemento.qtdePronto : elemento.qtde;
+    int selecionado = elemento.qtdePronto;
 
     return showDialog<int>(
       context: context,
@@ -266,7 +266,7 @@ class ArmacaoController {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton(
-                    onPressed: selecionado > 1 ? () => setState(() => selecionado--) : null,
+                    onPressed: selecionado > 0 ? () => setState(() => selecionado--) : null,
                     icon: const Icon(Icons.remove_circle_outline),
                     iconSize: 32,
                     color: Colors.red,
@@ -313,7 +313,7 @@ class ArmacaoController {
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
               ),
-              onPressed: () => Navigator.pop(ctx, selecionado),
+              onPressed: selecionado > 0 ? () => Navigator.pop(ctx, selecionado) : null,
               child: Text(selecionado == elemento.qtde ? 'CONFIRMAR PRONTO' : 'SALVAR PROGRESSO'),
             ),
           ],
