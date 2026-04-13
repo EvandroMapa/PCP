@@ -539,7 +539,8 @@ class _MediaViewerDialog extends StatefulWidget {
   State<_MediaViewerDialog> createState() => _MediaViewerDialogState();
 }
 
-  // PDF Controllers removidos (foco no nativo do SO)
+class _MediaViewerDialogState extends State<_MediaViewerDialog> {
+  int _currentIndex = 0;
 
   @override
   void initState() {
