@@ -54,7 +54,7 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
     // 1. Restrição de Status: Desenho só visível em produção ou pronto
     if (elemento.status == ElementoStatus.aguardando) {
       showInfoDialog(
-        'Visualização Bloqueada',
+        'VISUALIZAÇÃO BLOQUEADA!\n\n'
         'O desenho técnico só fica disponível após o início da produção.\n\n'
         'Mude o status para "ARMANDO" para liberar a visualização.',
       );
