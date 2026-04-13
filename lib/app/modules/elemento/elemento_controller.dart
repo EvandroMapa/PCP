@@ -304,7 +304,7 @@ class ElementoController {
     }
   }
 
-  // ─── DELETAR ELEMENTO e─────────────────────────────────────────────────────
+  // ─── DELETAR ELEMENTdfO e─────────────────────────────────────────────────────
   Future<void> onDeleteElemento(ElementoModel elemento) async {
     try {
       if (elemento.status != ElementoStatus.aguardando) {
