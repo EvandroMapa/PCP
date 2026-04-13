@@ -334,7 +334,11 @@ class _ElementosTabState extends State<ElementosTab> {
                 child: Builder(
                   builder: (_) {
                     final filtrados = elementos.where((e) {
-                      // Para parcial (armando com qtdePronto > 0), consideramos como armando
+                      // Elemento com progresso parcial tem peças em armando E pronto
+                      if (e.isProntoParcial) {
+                        return (_statusVisivel[ElementoStatus.armando] ?? true) ||
+                               (_statusVisivel[ElementoStatus.pronto] ?? true);
+                      }
                       return _statusVisivel[e.status] ?? true;
                     }).toList();
                     if (filtrados.isEmpty) {
