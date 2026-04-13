@@ -716,6 +716,36 @@ class _ElementoTileState extends State<_ElementoTile> {
             ),
           ),
 
+          // ── Barra de progresso parcial ─────────────────────────────────────
+          if (el.qtde > 1 && el.qtdePronto > 0)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: LinearProgressIndicator(
+                      value: el.progressoPronto,
+                      minHeight: 18,
+                      backgroundColor: Colors.grey[200],
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        el.status == ElementoStatus.pronto
+                            ? Colors.green[700]!
+                            : Colors.green[500]!,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${el.qtdePronto} / ${el.qtde} PÇ PRONTAS',
+                    style: AppCss.minimumBold.setSize(10).setColor(
+                      el.progressoPronto > 0.5 ? Colors.white : Colors.green[900]!
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           // ── Posições expandidas ───────────────────────────────────────────
           if (_expanded)
             Container(
