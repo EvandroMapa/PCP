@@ -7,6 +7,8 @@ import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/services/fullscreen_service.dart';
 import 'package:aco_plus/app/modules/armacao/armacao_controller.dart';
+import 'package:dio/dio.dart';
+import 'package:pdfx/pdfx.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
@@ -537,7 +539,11 @@ class _MediaViewerDialog extends StatefulWidget {
 
 class _MediaViewerDialogState extends State<_MediaViewerDialog> {
   int _currentIndex = 0;
-  final Map<String, bool> _registeredFactories = {};
+  
+  // PDF Controllers
+  PdfController? _pdfController;
+  bool _isLoadingPdf = false;
+  bool _hasPdfError = false;
 
   @override
   void initState() {
@@ -551,10 +557,51 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
             break;
         }
     }
+    _checkAndLoadPdf();
+  }
+
+  void _checkAndLoadPdf() {
+    final currentArq = widget.elemento.arquivos[_currentIndex];
+    final isPdf = currentArq.extensao.toLowerCase() == 'pdf' || currentArq.tipo.contains('pdf');
+    if (isPdf) {
+      _loadPdfData(currentArq.url);
+    }
+  }
+
+  Future<void> _loadPdfData(String url) async {
+    setState(() {
+      _isLoadingPdf = true;
+      _hasPdfError = false;
+    });
+    try {
+      final response = await Dio().get(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final bytes = Uint8List.fromList(response.data);
+      _pdfController = PdfController(
+        document: PdfDocument.openData(bytes),
+      );
+      setState(() => _isLoadingPdf = false);
+    } catch (e) {
+      setState(() {
+        _hasPdfError = true;
+        _isLoadingPdf = false;
+      });
+    }
   }
 
   void _close() {
     Navigator.pop(context);
+  }
+
+  void _onChangeMedia(int index) {
+    setState(() {
+      _currentIndex = index;
+      _pdfController?.dispose();
+      _pdfController = null;
+    });
+    _checkAndLoadPdf();
   }
 
   Widget _buildMainContent() {
@@ -562,23 +609,36 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
     final isPdf = currentArq.extensao.toLowerCase() == 'pdf' || currentArq.tipo.contains('pdf');
 
     if (isPdf) {
-      final viewId = 'pdf-viewer-${currentArq.id}';
-      if (!_registeredFactories.containsKey(viewId)) {
-        ui_web.platformViewRegistry.registerViewFactory(
-          viewId,
-          (int id) {
-            final iframe = html.IFrameElement();
-            // Adicional para navegadores baseados em Chromium não exibirem a taskbar interna preta deles
-            iframe.src = '${currentArq.url}#toolbar=0&navpanes=0&scrollbar=0';
-            iframe.style.border = 'none';
-            iframe.style.width = '100%';
-            iframe.style.height = '100%';
-            return iframe;
-          },
+      if (_isLoadingPdf) {
+        return Center(
+          child: CircularProgressIndicator(color: Colors.white.withValues(alpha: 0.7)),
         );
-        _registeredFactories[viewId] = true;
       }
-      return HtmlElementView(viewType: viewId);
+      if (_hasPdfError || _pdfController == null) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.broken_image_outlined, size: 64, color: Colors.white.withValues(alpha: 0.3)),
+              const SizedBox(height: 16),
+              Text('Erro ao carregar PDF do servidor', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () => launchUrl(Uri.parse(currentArq.url)),
+                icon: const Icon(Icons.open_in_new),
+                label: const Text('Tentar Abrir no Navegador'),
+              ),
+            ],
+          ),
+        );
+      }
+      return InteractiveViewer(
+        maxScale: 5.0,
+        child: PdfView(
+          controller: _pdfController!,
+          scrollDirection: Axis.vertical,
+        ),
+      );
     } else {
       return InteractiveViewer(
         minScale: 0.1,
@@ -762,7 +822,7 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
                       final isSelected = i == _currentIndex;
 
                       return GestureDetector(
-                        onTap: () => setState(() => _currentIndex = i),
+                        onTap: () => _onChangeMedia(i),
                         child: AnimatedContainer(
                           duration: const Duration(milliseconds: 250),
                           curve: Curves.easeOutCubic,

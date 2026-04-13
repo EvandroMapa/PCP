@@ -4,22 +4,28 @@ class FullscreenService {
   static bool get isFullscreen => web.document.fullscreenElement != null;
 
   static void toggle() {
-    if (isFullscreen) {
-      web.document.exitFullscreen();
-    } else {
-      web.document.documentElement?.requestFullscreen();
-    }
+    try {
+      if (isFullscreen) {
+        web.document.exitFullscreen();
+      } else {
+        web.document.documentElement?.requestFullscreen();
+      }
+    } catch (_) {}
   }
 
   static void enter() {
-    if (!isFullscreen) {
-      web.document.documentElement?.requestFullscreen();
-    }
+    try {
+      if (!isFullscreen) {
+        web.document.documentElement?.requestFullscreen();
+      }
+    } catch (_) {}
   }
 
   static void exit() {
-    if (isFullscreen) {
-      web.document.exitFullscreen();
-    }
+    try {
+      if (isFullscreen) {
+        web.document.exitFullscreen();
+      }
+    } catch (_) {}
   }
 }
