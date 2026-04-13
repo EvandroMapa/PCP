@@ -474,14 +474,23 @@ class ArmacaoController {
         }
       };
 
+      // Atualizar localmente no objeto pedido para UI refletir
+      pedido.armacaoResumo.clear();
+      pedido.armacaoResumo.addAll(resume);
+
+      // Atualizar o pedido no stream GLOBAL para que o StreamOut não pisque
+      final pedidosAtual = AppSupabaseClient.pedidos.dataStream.value.toList();
+      final idxGlobal = pedidosAtual.indexWhere((p) => p.id == pedido.id);
+      if (idxGlobal != -1) {
+        pedidosAtual[idxGlobal] = pedido;
+        AppSupabaseClient.pedidos.dataStream.add(pedidosAtual);
+      }
+
+      // Só agora persiste no banco (realtime trará o mesmo dado que já está na tela)
       await SupabaseService.client
           .from('pedidos')
           .update({'armacao_resumo': resume})
           .eq('id', pedido.id);
-
-      // Atualizar localmente no objeto pedido para UI refletir
-      pedido.armacaoResumo.clear();
-      pedido.armacaoResumo.addAll(resume);
     } catch (e) {
       log('Erro ao atualizar resumo do pedido: $e');
     }

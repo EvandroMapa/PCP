@@ -704,20 +704,57 @@ class ElementoController {
       final List<ElementoCreateModel> novosElementos = [];
       ElementoCreateModel? currentElement;
 
+      // Extrai a linha de cabeçalho (ignorando case e espaços)
+      final headerLine = lines.first.split(';').map((e) => e.trim().toUpperCase()).toList();
+      
+      // Cria mapa de índices para procurar colunas chaves
+      final Map<String, int> headerIndex = {};
+      for (int i = 0; i < headerLine.length; i++) {
+        headerIndex[headerLine[i]] = i;
+      }
+
+      int getIndex(List<String> possibleNames) {
+        for (String name in possibleNames) {
+          if (headerIndex.containsKey(name)) return headerIndex[name]!;
+          // Pesquisa com partially match se não achar exato (ex: PESO (KG) -> PESO)
+          final match = headerIndex.keys.firstWhereOrNull((k) => k.contains(name));
+          if (match != null) return headerIndex[match]!;
+        }
+        return -1;
+      }
+
+      // Procura índices usando possíveis variações de nome na sua planilha
+      final idxElemento = getIndex(['ELEMENTO']);
+      final idxQtdeElementos = getIndex(['QTDE_ELEMENTOS', 'QTDE ELEMENTOS', 'QTD_ELEMENTOS', 'QTD ELEMENTOS']);
+      final idxOs = getIndex(['OS', 'O.S.', 'O.S']);
+      final idxPosicao = getIndex(['POSICAO', 'POSIÇÃO', 'POS.']);
+      final idxBitola = getIndex(['BITOLA', 'DIAMETRO']);
+      final idxPeso = getIndex(['PESO (KG)', 'PESO']);
+      final idxQtde = getIndex(['QTDE', 'QUANTIDADE', 'QTD']); // qtde da posicao
+
+      if (idxElemento == -1 || idxPosicao == -1 || idxBitola == -1) {
+        importProgressStream.add(null);
+        return {
+          'success': false,
+          'error': 'Colunas obrigatórias não encontradas no CSV (ELEMENTO, POSICAO, BITOLA).',
+          'rawText': rawText
+        };
+      }
+
       // Pula a linha de cabeçalho
       for (int i = 1; i < lines.length; i++) {
         final line = lines[i];
         final columns = line.split(';');
 
-        // LOCALIZADOR[0]; PLAN[1]; ELEMENTO[2]; QTDE_ELEMENTOS[3]; OS[4]; POSICAO[5]; BITOLA[6]; PESO (KG)[7]; QTDE[8] ...
-        if (columns.length < 8) continue; // Pula linhas defeituosas ou vazias do fim do excel
+        if (columns.length <= idxBitola) continue;
 
-        final elNome = columns[2].trim();
-        final elQtdeStr = columns[3].trim();
-        final osNumber = columns[4].trim();
-        final posNome = columns[5].trim();
-        final bitolaStr = columns[6].trim().replaceAll('mm', '').replaceAll(',', '.');
-        final pesoStr = columns[7].trim().replaceAll(',', '.');
+        final elNome = columns[idxElemento].trim();
+        final elQtdeStr = idxQtdeElementos != -1 && columns.length > idxQtdeElementos ? columns[idxQtdeElementos].trim() : '1';
+        final osNumber = idxOs != -1 && columns.length > idxOs ? columns[idxOs].trim() : '';
+        final posNome = columns[idxPosicao].trim();
+        final bitolaStr = columns[idxBitola].trim().replaceAll('mm', '').replaceAll(',', '.');
+        final pesoStr = idxPeso != -1 && columns.length > idxPeso ? columns[idxPeso].trim().replaceAll(',', '.') : '0';
+        final posQtdeStr = idxQtde != -1 && columns.length > idxQtde ? columns[idxQtde].trim() : '0';
 
         if (elNome.isEmpty || posNome.isEmpty) continue;
 
@@ -731,7 +768,6 @@ class ElementoController {
           currentElement.qtde.text = int.tryParse(elQtdeStr)?.toString() ?? '1';
         }
 
-        final qtdePos = int.tryParse(elQtdeStr) ?? 1;
         final bitola = double.tryParse(bitolaStr);
         final pesoLido = double.tryParse(pesoStr);
 
@@ -740,10 +776,7 @@ class ElementoController {
           pos.nome.text = posNome;
           pos.numeroOs.text = osNumber;
           pos.pesoKg.text = pesoLido.toStringAsFixed(3);
-          // Lê a qtde de peças/barras da posição (coluna QTDE[8])
-          if (columns.length > 8) {
-            pos.qtde.text = columns[8].trim();
-          }
+          pos.qtde.text = posQtdeStr;
 
           pos.produto = pedido.getProdutos()
               .map((e) => e.produto)

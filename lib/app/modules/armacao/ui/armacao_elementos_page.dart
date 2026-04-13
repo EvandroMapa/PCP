@@ -526,20 +526,32 @@ class _MediaViewerDialog extends StatefulWidget {
 class _MediaViewerDialogState extends State<_MediaViewerDialog> {
   int _currentIndex = 0;
   final Map<String, bool> _registeredFactories = {};
+  bool _wasFullscreen = false;
 
   @override
-  Widget build(BuildContext context) {
-    if (widget.elemento.arquivos.isEmpty) return const SizedBox();
-    
-    // Garantir bounds do currentIndex
-    if (_currentIndex >= widget.elemento.arquivos.length) {
-      _currentIndex = 0;
-    }
+  void initState() {
+    super.initState();
+    // Guarda o estado anterior e força fullscreen real do navegador
+    _wasFullscreen = FullscreenService.isFullscreen;
+    FullscreenService.enter();
+  }
 
+  @override
+  void dispose() {
+    // Restaura o estado anterior ao fechar
+    if (!_wasFullscreen) {
+      FullscreenService.exit();
+    }
+    super.dispose();
+  }
+
+  void _close() {
+    Navigator.pop(context);
+  }
+
+  Widget _buildMainContent() {
     final currentArq = widget.elemento.arquivos[_currentIndex];
     final isPdf = currentArq.extensao.toLowerCase() == 'pdf' || currentArq.tipo.contains('pdf');
-
-    Widget mainContent;
 
     if (isPdf) {
       final viewId = 'pdf-viewer-${currentArq.id}';
@@ -557,9 +569,9 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
         );
         _registeredFactories[viewId] = true;
       }
-      mainContent = HtmlElementView(viewType: viewId);
+      return HtmlElementView(viewType: viewId);
     } else {
-      mainContent = InteractiveViewer(
+      return InteractiveViewer(
         minScale: 0.1,
         maxScale: 15.0,
         child: Image.network(
@@ -567,63 +579,174 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
           fit: BoxFit.contain,
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) return child;
-            return const Center(child: CircularProgressIndicator());
+            return Center(
+              child: CircularProgressIndicator(
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
+            );
           },
-          errorBuilder: (context, error, stackTrace) => const Center(
-            child: Text('Erro ao carregar imagem. Verifique sua conexão.'),
+          errorBuilder: (context, error, stackTrace) => Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.broken_image_outlined, size: 64, color: Colors.white.withValues(alpha: 0.3)),
+              const SizedBox(height: 16),
+              Text('Erro ao carregar imagem', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+            ],
           ),
         ),
       );
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.elemento.arquivos.isEmpty) return const SizedBox();
+
+    if (_currentIndex >= widget.elemento.arquivos.length) {
+      _currentIndex = 0;
+    }
+
+    final currentArq = widget.elemento.arquivos[_currentIndex];
+    final hasMultiple = widget.elemento.arquivos.length > 1;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF1A1A2E), // Fundo noturno elegante
       body: Stack(
         children: [
-          Positioned.fill(child: mainContent),
+          // ─── CONTEÚDO PRINCIPAL ──────────────────────────────────────
+          Positioned.fill(
+            bottom: hasMultiple ? 110 : 0,
+            child: _buildMainContent(),
+          ),
 
-          // Botão para Restaurar a tela (Voltar)
+          // ─── BARRA SUPERIOR (nome do arquivo + botão fechar) ────────
           Positioned(
-            top: MediaQuery.of(context).padding.top + 20,
-            right: 20,
-            child: FloatingActionButton.extended(
-              heroTag: 'restore_image',
-              onPressed: () => Navigator.pop(context),
-              backgroundColor: AppColors.secondary,
-              icon: const Icon(Icons.fullscreen_exit, color: Colors.white),
-              label: const Text(
-                'RESTAURAR TELA',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + 8,
+                left: 20,
+                right: 12,
+                bottom: 12,
+              ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.8),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Icon(
+                    currentArq.tipo.contains('pdf')
+                        ? Icons.picture_as_pdf_rounded
+                        : Icons.image_outlined,
+                    color: Colors.white.withValues(alpha: 0.9),
+                    size: 26,
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          widget.elemento.nome.toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                            shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
+                          ),
+                        ),
+                        Text(
+                          currentArq.nome,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            fontSize: 12,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (hasMultiple)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                      child: Text(
+                        '${_currentIndex + 1} / ${widget.elemento.arquivos.length}',
+                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  const SizedBox(width: 16),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(50),
+                      onTap: _close,
+                      child: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryMain,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primaryMain.withValues(alpha: 0.4),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                            )
+                          ],
+                        ),
+                        child: const Icon(Icons.close, color: Colors.white, size: 24),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
 
-          // Galeria de Thumbnails caso haja mais de 1 anexo
-          if (widget.elemento.arquivos.length > 1)
+          // ─── BARRA DE THUMBNAILS (inferior) ─────────────────────────
+          if (hasMultiple)
             Positioned(
-              bottom: 40,
-              left: 40,
-              right: 40,
-              child: Center(
-                child: Container(
-                  height: 90,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.85),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 110,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.9),
+                      Colors.black.withValues(alpha: 0.5),
+                      Colors.transparent,
                     ],
                   ),
+                ),
+                padding: const EdgeInsets.only(bottom: 20, top: 15),
+                child: Center(
                   child: ListView.separated(
                     shrinkWrap: true,
                     scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
                     itemCount: widget.elemento.arquivos.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 16),
+                    separatorBuilder: (_, __) => const SizedBox(width: 14),
                     itemBuilder: (ctx, i) {
                       final arq = widget.elemento.arquivos[i];
                       final arqIsPdf = arq.extensao.toLowerCase() == 'pdf' || arq.tipo.contains('pdf');
@@ -632,28 +755,47 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
                       return GestureDetector(
                         onTap: () => setState(() => _currentIndex = i),
                         child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          width: 66,
+                          duration: const Duration(milliseconds: 250),
+                          curve: Curves.easeOutCubic,
+                          width: isSelected ? 80 : 65,
+                          height: isSelected ? 80 : 65,
+                          margin: EdgeInsets.only(top: isSelected ? 0 : 7), // Alinha na base
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: const Color(0xFF2E2E3A),
                             border: Border.all(
-                              color: isSelected ? AppColors.primaryMain : Colors.transparent,
-                              width: 3,
+                              color: isSelected ? AppColors.primaryMain : Colors.white.withValues(alpha: 0.2),
+                              width: isSelected ? 3 : 1,
                             ),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: isSelected
+                                ? [BoxShadow(color: AppColors.primaryMain.withValues(alpha: 0.5), blurRadius: 15, spreadRadius: 1)]
+                                : [],
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
                               if (arqIsPdf)
-                                const Center(
-                                  child: Icon(Icons.picture_as_pdf_rounded, color: Colors.redAccent, size: 36),
+                                Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.picture_as_pdf_rounded, 
+                                        color: isSelected ? Colors.redAccent : Colors.redAccent.withValues(alpha: 0.6), 
+                                        size: isSelected ? 32 : 24,
+                                      ),
+                                      if (isSelected) const SizedBox(height: 4),
+                                      if (isSelected) 
+                                        const Text('PDF', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70)),
+                                    ],
+                                  ),
                                 )
                               else
                                 Image.network(arq.url, fit: BoxFit.cover),
+                              
                               if (!isSelected)
-                                Container(color: Colors.white.withValues(alpha: 0.6)),
+                                Container(color: Colors.black.withValues(alpha: 0.4)),
                             ],
                           ),
                         ),
