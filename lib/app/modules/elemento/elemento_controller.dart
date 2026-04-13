@@ -287,7 +287,7 @@ class ElementoController {
   Future<void> onDeleteElemento(ElementoModel elemento) async {
     try {
       if (elemento.status != ElementoStatus.aguardando) {
-         showInfoDialog('Não Permitido', 'Não é possível excluir um elemento que já está sendo armando ou pronto.');
+         showInfoDialog('Não Permitido: Não é possível excluir um elemento que já está sendo armando ou pronto.');
          return;
       }
       showLoadingDialog();
