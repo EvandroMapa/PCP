@@ -168,10 +168,27 @@ class ArmacaoController {
   Future<void> updateElementoStatus(
       PedidoModel pedido, ElementoModel elemento, ElementoStatus newStatus) async {
     try {
+      // 1. Buscar limite dinamicamente do banco de dados (reatividade administrativa)
+      try {
+        final configRaw = await SupabaseService.client
+            .from('configs')
+            .select()
+            .eq('key', 'max_elementos_producao')
+            .maybeSingle();
+        if (configRaw != null) {
+          final val = int.tryParse(configRaw['value'].toString());
+          if (val != null) {
+            PreferencesService.maxElementosProducao.add(val);
+          }
+        }
+      } catch (e) {
+        log('Erro ao atualizar limite dinâmico: $e');
+      }
+
       int novoQtdePronto = elemento.qtdePronto;
       ElementoStatus statusFinal = newStatus;
 
-      // Se vai para "Pronto" e tem mais de 1 peça, perguntar quantas estão prontas
+      // 2. Determinar status final planejado
       if (newStatus == ElementoStatus.pronto && elemento.qtde > 1) {
         final quantidadeEscolhida = await _showQtdeProntoDialog(
           context: contextGlobal,
@@ -180,25 +197,30 @@ class ArmacaoController {
         if (quantidadeEscolhida == null) return; // Cancelou
 
         novoQtdePronto = quantidadeEscolhida;
-        // Só vai para pronto definitivo quando TODAS as peças estiverem prontas
-        statusFinal = (novoQtdePronto >= elemento.qtde)
-            ? ElementoStatus.pronto
-            : ElementoStatus.armando;
+        statusFinal = (novoQtdePronto >= elemento.qtde) ? ElementoStatus.pronto : ElementoStatus.armando;
       } else if (newStatus == ElementoStatus.pronto && elemento.qtde == 1) {
         novoQtdePronto = 1;
         statusFinal = ElementoStatus.pronto;
       } else if (newStatus == ElementoStatus.armando) {
-        // Regra de negócio: Limite de produção simultânea
-        final countArmando =
-            pedido.elementos.where((e) => e.status == ElementoStatus.armando).length;
-        final limit = PreferencesService.maxElementosProducao.value;
-        if (countArmando >= limit) {
-          showInfoDialog('Limite Atingido: Você só pode armar até $limit elementos simultaneamente.');
-          return;
-        }
         novoQtdePronto = 0; // Volta a armar, zera o progresso
+        statusFinal = ElementoStatus.armando;
       } else if (newStatus == ElementoStatus.aguardando) {
         novoQtdePronto = 0; // Volta para aguardando, zera o progresso
+        statusFinal = ElementoStatus.aguardando;
+      }
+
+      // 3. Regra de negócio: Limite de produção simultânea (Verificação Dinâmica)
+      // Só validamos o limite se o elemento estiver ENTRANDO no estado Armando (novo WIP)
+      if (statusFinal == ElementoStatus.armando && elemento.status != ElementoStatus.armando) {
+        final countArmando = pedido.elementos.where((e) => e.status == ElementoStatus.armando).length;
+        final limit = PreferencesService.maxElementosProducao.value;
+
+        if (countArmando >= limit) {
+          showInfoDialog('Limite Atingido', 
+            'O limite atual para este pedido é de $limit elementos simultâneos em produção.\n\n'
+            'Conclua algum item ou peça ao administrador para aumentar o limite nas configurações.');
+          return;
+        }
       }
 
       await SupabaseService.client
