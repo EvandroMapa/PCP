@@ -395,11 +395,11 @@ class _ElementoArmacaoCard extends StatelessWidget {
                         children: [
                           Text(
                             '${elemento.qtdePronto} / ${elemento.qtde}',
-                            style: AppCss.largeBold.setSize(26).setColor(Colors.green[800]!),
+                            style: AppCss.largeBold.setSize(22).setColor(Colors.green[800]!),
                           ),
                           Text(
                             'pç prontas',
-                            style: AppCss.largeBold.setSize(13).setColor(Colors.green[600]!),
+                            style: AppCss.largeBold.setSize(12).setColor(Colors.green[600]!),
                           ),
                         ],
                       )
@@ -410,9 +410,9 @@ class _ElementoArmacaoCard extends StatelessWidget {
               ),
             ),
             // Barra de progresso parcial
-            if (elemento.qtde > 1 && elemento.qtdePronto > 0)
+            if (elemento.qtde > 1 && elemento.qtdePronto > 0) ...[
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
