@@ -348,7 +348,7 @@ class _ElementosTabState extends State<ElementosTab> {
   Widget _buildStatusSummaryBar(List<ElementoModel> elementos) {
     int totalQtd = 0;
     double totalPeso = 0;
-    final Map<ElementoStatus, int> qtdPorStatus = {
+    final Map<ElementoStatus, double> qtdPorStatus = {
       ElementoStatus.aguardando: 0,
       ElementoStatus.armando: 0,
       ElementoStatus.pronto: 0,
@@ -362,8 +362,25 @@ class _ElementosTabState extends State<ElementosTab> {
     for (final e in elementos) {
       totalQtd += e.qtde;
       totalPeso += e.pesoTotal;
-      qtdPorStatus[e.status] = (qtdPorStatus[e.status] ?? 0) + e.qtde;
-      pesoPorStatus[e.status] = (pesoPorStatus[e.status] ?? 0) + e.pesoTotal;
+
+      if (e.status == ElementoStatus.aguardando) {
+        qtdPorStatus[ElementoStatus.aguardando] = (qtdPorStatus[ElementoStatus.aguardando] ?? 0) + e.qtde;
+        pesoPorStatus[ElementoStatus.aguardando] = (pesoPorStatus[ElementoStatus.aguardando] ?? 0) + e.pesoTotal;
+      } else if (e.status == ElementoStatus.pronto) {
+        qtdPorStatus[ElementoStatus.pronto] = (qtdPorStatus[ElementoStatus.pronto] ?? 0) + e.qtde;
+        pesoPorStatus[ElementoStatus.pronto] = (pesoPorStatus[ElementoStatus.pronto] ?? 0) + e.pesoTotal;
+      } else {
+        // armando — cálculo proporcional baseado no qtdePronto
+        final qtdeProntoFrac = e.qtdePronto.toDouble();
+        final qtdeArmandoFrac = (e.qtde - e.qtdePronto).toDouble();
+        final pesoPorUnidade = e.qtde > 0 ? e.pesoTotal / e.qtde : 0.0;
+
+        qtdPorStatus[ElementoStatus.pronto] = (qtdPorStatus[ElementoStatus.pronto] ?? 0) + qtdeProntoFrac;
+        pesoPorStatus[ElementoStatus.pronto] = (pesoPorStatus[ElementoStatus.pronto] ?? 0) + (qtdeProntoFrac * pesoPorUnidade);
+
+        qtdPorStatus[ElementoStatus.armando] = (qtdPorStatus[ElementoStatus.armando] ?? 0) + qtdeArmandoFrac;
+        pesoPorStatus[ElementoStatus.armando] = (pesoPorStatus[ElementoStatus.armando] ?? 0) + (qtdeArmandoFrac * pesoPorUnidade);
+      }
     }
 
     Widget col(ElementoStatus status) {
@@ -401,7 +418,7 @@ class _ElementosTabState extends State<ElementosTab> {
                       children: [
                         Text('ELEMENTOS', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w600, color: Colors.grey[500])),
                         const SizedBox(height: 2),
-                        Text('$qtd (${pctQtd.toStringAsFixed(0)}%)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        Text('${qtd % 1 == 0 ? qtd.toInt() : qtd.toStringAsFixed(1)} (${pctQtd.toStringAsFixed(0)}%)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                       ],
                     ),
                   ),
