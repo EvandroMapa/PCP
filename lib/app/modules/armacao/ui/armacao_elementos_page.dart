@@ -427,6 +427,7 @@ class _ElementoArmacaoCard extends StatelessWidget {
                   ),
                 ),
               ),
+            ],
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Row(
