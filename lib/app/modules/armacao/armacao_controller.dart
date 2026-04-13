@@ -168,23 +168,6 @@ class ArmacaoController {
   Future<void> updateElementoStatus(
       PedidoModel pedido, ElementoModel elemento, ElementoStatus newStatus) async {
     try {
-      // 1. Buscar limite dinamicamente do banco de dados (reatividade administrativa)
-      try {
-        final configRaw = await SupabaseService.client
-            .from('configs')
-            .select()
-            .eq('key', 'max_elementos_producao')
-            .maybeSingle();
-        if (configRaw != null) {
-          final val = int.tryParse(configRaw['value'].toString());
-          if (val != null) {
-            PreferencesService.maxElementosProducao.add(val);
-          }
-        }
-      } catch (e) {
-        log('Erro ao atualizar limite dinâmico: $e');
-      }
-
       int novoQtdePronto = elemento.qtdePronto;
       ElementoStatus statusFinal = newStatus;
 
@@ -209,57 +192,106 @@ class ArmacaoController {
         statusFinal = ElementoStatus.aguardando;
       }
 
-      // 3. Regra de negócio: Limite de produção simultânea (Verificação Dinâmica)
-      // Só validamos o limite se o elemento estiver ENTRANDO no estado Armando (novo WIP)
-      if (statusFinal == ElementoStatus.armando && elemento.status != ElementoStatus.armando) {
-        final countArmando = pedido.elementos.where((e) => e.status == ElementoStatus.armando).length;
-        final limit = PreferencesService.maxElementosProducao.value;
-
-        if (countArmando >= limit) {
-          showInfoDialog('LIMITE ATINGIDO!\n\n' 
-            'O limite atual para este pedido é de $limit elementos simultâneos em produção.\n\n'
-            'Conclua algum item ou peça ao administrador para aumentar o limite nas configurações.');
-          return;
-        }
-      }
-
-      await SupabaseService.client
-          .from('elementos')
-          .update({
-            'status': statusFinal.name,
-            'qtde_pronto': novoQtdePronto,
-          }).eq('id', elemento.id);
-
-      // Atualizar localmente
-      final index = pedido.elementos.indexWhere((e) => e.id == elemento.id);
-      if (index != -1) {
-        pedido.elementos[index] = elemento.copyWith(
-          status: statusFinal,
-          qtdePronto: novoQtdePronto,
-        );
-      }
-      await updatePedidoSummary(pedido);
-
-      // Verificação de finalização: só finaliza se TODOS elementos tiverem qtdePronto == qtde
-      final todosProntos = pedido.elementos.every(
-        (e) => e.status == ElementoStatus.pronto && e.qtdePronto >= e.qtde,
-      );
-      if (todosProntos) {
-        final targetStep = automatizacaoCtrl.checkFinalizacaoArmacaoTargetStep(pedido);
-        if (targetStep != null) {
-          final confirm = await showConfirmDialog(
-            'Finalização de Armação',
-            'Todos os itens foram concluídos! Deseja finalizar este pedido?',
-          );
-          if (confirm) {
-            await automatizacaoCtrl.executeFinalizacaoArmacao(pedido, targetStep);
-          }
-          if (contextGlobal.mounted) Navigator.pop(contextGlobal);
-        }
-      }
+      await _applyStatusUpdate(pedido, elemento, statusFinal, novoQtdePronto);
     } catch (e) {
       log('Erro ao atualizar status do elemento: $e');
       showInfoDialog('Erro: Não foi possível atualizar o status.');
+    }
+  }
+
+  /// Método direto de atualização de progresso para elementos com qtde > 1
+  Future<void> openProgressoParcialDirect(PedidoModel pedido, ElementoModel elemento) async {
+    try {
+      final int? quantidadeEscolhida = await _showQtdeProntoDialog(
+        context: contextGlobal,
+        elemento: elemento,
+      );
+
+      if (quantidadeEscolhida == null) return; // Cancelou
+
+      ElementoStatus statusFinal;
+      if (quantidadeEscolhida == 0) {
+        statusFinal = ElementoStatus.aguardando;
+      } else if (quantidadeEscolhida >= elemento.qtde) {
+        statusFinal = ElementoStatus.pronto;
+      } else {
+        statusFinal = ElementoStatus.armando;
+      }
+
+      await _applyStatusUpdate(pedido, elemento, statusFinal, quantidadeEscolhida);
+    } catch (e) {
+      log('Erro no fluxo direto de progresso: $e');
+      showInfoDialog('Erro: Não foi possível atualizar o progresso.');
+    }
+  }
+
+  /// Centraliza a verificação de limite dinâmico e persistência no banco e local
+  Future<void> _applyStatusUpdate(
+      PedidoModel pedido, ElementoModel elemento, ElementoStatus statusFinal, int novoQtdePronto) async {
+    
+    // 1. Buscar limite dinamicamente (Reatividade Administrativa)
+    try {
+      final configRaw = await SupabaseService.client
+          .from('configs')
+          .select()
+          .eq('key', 'max_elementos_producao')
+          .maybeSingle();
+      if (configRaw != null) {
+        final val = int.tryParse(configRaw['value'].toString());
+        if (val != null) {
+          PreferencesService.maxElementosProducao.add(val);
+        }
+      }
+    } catch (e) {
+      log('Erro ao atualizar limite dinâmico: $e');
+    }
+
+    // 2. Verificação de Limite de Produção Simultânea
+    if (statusFinal == ElementoStatus.armando && elemento.status != ElementoStatus.armando) {
+      final countArmando = pedido.elementos.where((e) => e.status == ElementoStatus.armando).length;
+      final limit = PreferencesService.maxElementosProducao.value;
+
+      if (countArmando >= limit) {
+        showInfoDialog('LIMITE ATINGIDO!\n\n' 
+          'O limite atual para este pedido é de $limit elementos simultâneos em produção.\n\n'
+          'Conclua algum item ou peça ao administrador para aumentar o limite nas configurações.');
+        return;
+      }
+    }
+
+    // 3. Persistência
+    await SupabaseService.client
+        .from('elementos')
+        .update({
+          'status': statusFinal.name,
+          'qtde_pronto': novoQtdePronto,
+        }).eq('id', elemento.id);
+
+    // 4. Atualizar memória local
+    final index = pedido.elementos.indexWhere((e) => e.id == elemento.id);
+    if (index != -1) {
+      pedido.elementos[index] = elemento.copyWith(
+        status: statusFinal,
+        qtdePronto: novoQtdePronto,
+      );
+    }
+    await updatePedidoSummary(pedido);
+
+    // 5. Finalização de Pedido inteiro
+    final todosProntos = pedido.elementos.every(
+      (e) => e.status == ElementoStatus.pronto && e.qtdePronto >= e.qtde,
+    );
+    if (todosProntos) {
+      final targetStep = automatizacaoCtrl.checkFinalizacaoArmacaoTargetStep(pedido);
+      if (targetStep != null) {
+        final confirm = await showConfirmDialog(
+          'Finalização de Armação',
+          'Todos os itens foram concluídos! Deseja finalizar este pedido?',
+        );
+        if (confirm) {
+          await automatizacaoCtrl.executeFinalizacaoArmacao(pedido, targetStep);
+        }
+      }
     }
   }
 
@@ -314,15 +346,24 @@ class ArmacaoController {
                   ),
                 ],
               ),
-              if (selecionado < elemento.qtde)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(
-                    'As ${elemento.qtde - selecionado} peças restantes continuarão em ARMANDO.',
-                    style: const TextStyle(fontSize: 12, color: Colors.orange, fontStyle: FontStyle.italic),
-                    textAlign: TextAlign.center,
+                if (selecionado == 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(
+                      'O elemento voltará para AGUARDANDO.',
+                      style: const TextStyle(fontSize: 12, color: Colors.blueGrey, fontStyle: FontStyle.italic),
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                else if (selecionado < elemento.qtde)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(
+                      'As ${elemento.qtde - selecionado} peças restantes ficarão em ARMANDO.',
+                      style: const TextStyle(fontSize: 12, color: Colors.orange, fontStyle: FontStyle.italic),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                ),
             ],
           ),
           actions: [
@@ -332,11 +373,15 @@ class ArmacaoController {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: selecionado == 0 ? Colors.blueGrey : Colors.green,
                 foregroundColor: Colors.white,
               ),
-              onPressed: selecionado > 0 ? () => Navigator.pop(ctx, selecionado) : null,
-              child: Text(selecionado == elemento.qtde ? 'CONFIRMAR PRONTO' : 'SALVAR PROGRESSO'),
+              onPressed: () => Navigator.pop(ctx, selecionado),
+              child: Text(
+                selecionado == 0 
+                  ? 'P/ AGUARDANDO' 
+                  : (selecionado == elemento.qtde ? 'CONFIRMAR PRONTO' : 'SALVAR PROGRESSO'),
+              ),
             ),
           ],
         ),

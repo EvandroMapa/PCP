@@ -192,7 +192,11 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                                     return _ElementoArmacaoCard(
                                       elemento: elemento,
                                       onStatusPressed: () async {
-                                        await _showStatusPicker(elemento);
+                                        if (elemento.qtde > 1) {
+                                          await armacaoCtrl.openProgressoParcialDirect(currentPedido, elemento);
+                                        } else {
+                                          await _showStatusPicker(elemento);
+                                        }
                                       },
                                       onImagePressed: () => _showImageDialog(elemento),
                                     );
