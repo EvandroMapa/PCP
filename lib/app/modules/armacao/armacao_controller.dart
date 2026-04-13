@@ -212,10 +212,10 @@ class ArmacaoController {
         if (confirm) {
           await automatizacaoCtrl.executeFinalizacaoArmacao(pedido, targetStep);
           // Voltar para a tela de pedidos do armador
-          Navigator.pop(contextGlobal);
+          if (contextGlobal.mounted) Navigator.pop(contextGlobal);
         } else {
           // Se responder NÃO, apenas volta para a tela de pedidos
-          Navigator.pop(contextGlobal);
+          if (contextGlobal.mounted) Navigator.pop(contextGlobal);
         }
       }
     } catch (e) {
