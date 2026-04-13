@@ -543,7 +543,7 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
   int _currentIndex = 0;
   
   // PDF Controllers
-  PdfController? _pdfController;
+  PdfControllerPinch? _pdfController;
   bool _isLoadingPdf = false;
   bool _hasPdfError = false;
 
@@ -581,7 +581,7 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
         options: Options(responseType: ResponseType.bytes),
       );
       final bytes = Uint8List.fromList(response.data);
-      _pdfController = PdfController(
+      _pdfController = PdfControllerPinch(
         document: PdfDocument.openData(bytes),
       );
       setState(() => _isLoadingPdf = false);
@@ -634,12 +634,9 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
           ),
         );
       }
-      return InteractiveViewer(
-        maxScale: 5.0,
-        child: PdfView(
-          controller: _pdfController!,
-          scrollDirection: Axis.vertical,
-        ),
+      return PdfViewPinch(
+        controller: _pdfController!,
+        padding: 0,
       );
     } else {
       return InteractiveViewer(
