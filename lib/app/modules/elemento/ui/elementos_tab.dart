@@ -641,7 +641,6 @@ class _ElementoTileState extends State<_ElementoTile> {
                             } else if (action == 'delete') {
                               await elementoCtrl.onDeleteElemento(el);
                             }
-                          },
                           itemBuilder: (_) => [
                             PopupMenuItem(
                                 value: 'edit',
@@ -650,16 +649,18 @@ class _ElementoTileState extends State<_ElementoTile> {
                                   const SizedBox(width: 12),
                                   const Text('Editar')
                                 ])),
-                            const PopupMenuDivider(),
-                            PopupMenuItem(
-                                value: 'delete',
-                                child: Row(children: [
-                                  const Icon(Icons.delete_outline_rounded,
-                                      size: 18, color: Colors.red),
-                                  const SizedBox(width: 12),
-                                  const Text('Excluir',
-                                      style: TextStyle(color: Colors.red))
-                                ])),
+                            if (el.status == ElementoStatus.aguardando) ...[
+                              const PopupMenuDivider(),
+                              PopupMenuItem(
+                                  value: 'delete',
+                                  child: Row(children: [
+                                    const Icon(Icons.delete_outline_rounded,
+                                        size: 18, color: Colors.red),
+                                    const SizedBox(width: 12),
+                                    const Text('Excluir',
+                                        style: TextStyle(color: Colors.red))
+                                  ])),
+                            ],
                           ],
                         ),
                     ],

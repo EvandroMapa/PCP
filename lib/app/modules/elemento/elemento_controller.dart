@@ -285,6 +285,10 @@ class ElementoController {
   // ─── DELETAR ELEMENTO ─────────────────────────────────────────────────────
   Future<void> onDeleteElemento(ElementoModel elemento) async {
     try {
+      if (elemento.status != ElementoStatus.aguardando) {
+         showInfoDialog('Não Permitido', 'Não é possível excluir um elemento que já está sendo armando ou pronto.');
+         return;
+      }
       showLoadingDialog();
       // Remove dependências manualmente para evitar violar Foreign Keys caso não haja ON DELETE CASCADE
       await SupabaseService.client.from('elemento_posicoes').delete().eq('elemento_id', elemento.id);
@@ -635,13 +639,17 @@ class ElementoController {
     // 1. Verificar se já existem elementos e perguntar o que fazer
     bool clearExisting = false;
     if (elementos.isNotEmpty) {
+      final canClearAll = elementos.every((e) => e.status == ElementoStatus.aguardando);
+
       final String? choice = await showDialog<String>(
         context: contextGlobal,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
           title: const Text('Elementos Existentes'),
-          content: const Text(
-            'Já existem elementos cadastrados neste pedido. O que deseja fazer com a lista atual?'
+          content: Text(
+            canClearAll 
+              ? 'Já existem elementos cadastrados neste pedido. O que deseja fazer com a lista atual?'
+              : 'Já existem elementos cadastrados neste pedido. Como alguns já estão em produção, você apenas pode acrescentar os novos.'
           ),
           actions: [
             TextButton(
@@ -652,11 +660,12 @@ class ElementoController {
               onPressed: () => Navigator.pop(context, 'append'),
               child: const Text('ACRESCENTAR NOVOS'),
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-              onPressed: () => Navigator.pop(context, 'clear'),
-              child: const Text('APAGAR TUDO E IMPORTAR'),
-            ),
+            if (canClearAll)
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                onPressed: () => Navigator.pop(context, 'clear'),
+                child: const Text('APAGAR TUDO E IMPORTAR'),
+              ),
           ],
         ),
       );
