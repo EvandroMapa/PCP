@@ -276,6 +276,14 @@ class ArmacaoController {
       pedido.elementos[idxPedido] = elementosLocal[index];
     }
 
+    // Injetar no fluxo GLOBAL para evitar que o realtime atropele a tela antes do tempo
+    final elementosGlobal = AppSupabaseClient.elementos.dataStream.value.toList();
+    final idxGlobalElem = elementosGlobal.indexWhere((e) => e.id == elemento.id);
+    if (idxGlobalElem != -1 && index != -1) {
+      elementosGlobal[idxGlobalElem] = elementosLocal[index] as ElementoModel;
+      AppSupabaseClient.elementos.dataStream.add(elementosGlobal);
+    }
+
     // 4. Calcular e aplicar o resumo localmente (UI já reflete antes do banco)
     await updatePedidoSummary(pedido);
 

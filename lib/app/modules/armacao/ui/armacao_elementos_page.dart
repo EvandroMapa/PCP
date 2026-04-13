@@ -66,6 +66,10 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
       return;
     }
 
+    // Entra em tela cheia logo no clique (navegador exige)
+    final wasFullscreen = FullscreenService.isFullscreen;
+    FullscreenService.enter();
+
     await showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -73,6 +77,11 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
       transitionDuration: const Duration(milliseconds: 300),
       pageBuilder: (context, _, __) => _MediaViewerDialog(elemento: elemento),
     );
+
+    // Restaura se não estava em tela cheia antes
+    if (!wasFullscreen) {
+      FullscreenService.exit();
+    }
   }
 
   @override
@@ -527,24 +536,6 @@ class _MediaViewerDialog extends StatefulWidget {
 class _MediaViewerDialogState extends State<_MediaViewerDialog> {
   int _currentIndex = 0;
   final Map<String, bool> _registeredFactories = {};
-  bool _wasFullscreen = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Guarda o estado anterior e força fullscreen real do navegador
-    _wasFullscreen = FullscreenService.isFullscreen;
-    FullscreenService.enter();
-  }
-
-  @override
-  void dispose() {
-    // Restaura o estado anterior ao fechar
-    if (!_wasFullscreen) {
-      FullscreenService.exit();
-    }
-    super.dispose();
-  }
 
   void _close() {
     Navigator.pop(context);
@@ -561,7 +552,8 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
           viewId,
           (int id) {
             final iframe = html.IFrameElement();
-            iframe.src = currentArq.url;
+            // Adicional para navegadores baseados em Chromium não exibirem a taskbar interna preta deles
+            iframe.src = '${currentArq.url}#toolbar=0&navpanes=0&scrollbar=0';
             iframe.style.border = 'none';
             iframe.style.width = '100%';
             iframe.style.height = '100%';
