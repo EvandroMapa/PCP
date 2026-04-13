@@ -92,6 +92,7 @@ class ElementoModel {
   final String pedidoId;
   final String nome;
   final int qtde;
+  final int qtdePronto; // Quantas peças já foram concluídas (para qtde > 1)
   final DateTime createdAt;
   final ElementoStatus status;
   List<ElementoPosicaoModel> posicoes;
@@ -105,6 +106,7 @@ class ElementoModel {
     required this.createdAt,
     required this.posicoes,
     required this.arquivos,
+    this.qtdePronto = 0,
     this.status = ElementoStatus.aguardando,
   });
 
@@ -121,6 +123,7 @@ class ElementoModel {
     String? pedidoId,
     String? nome,
     int? qtde,
+    int? qtdePronto,
     DateTime? createdAt,
     ElementoStatus? status,
     List<ElementoPosicaoModel>? posicoes,
@@ -131,6 +134,7 @@ class ElementoModel {
       pedidoId: pedidoId ?? this.pedidoId,
       nome: nome ?? this.nome,
       qtde: qtde ?? this.qtde,
+      qtdePronto: qtdePronto ?? this.qtdePronto,
       createdAt: createdAt ?? this.createdAt,
       status: status ?? this.status,
       posicoes: posicoes ?? this.posicoes,
@@ -146,6 +150,15 @@ class ElementoModel {
     }
     return map;
   }
+
+  /// Se tem conclusão parcial (qtde > 1 e ainda não todos prontos)
+  bool get isProntoParcial => qtdePronto > 0 && qtdePronto < qtde;
+
+  /// Progresso de conclusão (0.0 a 1.0)
+  double get progressoPronto => qtde > 0 ? (qtdePronto / qtde).clamp(0.0, 1.0) : 0.0;
+
+  /// Peso já concluído proporcionalmente
+  double get pesoPronto => pesoTotal * progressoPronto;
 
   factory ElementoModel.fromSupabaseMap(
     Map<String, dynamic> map, {
@@ -163,6 +176,7 @@ class ElementoModel {
       pedidoId: (map['pedido_id'] ?? '').toString(),
       nome: (map['nome'] ?? '').toString(),
       qtde: int.tryParse((map['qtde'] ?? '1').toString()) ?? 1,
+      qtdePronto: int.tryParse((map['qtde_pronto'] ?? '0').toString()) ?? 0,
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -179,6 +193,7 @@ class ElementoModel {
         'pedido_id': pedidoId,
         'nome': nome,
         'qtde': qtde,
+        'qtde_pronto': qtdePronto,
         'status': status.name,
       };
 }

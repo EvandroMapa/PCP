@@ -168,53 +168,70 @@ class ArmacaoController {
   Future<void> updateElementoStatus(
       PedidoModel pedido, ElementoModel elemento, ElementoStatus newStatus) async {
     try {
-      // Regra de negócio: Limite de produção simultânea
-      if (newStatus == ElementoStatus.armando) {
+      int novoQtdePronto = elemento.qtdePronto;
+      ElementoStatus statusFinal = newStatus;
+
+      // Se vai para "Pronto" e tem mais de 1 peça, perguntar quantas estão prontas
+      if (newStatus == ElementoStatus.pronto && elemento.qtde > 1) {
+        final quantidadeEscolhida = await _showQtdeProntoDialog(
+          context: contextGlobal,
+          elemento: elemento,
+        );
+        if (quantidadeEscolhida == null) return; // Cancelou
+
+        novoQtdePronto = quantidadeEscolhida;
+        // Só vai para pronto definitivo quando TODAS as peças estiverem prontas
+        statusFinal = (novoQtdePronto >= elemento.qtde)
+            ? ElementoStatus.pronto
+            : ElementoStatus.armando;
+      } else if (newStatus == ElementoStatus.pronto && elemento.qtde == 1) {
+        novoQtdePronto = 1;
+        statusFinal = ElementoStatus.pronto;
+      } else if (newStatus == ElementoStatus.armando) {
+        // Regra de negócio: Limite de produção simultânea
         final countArmando =
             pedido.elementos.where((e) => e.status == ElementoStatus.armando).length;
         final limit = PreferencesService.maxElementosProducao.value;
-
         if (countArmando >= limit) {
           showInfoDialog('Limite Atingido: Você só pode armar até $limit elementos simultaneamente.');
           return;
         }
+        novoQtdePronto = 0; // Volta a armar, zera o progresso
+      } else if (newStatus == ElementoStatus.aguardando) {
+        novoQtdePronto = 0; // Volta para aguardando, zera o progresso
       }
 
       await SupabaseService.client
           .from('elementos')
-          .update({'status': newStatus.name}).eq('id', elemento.id);
+          .update({
+            'status': statusFinal.name,
+            'qtde_pronto': novoQtdePronto,
+          }).eq('id', elemento.id);
 
       // Atualizar localmente
       final index = pedido.elementos.indexWhere((e) => e.id == elemento.id);
       if (index != -1) {
-        final updatedElemento = ElementoModel(
-          id: elemento.id,
-          pedidoId: elemento.pedidoId,
-          nome: elemento.nome,
-          qtde: elemento.qtde,
-          createdAt: elemento.createdAt,
-          posicoes: elemento.posicoes,
-          arquivos: elemento.arquivos,
-          status: newStatus,
+        pedido.elementos[index] = elemento.copyWith(
+          status: statusFinal,
+          qtdePronto: novoQtdePronto,
         );
-        pedido.elementos[index] = updatedElemento;
       }
       await updatePedidoSummary(pedido);
 
-      // Verificação de finalização interativa
-      final targetStep = automatizacaoCtrl.checkFinalizacaoArmacaoTargetStep(pedido);
-      if (targetStep != null) {
-        final confirm = await showConfirmDialog(
-          'Finalização de Armação',
-          'Todos os itens já foram marcados como pronto. Deseja arquivar este pedido?',
-        );
-
-        if (confirm) {
-          await automatizacaoCtrl.executeFinalizacaoArmacao(pedido, targetStep);
-          // Voltar para a tela de pedidos do armador
-          if (contextGlobal.mounted) Navigator.pop(contextGlobal);
-        } else {
-          // Se responder NÃO, apenas volta para a tela de pedidos
+      // Verificação de finalização: só finaliza se TODOS elementos tiverem qtdePronto == qtde
+      final todosProntos = pedido.elementos.every(
+        (e) => e.status == ElementoStatus.pronto && e.qtdePronto >= e.qtde,
+      );
+      if (todosProntos) {
+        final targetStep = automatizacaoCtrl.checkFinalizacaoArmacaoTargetStep(pedido);
+        if (targetStep != null) {
+          final confirm = await showConfirmDialog(
+            'Finalização de Armação',
+            'Todos os itens foram concluídos! Deseja finalizar este pedido?',
+          );
+          if (confirm) {
+            await automatizacaoCtrl.executeFinalizacaoArmacao(pedido, targetStep);
+          }
           if (contextGlobal.mounted) Navigator.pop(contextGlobal);
         }
       }
@@ -224,17 +241,99 @@ class ArmacaoController {
     }
   }
 
+  /// Diálogo para o armador informar quantas peças estão prontas
+  Future<int?> _showQtdeProntoDialog({
+    required BuildContext context,
+    required ElementoModel elemento,
+  }) async {
+    int selecionado = elemento.qtdePronto > 0 ? elemento.qtdePronto : elemento.qtde;
+
+    return showDialog<int>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setState) => AlertDialog(
+          title: Text('Quantas peças prontas?\n${elemento.nome}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Total de peças: ${elemento.qtde}\nAtualmente prontas: ${elemento.qtdePronto}',
+                style: const TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    onPressed: selecionado > 1 ? () => setState(() => selecionado--) : null,
+                    icon: const Icon(Icons.remove_circle_outline),
+                    iconSize: 32,
+                    color: Colors.red,
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.green, width: 2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '$selecionado / ${elemento.qtde}',
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: selecionado < elemento.qtde ? () => setState(() => selecionado++) : null,
+                    icon: const Icon(Icons.add_circle_outline),
+                    iconSize: 32,
+                    color: Colors.green,
+                  ),
+                ],
+              ),
+              if (selecionado < elemento.qtde)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(
+                    'As ${elemento.qtde - selecionado} peças restantes continuarão em ARMANDO.',
+                    style: const TextStyle(fontSize: 12, color: Colors.orange, fontStyle: FontStyle.italic),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('CANCELAR', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.pop(ctx, selecionado),
+              child: Text(selecionado == elemento.qtde ? 'CONFIRMAR PRONTO' : 'SALVAR PROGRESSO'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> updatePedidoSummary(PedidoModel pedido) async {
     try {
       int totalQtd = 0;
       double totalPeso = 0;
 
-      final Map<ElementoStatus, int> qtdPorStatus = {
+      // Qtd e peso por status. Para elementos com qtdePronto parcial,
+      // a fração pronta vai para "pronto" e o restante fica em "armando".
+      final Map<ElementoStatus, double> qtdPorStatus = {
         ElementoStatus.aguardando: 0,
         ElementoStatus.armando: 0,
         ElementoStatus.pronto: 0,
       };
-
       final Map<ElementoStatus, double> pesoPorStatus = {
         ElementoStatus.aguardando: 0,
         ElementoStatus.armando: 0,
@@ -245,8 +344,32 @@ class ArmacaoController {
         totalQtd += e.qtde;
         totalPeso += e.pesoTotal;
 
-        qtdPorStatus[e.status] = (qtdPorStatus[e.status] ?? 0) + e.qtde;
-        pesoPorStatus[e.status] = (pesoPorStatus[e.status] ?? 0) + e.pesoTotal;
+        if (e.status == ElementoStatus.aguardando) {
+          qtdPorStatus[ElementoStatus.aguardando] =
+              (qtdPorStatus[ElementoStatus.aguardando] ?? 0) + e.qtde;
+          pesoPorStatus[ElementoStatus.aguardando] =
+              (pesoPorStatus[ElementoStatus.aguardando] ?? 0) + e.pesoTotal;
+        } else if (e.status == ElementoStatus.pronto) {
+          qtdPorStatus[ElementoStatus.pronto] =
+              (qtdPorStatus[ElementoStatus.pronto] ?? 0) + e.qtde;
+          pesoPorStatus[ElementoStatus.pronto] =
+              (pesoPorStatus[ElementoStatus.pronto] ?? 0) + e.pesoTotal;
+        } else {
+          // armando — pode ter progresso parcial
+          final qtdeProntoFrac = e.qtdePronto.toDouble();
+          final qtdeArmandoFrac = (e.qtde - e.qtdePronto).toDouble();
+          final pesoPorUnidade = e.qtde > 0 ? e.pesoTotal / e.qtde : 0.0;
+
+          qtdPorStatus[ElementoStatus.pronto] =
+              (qtdPorStatus[ElementoStatus.pronto] ?? 0) + qtdeProntoFrac;
+          pesoPorStatus[ElementoStatus.pronto] =
+              (pesoPorStatus[ElementoStatus.pronto] ?? 0) + (qtdeProntoFrac * pesoPorUnidade);
+
+          qtdPorStatus[ElementoStatus.armando] =
+              (qtdPorStatus[ElementoStatus.armando] ?? 0) + qtdeArmandoFrac;
+          pesoPorStatus[ElementoStatus.armando] =
+              (pesoPorStatus[ElementoStatus.armando] ?? 0) + (qtdeArmandoFrac * pesoPorUnidade);
+        }
       }
 
       final Map<String, dynamic> resume = {

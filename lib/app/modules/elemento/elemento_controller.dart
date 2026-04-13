@@ -67,13 +67,15 @@ class ElementoController {
          if (globalEl.pedidoId != _currentPedidoId) continue;
          final idx = currentList.indexWhere((e) => e.id == globalEl.id);
          if (idx != -1) {
-            // Se o status, qtde ou nome mudou globamente, atualiza localmente
-            if (currentList[idx].status != globalEl.status || 
-                currentList[idx].qtde != globalEl.qtde || 
+            // Se o status, qtde, qtdePronto ou nome mudou globalmente, atualiza localmente
+            if (currentList[idx].status != globalEl.status ||
+                currentList[idx].qtde != globalEl.qtde ||
+                currentList[idx].qtdePronto != globalEl.qtdePronto ||
                 currentList[idx].nome != globalEl.nome) {
                currentList[idx] = currentList[idx].copyWith(
                  status: globalEl.status,
                  qtde: globalEl.qtde,
+                 qtdePronto: globalEl.qtdePronto,
                  nome: globalEl.nome,
                );
                changed = true;
