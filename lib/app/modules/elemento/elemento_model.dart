@@ -116,6 +116,27 @@ class ElementoModel {
   double get pesoUnitario =>
       posicoes.fold(0.0, (sum, p) => sum + p.pesoKg);
 
+  ElementoModel copyWith({
+    String? id,
+    String? pedidoId,
+    String? nome,
+    int? qtde,
+    DateTime? createdAt,
+    ElementoStatus? status,
+    List<ElementoPosicaoModel>? posicoes,
+    List<ElementoArquivoModel>? arquivos,
+  }) {
+    return ElementoModel(
+      id: id ?? this.id,
+      pedidoId: pedidoId ?? this.pedidoId,
+      nome: nome ?? this.nome,
+      qtde: qtde ?? this.qtde,
+      createdAt: createdAt ?? this.createdAt,
+      status: status ?? this.status,
+      posicoes: posicoes ?? this.posicoes,
+      arquivos: arquivos ?? this.arquivos,
+    );
+  }
 
   /// Peso agrupado por produto (bitola)
   Map<String, double> get pesoPorBitola {

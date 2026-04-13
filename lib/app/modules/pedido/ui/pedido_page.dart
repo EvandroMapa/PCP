@@ -74,6 +74,7 @@ class _PedidoPageState extends State<PedidoPage>
     _tabController.dispose();
     pedidoCtrl.onDisposePage();
     pedidoCtrl.setPedido(null);
+    elementoCtrl.onDispose(); // Limpa estado interno dos elementos e listener em tempo real
     super.dispose();
   }
 

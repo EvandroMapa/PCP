@@ -44,14 +44,55 @@ class ElementoController {
   bool _validacaoDirty = true;
 
   // ─── INICIALIZAÇÃO ────────────────────────────────────────────────────────
+  StreamSubscription? _globalElementosSub;
+
   Future<void> onInit(String pedidoId) async {
-    if (_currentPedidoId == pedidoId) return;
-    _currentPedidoId = pedidoId;
-    await onFetch(pedidoId);
+    // Se mudou de pedido ou o stream está vazio, refaz o fetch completo.
+    if (_currentPedidoId != pedidoId || elementosStream.value.isEmpty) {
+      _currentPedidoId = pedidoId;
+      await onFetch(pedidoId);
+    }
+
+    // Escuta mudanças globais em tempo real para sincronizar o status e dados básicos
+    _globalElementosSub?.cancel();
+    _globalElementosSub = AppSupabaseClient.elementos.dataStream.listen.listen((globalElementos) {
+      if (_currentPedidoId == null) return;
+
+      final currentList = elementosStream.value.toList();
+      bool changed = false;
+
+      for (final globalEl in globalElementos) {
+         if (globalEl.pedidoId != _currentPedidoId) continue;
+         final idx = currentList.indexWhere((e) => e.id == globalEl.id);
+         if (idx != -1) {
+            // Se o status, qtde ou nome mudou globamente, atualiza localmente
+            if (currentList[idx].status != globalEl.status || 
+                currentList[idx].qtde != globalEl.qtde || 
+                currentList[idx].nome != globalEl.nome) {
+               currentList[idx] = currentList[idx].copyWith(
+                 status: globalEl.status,
+                 qtde: globalEl.qtde,
+                 nome: globalEl.nome,
+               );
+               changed = true;
+            }
+         }
+      }
+
+      if (changed) {
+        // Ordenar alfabeticamente A-Z
+        currentList.sort((a, b) => a.nome.toLowerCase().trim().compareTo(b.nome.toLowerCase().trim()));
+        elementosStream.add(currentList);
+        _validacaoDirty = true;
+        // Se mudou o status, não precisamos recalcular o resumo de armação aqui porque
+        // o ArmacaoController ou quem fez a alteração já atualizou o "armacao_resumo" no banco.
+      }
+    });
   }
 
   void onDispose() {
     _currentPedidoId = null;
+    _globalElementosSub?.cancel();
     elementosStream.add(<ElementoModel>[]);
     importProgressStream.add(null);
   }
