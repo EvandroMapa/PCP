@@ -382,6 +382,7 @@ class _ElementoArmacaoCard extends StatelessWidget {
   final VoidCallback onImagePressed;
 
   const _ElementoArmacaoCard({
+    super.key,
     required this.elemento,
     required this.onStatusPressed,
     required this.onImagePressed,
