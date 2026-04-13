@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
@@ -11,7 +12,6 @@ import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/services/supabase_storage_service.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
-import 'package:syncfusion_flutter_pdf/pdf.dart' as syncfusion;
 import 'package:collection/collection.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -658,7 +658,7 @@ class ElementoController {
     );
   }
 
-  Future<Map<String, dynamic>> onImportPDF(
+  Future<Map<String, dynamic>> onImportCSV(
       Uint8List bytes, PedidoModel pedido, bool clearExisting) async {
 
     String rawText = '';
@@ -670,121 +670,91 @@ class ElementoController {
         await onDeleteAllElementos(pedido.id);
       }
 
-      importProgressStream.add(ImportProgress(status: 'Extraindo texto do PDF...'));
+      importProgressStream.add(ImportProgress(status: 'Lendo dados do arquivo CSV...'));
 
-      final syncfusion.PdfDocument document = syncfusion.PdfDocument(inputBytes: bytes);
-      rawText = syncfusion.PdfTextExtractor(document).extractText();
-      document.dispose();
+      try {
+        rawText = utf8.decode(bytes);
+      } catch (e) {
+        // Fallback clássico para CSVs gerados pelo Excel BR sem UTF-8
+        rawText = latin1.decode(bytes);
+      }
 
       if (rawText.trim().isEmpty) {
         importProgressStream.add(null);
         return {
           'success': false,
-          'error': 'PDF parece estar sem texto (pode ser uma imagem).',
+          'error': 'O arquivo CSV está vazio.',
           'rawText': ''
         };
       }
 
-      final lines = rawText.split('\n').map((l) => l.trim()).toList();
+      final lines = rawText.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+      
+      // Validação básica se parece um CSV válido
+      if (lines.length <= 1 || !lines.first.contains(';')) {
+        importProgressStream.add(null);
+        return {
+          'success': false,
+          'error': 'O arquivo não parece ser um CSV válido separado por ponto-e-vírgula (;).',
+          'rawText': rawText
+        };
+      }
+
       final List<ElementoCreateModel> novosElementos = [];
-
       ElementoCreateModel? currentElement;
-      String? pendingOS;
 
-      // Lista de termos para ignorar (ruído de cabeçalho)
-
-      for (int i = 0; i < lines.length; i++) {
+      // Pula a linha de cabeçalho
+      for (int i = 1; i < lines.length; i++) {
         final line = lines[i];
-        if (line.isEmpty) continue;
+        final columns = line.split(';');
 
-        // 1. Detectar Início de Elemento (Vertical)
-        // Padrão: NomeElemento \n Elemento \n Ok
-        if (i + 2 < lines.length &&
-            lines[i+1].toLowerCase() == 'elemento' &&
-            lines[i+2].toLowerCase() == 'ok') {
+        // LOCALIZADOR[0]; PLAN[1]; ELEMENTO[2]; QTDE_ELEMENTOS[3]; OS[4]; POSICAO[5]; BITOLA[6]; PESO (KG)[7] ...
+        if (columns.length < 8) continue; // Pula linhas defeituosas ou vazias do fim do excel
 
+        final elNome = columns[2].trim();
+        final elQtdeStr = columns[3].trim();
+        final osNumber = columns[4].trim();
+        final posNome = columns[5].trim();
+        final bitolaStr = columns[6].trim().replaceAll('mm', '').replaceAll(',', '.');
+        final pesoStr = columns[7].trim().replaceAll(',', '.');
+
+        if (elNome.isEmpty || posNome.isEmpty) continue;
+
+        // Controle de agrupamento de Posições sob o mesmo "Elemento Pai"
+        if (currentElement == null || currentElement.nome.text != elNome) {
           if (currentElement != null && currentElement.posicoes.isNotEmpty) {
             novosElementos.add(currentElement);
           }
-
           currentElement = ElementoCreateModel();
-
-          // Tentar extrair Qtde do nome (ex: "V37 X 2") e descartar o multiplicador do nome
-          final xMatch = RegExp(r'\s*X\s*(\d+)$', caseSensitive: false).firstMatch(line);
-          if (xMatch != null) {
-            currentElement.qtde.text = xMatch.group(1)!;
-            currentElement.nome.text = line.substring(0, xMatch.start).trim();
-          } else {
-            currentElement.nome.text = line;
-          }
-
-          i += 2; // Pula "Elemento" e "Ok"
-          continue;
+          currentElement.nome.text = elNome;
+          currentElement.qtde.text = int.tryParse(elQtdeStr)?.toString() ?? '1';
         }
 
-        // 2. Identificar possível OS (número isolado)
-        // No PDF da ALA, a OS vem como um número solto, tentamos guardar mas NAO damos continue
-        if (RegExp(r'^\d{2,6}$').hasMatch(line)) {
-          pendingOS = line;
-        }
+        final qtdePos = int.tryParse(elQtdeStr) ?? 1;
+        final bitola = double.tryParse(bitolaStr);
+        final pesoLido = double.tryParse(pesoStr);
 
-        // 3. Tentar capturar um bloco de posição (Vertical)
-        // Padrão antigo: Qtde(i) -> Compr(i+1) -> Pos(i+2) -> Bitola(i+3) -> Aço(i+4) -> Peso(i+5)
-        // Padrão novo: ... -> Peso(i+5) -> OS(i+6)
-        if (currentElement != null && i + 5 < lines.length) {
-          final valQtde = lines[i].replaceAll(',', '.');
-          final valPos = lines[i+2];
-          final valBitolaStr = lines[i+3].replaceAll(',', '.');
-          final valAco = lines[i+4].toUpperCase();
-          final valPesoStr = lines[i+5].replaceAll(',', '.');
+        if (bitola != null && pesoLido != null) {
+          final pos = ElementoPosicaoCreateModel();
+          pos.nome.text = posNome;
+          pos.numeroOs.text = osNumber;
+          // No CSV o peso parece ser o total. Se o model espera Unitário, calculamos:
+          pos.pesoKg.text = pesoLido.toStringAsFixed(3);
 
-          final qtdePos = double.tryParse(valQtde);
-          final bitola = double.tryParse(valBitolaStr);
-          final peso = double.tryParse(valPesoStr);
+          pos.produto = pedido.getProdutos()
+              .map((e) => e.produto)
+              .where((p) {
+                final textToSearch = '${p.nome} ${p.labelMinified}'.replaceAll(',', '.');
+                final extractedNumbers = RegExp(r'\d+(?:\.\d+)?').allMatches(textToSearch);
+                return extractedNumbers.any((match) {
+                   final extractedValue = double.tryParse(match.group(0)!);
+                   return extractedValue == bitola;
+                });
+              })
+              .firstOrNull;
 
-          // Validação: Se bitola e peso são números e o Aço é CA50/CA60, é uma posição
-          if (qtdePos != null && bitola != null && (valAco.contains('CA50') || valAco.contains('CA60'))) {
-
-            bool hasOSInBlock = false;
-            String osValue = pendingOS ?? '';
-
-            if (i + 6 < lines.length && RegExp(r'^\d+$').hasMatch(lines[i+6])) {
-                osValue = lines[i+6];
-                hasOSInBlock = true;
-            }
-
-            final pos = ElementoPosicaoCreateModel();
-            pos.nome.text = valPos; // Nome da Posição (ex: 01, 02)
-            pos.numeroOs.text = osValue;
-
-            // Peso unitário (no PDF o peso é total da posição incluindo Elemento.qtde)
-            final elQtde = int.tryParse(currentElement.qtde.text) ?? 1;
-            final pesoLido = peso ?? 0.0;
-            final pesoUnitario = elQtde > 0 ? pesoLido / elQtde : pesoLido;
-            pos.pesoKg.text = pesoUnitario.toStringAsFixed(3);
-
-            pos.produto = pedido.getProdutos()
-                .map((e) => e.produto)
-                .where((p) {
-                  final textToSearch = '${p.nome} ${p.labelMinified}'.replaceAll(',', '.');
-                  // Extrai todos os números (com ou sem casa decimal) do nome do produto ex: "50", "12.5", "5"
-                  final extractedNumbers = RegExp(r'\d+(?:\.\d+)?').allMatches(textToSearch);
-
-                  // Verifica se algum dos números extraídos é exatamente igual à bitola lida
-                  return extractedNumbers.any((match) {
-                     final extractedValue = double.tryParse(match.group(0)!);
-                     return extractedValue == bitola;
-                  });
-                })
-                .firstOrNull;
-
-            if (pos.produto != null) {
-              currentElement.posicoes.add(pos);
-            }
-
-            i += hasOSInBlock ? 6 : 5; // Pula o bloco processado
-            pendingOS = null;
-            continue;
+          if (pos.produto != null) {
+            currentElement.posicoes.add(pos);
           }
         }
       }
@@ -798,16 +768,7 @@ class ElementoController {
         importProgressStream.add(null);
         return {
           'success': false,
-          'error': 'Nenhum elemento ou posição válida foi identificado.',
-          'rawText': rawText
-        };
-      }
-
-      if (novosElementos.isEmpty) {
-        importProgressStream.add(null);
-        return {
-          'success': false,
-          'error': 'Nenhum elemento ou posição válida foi identificado.',
+          'error': 'Nenhum elemento ou posição válida foi identificada no CSV.',
           'rawText': rawText
         };
       }
@@ -886,7 +847,7 @@ class ElementoController {
         'rawText': rawText
       };
     } catch (e) {
-      log('ElementoController.onImportPDF erro: $e');
+      log('ElementoController.onImportCSV erro: $e');
       importProgressStream.add(null);
       return {'success': false, 'error': e.toString(), 'rawText': rawText};
     }

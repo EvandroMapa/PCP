@@ -97,16 +97,16 @@ class _ElementosTabState extends State<ElementosTab> {
                     runSpacing: 8,
                     children: [
                       if (usuarioCtrl.usuario?.podeEditarElementos ?? false) ...[
-                        // ── Importar PDF (ghost/outlined) ──
+                        // ── Importar CSV ──
                         _ActionButton(
-                          icon: Icons.picture_as_pdf_outlined,
-                          label: 'Importar PDF',
+                          icon: Icons.table_chart_outlined,
+                          label: 'Importar CSV',
                           color: AppColors.secondary,
                           variant: _ButtonVariant.outlined,
                           onTap: () async {
                             final result = await FilePicker.platform.pickFiles(
                               type: FileType.custom,
-                              allowedExtensions: ['pdf'],
+                              allowedExtensions: ['csv'],
                             );
                             if (result != null && result.files.single.bytes != null) {
                               if (!context.mounted) return;
@@ -152,10 +152,10 @@ class _ElementosTabState extends State<ElementosTab> {
                               if (!context.mounted) return;
                               _showProgressDialog(context);
                               elementoCtrl.importProgressStream.add(
-                                ImportProgress(status: 'Extraindo texto do PDF...'),
+                                ImportProgress(status: 'Lendo dados do CSV...'),
                               );
                               await Future.delayed(const Duration(milliseconds: 100));
-                              final res = await elementoCtrl.onImportPDF(
+                              final res = await elementoCtrl.onImportCSV(
                                   result.files.single.bytes!, widget.pedido, clearExisting);
 
                               if (context.mounted) Navigator.pop(context); // Fecha progresso
