@@ -45,6 +45,7 @@ class ElementoPosicaoModel {
   final String produtoId;
   ProdutoModel? produto;   // bitola do catálogo
   final double pesoKg;
+  final int qtde;           // quantidade de peças/barras na posição
   final DateTime createdAt;
 
   ElementoPosicaoModel({
@@ -55,6 +56,7 @@ class ElementoPosicaoModel {
     required this.produtoId,
     required this.pesoKg,
     required this.createdAt,
+    this.qtde = 0,
     this.produto,
   });
 
@@ -67,6 +69,7 @@ class ElementoPosicaoModel {
       numeroOs: (map['numero_os'] ?? '').toString(),
       produtoId: produtoId,
       pesoKg: double.tryParse((map['peso_kg'] ?? '0').toString()) ?? 0.0,
+      qtde: int.tryParse((map['qtde'] ?? '0').toString()) ?? 0,
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -83,6 +86,7 @@ class ElementoPosicaoModel {
         'numero_os': numeroOs,
         'produto_id': produtoId,
         'peso_kg': pesoKg,
+        'qtde': qtde,
       };
 }
 
@@ -205,6 +209,7 @@ class ElementoPosicaoCreateModel {
   final TextController nome = TextController();
   final TextController numeroOs = TextController();
   final TextController pesoKg = TextController();
+  final TextController qtde = TextController(text: '0');
   ProdutoModel? produto;
   bool isEdit;
 
@@ -217,12 +222,14 @@ class ElementoPosicaoCreateModel {
     nome.text = m.nome;
     numeroOs.text = m.numeroOs;
     pesoKg.text = m.pesoKg.toStringAsFixed(3);
+    qtde.text = m.qtde.toString();
   }
 
   bool get isValid =>
       nome.text.isNotEmpty && numeroOs.text.isNotEmpty && produto != null && pesoDouble > 0;
 
   double get pesoDouble => double.tryParse(pesoKg.text.replaceAll(',', '.')) ?? 0.0;
+  int get qtdeInt => int.tryParse(qtde.text) ?? 0;
 
   ElementoPosicaoModel toModel(String elementoId) => ElementoPosicaoModel(
         id: id,
@@ -232,6 +239,7 @@ class ElementoPosicaoCreateModel {
         produtoId: produto!.id,
         produto: produto,
         pesoKg: pesoDouble,
+        qtde: qtdeInt,
         createdAt: DateTime.now(),
       );
 }

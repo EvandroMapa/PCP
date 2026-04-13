@@ -294,6 +294,7 @@ class ElementoController {
           'numero_os': posicao.numeroOs.controller.text,
           'produto_id': posicao.produto!.id,
           'peso_kg': posicao.pesoDouble,
+          'qtde': posicao.qtdeInt,
         });
       }
 
@@ -708,7 +709,7 @@ class ElementoController {
         final line = lines[i];
         final columns = line.split(';');
 
-        // LOCALIZADOR[0]; PLAN[1]; ELEMENTO[2]; QTDE_ELEMENTOS[3]; OS[4]; POSICAO[5]; BITOLA[6]; PESO (KG)[7] ...
+        // LOCALIZADOR[0]; PLAN[1]; ELEMENTO[2]; QTDE_ELEMENTOS[3]; OS[4]; POSICAO[5]; BITOLA[6]; PESO (KG)[7]; QTDE[8] ...
         if (columns.length < 8) continue; // Pula linhas defeituosas ou vazias do fim do excel
 
         final elNome = columns[2].trim();
@@ -738,8 +739,11 @@ class ElementoController {
           final pos = ElementoPosicaoCreateModel();
           pos.nome.text = posNome;
           pos.numeroOs.text = osNumber;
-          // No CSV o peso parece ser o total. Se o model espera Unitário, calculamos:
           pos.pesoKg.text = pesoLido.toStringAsFixed(3);
+          // Lê a qtde de peças/barras da posição (coluna QTDE[8])
+          if (columns.length > 8) {
+            pos.qtde.text = columns[8].trim();
+          }
 
           pos.produto = pedido.getProdutos()
               .map((e) => e.produto)
@@ -831,6 +835,7 @@ class ElementoController {
             'numero_os': posicao.numeroOs.controller.text,
             'produto_id': posicao.produto!.id,
             'peso_kg': posicao.pesoDouble,
+            'qtde': posicao.qtdeInt,
           });
         }
 
