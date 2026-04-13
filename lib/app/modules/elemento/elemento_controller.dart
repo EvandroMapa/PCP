@@ -304,7 +304,7 @@ class ElementoController {
     }
   }
 
-  // ─── DELETAR ELEMENTO ─────────────────────────────────────────────────────
+  // ─── DELETAR ELEMENTO e─────────────────────────────────────────────────────
   Future<void> onDeleteElemento(ElementoModel elemento) async {
     try {
       if (elemento.status != ElementoStatus.aguardando) {
@@ -690,7 +690,7 @@ class ElementoController {
       }
 
       final lines = rawText.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
-      
+
       // Validação básica se parece um CSV válido
       if (lines.length <= 1 || !lines.first.contains(';')) {
         importProgressStream.add(null);
