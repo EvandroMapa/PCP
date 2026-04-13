@@ -389,42 +389,39 @@ class _ElementoArmacaoCard extends StatelessWidget {
             _buildHeader(),
             Expanded(
               child: Center(
-                child: elemento.isProntoParcial
-                    ? Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '${elemento.qtdePronto} / ${elemento.qtde}',
-                            style: AppCss.largeBold.setSize(22).setColor(Colors.green[800]!),
-                          ),
-                          Text(
-                            'pç prontas',
-                            style: AppCss.largeBold.setSize(12).setColor(Colors.green[600]!),
-                          ),
-                        ],
-                      )
-                    : Text(
-                        elemento.status.label.toUpperCase(),
-                        style: AppCss.largeBold.setSize(22).setColor(Colors.black).copyWith(letterSpacing: 1.5),
-                      ),
+                child: Text(
+                  elemento.status.label.toUpperCase(),
+                  style: AppCss.largeBold.setSize(22).setColor(Colors.black).copyWith(letterSpacing: 1.5),
+                ),
               ),
             ),
-            // Barra de progresso parcial
+            // Barra de progresso parcial dentro de um Container robusto
             if (elemento.qtde > 1 && elemento.qtdePronto > 0) ...[
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: elemento.progressoPronto,
-                    minHeight: 6,
-                    backgroundColor: Colors.grey[200],
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      elemento.status == ElementoStatus.pronto
-                          ? Colors.green[700]!
-                          : Colors.green[500]!,
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: elemento.progressoPronto,
+                        minHeight: 22,
+                        backgroundColor: Colors.grey[200],
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          elemento.status == ElementoStatus.pronto
+                              ? Colors.green[700]!
+                              : Colors.green[500]!,
+                        ),
+                      ),
                     ),
-                  ),
+                    Text(
+                      '${elemento.qtdePronto} / ${elemento.qtde} PÇ PRONTAS',
+                      style: AppCss.mediumBold.setSize(11).setColor(
+                        elemento.progressoPronto > 0.5 ? Colors.white : Colors.green[900]!
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
