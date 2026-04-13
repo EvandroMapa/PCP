@@ -9,6 +9,7 @@ import 'package:aco_plus/app/modules/armacao/armacao_controller.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
+import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:flutter/material.dart';
 
 class ArmacaoElementosPage extends StatefulWidget {
