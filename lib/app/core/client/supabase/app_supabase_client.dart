@@ -15,6 +15,7 @@ import 'package:aco_plus/app/core/client/supabase/collections/checklist/checklis
 import 'package:aco_plus/app/core/client/supabase/collections/automatizacao/automatizacao_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/notificacao/notificacao_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/elemento/elemento_arquivo_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/elemento/elemento_supabase_collection.dart';
 
 
 
@@ -35,6 +36,7 @@ class AppSupabaseClient {
   static AutomatizacaoSupabaseCollection automatizacao = AutomatizacaoSupabaseCollection();
   static NotificacaoSupabaseCollection notificacoes = NotificacaoSupabaseCollection();
   static ElementoArquivoSupabaseCollection elementoArquivos = ElementoArquivoSupabaseCollection();
+  static ElementoSupabaseCollection elementos = ElementoSupabaseCollection();
 
   static Future<void> init() async {
     try {
@@ -53,6 +55,7 @@ class AppSupabaseClient {
       await automatizacao.start().catchError((e) => log('Error starting automatizacao: $e'));
       await notificacoes.start().catchError((e) => log('Error starting notificacoes: $e'));
       await elementoArquivos.start().catchError((e) => log('Error starting elementoArquivos: $e'));
+      await elementos.start().catchError((e) => log('Error starting elementos: $e'));
       await ordens.startOnlyArquivadas();
 
       // Pedidos depends on clientes/steps for mapping, so start it after
@@ -74,6 +77,7 @@ class AppSupabaseClient {
       automatizacao.listen();
       notificacoes.listen();
       elementoArquivos.listen();
+      elementos.listen();
     } catch (e) {
       log('AppSupabaseClient: Critical error during init: $e');
     }

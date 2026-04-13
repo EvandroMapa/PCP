@@ -2,6 +2,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/components/fullscreen_button.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/empty_data.dart';
+import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/modules/armacao/armacao_controller.dart';
@@ -111,35 +112,37 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
               children: [
                 _ResumoProducaoBar(pedido: widget.pedido),
                 Expanded(
-                  child: widget.pedido.elementos.isEmpty
-                      ? const EmptyData(message: 'Nenhum elemento cadastrado!')
-                      : Scrollbar(
-                          controller: _scrollController,
-                          thumbVisibility: true,
-                          trackVisibility: true,
-                          child: GridView.builder(
+                  child: StreamOut<List<ElementoModel>>(
+                    stream: armacaoCtrl.elementosStream.listen,
+                    builder: (_, elementos) => elementos.isEmpty
+                        ? const EmptyData(message: 'Nenhum elemento cadastrado!')
+                        : Scrollbar(
                             controller: _scrollController,
-                            padding: const EdgeInsets.all(24),
-                            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 350,
-                              mainAxisExtent: 160,
-                              crossAxisSpacing: 20,
-                              mainAxisSpacing: 20,
+                            thumbVisibility: true,
+                            trackVisibility: true,
+                            child: GridView.builder(
+                              controller: _scrollController,
+                              padding: const EdgeInsets.all(24),
+                              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: 350,
+                                mainAxisExtent: 160,
+                                crossAxisSpacing: 20,
+                                mainAxisSpacing: 20,
+                              ),
+                              itemCount: elementos.length,
+                              itemBuilder: (context, index) {
+                                final elemento = elementos[index];
+                                return _ElementoArmacaoCard(
+                                  elemento: elemento,
+                                  onStatusPressed: () async {
+                                    await _showStatusPicker(elemento);
+                                  },
+                                  onImagePressed: () => _showImageDialog(elemento),
+                                );
+                              },
                             ),
-                            itemCount: widget.pedido.elementos.length,
-                            itemBuilder: (context, index) {
-                              final elemento = widget.pedido.elementos[index];
-                              return _ElementoArmacaoCard(
-                                elemento: elemento,
-                                onStatusPressed: () async {
-                                  await _showStatusPicker(elemento);
-                                  setState(() {});
-                                },
-                                onImagePressed: () => _showImageDialog(elemento),
-                              );
-                            },
                           ),
-                        ),
+                  ),
                 ),
               ],
             ),

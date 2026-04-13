@@ -10,6 +10,7 @@ import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/automatizacao/automatizacao_controller.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
+import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:flutter/material.dart';
 
 final armacaoCtrl = ArmacaoController();
@@ -39,6 +40,7 @@ class ArmacaoController {
 
   final TextController search = TextController();
   final AppStream<List<PedidoModel>> pedidosStream = AppStream.seed([]);
+  final AppStream<List<ElementoModel>> elementosStream = AppStream.seed([]);
   final AppStream<bool> loadingStream = AppStream.seed(false);
   
   // Cache para evitar recarregar elementos desnecessariamente
@@ -48,7 +50,21 @@ class ArmacaoController {
     AppSupabaseClient.pedidos.dataStream.listen.listen((pedidos) {
       _syncSummariesAndFilter(pedidos);
     });
+
+    // Listener reativo para elementos
+    AppSupabaseClient.elementos.dataStream.listen.listen((allElementos) {
+      if (_currentPedidoId != null) {
+        final filtered = allElementos
+            .where((e) => e.pedidoId == _currentPedidoId)
+            .toList();
+        // Ordenar alfabeticamente
+        filtered.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
+        elementosStream.add(filtered);
+      }
+    });
   }
+
+  String? _currentPedidoId;
 
   Future<void> _syncSummariesAndFilter(List<PedidoModel> all) async {
     loadingStream.add(true);
@@ -119,37 +135,21 @@ class ArmacaoController {
 
   Future<void> onFetchElementos(PedidoModel pedido) async {
     try {
-      final elementosRaw = await SupabaseService.client
-          .from('elementos')
-          .select()
-          .eq('pedido_id', pedido.id);
-
-      final List<ElementoModel> result = [];
-      for (final e in elementosRaw) {
-        final posicoesRaw = await SupabaseService.client
-            .from('elemento_posicoes')
-            .select()
-            .eq('elemento_id', e['id'].toString());
-            
-        final arquivosRaw = await SupabaseService.client
-            .from('elemento_arquivos')
-            .select()
-            .eq('elemento_id', e['id'].toString());
-
-        result.add(ElementoModel.fromSupabaseMap(
-          e,
-          posicoesRaw: List<Map<String, dynamic>>.from(posicoesRaw),
-          arquivosRaw: List<Map<String, dynamic>>.from(arquivosRaw),
-        ));
-      }
+      _currentPedidoId = pedido.id;
+      
+      // Filtra o que já temos no AppSupabaseClient de forma reativa
+      final filtered = AppSupabaseClient.elementos.data
+          .where((e) => e.pedidoId == pedido.id)
+          .toList();
       
       // Ordenar alfabeticamente pelo nome
-      result.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
+      filtered.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
       
       pedido.elementos.clear();
-      pedido.elementos.addAll(result);
+      pedido.elementos.addAll(filtered);
+      elementosStream.add(filtered);
       
-      // Atualizar resumo garantindo que o que está no banco reflete os elementos carregados
+      // Atualizar resumo localmente 
       await updatePedidoSummary(pedido);
     } catch (e) {
       log('ArmacaoController.onFetchElementos erro: $e');
