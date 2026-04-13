@@ -102,8 +102,47 @@ class _ElementosTabState extends State<ElementosTab> {
                               type: FileType.custom,
                               allowedExtensions: ['pdf'],
                             );
-                            if (result != null &&
-                                result.files.single.bytes != null) {
+                            if (result != null && result.files.single.bytes != null) {
+                              if (!context.mounted) return;
+
+                              // 1. Verificar se já existem elementos e perguntar o que fazer (Mover do controller para cá para não travar)
+                              bool clearExisting = false;
+                              if (elementoCtrl.elementos.isNotEmpty) {
+                                final canClearAll = elementoCtrl.elementos
+                                    .every((e) => e.status == ElementoStatus.aguardando);
+
+                                final String? choice = await showDialog<String>(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Elementos Existentes'),
+                                    content: Text(canClearAll
+                                        ? 'Já existem elementos cadastrados neste pedido. O que deseja fazer com a lista atual?'
+                                        : 'Já existem elementos cadastrados neste pedido. Como alguns já estão em produção, você apenas pode acrescentar os novos.'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context, 'cancel'),
+                                        child: const Text('CANCELAR', style: TextStyle(color: Colors.grey)),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context, 'append'),
+                                        child: const Text('ACRESCENTAR NOVOS'),
+                                      ),
+                                      if (canClearAll)
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.red, foregroundColor: Colors.white),
+                                          onPressed: () => Navigator.pop(context, 'clear'),
+                                          child: const Text('APAGAR TUDO E IMPORTAR'),
+                                        ),
+                                    ],
+                                  ),
+                                );
+
+                                if (choice == null || choice == 'cancel') return;
+                                clearExisting = (choice == 'clear');
+                              }
+
                               if (!context.mounted) return;
                               _showProgressDialog(context);
                               elementoCtrl.importProgressStream.add(
@@ -111,11 +150,14 @@ class _ElementosTabState extends State<ElementosTab> {
                               );
                               await Future.delayed(const Duration(milliseconds: 100));
                               final res = await elementoCtrl.onImportPDF(
-                                  result.files.single.bytes!, widget.pedido);
-                              
+                                  result.files.single.bytes!, widget.pedido, clearExisting);
+
                               if (context.mounted) Navigator.pop(context); // Fecha progresso
 
                               if (!res['success'] && context.mounted) {
+                                // Se for apenas cancelamento, não precisa mostrar erro
+                                if (res['error'] == 'Operação cancelada.') return;
+
                                 showDialog(
                                   context: context,
                                   builder: (_) => AlertDialog(

@@ -640,48 +640,8 @@ class ElementoController {
   }
 
   Future<Map<String, dynamic>> onImportPDF(
-      Uint8List bytes, PedidoModel pedido) async {
+      Uint8List bytes, PedidoModel pedido, bool clearExisting) async {
     
-    // 1. Verificar se já existem elementos e perguntar o que fazer
-    bool clearExisting = false;
-    if (elementos.isNotEmpty) {
-      final canClearAll = elementos.every((e) => e.status == ElementoStatus.aguardando);
-
-      final String? choice = await showDialog<String>(
-        context: contextGlobal,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          title: const Text('Elementos Existentes'),
-          content: Text(
-            canClearAll 
-              ? 'Já existem elementos cadastrados neste pedido. O que deseja fazer com a lista atual?'
-              : 'Já existem elementos cadastrados neste pedido. Como alguns já estão em produção, você apenas pode acrescentar os novos.'
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, 'cancel'),
-              child: const Text('CANCELAR', style: TextStyle(color: Colors.grey)),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, 'append'),
-              child: const Text('ACRESCENTAR NOVOS'),
-            ),
-            if (canClearAll)
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-                onPressed: () => Navigator.pop(context, 'clear'),
-                child: const Text('APAGAR TUDO E IMPORTAR'),
-              ),
-          ],
-        ),
-      );
-
-      if (choice == null || choice == 'cancel') {
-        return {'success': false, 'error': 'Operação cancelada.'};
-      }
-      clearExisting = (choice == 'clear');
-    }
-
     String rawText = '';
     _cancelImport = false;
     final List<String> createdElementIds = [];
