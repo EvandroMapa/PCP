@@ -108,43 +108,54 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                 ],
               ),
             )
-          : Column(
-              children: [
-                _ResumoProducaoBar(pedido: widget.pedido),
-                Expanded(
-                  child: StreamOut<List<ElementoModel>>(
-                    stream: armacaoCtrl.elementosStream.listen,
-                    builder: (_, elementos) => elementos.isEmpty
-                        ? const EmptyData(message: 'Nenhum elemento cadastrado!')
-                        : Scrollbar(
-                            controller: _scrollController,
-                            thumbVisibility: true,
-                            trackVisibility: true,
-                            child: GridView.builder(
-                              controller: _scrollController,
-                              padding: const EdgeInsets.all(24),
-                              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                                maxCrossAxisExtent: 350,
-                                mainAxisExtent: 160,
-                                crossAxisSpacing: 20,
-                                mainAxisSpacing: 20,
-                              ),
-                              itemCount: elementos.length,
-                              itemBuilder: (context, index) {
-                                final elemento = elementos[index];
-                                return _ElementoArmacaoCard(
-                                  elemento: elemento,
-                                  onStatusPressed: () async {
-                                    await _showStatusPicker(elemento);
+          : StreamOut<List<PedidoModel>>(
+              stream: AppSupabaseClient.pedidos.dataStream.listen,
+              builder: (_, allPedidos) {
+                // Busca a versão mais atualizada do pedido no stream global
+                final currentPedido = allPedidos.firstWhere(
+                  (p) => p.id == widget.pedido.id,
+                  orElse: () => widget.pedido,
+                );
+
+                return Column(
+                  children: [
+                    _ResumoProducaoBar(pedido: currentPedido),
+                    Expanded(
+                      child: StreamOut<List<ElementoModel>>(
+                        stream: armacaoCtrl.elementosStream.listen,
+                        builder: (_, elementos) => elementos.isEmpty
+                            ? const EmptyData(message: 'Nenhum elemento cadastrado!')
+                            : Scrollbar(
+                                controller: _scrollController,
+                                thumbVisibility: true,
+                                trackVisibility: true,
+                                child: GridView.builder(
+                                  controller: _scrollController,
+                                  padding: const EdgeInsets.all(24),
+                                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                                    maxCrossAxisExtent: 350,
+                                    mainAxisExtent: 160,
+                                    crossAxisSpacing: 20,
+                                    mainAxisSpacing: 20,
+                                  ),
+                                  itemCount: elementos.length,
+                                  itemBuilder: (context, index) {
+                                    final elemento = elementos[index];
+                                    return _ElementoArmacaoCard(
+                                      elemento: elemento,
+                                      onStatusPressed: () async {
+                                        await _showStatusPicker(elemento);
+                                      },
+                                      onImagePressed: () => _showImageDialog(elemento),
+                                    );
                                   },
-                                  onImagePressed: () => _showImageDialog(elemento),
-                                );
-                              },
-                            ),
-                          ),
-                  ),
-                ),
-              ],
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
     );
   }
