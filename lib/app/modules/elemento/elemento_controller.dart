@@ -260,7 +260,8 @@ class ElementoController {
     }
   }
 
-  // ─── SALVAR ELEMENTO ──────────────────────────────────────────────────────
+  // ─── SALVAR ELEMENTO
+  // ──────────────────────────────────────────────────────
   Future<void> onSaveElemento(
       ElementoCreateModel form, String pedidoId) async {
     try {
@@ -371,7 +372,7 @@ class ElementoController {
       await SupabaseStorageService.deleteFile(arquivo.url);
       // Remove do banco
       await AppSupabaseClient.elementoArquivos.delete(arquivo.id);
-      
+
       await onFetch(pedidoId);
       if (contextGlobal.mounted) Navigator.pop(contextGlobal); // Fecha loading
       NotificationService.showPositive('Sucesso', 'Arquivo removido!');
@@ -389,11 +390,11 @@ class ElementoController {
          return;
       }
       showLoadingDialog();
-      
+
       // Resgata os IDs para deletar filhos
       final eRaw = await SupabaseService.client.from('elementos').select('id').eq('pedido_id', pedidoId);
       final eIds = eRaw.map((e) => e['id'].toString()).toList();
-      
+
       if (eIds.isNotEmpty) {
           await SupabaseService.client.from('elemento_posicoes').delete().filter('elemento_id', 'in', eIds);
           await SupabaseService.client.from('elemento_arquivos').delete().filter('elemento_id', 'in', eIds);
@@ -659,7 +660,7 @@ class ElementoController {
 
   Future<Map<String, dynamic>> onImportPDF(
       Uint8List bytes, PedidoModel pedido, bool clearExisting) async {
-    
+
     String rawText = '';
     _cancelImport = false;
     final List<String> createdElementIds = [];
@@ -670,7 +671,7 @@ class ElementoController {
       }
 
       importProgressStream.add(ImportProgress(status: 'Extraindo texto do PDF...'));
-      
+
       final syncfusion.PdfDocument document = syncfusion.PdfDocument(inputBytes: bytes);
       rawText = syncfusion.PdfTextExtractor(document).extractText();
       document.dispose();
@@ -686,7 +687,7 @@ class ElementoController {
 
       final lines = rawText.split('\n').map((l) => l.trim()).toList();
       final List<ElementoCreateModel> novosElementos = [];
-      
+
       ElementoCreateModel? currentElement;
       String? pendingOS;
 
@@ -698,16 +699,16 @@ class ElementoController {
 
         // 1. Detectar Início de Elemento (Vertical)
         // Padrão: NomeElemento \n Elemento \n Ok
-        if (i + 2 < lines.length && 
-            lines[i+1].toLowerCase() == 'elemento' && 
+        if (i + 2 < lines.length &&
+            lines[i+1].toLowerCase() == 'elemento' &&
             lines[i+2].toLowerCase() == 'ok') {
-          
+
           if (currentElement != null && currentElement.posicoes.isNotEmpty) {
             novosElementos.add(currentElement);
           }
-          
+
           currentElement = ElementoCreateModel();
-          
+
           // Tentar extrair Qtde do nome (ex: "V37 X 2") e descartar o multiplicador do nome
           final xMatch = RegExp(r'\s*X\s*(\d+)$', caseSensitive: false).firstMatch(line);
           if (xMatch != null) {
@@ -716,7 +717,7 @@ class ElementoController {
           } else {
             currentElement.nome.text = line;
           }
-          
+
           i += 2; // Pula "Elemento" e "Ok"
           continue;
         }
@@ -743,7 +744,7 @@ class ElementoController {
 
           // Validação: Se bitola e peso são números e o Aço é CA50/CA60, é uma posição
           if (qtdePos != null && bitola != null && (valAco.contains('CA50') || valAco.contains('CA60'))) {
-            
+
             bool hasOSInBlock = false;
             String osValue = pendingOS ?? '';
 
@@ -755,7 +756,7 @@ class ElementoController {
             final pos = ElementoPosicaoCreateModel();
             pos.nome.text = valPos; // Nome da Posição (ex: 01, 02)
             pos.numeroOs.text = osValue;
-            
+
             // Peso unitário (no PDF o peso é total da posição incluindo Elemento.qtde)
             final elQtde = int.tryParse(currentElement.qtde.text) ?? 1;
             final pesoLido = peso ?? 0.0;
@@ -768,7 +769,7 @@ class ElementoController {
                   final textToSearch = '${p.nome} ${p.labelMinified}'.replaceAll(',', '.');
                   // Extrai todos os números (com ou sem casa decimal) do nome do produto ex: "50", "12.5", "5"
                   final extractedNumbers = RegExp(r'\d+(?:\.\d+)?').allMatches(textToSearch);
-                  
+
                   // Verifica se algum dos números extraídos é exatamente igual à bitola lida
                   return extractedNumbers.any((match) {
                      final extractedValue = double.tryParse(match.group(0)!);
@@ -780,9 +781,9 @@ class ElementoController {
             if (pos.produto != null) {
               currentElement.posicoes.add(pos);
             }
-            
+
             i += hasOSInBlock ? 6 : 5; // Pula o bloco processado
-            pendingOS = null; 
+            pendingOS = null;
             continue;
           }
         }
