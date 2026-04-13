@@ -116,6 +116,9 @@ class ElementoController {
         );
       }).toList();
 
+      // Ordenar alfabeticamente A-Z (Garante ordem mesmo que o banco falte)
+      result.sort((a, b) => a.nome.toLowerCase().trim().compareTo(b.nome.toLowerCase().trim()));
+
       elementosStream.add(result);
       _validacaoDirty = true; // Invalida cache do comparativo
 
@@ -587,11 +590,51 @@ class ElementoController {
 
   Future<Map<String, dynamic>> onImportPDF(
       Uint8List bytes, PedidoModel pedido) async {
+    
+    // 1. Verificar se já existem elementos e perguntar o que fazer
+    bool clearExisting = false;
+    if (elementos.isNotEmpty) {
+      final String? choice = await showDialog<String>(
+        context: contextGlobal,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('Elementos Existentes'),
+          content: const Text(
+            'Já existem elementos cadastrados neste pedido. O que deseja fazer com a lista atual?'
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'cancel'),
+              child: const Text('CANCELAR', style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'append'),
+              child: const Text('ACRESCENTAR NOVOS'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              onPressed: () => Navigator.pop(context, 'clear'),
+              child: const Text('APAGAR TUDO E IMPORTAR'),
+            ),
+          ],
+        ),
+      );
+
+      if (choice == null || choice == 'cancel') {
+        return {'success': false, 'error': 'Operação cancelada.'};
+      }
+      clearExisting = (choice == 'clear');
+    }
+
     String rawText = '';
     _cancelImport = false;
     final List<String> createdElementIds = [];
 
     try {
+      if (clearExisting) {
+        await onDeleteAllElementos(pedido.id);
+      }
+
       importProgressStream.add(ImportProgress(status: 'Extraindo texto do PDF...'));
       
       final syncfusion.PdfDocument document = syncfusion.PdfDocument(inputBytes: bytes);

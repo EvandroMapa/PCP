@@ -62,8 +62,8 @@ class ArmacaoController {
         final filtered = allElementos
             .where((e) => e.pedidoId == _currentPedidoId)
             .toList();
-        // Ordenar alfabeticamente
-        filtered.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
+        // Ordenar alfabeticamente A-Z
+        filtered.sort((a, b) => a.nome.toLowerCase().trim().compareTo(b.nome.toLowerCase().trim()));
         elementosStream.add(filtered);
       }
     });
@@ -147,8 +147,8 @@ class ArmacaoController {
           .where((e) => e.pedidoId == pedido.id)
           .toList();
       
-      // Ordenar alfabeticamente pelo nome
-      filtered.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
+      // Ordenar alfabeticamente pelo nome A-Z
+      filtered.sort((a, b) => a.nome.toLowerCase().trim().compareTo(b.nome.toLowerCase().trim()));
       
       pedido.elementos.clear();
       pedido.elementos.addAll(filtered);
