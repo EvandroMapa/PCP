@@ -18,6 +18,7 @@ class ProdutoStatusController {
     return [
           PedidoProdutoStatus.aguardandoProducao,
           PedidoProdutoStatus.produzindo,
+          PedidoProdutoStatus.pronto,
         ]
         .map(
           (status) => ColumnSeries<ProdutoStatusGraphModel, String>(
@@ -39,13 +40,14 @@ class ProdutoStatusController {
   }
 
   List<ProdutoStatusGraphModel> getSourceByStatus(PedidoProdutoStatus status) {
-    final ordens = FirestoreClient.ordens.data
+    final pedidos = FirestoreClient.pedidos.data
+        .where((p) => !p.isArchived) // Omitir arquivados 
         .map((e) => e.copyWith())
         .toList();
 
     List<PedidoProdutoModel> pedidosProdutos = [];
-    for (var ordem in ordens) {
-      for (var produto in ordem.produtos) {
+    for (var pedido in pedidos) {
+      for (var produto in pedido.produtos) {
         if (produto.status.getStatusMinified() == status) {
           pedidosProdutos.add(produto.copyWith());
         }

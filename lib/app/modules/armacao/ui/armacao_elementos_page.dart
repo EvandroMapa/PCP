@@ -539,58 +539,12 @@ class _MediaViewerDialog extends StatefulWidget {
   State<_MediaViewerDialog> createState() => _MediaViewerDialogState();
 }
 
-class _MediaViewerDialogState extends State<_MediaViewerDialog> {
-  int _currentIndex = 0;
-  
-  // PDF Controllers
-  PdfControllerPinch? _pdfController;
-  bool _isLoadingPdf = false;
-  bool _hasPdfError = false;
+  // PDF Controllers removidos (foco no nativo do SO)
 
   @override
   void initState() {
     super.initState();
-    // Prioriza o PDF abrindo-o automaticamente se houver múltiplos anexos
-    for (int i = 0; i < widget.elemento.arquivos.length; i++) {
-        final ext = widget.elemento.arquivos[i].extensao.toLowerCase();
-        final tipo = widget.elemento.arquivos[i].tipo.toLowerCase();
-        if (ext == 'pdf' || tipo.contains('pdf')) {
-            _currentIndex = i;
-            break;
-        }
-    }
-    _checkAndLoadPdf();
-  }
-
-  void _checkAndLoadPdf() {
-    final currentArq = widget.elemento.arquivos[_currentIndex];
-    final isPdf = currentArq.extensao.toLowerCase() == 'pdf' || currentArq.tipo.contains('pdf');
-    if (isPdf) {
-      _loadPdfData(currentArq.url);
-    }
-  }
-
-  Future<void> _loadPdfData(String url) async {
-    setState(() {
-      _isLoadingPdf = true;
-      _hasPdfError = false;
-    });
-    try {
-      final response = await Dio().get(
-        url,
-        options: Options(responseType: ResponseType.bytes),
-      );
-      final bytes = Uint8List.fromList(response.data);
-      _pdfController = PdfControllerPinch(
-        document: PdfDocument.openData(bytes),
-      );
-      setState(() => _isLoadingPdf = false);
-    } catch (e) {
-      setState(() {
-        _hasPdfError = true;
-        _isLoadingPdf = false;
-      });
-    }
+    // Prioriza focar o primeiro item da lista
   }
 
   void _close() {
@@ -600,10 +554,20 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
   void _onChangeMedia(int index) {
     setState(() {
       _currentIndex = index;
-      _pdfController?.dispose();
-      _pdfController = null;
     });
-    _checkAndLoadPdf();
+  }
+
+  Future<void> _openNativePdf(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (_) {
+      // Ignorar fallback
+    }
   }
 
   Widget _buildMainContent() {
@@ -611,32 +575,61 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
     final isPdf = currentArq.extensao.toLowerCase() == 'pdf' || currentArq.tipo.contains('pdf');
 
     if (isPdf) {
-      if (_isLoadingPdf) {
-        return Center(
-          child: CircularProgressIndicator(color: Colors.white.withValues(alpha: 0.7)),
-        );
-      }
-      if (_hasPdfError || _pdfController == null) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.broken_image_outlined, size: 64, color: Colors.white.withValues(alpha: 0.3)),
-              const SizedBox(height: 16),
-              Text('Erro ao carregar PDF do servidor', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () => launchUrl(Uri.parse(currentArq.url)),
-                icon: const Icon(Icons.open_in_new),
-                label: const Text('Tentar Abrir no Navegador'),
-              ),
-            ],
+      return Center(
+        child: GestureDetector(
+          onTap: () => _openNativePdf(currentArq.url),
+          child: Container(
+            width: double.infinity,
+            margin: const EdgeInsets.symmetric(horizontal: 40),
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+            decoration: BoxDecoration(
+              color: const Color(0xFF232338),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3), width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.redAccent.withValues(alpha: 0.15),
+                  blurRadius: 40,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.picture_as_pdf_rounded, size: 80, color: Colors.white.withValues(alpha: 0.9)),
+                const SizedBox(height: 24),
+                Text(
+                  'Visualizador Técnico',
+                  style: AppCss.largeBold.setSize(24).setColor(Colors.white),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Este desenho precisa ser aberto no leitor\nnativo do dispositivo para não perder qualidade\nou travar a interface.',
+                  style: AppCss.minimumRegular.setSize(14).setColor(Colors.white.withValues(alpha: 0.6)),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.open_in_new_rounded, color: Colors.white, size: 20),
+                      const SizedBox(width: 12),
+                      Text('ABRIR DESENHO', style: AppCss.mediumBold.setSize(16).setColor(Colors.white)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        );
-      }
-      return PdfViewPinch(
-        controller: _pdfController!,
-        padding: 0,
+        ),
       );
     } else {
       return InteractiveViewer(
