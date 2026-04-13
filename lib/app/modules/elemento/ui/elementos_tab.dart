@@ -209,6 +209,12 @@ class _ElementosTabState extends State<ElementosTab> {
                               color: AppColors.error,
                               variant: _ButtonVariant.outlined,
                               onTap: () async {
+                                final hasInProduction = elementos.any((e) => e.status != ElementoStatus.aguardando);
+                                if (hasInProduction) {
+                                  showInfoDialog('Não é possível limpar a lista porque existem elementos que já estão em produção ou concluídos. Exclua individualmente os itens aguardando.');
+                                  return;
+                                }
+
                                 if (await showConfirmDialog(
                                   'Apagar TODOS os elementos?',
                                   'Esta ação não pode ser desfeita. Deseja continuar?',
@@ -616,54 +622,49 @@ class _ElementoTileState extends State<_ElementoTile> {
                       IconButton(
                         onPressed: () => _showArquivosDialog(context, el),
                         tooltip: 'Anexos (${el.arquivos.length})',
-                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                         padding: EdgeInsets.zero,
-                        splashRadius: 20,
+                        splashRadius: 18,
                         icon: Icon(
                           el.arquivos.isEmpty ? Icons.attach_file_rounded : Icons.attachment_rounded,
                           color: el.arquivos.isEmpty ? Colors.grey[400] : AppColors.secondary,
-                          size: 20,
+                          size: 18,
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 2),
                       // Ações
-                      if (usuarioCtrl.usuario?.podeEditarElementos ?? false)
-                        PopupMenuButton<String>(
-                          icon: Icon(Icons.more_vert_rounded, color: Colors.grey[400], size: 20),
-                          tooltip: 'Ações',
+                      if (usuarioCtrl.usuario?.podeEditarElementos ?? false) ...[
+                        // Botão Editar
+                        IconButton(
+                          onPressed: () => showElementoFormDialog(context,
+                              pedido: widget.pedido, elemento: el),
+                          tooltip: 'Editar',
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                           padding: EdgeInsets.zero,
-                          splashRadius: 20,
-                          constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                          onSelected: (action) async {
-                            if (action == 'edit') {
-                              await showElementoFormDialog(context,
-                                  pedido: widget.pedido, elemento: el);
-                            } else if (action == 'delete') {
-                              await elementoCtrl.onDeleteElemento(el);
-                            }
-                          },
-                          itemBuilder: (_) => [
-                            PopupMenuItem(
-                                value: 'edit',
-                                child: Row(children: [
-                                  Icon(Icons.edit_rounded, size: 18, color: Colors.grey[700]),
-                                  const SizedBox(width: 12),
-                                  const Text('Editar')
-                                ])),
-                            if (el.status == ElementoStatus.aguardando) ...[
-                              const PopupMenuDivider(),
-                              PopupMenuItem(
-                                  value: 'delete',
-                                  child: Row(children: [
-                                    const Icon(Icons.delete_outline_rounded,
-                                        size: 18, color: Colors.red),
-                                    const SizedBox(width: 12),
-                                    const Text('Excluir',
-                                        style: TextStyle(color: Colors.red))
-                                  ])),
-                            ],
-                          ],
+                          splashRadius: 18,
+                          icon: Icon(Icons.edit_rounded, color: Colors.grey[600], size: 18),
                         ),
+                        const SizedBox(width: 2),
+                        // Botão Excluir
+                        IconButton(
+                          onPressed: el.status == ElementoStatus.aguardando
+                              ? () => elementoCtrl.onDeleteElemento(el)
+                              : null,
+                          tooltip: el.status == ElementoStatus.aguardando 
+                              ? 'Excluir' 
+                              : 'Não é possível excluir elementos em produção',
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          padding: EdgeInsets.zero,
+                          splashRadius: 18,
+                          icon: Icon(
+                            Icons.delete_outline_rounded,
+                            color: el.status == ElementoStatus.aguardando 
+                                ? Colors.red[400] 
+                                : Colors.grey[300],
+                            size: 18,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   const SizedBox(width: 4),

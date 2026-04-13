@@ -123,6 +123,7 @@ class ElementoController {
       if (elementosRaw.isEmpty) {
         elementosStream.add(<ElementoModel>[]);
         _validacaoDirty = true;
+        _updateArmacaoResumo(pedidoId, <ElementoModel>[]); // Zera o resumo do Kanban no BD
         return;
       }
 
@@ -365,6 +366,10 @@ class ElementoController {
   // ─── DELETAR TODOS OS ELEMENTOS ───────────────────────────────────────────
   Future<void> onDeleteAllElementos(String pedidoId) async {
     try {
+      if (elementos.any((e) => e.status != ElementoStatus.aguardando)) {
+         showInfoDialog('Operação Negada: Existem elementos que já estão em produção ou concluídos. Remova individualmente os que permite exclusão.');
+         return;
+      }
       showLoadingDialog();
       
       // Resgata os IDs para deletar filhos
