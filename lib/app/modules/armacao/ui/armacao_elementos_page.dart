@@ -540,34 +540,8 @@ class _MediaViewerDialog extends StatefulWidget {
 }
 
 class _MediaViewerDialogState extends State<_MediaViewerDialog> {
-  int _currentIndex = 0;
-  late PageController _pageController;
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController(initialPage: _currentIndex);
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
   void _close() {
     Navigator.pop(context);
-  }
-
-  void _onChangeMedia(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
   }
 
   Future<void> _openNativePdf(String url) async {
@@ -581,99 +555,28 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
     }
   }
 
-  Widget _buildMainContent() {
-    return PageView.builder(
-      controller: _pageController,
-      itemCount: widget.elemento.arquivos.length,
-      onPageChanged: (index) {
-        setState(() => _currentIndex = index);
-      },
-      itemBuilder: (context, index) {
-        final arq = widget.elemento.arquivos[index];
-        final isPdf = arq.extensao.toLowerCase() == 'pdf' || arq.tipo.contains('pdf');
-
-        if (isPdf) {
-          return Center(
-            child: GestureDetector(
-              onTap: () => _openNativePdf(arq.url),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                padding: const EdgeInsets.all(40),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.05),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2), width: 2),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          width: 140,
-                          height: 140,
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.redAccent.withValues(alpha: 0.2),
-                                blurRadius: 30,
-                                spreadRadius: 5,
-                              )
-                            ],
-                          ),
-                        ),
-                        const Icon(
-                          Icons.picture_as_pdf_rounded,
-                          size: 100,
-                          color: Colors.redAccent,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'PDF',
-                      style: AppCss.largeBold.setSize(28).setColor(Colors.white),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Tocar para abrir desenho',
-                      style: AppCss.minimumRegular.setSize(14).setColor(Colors.white.withValues(alpha: 0.5)),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        } else {
-          return InteractiveViewer(
-            minScale: 0.1,
-            maxScale: 15.0,
+  void _showImageFull(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (_) => Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          iconTheme: const IconThemeData(color: Colors.white),
+          elevation: 0,
+        ),
+        body: InteractiveViewer(
+          minScale: 0.1,
+          maxScale: 10.0,
+          child: Center(
             child: Image.network(
-              arq.url,
+              url,
               fit: BoxFit.contain,
-              loadingBuilder: (context, child, loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.white.withValues(alpha: 0.7),
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) => Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.broken_image_outlined, size: 64, color: Colors.white.withValues(alpha: 0.3)),
-                  const SizedBox(height: 16),
-                  Text('Erro ao carregar imagem', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
-                ],
-              ),
+              loadingBuilder: (_, child, prog) => prog == null ? child : const CircularProgressIndicator(color: Colors.white),
             ),
-          );
-        }
-      },
+          ),
+        ),
+      ),
     );
   }
 
@@ -681,56 +584,137 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
   Widget build(BuildContext context) {
     if (widget.elemento.arquivos.isEmpty) return const SizedBox();
 
-    if (_currentIndex >= widget.elemento.arquivos.length) {
-      _currentIndex = 0;
-    }
-
-    final currentArq = widget.elemento.arquivos[_currentIndex];
-    final hasMultiple = widget.elemento.arquivos.length > 1;
-
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E), // Fundo noturno elegante
+      backgroundColor: const Color(0xFF141423),
       body: Stack(
         children: [
-          // ─── CONTEÚDO PRINCIPAL ──────────────────────────────────────
+          // ─── BACKGROUND DECOR ────────────────────────────────────────
           Positioned.fill(
-            bottom: hasMultiple ? 110 : 0,
-            child: _buildMainContent(),
+            child: Opacity(
+              opacity: 0.05,
+              child: Icon(Icons.architecture_rounded, size: 400, color: Colors.white.withValues(alpha: 0.2)),
+            ),
           ),
 
-          // ─── BARRA SUPERIOR (nome do arquivo + botão fechar) ────────
+          // ─── GRID CENTRAL DE ARQUIVOS ────────────────────────────────
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 100),
+              child: Wrap(
+                spacing: 32,
+                runSpacing: 32,
+                alignment: WrapAlignment.center,
+                children: widget.elemento.arquivos.map((arq) {
+                  final isPdf = arq.extensao.toLowerCase() == 'pdf' || arq.tipo.contains('pdf');
+
+                  return GestureDetector(
+                    onTap: () {
+                      if (isPdf) {
+                        _openNativePdf(arq.url);
+                      } else {
+                        _showImageFull(context, arq.url);
+                      }
+                    },
+                    child: Container(
+                      width: 220, // Cards bem grandes no meio da tela
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF23233D),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: isPdf ? Colors.redAccent.withValues(alpha: 0.3) : Colors.blueAccent.withValues(alpha: 0.3),
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.4),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          )
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            height: 140,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: isPdf
+                                ? const Center(
+                                    child: Icon(
+                                      Icons.picture_as_pdf_rounded,
+                                      size: 70,
+                                      color: Colors.redAccent,
+                                    ),
+                                  )
+                                : Image.network(
+                                    arq.url,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.white24, size: 40),
+                                  ),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            arq.nome.toUpperCase(),
+                            style: AppCss.mediumBold.setSize(14).setColor(Colors.white),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                isPdf ? Icons.open_in_new_rounded : Icons.fullscreen_rounded,
+                                size: 16,
+                                color: isPdf ? Colors.redAccent : Colors.blueAccent,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                isPdf ? 'ABRIR PDF' : 'VER IMAGEM',
+                                style: AppCss.minimumBold.setSize(12).setColor(isPdf ? Colors.redAccent : Colors.blueAccent),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+
+          // ─── HEADER ───────────────────────────────────────────────
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             child: Container(
               padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + 8,
-                left: 20,
-                right: 12,
-                bottom: 12,
+                top: MediaQuery.of(context).padding.top + 16,
+                left: 24,
+                right: 24,
+                bottom: 20,
               ),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withValues(alpha: 0.8),
-                    Colors.transparent,
+                    const Color(0xFF141423).withValues(alpha: 0.95),
+                    const Color(0xFF141423).withValues(alpha: 0.0),
                   ],
                 ),
               ),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Icon(
-                    currentArq.tipo.contains('pdf')
-                        ? Icons.picture_as_pdf_rounded
-                        : Icons.image_outlined,
-                    color: Colors.white.withValues(alpha: 0.9),
-                    size: 26,
-                  ),
-                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -738,154 +722,35 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
                       children: [
                         Text(
                           widget.elemento.nome.toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1.2,
-                            shadows: [Shadow(color: Colors.black54, blurRadius: 4)],
-                          ),
+                          style: AppCss.largeBold.setSize(24).setColor(Colors.white),
                         ),
+                        const SizedBox(height: 4),
                         Text(
-                          currentArq.nome,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            fontSize: 12,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          'DESENHOS TÉCNICOS DISPONÍVEIS',
+                          style: AppCss.minimumRegular.setSize(12).setColor(Colors.white.withValues(alpha: 0.5)).copyWith(letterSpacing: 2),
                         ),
                       ],
                     ),
                   ),
-                  if (hasMultiple)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  GestureDetector(
+                    onTap: _close,
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.white.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
                         border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                       ),
-                      child: Text(
-                        '${_currentIndex + 1} / ${widget.elemento.arquivos.length}',
-                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  const SizedBox(width: 16),
-                  Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(50),
-                      onTap: _close,
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryMain,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primaryMain.withValues(alpha: 0.4),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            )
-                          ],
-                        ),
-                        child: const Icon(Icons.close, color: Colors.white, size: 24),
-                      ),
+                      child: const Icon(Icons.close, color: Colors.white, size: 28),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-
-          // ─── BARRA DE THUMBNAILS (inferior) ─────────────────────────
-          if (hasMultiple)
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: 110,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.9),
-                      Colors.black.withValues(alpha: 0.5),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-                padding: const EdgeInsets.only(bottom: 20, top: 15),
-                child: Center(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    itemCount: widget.elemento.arquivos.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 14),
-                    itemBuilder: (ctx, i) {
-                      final arq = widget.elemento.arquivos[i];
-                      final arqIsPdf = arq.extensao.toLowerCase() == 'pdf' || arq.tipo.contains('pdf');
-                      final isSelected = i == _currentIndex;
-
-                      return GestureDetector(
-                        onTap: () => _onChangeMedia(i),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
-                          curve: Curves.easeOutCubic,
-                          width: isSelected ? 80 : 65,
-                          height: isSelected ? 80 : 65,
-                          margin: EdgeInsets.only(top: isSelected ? 0 : 7), // Alinha na base
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2E2E3A),
-                            border: Border.all(
-                              color: isSelected ? AppColors.primaryMain : Colors.white.withValues(alpha: 0.2),
-                              width: isSelected ? 3 : 1,
-                            ),
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: isSelected
-                                ? [BoxShadow(color: AppColors.primaryMain.withValues(alpha: 0.5), blurRadius: 15, spreadRadius: 1)]
-                                : [],
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              if (arqIsPdf)
-                                Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.picture_as_pdf_rounded, 
-                                        color: isSelected ? Colors.redAccent : Colors.redAccent.withValues(alpha: 0.6), 
-                                        size: isSelected ? 32 : 24,
-                                      ),
-                                      if (isSelected) const SizedBox(height: 4),
-                                      if (isSelected) 
-                                        const Text('PDF', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white70)),
-                                    ],
-                                  ),
-                                )
-                              else
-                                Image.network(arq.url, fit: BoxFit.cover),
-                              
-                              if (!isSelected)
-                                Container(color: Colors.black.withValues(alpha: 0.4)),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );
   }
 }
+
