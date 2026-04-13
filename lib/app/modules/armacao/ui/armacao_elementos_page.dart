@@ -541,11 +541,18 @@ class _MediaViewerDialog extends StatefulWidget {
 
 class _MediaViewerDialogState extends State<_MediaViewerDialog> {
   int _currentIndex = 0;
+  late PageController _pageController;
 
   @override
   void initState() {
     super.initState();
-    // Prioriza focar o primeiro item da lista
+    _pageController = PageController(initialPage: _currentIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   void _close() {
@@ -556,108 +563,118 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
     setState(() {
       _currentIndex = index;
     });
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   Future<void> _openNativePdf(String url) async {
     try {
       final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        await launchUrl(uri, mode: LaunchMode.platformDefault);
-      }
+      await launchUrl(uri, mode: LaunchMode.externalNonBrowserApplication);
     } catch (_) {
-      // Ignorar fallback
+      try {
+        await launchUrl(Uri.parse(url), mode: LaunchMode.platformDefault);
+      } catch (__) {}
     }
   }
 
   Widget _buildMainContent() {
-    final currentArq = widget.elemento.arquivos[_currentIndex];
-    final isPdf = currentArq.extensao.toLowerCase() == 'pdf' || currentArq.tipo.contains('pdf');
+    return PageView.builder(
+      controller: _pageController,
+      itemCount: widget.elemento.arquivos.length,
+      onPageChanged: (index) {
+        setState(() => _currentIndex = index);
+      },
+      itemBuilder: (context, index) {
+        final arq = widget.elemento.arquivos[index];
+        final isPdf = arq.extensao.toLowerCase() == 'pdf' || arq.tipo.contains('pdf');
 
-    if (isPdf) {
-      return Center(
-        child: GestureDetector(
-          onTap: () => _openNativePdf(currentArq.url),
-          child: Container(
-            width: double.infinity,
-            margin: const EdgeInsets.symmetric(horizontal: 40),
-            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-            decoration: BoxDecoration(
-              color: const Color(0xFF232338),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3), width: 2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.redAccent.withValues(alpha: 0.15),
-                  blurRadius: 40,
-                  spreadRadius: 5,
+        if (isPdf) {
+          return Center(
+            child: GestureDetector(
+              onTap: () => _openNativePdf(arq.url),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                padding: const EdgeInsets.all(40),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2), width: 2),
                 ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.picture_as_pdf_rounded, size: 80, color: Colors.white.withValues(alpha: 0.9)),
-                const SizedBox(height: 24),
-                Text(
-                  'Visualizador Técnico',
-                  style: AppCss.largeBold.setSize(24).setColor(Colors.white),
-                  textAlign: TextAlign.center,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 140,
+                          height: 140,
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.redAccent.withValues(alpha: 0.2),
+                                blurRadius: 30,
+                                spreadRadius: 5,
+                              )
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.picture_as_pdf_rounded,
+                          size: 100,
+                          color: Colors.redAccent,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'PDF',
+                      style: AppCss.largeBold.setSize(28).setColor(Colors.white),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tocar para abrir desenho',
+                      style: AppCss.minimumRegular.setSize(14).setColor(Colors.white.withValues(alpha: 0.5)),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  'Este desenho precisa ser aberto no leitor\nnativo do dispositivo para não perder qualidade\nou travar a interface.',
-                  style: AppCss.minimumRegular.setSize(14).setColor(Colors.white.withValues(alpha: 0.6)),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: Colors.redAccent,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.open_in_new_rounded, color: Colors.white, size: 20),
-                      const SizedBox(width: 12),
-                      Text('ABRIR DESENHO', style: AppCss.mediumBold.setSize(16).setColor(Colors.white)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    } else {
-      return InteractiveViewer(
-        minScale: 0.1,
-        maxScale: 15.0,
-        child: Image.network(
-          currentArq.url,
-          fit: BoxFit.contain,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Center(
-              child: CircularProgressIndicator(
-                color: Colors.white.withValues(alpha: 0.7),
               ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) => Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.broken_image_outlined, size: 64, color: Colors.white.withValues(alpha: 0.3)),
-              const SizedBox(height: 16),
-              Text('Erro ao carregar imagem', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
-            ],
-          ),
-        ),
-      );
-    }
+            ),
+          );
+        } else {
+          return InteractiveViewer(
+            minScale: 0.1,
+            maxScale: 15.0,
+            child: Image.network(
+              arq.url,
+              fit: BoxFit.contain,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white.withValues(alpha: 0.7),
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) => Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.broken_image_outlined, size: 64, color: Colors.white.withValues(alpha: 0.3)),
+                  const SizedBox(height: 16),
+                  Text('Erro ao carregar imagem', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+                ],
+              ),
+            ),
+          );
+        }
+      },
+    );
   }
 
   @override
