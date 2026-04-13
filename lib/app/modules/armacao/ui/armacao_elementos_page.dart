@@ -21,6 +21,12 @@ class ArmacaoElementosPage extends StatefulWidget {
 class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
   bool _isLoading = true;
   final ScrollController _scrollController = ScrollController();
+  // Filtros de visibilidade por status (Pronto oculto por padrão no Armador)
+  final Map<ElementoStatus, bool> _statusVisivel = {
+    ElementoStatus.aguardando: true,
+    ElementoStatus.armando: true,
+    ElementoStatus.pronto: false,
+  };
 
   @override
   void initState() {
@@ -120,13 +126,26 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
 
                 return Column(
                   children: [
-                    _ResumoProducaoBar(pedido: currentPedido),
+                    _ResumoProducaoBar(
+                      pedido: currentPedido,
+                      statusVisivel: _statusVisivel,
+                      onToggle: (status) => setState(() => _statusVisivel[status] = !(_statusVisivel[status] ?? true)),
+                    ),
                     Expanded(
                       child: StreamOut<List<ElementoModel>>(
                         stream: armacaoCtrl.elementosStream.listen,
-                        builder: (_, elementos) => elementos.isEmpty
-                            ? const EmptyData(message: 'Nenhum elemento cadastrado!')
-                            : Scrollbar(
+                        builder: (_, elementos) {
+                          final filtrados = elementos.where((e) {
+                            if (e.isProntoParcial) {
+                              return (_statusVisivel[ElementoStatus.armando] ?? true) ||
+                                     (_statusVisivel[ElementoStatus.pronto] ?? true);
+                            }
+                            return _statusVisivel[e.status] ?? true;
+                          }).toList();
+                          if (filtrados.isEmpty) {
+                            return const EmptyData(message: 'Nenhum elemento visível com os filtros ativos.');
+                          }
+                          return Scrollbar(
                                 controller: _scrollController,
                                 thumbVisibility: true,
                                 trackVisibility: true,
@@ -139,9 +158,9 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                                     crossAxisSpacing: 20,
                                     mainAxisSpacing: 20,
                                   ),
-                                  itemCount: elementos.length,
+                                  itemCount: filtrados.length,
                                   itemBuilder: (context, index) {
-                                    final elemento = elementos[index];
+                                    final elemento = filtrados[index];
                                     return _ElementoArmacaoCard(
                                       elemento: elemento,
                                       onStatusPressed: () async {
@@ -151,7 +170,8 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                                     );
                                   },
                                 ),
-                              ),
+                              );
+                        },
                       ),
                     ),
                   ],
@@ -232,7 +252,9 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
 
 class _ResumoProducaoBar extends StatelessWidget {
   final PedidoModel pedido;
-  const _ResumoProducaoBar({required this.pedido});
+  final Map<ElementoStatus, bool> statusVisivel;
+  final ValueChanged<ElementoStatus> onToggle;
+  const _ResumoProducaoBar({required this.pedido, required this.statusVisivel, required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
@@ -260,23 +282,11 @@ class _ResumoProducaoBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
       child: Row(
         children: [
-          _buildResumoItem(
-            'AGUARDANDO',
-            ElementoStatus.aguardando,
-            details['aguardando'],
-          ),
+          _buildResumoItem('AGUARDANDO', ElementoStatus.aguardando, details['aguardando']),
           const SizedBox(width: 16),
-          _buildResumoItem(
-            'ARMANDO',
-            ElementoStatus.armando,
-            details['armando'],
-          ),
+          _buildResumoItem('ARMANDO', ElementoStatus.armando, details['armando']),
           const SizedBox(width: 16),
-          _buildResumoItem(
-            'PRONTO',
-            ElementoStatus.pronto,
-            details['pronto'],
-          ),
+          _buildResumoItem('PRONTO', ElementoStatus.pronto, details['pronto']),
         ],
       ),
     );
@@ -285,25 +295,40 @@ class _ResumoProducaoBar extends StatelessWidget {
   Widget _buildResumoItem(String label, ElementoStatus status, Map<String, dynamic> data) {
     final double prcntQtd = (data['prcnt_qtd'] ?? 0.0) * 100;
     final double prcntPeso = (data['prcnt_peso'] ?? 0.0) * 100;
+    final bool isVisible = statusVisivel[status] ?? true;
 
     return Expanded(
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: status.backgroundColor,
+          color: isVisible ? status.backgroundColor : Colors.grey[100],
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.black, width: 1.5),
+          border: Border.all(color: isVisible ? Colors.black : Colors.grey[300]!, width: 1.5),
         ),
         child: Column(
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              color: Colors.grey[800], // Tarja Chumbo
-              child: Text(
-                label,
-                textAlign: TextAlign.center,
-                style: AppCss.largeBold.setSize(15).setColor(Colors.white),
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+              color: isVisible ? Colors.grey[800] : Colors.grey[400],
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: AppCss.largeBold.setSize(15).setColor(Colors.white),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => onToggle(status),
+                    child: Icon(
+                      isVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                      size: 16,
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
               ),
             ),
             Padding(
@@ -314,20 +339,20 @@ class _ResumoProducaoBar extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('ELEMENTOS', style: AppCss.largeBold.setSize(12).setColor(Colors.black)),
+                      Text('ELEMENTOS', style: AppCss.largeBold.setSize(12).setColor(isVisible ? Colors.black : Colors.grey[400]!)),
                       Text(
                         '${data['qtd']} (${prcntQtd.toStringAsFixed(0)}%)',
-                        style: AppCss.largeBold.setSize(18).setColor(Colors.black),
+                        style: AppCss.largeBold.setSize(18).setColor(isVisible ? Colors.black : Colors.grey[400]!),
                       ),
                     ],
                   ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text('PESO (KG)', style: AppCss.largeBold.setSize(12).setColor(Colors.black)),
+                      Text('PESO (KG)', style: AppCss.largeBold.setSize(12).setColor(isVisible ? Colors.black : Colors.grey[400]!)),
                       Text(
                         '${data['peso'].toStringAsFixed(1)} (${prcntPeso.toStringAsFixed(0)}%)',
-                        style: AppCss.largeBold.setSize(18).setColor(Colors.black),
+                        style: AppCss.largeBold.setSize(18).setColor(isVisible ? Colors.black : Colors.grey[400]!),
                       ),
                     ],
                   ),
