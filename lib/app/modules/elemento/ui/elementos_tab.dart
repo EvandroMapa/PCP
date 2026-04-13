@@ -641,6 +641,7 @@ class _ElementoTileState extends State<_ElementoTile> {
                             } else if (action == 'delete') {
                               await elementoCtrl.onDeleteElemento(el);
                             }
+                          },
                           itemBuilder: (_) => [
                             PopupMenuItem(
                                 value: 'edit',
