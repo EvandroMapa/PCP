@@ -259,15 +259,7 @@ class ArmacaoController {
       }
     }
 
-    // 3. Persistência
-    await SupabaseService.client
-        .from('elementos')
-        .update({
-          'status': statusFinal.name,
-          'qtde_pronto': novoQtdePronto,
-        }).eq('id', elemento.id);
-
-    // 4. Atualizar memória local robusta
+    // 3. Atualizar memória local ANTES da persistência (evita flash por realtime)
     final elementosLocal = elementosStream.value.toList();
     final index = elementosLocal.indexWhere((e) => e.id == elemento.id);
     if (index != -1) {
@@ -280,11 +272,20 @@ class ArmacaoController {
     
     // Atualizar no pedido também caso algo o leia diretamente
     final idxPedido = pedido.elementos.indexWhere((e) => e.id == elemento.id);
-    if (idxPedido != -1) {
+    if (idxPedido != -1 && index != -1) {
       pedido.elementos[idxPedido] = elementosLocal[index];
     }
-    
+
+    // 4. Calcular e aplicar o resumo localmente (UI já reflete antes do banco)
     await updatePedidoSummary(pedido);
+
+    // 5. Persistência no Supabase (o realtime vai trazer o mesmo dado que já está na tela)
+    await SupabaseService.client
+        .from('elementos')
+        .update({
+          'status': statusFinal.name,
+          'qtde_pronto': novoQtdePronto,
+        }).eq('id', elemento.id);
 
     // 5. Finalização de Pedido inteiro
     final todosProntos = pedido.elementos.every(
