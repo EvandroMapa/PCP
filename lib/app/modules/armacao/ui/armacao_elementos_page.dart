@@ -5,6 +5,7 @@ import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
+import 'package:aco_plus/app/core/services/fullscreen_service.dart';
 import 'package:aco_plus/app/modules/armacao/armacao_controller.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
