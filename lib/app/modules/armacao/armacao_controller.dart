@@ -248,7 +248,7 @@ class ArmacaoController {
 
     // 2. Verificação de Limite de Produção Simultânea
     if (statusFinal == ElementoStatus.armando && elemento.status != ElementoStatus.armando) {
-      final countArmando = pedido.elementos.where((e) => e.status == ElementoStatus.armando).length;
+      final countArmando = elementosStream.value.where((e) => e.status == ElementoStatus.armando).length;
       final limit = PreferencesService.maxElementosProducao.value;
 
       if (countArmando >= limit) {
@@ -267,14 +267,23 @@ class ArmacaoController {
           'qtde_pronto': novoQtdePronto,
         }).eq('id', elemento.id);
 
-    // 4. Atualizar memória local
-    final index = pedido.elementos.indexWhere((e) => e.id == elemento.id);
+    // 4. Atualizar memória local robusta
+    final elementosLocal = elementosStream.value.toList();
+    final index = elementosLocal.indexWhere((e) => e.id == elemento.id);
     if (index != -1) {
-      pedido.elementos[index] = elemento.copyWith(
+      elementosLocal[index] = elemento.copyWith(
         status: statusFinal,
         qtdePronto: novoQtdePronto,
       );
+      elementosStream.add(elementosLocal);
     }
+    
+    // Atualizar no pedido também caso algo o leia diretamente
+    final idxPedido = pedido.elementos.indexWhere((e) => e.id == elemento.id);
+    if (idxPedido != -1) {
+      pedido.elementos[idxPedido] = elementosLocal[index];
+    }
+    
     await updatePedidoSummary(pedido);
 
     // 5. Finalização de Pedido inteiro
@@ -407,7 +416,7 @@ class ArmacaoController {
         ElementoStatus.pronto: 0,
       };
 
-      for (final e in pedido.elementos) {
+      for (final e in elementosStream.value) {
         totalQtd += e.qtde;
         totalPeso += e.pesoTotal;
 
