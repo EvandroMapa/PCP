@@ -61,7 +61,16 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
       return;
     }
     
-    // 2. Visualização em "Telona" Maximazada
+    final arquivo = elemento.arquivos.first;
+    final isPdf = arquivo.extensao.toLowerCase() == 'pdf' || arquivo.tipo.contains('pdf');
+
+    // Se for PDF, o navegador lida de forma absurdamente melhor com o nativo em uma nova guia
+    if (isPdf) {
+      openInNewTab(arquivo.url);
+      return;
+    }
+
+    // 2. Visualização em "Telona" Maximazada (Apenas para Imagens)
     await showGeneralDialog(
       context: context,
       barrierDismissible: false,
@@ -77,7 +86,7 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                 minScale: 0.1,
                 maxScale: 15.0,
                 child: Image.network(
-                  elemento.arquivos.first.url,
+                  arquivo.url,
                   fit: BoxFit.contain,
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;

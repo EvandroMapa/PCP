@@ -941,12 +941,18 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
 
   @override
   Widget build(BuildContext context) {
+    // Busca a edição mais atual do elemento diretamente do cache centralizado
+    final elementoSync = elementoCtrl.elementos.firstWhere(
+      (e) => e.id == widget.elemento.id,
+      orElse: () => widget.elemento,
+    );
+
     return AlertDialog(
       title: Row(
         children: [
           Icon(Icons.attachment_rounded, color: AppColors.secondary),
           const SizedBox(width: 12),
-          Expanded(child: Text('Anexos: ${widget.elemento.nome}')),
+          Expanded(child: Text('Anexos: ${elementoSync.nome}')),
         ],
       ),
       content: SizedBox(
@@ -954,7 +960,7 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (widget.elemento.arquivos.isEmpty)
+            if (elementoSync.arquivos.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 40),
                 child: Column(
@@ -969,9 +975,9 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
               Flexible(
                 child: ListView.builder(
                   shrinkWrap: true,
-                  itemCount: widget.elemento.arquivos.length,
+                  itemCount: elementoSync.arquivos.length,
                   itemBuilder: (_, i) {
-                    final arq = widget.elemento.arquivos[i];
+                    final arq = elementoSync.arquivos[i];
                     return ListTile(
                       leading: Icon(
                         arq.tipo.contains('image') ? Icons.image_outlined : Icons.picture_as_pdf_outlined,

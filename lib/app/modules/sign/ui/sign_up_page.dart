@@ -43,6 +43,8 @@ class SignUpPageState extends State<SignUpPage> {
               AppField(
                 controller: email,
                 label: 'Login',
+                action: TextInputAction.next,
+                onEditingComplete: () => FocusScope.of(context).requestFocus(senha.focus),
               ),
               const H(12),
               AppField(
@@ -51,6 +53,11 @@ class SignUpPageState extends State<SignUpPage> {
                 obscure: true,
                 maxLines: 1,
                 minLines: 1,
+                action: TextInputAction.go,
+                onEditingComplete: () {
+                  FocusScope.of(context).unfocus();
+                  signCtrl.onClickLogin(email.text, senha.text, _rememberMe);
+                },
               ),
               const H(8),
               Theme(
