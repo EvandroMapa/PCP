@@ -9,6 +9,8 @@ import 'package:aco_plus/app/core/services/fullscreen_service.dart';
 import 'package:aco_plus/app/modules/armacao/armacao_controller.dart';
 import 'package:dio/dio.dart';
 import 'package:pdfx/pdfx.dart';
+import 'dart:typed_data';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
