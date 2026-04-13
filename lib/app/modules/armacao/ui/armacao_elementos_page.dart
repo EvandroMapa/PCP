@@ -167,6 +167,7 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                                   itemBuilder: (context, index) {
                                     final elemento = filtrados[index];
                                     return _ElementoArmacaoCard(
+                                      key: ValueKey(elemento.id),
                                       elemento: elemento,
                                       onStatusPressed: () async {
                                         if (elemento.qtde > 1) {
@@ -536,6 +537,20 @@ class _MediaViewerDialog extends StatefulWidget {
 class _MediaViewerDialogState extends State<_MediaViewerDialog> {
   int _currentIndex = 0;
   final Map<String, bool> _registeredFactories = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // Prioriza o PDF abrindo-o automaticamente se houver múltiplos anexos
+    for (int i = 0; i < widget.elemento.arquivos.length; i++) {
+        final ext = widget.elemento.arquivos[i].extensao.toLowerCase();
+        final tipo = widget.elemento.arquivos[i].tipo.toLowerCase();
+        if (ext == 'pdf' || tipo.contains('pdf')) {
+            _currentIndex = i;
+            break;
+        }
+    }
+  }
 
   void _close() {
     Navigator.pop(context);

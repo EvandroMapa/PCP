@@ -276,14 +276,6 @@ class ArmacaoController {
       pedido.elementos[idxPedido] = elementosLocal[index];
     }
 
-    // Injetar no fluxo GLOBAL para evitar que o realtime atropele a tela antes do tempo
-    final elementosGlobal = AppSupabaseClient.elementos.dataStream.value.toList();
-    final idxGlobalElem = elementosGlobal.indexWhere((e) => e.id == elemento.id);
-    if (idxGlobalElem != -1 && index != -1) {
-      elementosGlobal[idxGlobalElem] = elementosLocal[index] as ElementoModel;
-      AppSupabaseClient.elementos.dataStream.add(elementosGlobal);
-    }
-
     // 4. Calcular e aplicar o resumo localmente (UI já reflete antes do banco)
     await updatePedidoSummary(pedido);
 
@@ -485,14 +477,6 @@ class ArmacaoController {
       // Atualizar localmente no objeto pedido para UI refletir
       pedido.armacaoResumo.clear();
       pedido.armacaoResumo.addAll(resume);
-
-      // Atualizar o pedido no stream GLOBAL para que o StreamOut não pisque
-      final pedidosAtual = AppSupabaseClient.pedidos.dataStream.value.toList();
-      final idxGlobal = pedidosAtual.indexWhere((p) => p.id == pedido.id);
-      if (idxGlobal != -1) {
-        pedidosAtual[idxGlobal] = pedido;
-        AppSupabaseClient.pedidos.dataStream.add(pedidosAtual);
-      }
 
       // Só agora persiste no banco (realtime trará o mesmo dado que já está na tela)
       await SupabaseService.client
