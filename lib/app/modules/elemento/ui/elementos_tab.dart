@@ -26,6 +26,12 @@ class ElementosTab extends StatefulWidget {
 
 class _ElementosTabState extends State<ElementosTab> {
   bool _isLoading = false;
+  // Filtros de visibilidade por status (true = visível)
+  final Map<ElementoStatus, bool> _statusVisivel = {
+    ElementoStatus.aguardando: true,
+    ElementoStatus.armando: true,
+    ElementoStatus.pronto: true,
+  };
 
   @override
   void initState() {
@@ -325,17 +331,31 @@ class _ElementosTabState extends State<ElementosTab> {
               )
             else
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
-                  itemCount: elementos.length,
-                  itemBuilder: (_, i) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _ElementoTile(
-                      elemento: elementos[i],
-                      pedido: widget.pedido,
-                      fmt: _fmt,
-                    ),
-                  ),
+                child: Builder(
+                  builder: (_) {
+                    final filtrados = elementos.where((e) {
+                      // Para parcial (armando com qtdePronto > 0), consideramos como armando
+                      return _statusVisivel[e.status] ?? true;
+                    }).toList();
+                    if (filtrados.isEmpty) {
+                      return Center(
+                        child: Text('Nenhum elemento visível com os filtros ativos',
+                            style: AppCss.mediumRegular.copyWith(color: Colors.grey[500])),
+                      );
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                      itemCount: filtrados.length,
+                      itemBuilder: (_, i) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _ElementoTile(
+                          elemento: filtrados[i],
+                          pedido: widget.pedido,
+                          fmt: _fmt,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
           ],
@@ -400,14 +420,30 @@ class _ElementosTabState extends State<ElementosTab> {
           ),
           child: Column(
             children: [
-              Text(
-                status.label.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                  color: status.color,
-                  letterSpacing: 1,
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Text(
+                      status.label.toUpperCase(),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: (_statusVisivel[status] ?? true) ? status.color : Colors.grey[400],
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => setState(() => _statusVisivel[status] = !(_statusVisivel[status] ?? true)),
+                    child: Icon(
+                      (_statusVisivel[status] ?? true) ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                      size: 14,
+                      color: (_statusVisivel[status] ?? true) ? status.color : Colors.grey[400],
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 6),
               Row(
