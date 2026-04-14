@@ -7,11 +7,6 @@ import 'package:aco_plus/app/core/components/app_field.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/app_text_button.dart';
 import 'package:aco_plus/app/core/components/divisor.dart';
-import 'package:aco_plus/app/core/components/h.dart';
-import 'package:aco_plus/app/core/components/item_label.dart';
-import 'package:aco_plus/app/core/components/row_itens_label.dart';
-import 'package:aco_plus/app/core/components/stream_out.dart';
-import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
@@ -21,7 +16,6 @@ import 'package:aco_plus/app/modules/materia_prima/ui/materias_primas_create_pag
 import 'package:aco_plus/app/modules/ordem/ordem_controller.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem/components/ordem_status_widget.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem/components/produto/ordem_pedido_produto_widget.dart';
-import 'package:aco_plus/app/modules/ordem/ui/ordem/components/timeline/ordem_timeline_widget.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem_create_page.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem_exportar_pdf_tipo_bottom.dart';
 import 'package:aco_plus/app/modules/ordem/view_models/ordem_view_model.dart';
@@ -142,8 +136,6 @@ class _OrdemPageState extends State<OrdemPage> {
             child: Column(
               children: [
                 _descriptionWidget(ordem),
-                if (ordem.history.isNotEmpty) const Divisor(),
-                if (ordem.history.isNotEmpty) OrdemTimelineWidget(ordem: ordem),
                 const Divisor(),
                 OrdemStatusWidget(ordem: ordem),
                 for (final produto in ordem.produtos)
@@ -167,22 +159,43 @@ class _OrdemPageState extends State<OrdemPage> {
     );
   }
 
-  Padding _descriptionWidget(OrdemModel ordem) {
+  Widget _descriptionWidget(OrdemModel ordem) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          RowItensLabel([
-            ItemLabel(
-              'Produto',
-              '${ordem.produto.nome} - ${ordem.produto.descricao}',
-            ),
-            ItemLabel('Iniciada', ordem.createdAt.text()),
-            if (ordem.endAt != null)
-              ItemLabel('Finalizada', ordem.endAt.text()),
-          ]),
-          const H(16),
+          // Linha: Produto + Data
+          Row(
+            children: [
+              Expanded(
+                child: _infoCard(
+                  icon: Icons.straighten_outlined,
+                  label: 'Produto',
+                  value: '${ordem.produto.nome} · ${ordem.produto.descricao}',
+                  color: AppColors.primaryMain,
+                ),
+              ),
+              const SizedBox(width: 10),
+              _infoCard(
+                icon: Icons.calendar_today_outlined,
+                label: 'Iniciada',
+                value: ordem.createdAt.text(),
+                color: Colors.blueGrey,
+              ),
+              if (ordem.endAt != null) ...[
+                const SizedBox(width: 10),
+                _infoCard(
+                  icon: Icons.check_circle_outline,
+                  label: 'Finalizada',
+                  value: ordem.endAt.text(),
+                  color: Colors.green,
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 10),
+          // Matéria Prima
           InkWell(
             onTap: () async {
               if (ordem.materiaPrima == null) return;
@@ -191,13 +204,64 @@ class _OrdemPageState extends State<OrdemPage> {
                 push(context, MateriaPrimaCreatePage(materiaPrima: result));
               }
             },
-            child: ItemLabel(
-              'Matéria Prima',
-              ordem.materiaPrima != null
+            borderRadius: BorderRadius.circular(12),
+            child: _infoCard(
+              icon: Icons.inventory_2_outlined,
+              label: 'Matéria Prima',
+              value: ordem.materiaPrima != null
                   ? ordem.materiaPrima!.label
                   : 'Não especificado',
+              color: Colors.orange,
+              fullWidth: true,
+              trailing: ordem.materiaPrima != null
+                  ? const Icon(Icons.chevron_right, size: 16, color: Colors.orange)
+                  : null,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+    bool fullWidth = false,
+    Widget? trailing,
+  }) {
+    return Container(
+      width: fullWidth ? double.infinity : null,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label.toUpperCase(),
+                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: color.withValues(alpha: 0.7), letterSpacing: 1),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: AppCss.minimumBold.setSize(12).setColor(Colors.grey[800]!),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          if (trailing != null) trailing,
         ],
       ),
     );

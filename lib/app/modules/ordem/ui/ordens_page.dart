@@ -263,111 +263,161 @@ class _OrdensPageState extends State<OrdensPage> {
   }
 
   Widget _itemOrdemWidget(OrdemModel ordem) {
-    return InkWell(
+    final isFreezed = ordem.freezed.isFreezed;
+    final statusColor = isFreezed ? Colors.grey[500]! : ordem.status.color;
+
+    return Padding(
       key: ValueKey(ordem.id),
-      onTap: () => push(context, OrdemPage(ordem.id, ordem: ordem)),
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
-        ),
-        child: Stack(
-          children: [
-            Container(
-              color: ordem.freezed.isFreezed ? Colors.grey[200]! : Colors.white,
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Icon(ordem.icon),
-                  const W(16),
-                  Expanded(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: InkWell(
+        onTap: () => push(context, OrdemPage(ordem.id, ordem: ordem)),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isFreezed ? Colors.grey[100] : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: statusColor.withValues(alpha: 0.25)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: IntrinsicHeight(
+            child: Row(
+              children: [
+                // Borda lateral colorida pelo status
+                Container(width: 5, color: statusColor),
+                // Conteúdo principal
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(ordem.localizator, style: AppCss.mediumBold),
-                        Text(
-                          '${ordem.produto.nome} ${ordem.produto.descricao} - ${ordem.produtos.fold(0.0, (previousValue, element) => previousValue + element.qtde).toKg()}',
-                          style: AppCss.minimumRegular
-                              .setSize(11)
-                              .setColor(AppColors.black),
+                        // Header: número + posição + badge status
+                        Row(
+                          children: [
+                            Text(
+                              ordem.localizator,
+                              style: AppCss.largeBold.setSize(17),
+                            ),
+                            if (!isFreezed && ordem.beltIndex != null && usuario.isNotOperador)
+                              Container(
+                                margin: const EdgeInsets.only(left: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryMain.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  '${ordem.beltIndex! + 1}ª na fila',
+                                  style: AppCss.minimumBold.setSize(10).setColor(AppColors.primaryMain),
+                                ),
+                              ),
+                            const Spacer(),
+                            // Badge status
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: statusColor.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                              ),
+                              child: Text(
+                                isFreezed ? 'CONGELADA' : ordem.status.label.toUpperCase(),
+                                style: AppCss.minimumBold.setSize(10).setColor(statusColor),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        // Produto + bitola
+                        Row(
+                          children: [
+                            Icon(Icons.circle, size: 6, color: Colors.grey[400]),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                '${ordem.produto.nome} · ${ordem.produto.descricao}',
+                                style: AppCss.minimumRegular.setSize(12).setColor(Colors.grey[700]!),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                         if (ordem.materiaPrima != null) ...[
-                          Text(
-                            ordem.materiaPrima!.label,
-                            style: AppCss.minimumRegular
-                                .setSize(11)
-                                .setColor(AppColors.black),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Icon(Icons.inventory_2_outlined, size: 12, color: Colors.grey[400]),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  ordem.materiaPrima!.label,
+                                  style: AppCss.minimumRegular.setSize(11).setColor(Colors.grey[500]!),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
-                        Text(
-                          'Criada ${ordem.createdAt.textHour()}',
-                          style: AppCss.minimumRegular
-                              .setSize(11)
-                              .setColor(AppColors.neutralMedium),
+                        const SizedBox(height: 8),
+                        // Footer: peso total + data + gráficos
+                        Row(
+                          children: [
+                            // Peso total
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryMain.withValues(alpha: 0.06),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                ordem.produtos.fold(0.0, (prev, e) => prev + e.qtde).toKg(),
+                                style: AppCss.mediumBold.setSize(13).setColor(AppColors.primaryMain),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              ordem.createdAt.textHour(),
+                              style: AppCss.minimumRegular.setSize(11).setColor(Colors.grey[400]!),
+                            ),
+                            const Spacer(),
+                            // Gráficos de progresso
+                            if (ordem.produtos.isNotEmpty)
+                              Row(
+                                children: [
+                                  _progressChartWidget(PedidoProdutoStatus.aguardandoProducao, ordem.getPrcntgAguardando(), isFreezed),
+                                  const SizedBox(width: 12),
+                                  _progressChartWidget(PedidoProdutoStatus.produzindo, ordem.getPrcntgProduzindo(), isFreezed),
+                                  const SizedBox(width: 12),
+                                  _progressChartWidget(PedidoProdutoStatus.pronto, ordem.getPrcntgPronto(), isFreezed),
+                                ],
+                              ),
+                            if (ordem.produtos.isEmpty)
+                              Row(
+                                children: [
+                                  Icon(Symbols.brightness_empty, size: 18, color: Colors.grey[400]),
+                                  const SizedBox(width: 4),
+                                  Text('Vazia', style: AppCss.minimumRegular.setColor(Colors.grey[400]!)),
+                                ],
+                              ),
+                          ],
                         ),
                       ],
-                    ),
-                  ),
-                  const W(8),
-                  if (ordem.produtos.isNotEmpty)
-                    Row(
-                      children: [
-                        _progressChartWidget(
-                          PedidoProdutoStatus.aguardandoProducao,
-                          ordem.getPrcntgAguardando(),
-                          ordem.freezed.isFreezed,
-                        ),
-                        const W(16),
-                        _progressChartWidget(
-                          PedidoProdutoStatus.produzindo,
-                          ordem.getPrcntgProduzindo(),
-                          ordem.freezed.isFreezed,
-                        ),
-                        const W(16),
-                        _progressChartWidget(
-                          PedidoProdutoStatus.pronto,
-                          ordem.getPrcntgPronto(),
-                          ordem.freezed.isFreezed,
-                        ),
-                      ],
-                    ),
-                  if (ordem.produtos.isEmpty)
-                    const Row(
-                      children: [
-                        Text('Ordem Vazia'),
-                        W(8),
-                        Icon(Symbols.brightness_empty),
-                      ],
-                    ),
-                  const W(32),
-                ],
-              ),
-            ),
-            if (usuario.isNotOperador)
-              if (!ordem.freezed.isFreezed)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryMain.withValues(alpha: 0.5),
-                    borderRadius: const BorderRadius.only(
-                      bottomRight: Radius.circular(8),
-                    ),
-                  ),
-                  child: Text(
-                    ordem.beltIndex != null ? '${ordem.beltIndex! + 1}º' : '-',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[900]!,
-                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-            ],
+              ],
+            ),
           ),
         ),
-      );
+      ),
+    );
   }
 
   Widget _progressChartWidget(
@@ -375,21 +425,34 @@ class _OrdensPageState extends State<OrdensPage> {
     double porcentagem,
     bool isFreezed,
   ) {
-    return Stack(
-      alignment: Alignment.center,
+    final color = isFreezed ? Colors.grey[500]! : status.color;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        CircularProgressIndicator(
-          value: porcentagem,
-          backgroundColor:
-              (isFreezed ? Colors.grey[600]! : status.color).withValues(alpha: 0.2),
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation(
-            isFreezed ? Colors.grey[600]! : status.color,
+        SizedBox(
+          width: 36,
+          height: 36,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              CircularProgressIndicator(
+                value: porcentagem,
+                backgroundColor: color.withValues(alpha: 0.15),
+                strokeWidth: 3,
+                valueColor: AlwaysStoppedAnimation(color),
+              ),
+              Text(
+                '${(porcentagem * 100).percent}%',
+                style: AppCss.minimumBold.setSize(9).setColor(color),
+              ),
+            ],
           ),
         ),
+        const SizedBox(height: 3),
         Text(
-          '${(porcentagem * 100).percent}%',
-          style: AppCss.minimumBold.setSize(10),
+          status == PedidoProdutoStatus.aguardandoProducao ? 'Ag.' :
+          status == PedidoProdutoStatus.produzindo ? 'Prod.' : 'Pronto',
+          style: AppCss.minimumRegular.setSize(9).setColor(Colors.grey[500]!),
         ),
       ],
     );
