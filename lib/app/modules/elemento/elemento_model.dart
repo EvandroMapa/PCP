@@ -5,7 +5,7 @@ import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_arquivo_model.dart';
 import 'package:flutter/material.dart';
 
-// ─── STATUS DO ELEMENTO ───────────────────────────────────────────────────────
+// ─── STATUS DO ELEMENTO w───────────────────────────────────────────────────────
 enum ElementoStatus {
   aguardando,
   armando,
