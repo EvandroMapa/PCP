@@ -194,13 +194,15 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
         .any((e) => e.pedidoId == produto.pedidoId);
   }
 
-  /// Abre o dialog de controle por OS/Elemento
+  /// Abre a página fullscreen de controle por OS/Elemento
   void _openElementosDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => OrdemPedidoElementosDialog(
-        produto: produto,
-        ordem: ordem,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OrdemPedidoElementosPage(
+          produto: produto,
+          ordem: ordem,
+        ),
       ),
     );
   }

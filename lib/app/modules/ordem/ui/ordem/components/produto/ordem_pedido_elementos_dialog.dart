@@ -6,6 +6,8 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
+import 'package:aco_plus/app/core/components/app_scaffold.dart';
+import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
@@ -15,25 +17,24 @@ import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/ordem/ordem_controller.dart';
 import 'package:flutter/material.dart';
 
-/// Dialog para o operador controlar produção no nível da OS/Elemento.
-/// Aberto a partir do card do pedido quando config = 'por_os'.
-class OrdemPedidoElementosDialog extends StatefulWidget {
+/// Página fullscreen para o operador controlar produção por OS/Elemento.
+/// Mostra um grid de cards no estilo industrial.
+class OrdemPedidoElementosPage extends StatefulWidget {
   final PedidoProdutoModel produto;
   final OrdemModel ordem;
 
-  const OrdemPedidoElementosDialog({
+  const OrdemPedidoElementosPage({
     super.key,
     required this.produto,
     required this.ordem,
   });
 
   @override
-  State<OrdemPedidoElementosDialog> createState() =>
-      _OrdemPedidoElementosDialogState();
+  State<OrdemPedidoElementosPage> createState() =>
+      _OrdemPedidoElementosPageState();
 }
 
-class _OrdemPedidoElementosDialogState
-    extends State<OrdemPedidoElementosDialog> {
+class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
   List<ElementoModel> _elementos = [];
   bool _isLoading = true;
 
@@ -45,7 +46,7 @@ class _OrdemPedidoElementosDialogState
 
   Future<void> _fetchElementos() async {
     try {
-      // Busca elementos do pedido via AppSupabaseClient (que já tem cache)
+      // Busca elementos do pedido via AppSupabaseClient (cache reativo)
       final all = AppSupabaseClient.elementos.data
           .where((e) => e.pedidoId == widget.produto.pedidoId)
           .toList();
@@ -53,10 +54,12 @@ class _OrdemPedidoElementosDialogState
       if (all.isNotEmpty) {
         all.sort((a, b) =>
             a.nome.toLowerCase().trim().compareTo(b.nome.toLowerCase().trim()));
-        setState(() {
-          _elementos = all;
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _elementos = all;
+            _isLoading = false;
+          });
+        }
       } else {
         // Fallback: buscar do Supabase diretamente
         final raw = await SupabaseService.client
@@ -75,25 +78,117 @@ class _OrdemPedidoElementosDialogState
         }
         fetched.sort((a, b) =>
             a.nome.toLowerCase().trim().compareTo(b.nome.toLowerCase().trim()));
-        setState(() {
-          _elementos = fetched;
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _elementos = fetched;
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
       log('Erro ao buscar elementos do pedido: $e');
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _onStatusChanged(
-      ElementoModel elemento, ElementoStatus newStatus) async {
+  Future<void> _onElementoTap(ElementoModel elemento) async {
+    // Abre picker de status
+    final newStatus = await _showStatusPicker(elemento);
+    if (newStatus == null || newStatus == elemento.status) return;
+
     final pedido = FirestoreClient.pedidos.getById(widget.produto.pedidoId);
     await armacaoCtrl.updateElementoStatus(pedido, elemento, newStatus);
     await _fetchElementos();
-
-    // Auto-update: se todos os elementos ficaram "pronto", atualiza o pedido pai
     await _checkAutoUpdatePedidoStatus();
+  }
+
+  Future<ElementoStatus?> _showStatusPicker(ElementoModel elemento) async {
+    return showDialog<ElementoStatus>(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          width: 360,
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'ALTERAR STATUS',
+                style: AppCss.mediumBold.setSize(16).setColor(AppColors.primaryMain),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                elemento.nome,
+                style: AppCss.largeBold.setSize(20),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              ...ElementoStatus.values.map((status) {
+                final isActive = status == elemento.status;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: InkWell(
+                    onTap: () => Navigator.pop(context, status),
+                    borderRadius: BorderRadius.circular(14),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? status.color.withValues(alpha: 0.15)
+                            : Colors.grey[50],
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isActive
+                              ? status.color
+                              : Colors.grey[300]!,
+                          width: isActive ? 2.5 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: status.color,
+                            radius: 14,
+                            child: isActive
+                                ? const Icon(Icons.check,
+                                    size: 16, color: Colors.white)
+                                : null,
+                          ),
+                          const SizedBox(width: 14),
+                          Text(
+                            status.label.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: isActive
+                                  ? FontWeight.w800
+                                  : FontWeight.w500,
+                              color: isActive
+                                  ? Colors.black87
+                                  : Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('CANCELAR',
+                    style: AppCss.mediumBold
+                        .setSize(14)
+                        .setColor(Colors.grey[400]!)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _checkAutoUpdatePedidoStatus() async {
@@ -103,8 +198,8 @@ class _OrdemPedidoElementosDialogState
 
     if (todosElementos.isEmpty) return;
 
-    final todosProntos =
-        todosElementos.every((e) => e.status == ElementoStatus.pronto && e.qtdePronto >= e.qtde);
+    final todosProntos = todosElementos
+        .every((e) => e.status == ElementoStatus.pronto && e.qtdePronto >= e.qtde);
     final algumArmando =
         todosElementos.any((e) => e.status == ElementoStatus.armando);
 
@@ -136,285 +231,231 @@ class _OrdemPedidoElementosDialogState
     final pedido = widget.produto.pedido;
     final tipoLabel = pedido.tipo == PedidoTipo.cda ? 'CDA' : 'CD';
 
-    return Dialog(
-      insetPadding: const EdgeInsets.all(24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 700, maxHeight: 700),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    return AppScaffold(
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        title: Row(
           children: [
-            // Header: OS + tipo
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: BoxDecoration(
-                color: AppColors.secondary,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.construction_rounded,
-                      color: Colors.white, size: 24),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'APONTAMENTO POR OS',
-                          style: AppCss.minimumBold
-                              .setSize(10)
-                              .setColor(Colors.white.withValues(alpha: 0.7)),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${pedido.localizador} · ${widget.produto.cliente.nome}',
-                          style: AppCss.mediumBold
-                              .setSize(16)
-                              .setColor(Colors.white),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Badge CD/CDA
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: pedido.tipo.foregroundColor.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                          color: pedido.tipo.foregroundColor
-                              .withValues(alpha: 0.5)),
-                    ),
-                    child: Text(
-                      tipoLabel,
-                      style: AppCss.minimumBold
-                          .setSize(12)
-                          .setColor(Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Body: lista de elementos
             Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _elementos.isEmpty
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(32),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.inbox_outlined,
-                                    size: 48, color: Colors.grey[300]),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'Nenhum elemento/OS encontrado para este pedido.',
-                                  style: AppCss.mediumRegular
-                                      .setColor(Colors.grey[500]!),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      : ListView.separated(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _elementos.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 10),
-                          itemBuilder: (_, index) {
-                            final elemento = _elementos[index];
-                            return _ElementoCard(
-                              elemento: elemento,
-                              onStatusChanged: (status) =>
-                                  _onStatusChanged(elemento, status),
-                            );
-                          },
-                        ),
-            ),
-
-            // Footer
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Resumo
                   Text(
-                    '${_elementos.length} elemento(s) · ${_elementos.fold(0.0, (sum, e) => sum + e.pesoTotal).toKg()}',
-                    style:
-                        AppCss.minimumRegular.setSize(12).setColor(Colors.grey),
+                    '${pedido.localizador} · $tipoLabel',
+                    style: AppCss.largeBold.setColor(Colors.white).setSize(18),
                   ),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('FECHAR',
-                        style: AppCss.mediumBold.setColor(AppColors.secondary)),
+                  Text(
+                    '${widget.produto.cliente.nome} · ${widget.ordem.localizator}',
+                    style: AppCss.minimumRegular
+                        .setColor(Colors.white.withValues(alpha: 0.7)),
                   ),
                 ],
+              ),
+            ),
+            // Badge resumo
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '${_elementos.length} OS',
+                style: AppCss.minimumBold
+                    .setSize(12)
+                    .setColor(Colors.white),
               ),
             ),
           ],
         ),
+        backgroundColor: AppColors.secondary,
+        elevation: 0,
       ),
+      body: _isLoading
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text('Carregando elementos...',
+                      style: AppCss.mediumRegular),
+                ],
+              ),
+            )
+          : _elementos.isEmpty
+              ? const EmptyData(
+                  message: 'Nenhum elemento/OS encontrado para este pedido.')
+              : GridView.builder(
+                  padding: const EdgeInsets.all(20),
+                  gridDelegate:
+                      const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 280,
+                    mainAxisExtent: 190,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount: _elementos.length,
+                  itemBuilder: (context, index) {
+                    final elemento = _elementos[index];
+                    return _ElementoOSCard(
+                      key: ValueKey(elemento.id),
+                      elemento: elemento,
+                      onTap: () => _onElementoTap(elemento),
+                    );
+                  },
+                ),
     );
   }
 }
 
-// ─── CARD DO ELEMENTO ──────────────────────────────────────────────────────────
+// ─── CARD ESTILO INDUSTRIAL (CONFORME REFERÊNCIA) ────────────────────────────
 
-class _ElementoCard extends StatelessWidget {
+class _ElementoOSCard extends StatelessWidget {
   final ElementoModel elemento;
-  final ValueChanged<ElementoStatus> onStatusChanged;
+  final VoidCallback onTap;
 
-  const _ElementoCard({
+  const _ElementoOSCard({
+    super.key,
     required this.elemento,
-    required this.onStatusChanged,
+    required this.onTap,
   });
+
+  String _statusLabel(ElementoStatus status) {
+    switch (status) {
+      case ElementoStatus.aguardando:
+        return 'AGUARDANDO';
+      case ElementoStatus.armando:
+        return 'PRODUZINDO';
+      case ElementoStatus.pronto:
+        return 'PRONTO';
+    }
+  }
+
+  Color _statusTextColor(ElementoStatus status) {
+    switch (status) {
+      case ElementoStatus.aguardando:
+        return Colors.black87;
+      case ElementoStatus.armando:
+        return Colors.orange[800]!;
+      case ElementoStatus.pronto:
+        return Colors.green[700]!;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = elemento.status.color;
-    final bitolaLabel = elemento.posicoes.isNotEmpty
-        ? elemento.posicoes.first.produto?.descricao ?? '—'
-        : '—';
+    final status = elemento.status;
+    final statusColor = status.color;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: statusColor.withValues(alpha: 0.4),
+            width: status == ElementoStatus.armando ? 2.5 : 1.5,
           ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: IntrinsicHeight(
-        child: Row(
+          boxShadow: [
+            BoxShadow(
+              color: statusColor.withValues(alpha: 0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
           children: [
-            // Borda lateral
-            Container(width: 4, color: statusColor),
-            // Info
+            // ─── TARJA: NÚMERO DA OS ───
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.grey[900],
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(13)),
+              ),
+              child: Text(
+                elemento.posicoes.isNotEmpty
+                    ? elemento.posicoes.first.numeroOs
+                    : elemento.nome,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+
+            // ─── STATUS ───
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
+              child: Center(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Nome do elemento (OS)
-                    Row(
-                      children: [
-                        Icon(Icons.description_outlined,
-                            size: 16, color: statusColor),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            elemento.nome,
-                            style: AppCss.mediumBold.setSize(14),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                    Text(
+                      _statusLabel(status),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: _statusTextColor(status),
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    if (elemento.qtde > 1 && elemento.isProntoParcial) ...[
+                      const SizedBox(height: 6),
+                      // Barra de progresso para parcial
+                      SizedBox(
+                        width: 100,
+                        child: LinearProgressIndicator(
+                          value: elemento.progressoPronto,
+                          backgroundColor: Colors.grey[200],
+                          valueColor: AlwaysStoppedAnimation(Colors.green[400]!),
+                          minHeight: 4,
+                          borderRadius: BorderRadius.circular(2),
                         ),
-                        if (elemento.qtde > 1)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color:
-                                  AppColors.primaryMain.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${elemento.qtdePronto}/${elemento.qtde}',
-                              style: AppCss.minimumBold
-                                  .setSize(11)
-                                  .setColor(AppColors.primaryMain),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    // Posições resumo
-                    Row(
-                      children: [
-                        _infoChip(
-                            Icons.straighten_outlined, bitolaLabel, Colors.blue),
-                        const SizedBox(width: 8),
-                        _infoChip(Icons.scale_outlined,
-                            elemento.pesoUnitario.toKg(), Colors.orange),
-                        if (elemento.posicoes.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          _infoChip(
-                            Icons.format_list_numbered,
-                            '${elemento.posicoes.length} pos.',
-                            Colors.purple,
-                          ),
-                        ],
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${elemento.qtdePronto}/${elemento.qtde} pç',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[500],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
             ),
-            // Botões de status (coluna vertical)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: ElementoStatus.values.map((status) {
-                  final isActive = status == elemento.status;
-                  final color = status.color;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: InkWell(
-                      onTap: isActive
-                          ? null
-                          : () => onStatusChanged(status),
-                      borderRadius: BorderRadius.circular(8),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: 120,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: isActive ? 8 : 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color:
-                              color.withValues(alpha: isActive ? 0.15 : 0.06),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: color.withValues(
-                                alpha: isActive ? 1.0 : 0.4),
-                            width: isActive ? 2 : 1,
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            status.label.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: isActive ? 11 : 10,
-                              fontWeight: isActive
-                                  ? FontWeight.w800
-                                  : FontWeight.w500,
-                              color: Colors.black.withValues(
-                                  alpha: isActive ? 0.85 : 0.5),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
+
+            // ─── RODAPÉ: QTDE / PESO / OS ───
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius:
+                    const BorderRadius.vertical(bottom: Radius.circular(13)),
+                border: Border(
+                  top: BorderSide(color: Colors.grey[200]!),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _footerItem('QTDE', '${elemento.qtde} pç'),
+                  _footerItem('PESO', elemento.pesoUnitario.toKg()),
+                  _footerItem('OS', '${elemento.posicoes.length} os'),
+                ],
               ),
             ),
           ],
@@ -423,24 +464,28 @@ class _ElementoCard extends StatelessWidget {
     );
   }
 
-  Widget _infoChip(IconData icon, String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: AppCss.minimumBold.setSize(10).setColor(color),
+  Widget _footerItem(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[500],
+            letterSpacing: 0.5,
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 1),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w800,
+            color: Colors.black87,
+          ),
+        ),
+      ],
     );
   }
 }
