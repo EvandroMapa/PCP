@@ -130,7 +130,7 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
 
   /// Verifica se uma transição de status é permitida
   bool _canTransition(PosicaoStatus target, PosicaoStatus current) {
-    if (target == current) return false; // já é o mesmo
+    if (target == current) return false; // já é do mesmo
 
     switch (target) {
       case PosicaoStatus.aguardando:
