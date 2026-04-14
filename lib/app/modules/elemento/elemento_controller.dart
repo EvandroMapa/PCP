@@ -393,7 +393,7 @@ class ElementoController {
         final pageImage = await page.render(
           width: page.width * 2.5,
           height: page.height * 2.5,
-          format: PdfPageImageFormat.jpg,
+          format: PdfPageImageFormat.jpeg,
           quality: 85,
         );
         
