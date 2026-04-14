@@ -169,7 +169,7 @@ class ElementoController {
       elementosStream.add(result);
       // Injeta os dados novos na coleção global para atualizar outros módulos (Ex: Armação no Tablet) reativamente
       AppSupabaseClient.elementos.updateLocalData(result);
-      
+
       _validacaoDirty = true; // Invalida cache do comparativo
 
       // Recalcular armacaoResumo e persistir (garante dados para o Kanban)
@@ -336,12 +336,12 @@ class ElementoController {
     }
   }
 
-  // ─── GERENCIAMENTO DE ARQUIVOS ───────────────────────────────────────────
+  // ─── GERENCIAMENTO DE ARQUIVOS ─────────────────────────────────────────
   Future<void> onAddArquivo(
       ElementoModel elemento, String name, Uint8List bytes, String mimeType) async {
     try {
       final isPdf = mimeType == 'application/pdf' || name.toLowerCase().endsWith('.pdf');
-      
+
       if (isPdf) {
         // O dialog de loading com stream é aberto pela UI (_ElementoArquivosDialog)
         loadingMessageStream.add('Preparando otimização...');
@@ -406,7 +406,7 @@ class ElementoController {
       final level = PreferencesService.pdfOptimizationLevel.value;
       for (int i = 1; i <= pageCount; i++) {
         loadingMessageStream.add('Processando página $i de $pageCount...\nOtimizando com nível $level');
-        
+
         final page = await document.getPage(i);
         // Renderiza com escala e qualidade configuráveis (Configurações Gerais)
         final scale = PreferencesService.pdfScale;
@@ -417,12 +417,12 @@ class ElementoController {
           format: PdfPageImageFormat.jpeg,
           quality: quality,
         );
-        
+
         if (pageImage != null) {
-          final String fileName = pageCount > 1 
+          final String fileName = pageCount > 1
               ? '${originalName.split('.').first}_PAG_$i.jpg'
               : '${originalName.split('.').first}.jpg';
-              
+
           final url = await SupabaseStorageService.uploadFile(
             name: fileName,
             bytes: pageImage.bytes,
@@ -811,7 +811,7 @@ class ElementoController {
 
       // Extrai a linha de cabeçalho (ignorando case e espaços)
       final headerLine = lines.first.split(';').map((e) => e.trim().toUpperCase()).toList();
-      
+
       // Cria mapa de índices para procurar colunas chaves
       final Map<String, int> headerIndex = {};
       for (int i = 0; i < headerLine.length; i++) {
