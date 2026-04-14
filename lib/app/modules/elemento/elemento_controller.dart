@@ -21,6 +21,7 @@ import 'package:flutter/services.dart';
 import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/services/pdf_download_service/pdf_download_service_mobile.dart';
+import 'package:pdfx/pdfx.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 
 final elementoCtrl = ElementoController();
@@ -336,6 +337,18 @@ class ElementoController {
       ElementoModel elemento, String name, Uint8List bytes, String mimeType) async {
     try {
       showLoadingDialog();
+      // ─── INTERCEPTAÇÃO E OTIMIZAÇÃO DE PDF ────────────────────────
+      final isPdf = mimeType == 'application/pdf' || name.toLowerCase().endsWith('.pdf');
+      
+      if (isPdf) {
+        loadingMessageStream.add('Otimizando desenho para alta definição...\nIsso tornará o visualizador instantâneo no tablet.');
+        await _optimizeAndUploadPdf(elemento, name, bytes);
+        await onFetch(elemento.pedidoId);
+        if (contextGlobal.mounted) Navigator.pop(contextGlobal); // Fecha loading
+        NotificationService.showPositive('Sucesso', 'Desenho otimizado e anexado!');
+        return;
+      }
+
       final url = await SupabaseStorageService.uploadFile(
         name: name,
         bytes: bytes,
@@ -362,6 +375,60 @@ class ElementoController {
       if (contextGlobal.mounted) Navigator.pop(contextGlobal); // Fecha loading
       log('ElementoController.onAddArquivo erro: $e');
       NotificationService.showNegative('Erro', 'Falha ao anexado arquivo.');
+    }
+  }
+
+  /// ─── MOTOR DE OTIMIZAÇÃO DE DESENHOS (PDF -> JPG HD) ──────────────
+  Future<void> _optimizeAndUploadPdf(ElementoModel elemento, String originalName, Uint8List pdfBytes) async {
+    PdfDocument? document;
+    try {
+      document = await PdfDocument.openData(pdfBytes);
+      final int pageCount = document.pagesCount;
+
+      for (int i = 1; i <= pageCount; i++) {
+        loadingMessageStream.add('Processando página $i de $pageCount...\nGerando imagem de alta resolução.');
+        
+        final page = await document.getPage(i);
+        // Renderiza com escala 2.5x para garantir nitidez impecável no zoom
+        final pageImage = await page.render(
+          width: page.width * 2.5,
+          height: page.height * 2.5,
+          format: PdfPageFormat.jpg,
+          quality: 85,
+        );
+        
+        if (pageImage != null) {
+          final String fileName = pageCount > 1 
+              ? '${originalName.split('.').first}_PAG_$i.jpg'
+              : '${originalName.split('.').first}.jpg';
+              
+          final url = await SupabaseStorageService.uploadFile(
+            name: fileName,
+            bytes: pageImage.bytes,
+            mimeType: 'image/jpeg',
+            path: 'elementos/${elemento.id}',
+          );
+
+          final arquivo = ElementoArquivoModel(
+            id: '',
+            elementoId: elemento.id,
+            nome: fileName.toUpperCase(),
+            url: url,
+            tamanho: pageImage.bytes.length,
+            tipo: 'image/jpeg',
+            extensao: 'jpg',
+            criadoEm: DateTime.now(),
+          );
+
+          await AppSupabaseClient.elementoArquivos.add(arquivo);
+        }
+        await page.close();
+      }
+    } catch (e) {
+      log('ElementoController._optimizeAndUploadPdf erro: $e');
+      rethrow;
+    } finally {
+      await document?.close();
     }
   }
 
