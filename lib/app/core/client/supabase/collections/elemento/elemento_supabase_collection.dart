@@ -83,14 +83,22 @@ class ElementoSupabaseCollection {
     _isListen = true;
     
     // Listener simplificado: qualquer mudança na tabela elementos dispara um re-fetch
-    // O Supabase streams envia row-level events, mas para garantir integridade das 
-    // relações (posições/arquivos), re-buscamos o estado atualizado debounced.
     SupabaseService.client
         .from(name)
         .stream(primaryKey: ['id'])
-        .listen((List<Map<String, dynamic>> data) {
-          _updateStreams();
-        });
+        .listen((_) => _updateStreams());
+
+    // NOVO: Escuta mudanças na tabela de posições para atualizar pesos/OS
+    SupabaseService.client
+        .from('elemento_posicoes')
+        .stream(primaryKey: ['id'])
+        .listen((_) => _updateStreams());
+
+    // NOVO: Escuta mudanças na tabela de arquivos para atualizar os desenhos em tempo real
+    SupabaseService.client
+        .from('elemento_arquivos')
+        .stream(primaryKey: ['id'])
+        .listen((_) => _updateStreams());
   }
 
   Timer? _streamDebounce;
