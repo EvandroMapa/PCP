@@ -42,7 +42,7 @@ class ArmacaoController {
   final AppStream<List<PedidoModel>> pedidosStream = AppStream.seed([]);
   final AppStream<List<ElementoModel>> elementosStream = AppStream.seed([]);
   final AppStream<bool> loadingStream = AppStream.seed(false);
-  
+
   // Cache para evitar recarregar elementos desnecessariamente
   final Map<String, ArmacaoSummary> _summaries = {};
 
@@ -85,7 +85,7 @@ class ArmacaoController {
 
     // Ordenar por data de entrega ou criação
     filtered.sort((a, b) => (a.deliveryAt ?? a.createdAt).compareTo(b.deliveryAt ?? b.createdAt));
-    
+
     pedidosStream.add(filtered);
     loadingStream.add(false);
   }
@@ -114,7 +114,7 @@ class ArmacaoController {
         for (final pos in posicoesRaw) {
           final pesoPos = double.tryParse(pos['peso_kg'].toString()) ?? 0.0;
           final pesoTotalPos = pesoPos * qtde;
-          
+
           final prodId = pos['produto_id'].toString();
           pesoPorBitola[prodId] = (pesoPorBitola[prodId] ?? 0) + pesoTotalPos;
           pesoTotal += pesoTotalPos;
@@ -137,20 +137,20 @@ class ArmacaoController {
   Future<void> onFetchElementos(PedidoModel pedido) async {
     try {
       _currentPedidoId = pedido.id;
-      
+
       // Filtra o que já temos no AppSupabaseClient de forma reativa
       final filtered = AppSupabaseClient.elementos.data
           .where((e) => e.pedidoId == pedido.id)
           .toList();
-      
+
       // Ordenar alfabeticamente pelo nome A-Z
       filtered.sort((a, b) => a.nome.toLowerCase().trim().compareTo(b.nome.toLowerCase().trim()));
-      
+
       pedido.elementos.clear();
       pedido.elementos.addAll(filtered);
       elementosStream.add(filtered);
-      
-      // Atualizar resumo localmente 
+
+      // Atualizar resumo localmente
       await updatePedidoSummary(pedido);
     } catch (e) {
       log('ArmacaoController.onFetchElementos erro: $e');
@@ -184,7 +184,7 @@ class ArmacaoController {
         novoQtdePronto = 0; // Volta a armar, zera o progresso
         statusFinal = ElementoStatus.armando;
       } else if (newStatus == ElementoStatus.aguardando) {
-        novoQtdePronto = 0; // Volta para aguardando, zera o progresso
+        novoQtdePronto = 0; // Volta para aguardando, zera o progressodf
         statusFinal = ElementoStatus.aguardando;
       }
 
@@ -224,7 +224,7 @@ class ArmacaoController {
   /// Centraliza a verificação de limite dinâmico e persistência no banco e local
   Future<void> _applyStatusUpdate(
       PedidoModel pedido, ElementoModel elemento, ElementoStatus statusFinal, int novoQtdePronto) async {
-    
+
     // 1. Buscar limite dinamicamente (Reatividade Administrativa)
     try {
       final configRaw = await SupabaseService.client
@@ -248,7 +248,7 @@ class ArmacaoController {
       final limit = PreferencesService.maxElementosProducao.value;
 
       if (countArmando >= limit) {
-        showInfoDialog('LIMITE ATINGIDO!\n\n' 
+        showInfoDialog('LIMITE ATINGIDO!\n\n'
           'O limite atual para este pedido é de $limit elementos simultâneos em produção.\n\n'
           'Conclua algum item ou peça ao administrador para aumentar o limite nas configurações.');
         return;
@@ -265,7 +265,7 @@ class ArmacaoController {
       );
       elementosStream.add(elementosLocal);
     }
-    
+
     // Atualizar no pedido também caso algo o leia diretamente
     final idxPedido = pedido.elementos.indexWhere((e) => e.id == elemento.id);
     if (idxPedido != -1 && index != -1) {
@@ -384,8 +384,8 @@ class ArmacaoController {
               ),
               onPressed: () => Navigator.pop(ctx, selecionado),
               child: Text(
-                selecionado == 0 
-                  ? 'P/ AGUARDANDO' 
+                selecionado == 0
+                  ? 'P/ AGUARDANDO'
                   : (selecionado == elemento.qtde ? 'CONFIRMAR PRONTO' : 'SALVAR PROGRESSO'),
               ),
             ),
