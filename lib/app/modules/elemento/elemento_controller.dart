@@ -340,18 +340,19 @@ class ElementoController {
   Future<void> onAddArquivo(
       ElementoModel elemento, String name, Uint8List bytes, String mimeType) async {
     try {
-      showLoadingDialog();
-      // ─── INTERCEPTAÇÃO E OTIMIZAÇÃO DE PDF ────────────────────────
       final isPdf = mimeType == 'application/pdf' || name.toLowerCase().endsWith('.pdf');
       
       if (isPdf) {
-        loadingMessageStream.add('Otimizando desenho para alta definição...\nIsso tornará o visualizador instantâneo no tablet.');
+        // O dialog de loading com stream é aberto pela UI (_ElementoArquivosDialog)
+        loadingMessageStream.add('Preparando otimização...');
         await _optimizeAndUploadPdf(elemento, name, bytes);
         await onFetch(elemento.pedidoId);
-        if (contextGlobal.mounted) Navigator.pop(contextGlobal); // Fecha loading
+        if (contextGlobal.mounted) Navigator.pop(contextGlobal); // Fecha o dialog da UI
         NotificationService.showPositive('Sucesso', 'Desenho otimizado e anexado!');
         return;
       }
+
+      showLoadingDialog(); // Apenas para imagens normais
 
       final url = await SupabaseStorageService.uploadFile(
         name: name,

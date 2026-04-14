@@ -928,6 +928,43 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
       final bytes = result.files.single.bytes!;
       final extension = name.split('.').last.toLowerCase();
       final mimeType = extension == 'pdf' ? 'application/pdf' : 'image/$extension';
+      final isPdf = mimeType == 'application/pdf';
+
+      // Para PDF: abre dialog com mensagem reativa do stream
+      if (isPdf && context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => StreamOut<String>(
+            stream: elementoCtrl.loadingMessageStream.listen,
+            builder: (_, msg) => AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              content: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.secondary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.picture_as_pdf_outlined, color: AppColors.secondary, size: 32),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      msg,
+                      style: AppCss.mediumBold,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }
 
       await elementoCtrl.onAddArquivo(
         widget.elemento,
