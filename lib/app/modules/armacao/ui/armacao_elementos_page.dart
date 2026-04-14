@@ -547,19 +547,8 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
   }
 
   void _openPdfViewer(BuildContext context, String title, String url) {
-    // Registra o IFrame apenas para este PDF específico
-    final String viewId = 'pdf-view-${HashService.get}';
-    
-    // Encoda a URL para o Google Viewer
-    final String googleUrl = 'https://docs.google.com/viewer?url=${Uri.encodeComponent(url)}&embedded=true';
-
-    ui.platformViewRegistry.registerViewFactory(
-      viewId,
-      (int id) => html.IFrameElement()
-        ..src = googleUrl
-        ..style.border = 'none'
-        ..style.width = '100%'
-        ..style.height = '100%',
+    final PdfControllerPinch controller = PdfControllerPinch(
+      document: PdfDocument.openData(Dio().get<List<int>>(url, options: Options(responseType: ResponseType.bytes)).then((r) => Uint8List.fromList(r.data!))),
     );
 
     showDialog(
@@ -569,26 +558,44 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
         backgroundColor: Colors.black,
         body: Stack(
           children: [
-            HtmlElementView(viewType: viewId),
+            PdfViewPinch(
+              controller: controller,
+              scrollDirection: Axis.vertical,
+              builders: PdfViewPinchBuilders<DefaultBuilderOptions>(
+                options: const DefaultBuilderOptions(
+                  loaderSwitchDuration: Duration(milliseconds: 100),
+                ),
+                documentLoaderBuilder: (_) => const Center(child: CircularProgressIndicator(color: Colors.white)),
+                pageLoaderBuilder: (_) => const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                errorBuilder: (_, error) => Center(child: Text('Erro: $error', style: const TextStyle(color: Colors.white))),
+              ),
+            ),
             Positioned(
               top: MediaQuery.of(context).padding.top + 16,
               left: 16,
-              child: GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(30),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
-                      SizedBox(width: 12),
-                      Text('VOLTAR', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-                    ],
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    controller.dispose();
+                    Navigator.pop(context);
+                  },
+                  borderRadius: BorderRadius.circular(30),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.7),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                        SizedBox(width: 12),
+                        Text('VOLTAR', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                      ],
+                    ),
                   ),
                 ),
               ),
