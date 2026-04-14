@@ -18,7 +18,7 @@ import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:flutter/material.dart';
 // ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
-import 'dart:ui_web' as ui_web;
+import 'dart:ui_web' as ui;
 
 class ArmacaoElementosPage extends StatefulWidget {
   final PedidoModel pedido;
@@ -531,6 +531,7 @@ class _ElementoArmacaoCard extends StatelessWidget {
   }
 }
 
+
 class _MediaViewerDialog extends StatefulWidget {
   final ElementoModel elemento;
   const _MediaViewerDialog({required this.elemento});
@@ -542,6 +543,59 @@ class _MediaViewerDialog extends StatefulWidget {
 class _MediaViewerDialogState extends State<_MediaViewerDialog> {
   void _close() {
     Navigator.pop(context);
+  }
+
+  void _openPdfViewer(BuildContext context, String title, String url) {
+    // Registra o IFrame apenas para este PDF específico
+    final String viewId = 'pdf-view-${HashService.get}';
+    
+    // Encoda a URL para o Google Viewer
+    final String googleUrl = 'https://docs.google.com/viewer?url=${Uri.encodeComponent(url)}&embedded=true';
+
+    ui.platformViewRegistry.registerViewFactory(
+      viewId,
+      (int id) => html.IFrameElement()
+        ..src = googleUrl
+        ..style.border = 'none'
+        ..style.width = '100%'
+        ..style.height = '100%',
+    );
+
+    showDialog(
+      context: context,
+      useSafeArea: false,
+      builder: (_) => Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            HtmlElementView(viewType: viewId),
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 16,
+              left: 16,
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                      SizedBox(width: 12),
+                      Text('VOLTAR', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _openNativePdf(String url) async {
@@ -610,7 +664,7 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
                   return GestureDetector(
                     onTap: () {
                       if (isPdf) {
-                        _openNativePdf(arq.url);
+                        _openPdfViewer(context, arq.nome, arq.url);
                       } else {
                         _showImageFull(context, arq.url);
                       }
@@ -753,4 +807,5 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
     );
   }
 }
+
 
