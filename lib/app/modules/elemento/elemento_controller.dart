@@ -166,6 +166,9 @@ class ElementoController {
       result.sort((a, b) => a.nome.toLowerCase().trim().compareTo(b.nome.toLowerCase().trim()));
 
       elementosStream.add(result);
+      // Injeta os dados novos na coleção global para atualizar outros módulos (Ex: Armação no Tablet) reativamente
+      AppSupabaseClient.elementos.updateLocalData(result);
+      
       _validacaoDirty = true; // Invalida cache do comparativo
 
       // Recalcular armacaoResumo e persistir (garante dados para o Kanban)

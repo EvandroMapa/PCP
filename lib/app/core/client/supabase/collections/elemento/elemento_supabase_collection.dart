@@ -77,6 +77,25 @@ class ElementoSupabaseCollection {
     }
   }
 
+  /// Atualiza os dados locais de forma reativa a partir de mudanças em outros módulos (Ex: PC -> Tablet)
+  void updateLocalData(List<ElementoModel> newData) {
+    if (newData.isEmpty) return;
+    
+    final currentData = data.toList();
+    for (final newItem in newData) {
+      final idx = currentData.indexWhere((e) => e.id == newItem.id);
+      if (idx != -1) {
+        currentData[idx] = newItem;
+      } else {
+        currentData.add(newItem);
+      }
+    }
+    
+    data.clear();
+    data.addAll(currentData);
+    dataStream.add(data);
+  }
+
   bool _isListen = false;
   void listen() {
     if (_isListen) return;
