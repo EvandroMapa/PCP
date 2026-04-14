@@ -15,7 +15,6 @@ import 'package:aco_plus/app/modules/ordem/ui/ordem/components/produto/status/or
 import 'package:aco_plus/app/modules/ordem/ui/ordem/components/produto/status/ordem_pedido_status_operator_widget.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:gap/gap.dart';
 
 class OrdemPedidoProdutoWidget extends StatelessWidget {
   final PedidoProdutoModel produto;
@@ -31,71 +30,148 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: produto.isPaused ? Colors.grey.withValues(alpha: 0.1) : null,
-        border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+    final status = produto.statusView.status;
+    final statusColor = produto.isPaused ? Colors.orange : status.color;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Container(
+        decoration: BoxDecoration(
+          color: produto.isPaused
+              ? Colors.orange.withValues(alpha: 0.04)
+              : Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: statusColor.withValues(alpha: 0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: IntrinsicHeight(
+          child: Row(
+            children: [
+              // Borda lateral colorida pelo status
+              Container(width: 4, color: statusColor),
+              // Conteúdo
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header: localizador + tags
+                      Row(
+                        children: [
+                          if (produto.isPaused) _pauseTagWidget(),
+                          if (produto.pedido.tags.isNotEmpty)
+                            _tagWidget(produto.pedido.tags.first),
+                          Text(
+                            produto.pedido.localizador,
+                            style: AppCss.mediumBold.setSize(15),
+                          ),
+                          const Spacer(),
+                          // Badge status atual
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: statusColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                            ),
+                            child: Text(
+                              produto.isPaused ? 'PAUSADO' : status.label.toUpperCase(),
+                              style: AppCss.minimumBold.setSize(10).setColor(statusColor),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      // Peso + cliente/obra
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryMain.withValues(alpha: 0.07),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              produto.qtde.toKg(),
+                              style: AppCss.minimumBold.setSize(12).setColor(AppColors.primaryMain),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${produto.cliente.nome} · ${produto.obra.descricao}',
+                              style: AppCss.minimumRegular.setSize(12).setColor(Colors.grey[600]!),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (produto.pedido.deliveryAt != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(Icons.event_outlined, size: 12, color: Colors.grey[400]),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Entrega: ${produto.pedido.deliveryAt?.text()}',
+                              style: AppCss.minimumRegular.setSize(11).setColor(Colors.grey[500]!),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (materiaPrima != null) ...[
+                        const SizedBox(height: 4),
+                        InkWell(
+                          onTap: () async {
+                            final result = await showMateriaPrimaBottom(materiaPrima!);
+                            if (result != null) {
+                              push(context, MateriaPrimaCreatePage(materiaPrima: materiaPrima));
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(6),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.inventory_2_outlined, size: 12, color: Colors.orange[400]),
+                              const SizedBox(width: 4),
+                              Text(
+                                materiaPrima!.label,
+                                style: AppCss.minimumRegular
+                                    .setSize(11)
+                                    .setColor(Colors.orange[700]!)
+                                    .copyWith(decoration: TextDecoration.underline),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              // Botões de status + pause
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (produto.isPaused) _pauseTagWidget(),
-                    if (produto.pedido.tags.isNotEmpty)
-                      _tagWidget(produto.pedido.tags.first),
-                    Text(produto.pedido.localizador, style: AppCss.minimumBold),
+                    _statusWidget(),
+                    if (produto.statusView.status == PedidoProdutoStatus.produzindo)
+                      OrdemPedidoProdutoPauseWidget(ordem: ordem, produto: produto),
                   ],
                 ),
-
-                Text(
-                  produto.qtde.toKg(),
-                  style: AppCss.minimumRegular.setSize(12),
-                ),
-                Text(
-                  '${produto.cliente.nome} - ${produto.obra.descricao}',
-                  style: AppCss.minimumRegular.setSize(12),
-                ),
-                if (produto.pedido.deliveryAt != null)
-                  Text(
-                    'Previsão de Entrega: ${produto.pedido.deliveryAt?.text()}',
-                    style: AppCss.minimumRegular
-                        .copyWith(fontSize: 12)
-                        .setColor(AppColors.neutralDark),
-                  ),
-                if (materiaPrima != null)
-                  InkWell(
-                    onTap: () async {
-                      final result = await showMateriaPrimaBottom(
-                        materiaPrima!,
-                      );
-                      if (result != null) {
-                        push(
-                          context,
-                          MateriaPrimaCreatePage(materiaPrima: materiaPrima),
-                        );
-                      }
-                    },
-                    child: Text(
-                      'Materia Prima: ${materiaPrima?.label}',
-                      style: AppCss.minimumRegular
-                          .copyWith(fontSize: 12)
-                          .setColor(AppColors.neutralDark)
-                          .copyWith(decoration: TextDecoration.underline),
-                    ),
-                  ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Gap(8),
-          _statusWidget(),
-          if (produto.statusView.status == PedidoProdutoStatus.produzindo)
-            OrdemPedidoProdutoPauseWidget(ordem: ordem, produto: produto),
-        ],
+        ),
       ),
     );
   }
@@ -106,42 +182,36 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
         : OrdemPedidoStatusNormalWidget(produto: produto, ordem: ordem);
   }
 
-  Container _tagWidget(TagModel tag) {
+  Widget _tagWidget(TagModel tag) {
     return Container(
-      margin: const EdgeInsets.only(right: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 0.5),
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: tag.color,
-        borderRadius: BorderRadius.circular(2),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         tag.nome,
         style: TextStyle(
-          color: tag.color.computeLuminance() > 0.5
-              ? Colors.black
-              : Colors.white,
+          color: tag.color.computeLuminance() > 0.5 ? Colors.black : Colors.white,
           fontSize: 9,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
   }
 
-  Container _pauseTagWidget() {
+  Widget _pauseTagWidget() {
     return Container(
-      margin: const EdgeInsets.only(right: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 0.5),
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(2),
+        color: Colors.orange,
+        borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(
+      child: const Text(
         'PAUSADO',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 9,
-          fontWeight: FontWeight.w600,
-        ),
+        style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
       ),
     );
   }

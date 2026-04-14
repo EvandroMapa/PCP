@@ -14,6 +14,19 @@ class OrdemPedidoStatusOperatorWidget extends StatelessWidget {
     required this.ordem,
   });
 
+  IconData _iconFor(PedidoProdutoStatus status) {
+    switch (status) {
+      case PedidoProdutoStatus.aguardandoProducao:
+        return Icons.hourglass_empty_rounded;
+      case PedidoProdutoStatus.produzindo:
+        return Icons.construction_rounded;
+      case PedidoProdutoStatus.pronto:
+        return Icons.check_circle_rounded;
+      default:
+        return Icons.circle_outlined;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final statuses = [
@@ -24,52 +37,57 @@ class OrdemPedidoStatusOperatorWidget extends StatelessWidget {
 
     return IgnorePointer(
       ignoring: produto.isPaused,
-      child: Row(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: statuses
-            .map(
-              (status) => InkWell(
-                onTap: status == produto.status.status
+        children: statuses.map((status) {
+          final isActive = status == produto.status.status;
+          final color = status.color;
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Tooltip(
+              message: isActive
+                  ? 'Status atual: ${status.label}'
+                  : 'Alterar para ${status.label}',
+              child: InkWell(
+                onTap: isActive
                     ? null
-                    : () =>
-                          ordemCtrl.onSelectProdutoStatus(ordem, produto, status),
-                child: Tooltip(
-                  enableFeedback: status != produto.status.status,
-                  message: status == produto.status.status
-                      ? 'Este pedido atualmente está ${status.label}'
-                      : 'Clique para alterar para ${status.label}',
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
+                    : () => ordemCtrl.onSelectProdutoStatus(ordem, produto, status),
+                borderRadius: BorderRadius.circular(10),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isActive ? color : color.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isActive ? color : color.withValues(alpha: 0.25),
+                      width: isActive ? 2 : 1,
                     ),
-                    decoration: BoxDecoration(
-                      color: status.color.withValues(
-                        alpha: status == produto.status.status ? 1 : 0.1,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _iconFor(status),
+                        size: 16,
+                        color: isActive ? Colors.white : color,
                       ),
-                    ),
-                    child: Text(
-                      status.label,
-                      style: AppCss.minimumRegular
-                          .setSize(16)
-                          .copyWith(
-                            color:
-                                (status == PedidoProdutoStatus.pronto
-                                        ? Colors.white
-                                        : Colors.black)
-                                    .withValues(
-                                      alpha: status == produto.status.status
-                                          ? 1
-                                          : 0.4,
-                                    ),
-                          ),
-                    ),
+                      const SizedBox(width: 6),
+                      Text(
+                        status.label,
+                        style: AppCss.minimumBold.setSize(13).setColor(
+                          isActive ? Colors.white : color.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            )
-            .toList(),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
 }
+
