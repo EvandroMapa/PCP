@@ -57,32 +57,36 @@ class OrdemPedidoStatusOperatorWidget extends StatelessWidget {
                   duration: const Duration(milliseconds: 200),
                   width: 160,
                   padding: EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: isActive ? 11 : 7,
+                    horizontal: 10,
+                    vertical: isActive ? 12 : 8,
                   ),
                   decoration: BoxDecoration(
-                    color: isActive ? color : color.withValues(alpha: 0.08),
+                    color: color.withValues(alpha: isActive ? 0.15 : 0.06),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: isActive ? color : color.withValues(alpha: 0.25),
-                      width: isActive ? 2 : 1,
+                      color: color.withValues(alpha: isActive ? 1.0 : 0.55),
+                      width: isActive ? 2.5 : 1.5,
                     ),
                   ),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
                         _iconFor(status),
                         size: isActive ? 18 : 15,
-                        color: isActive ? Colors.white : color,
+                        color: color.withValues(alpha: isActive ? 1.0 : 0.7),
                       ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
                       Text(
-                        status.label,
+                        (status == PedidoProdutoStatus.aguardandoProducao
+                            ? 'AGUARDANDO'
+                            : status.label.toUpperCase()),
                         style: TextStyle(
                           fontSize: isActive ? 14 : 12,
                           fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
-                          color: isActive ? Colors.white : color.withValues(alpha: 0.65),
+                          // Texto sempre preto
+                          color: Colors.black.withValues(alpha: isActive ? 0.85 : 0.55),
                         ),
                       ),
                     ],
