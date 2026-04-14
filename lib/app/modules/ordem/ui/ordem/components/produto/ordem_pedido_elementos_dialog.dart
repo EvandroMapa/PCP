@@ -128,6 +128,30 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     await _checkAutoUpdatePedidoStatus();
   }
 
+  /// Verifica se uma transição de status é permitida
+  bool _canTransition(PosicaoStatus target, PosicaoStatus current) {
+    if (target == current) return false; // já é o mesmo
+
+    switch (target) {
+      case PosicaoStatus.aguardando:
+        // Pode voltar 1 etapa: apenas de produzindo
+        return current == PosicaoStatus.produzindo;
+
+      case PosicaoStatus.produzindo:
+        // Pode avançar de aguardando OU voltar de pronto
+        return current == PosicaoStatus.aguardando ||
+            current == PosicaoStatus.pronto;
+
+      case PosicaoStatus.pronto:
+        // Só pode avançar de produzindo E todos os outros devem estar
+        // ao menos em produzindo
+        if (current != PosicaoStatus.produzindo) return false;
+        return _posicoes.every((p) =>
+            p.posicao.status == PosicaoStatus.produzindo ||
+            p.posicao.status == PosicaoStatus.pronto);
+    }
+  }
+
   Future<PosicaoStatus?> _showStatusPicker(_PosicaoItem item) async {
     return showDialog<PosicaoStatus>(
       context: context,
@@ -156,51 +180,63 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
               const SizedBox(height: 20),
               ...PosicaoStatus.values.map((status) {
                 final isActive = status == item.posicao.status;
+                final canSelect = isActive || _canTransition(status, item.posicao.status);
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
-                  child: InkWell(
-                    onTap: () => Navigator.pop(context, status),
-                    borderRadius: BorderRadius.circular(14),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: isActive
-                            ? status.color.withValues(alpha: 0.15)
-                            : Colors.grey[50],
+                  child: Opacity(
+                    opacity: canSelect ? 1.0 : 0.3,
+                    child: IgnorePointer(
+                      ignoring: !canSelect,
+                      child: InkWell(
+                        onTap: () => Navigator.pop(context, status),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: isActive
-                              ? status.color
-                              : Colors.grey[300]!,
-                          width: isActive ? 2.5 : 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            backgroundColor: status.color,
-                            radius: 14,
-                            child: isActive
-                                ? const Icon(Icons.check,
-                                    size: 16, color: Colors.white)
-                                : null,
-                          ),
-                          const SizedBox(width: 14),
-                          Text(
-                            status.label.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: isActive
-                                  ? FontWeight.w800
-                                  : FontWeight.w500,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: isActive
+                                ? status.color.withValues(alpha: 0.15)
+                                : Colors.grey[50],
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
                               color: isActive
-                                  ? Colors.black87
-                                  : Colors.grey[600],
+                                  ? status.color
+                                  : Colors.grey[300]!,
+                              width: isActive ? 2.5 : 1,
                             ),
                           ),
-                        ],
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: status.color,
+                                radius: 14,
+                                child: isActive
+                                    ? const Icon(Icons.check,
+                                        size: 16, color: Colors.white)
+                                    : !canSelect
+                                        ? Icon(Icons.lock,
+                                            size: 12, color: Colors.grey[400])
+                                        : null,
+                              ),
+                              const SizedBox(width: 14),
+                              Text(
+                                status.label.toUpperCase(),
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: isActive
+                                      ? FontWeight.w800
+                                      : FontWeight.w500,
+                                  color: isActive
+                                      ? Colors.black87
+                                      : canSelect
+                                          ? Colors.grey[600]
+                                          : Colors.grey[400],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -221,34 +257,30 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     );
   }
 
-  /// Auto-update: verifica status de TODAS as posições desta bitola/pedido
+  /// Auto-update: sincroniza status da ordem/pedido com as posições
   Future<void> _checkAutoUpdatePedidoStatus() async {
     if (_posicoes.isEmpty) return;
 
+    final todosAguardando = _posicoes.every((p) => p.posicao.status == PosicaoStatus.aguardando);
     final todosProntos = _posicoes.every((p) => p.posicao.status == PosicaoStatus.pronto);
-    final algumProduzindo = _posicoes.any((p) => p.posicao.status == PosicaoStatus.produzindo);
 
-    PedidoProdutoStatus? novoStatus;
+    PedidoProdutoStatus novoStatus;
 
-    if (todosProntos &&
-        widget.produto.status.status != PedidoProdutoStatus.pronto) {
-      novoStatus = PedidoProdutoStatus.pronto;
-    } else if (algumProduzindo &&
-        widget.produto.status.status ==
-            PedidoProdutoStatus.aguardandoProducao) {
-      novoStatus = PedidoProdutoStatus.produzindo;
-    } else if (!algumProduzindo &&
-        !todosProntos &&
-        widget.produto.status.status == PedidoProdutoStatus.produzindo) {
+    if (todosAguardando) {
       novoStatus = PedidoProdutoStatus.aguardandoProducao;
+    } else if (todosProntos) {
+      novoStatus = PedidoProdutoStatus.pronto;
+    } else {
+      novoStatus = PedidoProdutoStatus.produzindo;
     }
 
-    if (novoStatus != null) {
-      await FirestoreClient.pedidos
-          .updateProdutoStatus(widget.produto, novoStatus);
-      await FirestoreClient.ordens.fetch();
-      ordemCtrl.setOrdem(ordemCtrl.getOrdemById(widget.ordem.id));
-    }
+    // Só atualiza se mudou
+    if (novoStatus == widget.produto.status.status) return;
+
+    await FirestoreClient.pedidos
+        .updateProdutoStatus(widget.produto, novoStatus);
+    await FirestoreClient.ordens.fetch();
+    ordemCtrl.setOrdem(ordemCtrl.getOrdemById(widget.ordem.id));
   }
 
   void _showDebugDialog(BuildContext context) {
