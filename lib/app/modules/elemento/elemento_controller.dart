@@ -6,6 +6,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
+import 'package:aco_plus/app/core/services/preferences_service.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_arquivo_model.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
@@ -392,12 +393,14 @@ class ElementoController {
         loadingMessageStream.add('Processando página $i de $pageCount...\nGerando imagem de alta resolução.');
         
         final page = await document.getPage(i);
-        // Renderiza com escala 2.5x para garantir nitidez impecável no zoom
+        // Renderiza com escala e qualidade configuráveis (Configurações Gerais)
+        final scale = PreferencesService.pdfScale;
+        final quality = PreferencesService.pdfQuality;
         final pageImage = await page.render(
-          width: page.width * 2.5,
-          height: page.height * 2.5,
+          width: page.width * scale,
+          height: page.height * scale,
           format: PdfPageImageFormat.jpeg,
-          quality: 85,
+          quality: quality,
         );
         
         if (pageImage != null) {

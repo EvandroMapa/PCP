@@ -343,6 +343,7 @@ class AppDrawerDropdown extends StatelessWidget {
         ),
       ),
       child: ExpansionTile(
+        key: ValueKey('$title-${items.contains(module)}'),
         initiallyExpanded: items.contains(module),
         leading: Icon(
           icon,

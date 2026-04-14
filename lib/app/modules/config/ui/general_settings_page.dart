@@ -22,6 +22,10 @@ class GeneralSettingsPage extends StatelessWidget {
           const SizedBox(height: 16),
           _productionSettings(),
           const SizedBox(height: 32),
+          _sectionHeader('Desenhos Técnicos'),
+          const SizedBox(height: 16),
+          _pdfOptimizationSettings(),
+          const SizedBox(height: 32),
           _sectionHeader('Interface'),
           const SizedBox(height: 16),
           _layoutSettings(),
@@ -105,6 +109,89 @@ class GeneralSettingsPage extends StatelessWidget {
                       onPressed: value < 30 
                           ? () => PreferencesService.maxElementosProducao.add(value + 1)
                           : null,
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  Widget _pdfOptimizationSettings() {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey[200]!),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.picture_as_pdf_outlined, color: Colors.deepOrange),
+                const SizedBox(width: 12),
+                const Text(
+                  'Nível de Otimização de PDF',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Controla a resolução das imagens geradas a partir dos desenhos técnicos (PDF → JPG).\n'
+              '0 = Máxima resolução (arquivo maior) · 10 = Máxima compressão (arquivo menor)',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 16),
+            StreamOut<int>(
+              stream: PreferencesService.pdfOptimizationLevel.listen,
+              builder: (context, level) {
+                final scale = PreferencesService.pdfScale;
+                final quality = PreferencesService.pdfQuality;
+                return Column(
+                  children: [
+                    Row(
+                      children: [
+                        Text('0', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green[700])),
+                        const SizedBox(width: 4),
+                        const Text('HD', style: TextStyle(fontSize: 10)),
+                        Expanded(
+                          child: Slider(
+                            value: level.toDouble(),
+                            min: 0,
+                            max: 10,
+                            divisions: 10,
+                            label: level.toString(),
+                            activeColor: level <= 3 ? Colors.green : (level <= 7 ? Colors.orange : Colors.red),
+                            onChanged: (value) => PreferencesService.pdfOptimizationLevel.add(value.round()),
+                          ),
+                        ),
+                        const Text('Leve', style: TextStyle(fontSize: 10)),
+                        const SizedBox(width: 4),
+                        Text('10', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.red[700])),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.deepOrange.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            'NÍVEL: $level  ·  ESCALA: ${scale.toStringAsFixed(1)}x  ·  JPEG: $quality%',
+                            style: AppCss.smallBold.setColor(Colors.deepOrange[800]!),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 );
