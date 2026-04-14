@@ -471,6 +471,23 @@ class ElementoController {
     }
   }
 
+  Future<void> onDeleteAllArquivos(
+      ElementoModel elemento, String pedidoId) async {
+    try {
+      showLoadingDialog();
+      for (final arquivo in List.from(elemento.arquivos)) {
+        await SupabaseStorageService.deleteFile(arquivo.url);
+        await AppSupabaseClient.elementoArquivos.delete(arquivo.id);
+      }
+      await onFetch(pedidoId);
+      if (contextGlobal.mounted) Navigator.pop(contextGlobal); // Fecha loading
+      NotificationService.showPositive('Sucesso', 'Todos os arquivos removidos!');
+    } catch (e) {
+      if (contextGlobal.mounted) Navigator.pop(contextGlobal); // Fecha loading
+      log('ElementoController.onDeleteAllArquivos erro: $e');
+    }
+  }
+
   // ─── DELETAR TODOS OS ELEMENTOS ───────────────────────────────────────────
   Future<void> onDeleteAllElementos(String pedidoId) async {
     try {

@@ -1065,6 +1065,20 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
         ),
       ),
       actions: [
+        if (elementoSync.arquivos.isNotEmpty)
+          TextButton.icon(
+            icon: const Icon(Icons.delete_sweep_rounded, color: Colors.red, size: 18),
+            label: const Text('Apagar Todos', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            onPressed: () async {
+              if (await showConfirmDialog(
+                'Apagar todos os anexos?',
+                'Deseja remover permanentemente todos os ${elementoSync.arquivos.length} arquivo(s) deste elemento?',
+              )) {
+                await elementoCtrl.onDeleteAllArquivos(elementoSync, widget.pedido.id);
+                setState(() {});
+              }
+            },
+          ),
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: const Text('Fechar'),

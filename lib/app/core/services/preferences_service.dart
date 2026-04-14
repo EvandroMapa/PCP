@@ -85,15 +85,12 @@ class PreferencesService implements Service {
     });
   }
 
-  /// Converte o nível (0-10) em escala de renderização.
-  /// 0 = máxima resolução (3.0x), 10 = compressão moderada (1.5x)
-  static double get pdfScale {
-    return 3.0 - (pdfOptimizationLevel.value / 10.0) * 1.5;
-  }
+  /// Escala fixa em 2.5x para manter nitidez em todos os níveis.
+  static double get pdfScale => 2.5;
 
   /// Converte o nível (0-10) em qualidade JPEG.
-  /// 0 = máxima qualidade (95), 10 = qualidade moderada (60)
+  /// 0 = máxima qualidade (95%), 10 = mínima qualidade (55%)
   static int get pdfQuality {
-    return (95 - (pdfOptimizationLevel.value / 10.0) * 35).round();
+    return (95 - (pdfOptimizationLevel.value / 10.0) * 40).round();
   }
 }
