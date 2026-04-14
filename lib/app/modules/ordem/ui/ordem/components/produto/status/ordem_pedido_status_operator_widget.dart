@@ -55,7 +55,11 @@ class OrdemPedidoStatusOperatorWidget extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  width: 160,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: isActive ? 11 : 7,
+                  ),
                   decoration: BoxDecoration(
                     color: isActive ? color : color.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(10),
@@ -69,14 +73,16 @@ class OrdemPedidoStatusOperatorWidget extends StatelessWidget {
                     children: [
                       Icon(
                         _iconFor(status),
-                        size: 16,
+                        size: isActive ? 18 : 15,
                         color: isActive ? Colors.white : color,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         status.label,
-                        style: AppCss.minimumBold.setSize(13).setColor(
-                          isActive ? Colors.white : color.withValues(alpha: 0.7),
+                        style: TextStyle(
+                          fontSize: isActive ? 14 : 12,
+                          fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
+                          color: isActive ? Colors.white : color.withValues(alpha: 0.65),
                         ),
                       ),
                     ],

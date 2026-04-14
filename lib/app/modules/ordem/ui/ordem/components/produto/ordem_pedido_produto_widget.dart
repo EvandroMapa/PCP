@@ -73,20 +73,6 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
                             produto.pedido.localizador,
                             style: AppCss.mediumBold.setSize(15),
                           ),
-                          const Spacer(),
-                          // Badge status atual
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: statusColor.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-                            ),
-                            child: Text(
-                              produto.isPaused ? 'PAUSADO' : status.label.toUpperCase(),
-                              style: AppCss.minimumBold.setSize(10).setColor(statusColor),
-                            ),
-                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
