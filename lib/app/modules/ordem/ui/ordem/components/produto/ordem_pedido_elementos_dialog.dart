@@ -12,7 +12,7 @@ import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
-import 'package:aco_plus/app/modules/armacao/armacao_controller.dart';
+
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/ordem/ordem_controller.dart';
 import 'package:flutter/material.dart';
@@ -36,7 +36,10 @@ class OrdemPedidoElementosPage extends StatefulWidget {
 
 class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
   List<ElementoModel> _elementos = [];
+  List<_PosicaoItem> _posicoes = [];
   bool _isLoading = true;
+
+  String get _ordemProdutoId => widget.ordem.produto.id;
 
   @override
   void initState() {
@@ -57,6 +60,7 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
         if (mounted) {
           setState(() {
             _elementos = all;
+            _buildPosicoes();
             _isLoading = false;
           });
         }
@@ -81,6 +85,7 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
         if (mounted) {
           setState(() {
             _elementos = fetched;
+            _buildPosicoes();
             _isLoading = false;
           });
         }
@@ -91,19 +96,40 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     }
   }
 
-  Future<void> _onElementoTap(ElementoModel elemento) async {
-    // Abre picker de status
-    final newStatus = await _showStatusPicker(elemento);
-    if (newStatus == null || newStatus == elemento.status) return;
+  /// Constrói lista flat de posições filtradas pela bitola da ordem
+  void _buildPosicoes() {
+    _posicoes = [];
+    for (final elemento in _elementos) {
+      for (final posicao in elemento.posicoes) {
+        if (posicao.produtoId == _ordemProdutoId) {
+          _posicoes.add(_PosicaoItem(elemento: elemento, posicao: posicao));
+        }
+      }
+    }
+    _posicoes.sort((a, b) {
+      final numA = int.tryParse(a.posicao.numeroOs) ?? 0;
+      final numB = int.tryParse(b.posicao.numeroOs) ?? 0;
+      return numA.compareTo(numB);
+    });
+  }
 
-    final pedido = FirestoreClient.pedidos.getById(widget.produto.pedidoId);
-    await armacaoCtrl.updateElementoStatus(pedido, elemento, newStatus);
+  Future<void> _onPosicaoTap(_PosicaoItem item) async {
+    final newStatus = await _showStatusPicker(item);
+    if (newStatus == null || newStatus == item.posicao.status) return;
+
+    // Atualiza status da posição no Supabase
+    item.posicao.status = newStatus;
+    await SupabaseService.client
+        .from('elemento_posicoes')
+        .update({'status': newStatus.name})
+        .eq('id', item.posicao.id);
+
     await _fetchElementos();
     await _checkAutoUpdatePedidoStatus();
   }
 
-  Future<ElementoStatus?> _showStatusPicker(ElementoModel elemento) async {
-    return showDialog<ElementoStatus>(
+  Future<PosicaoStatus?> _showStatusPicker(_PosicaoItem item) async {
+    return showDialog<PosicaoStatus>(
       context: context,
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -119,13 +145,17 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
               ),
               const SizedBox(height: 6),
               Text(
-                elemento.nome,
+                'OS - ${item.posicao.numeroOs}',
                 style: AppCss.largeBold.setSize(20),
                 textAlign: TextAlign.center,
               ),
+              Text(
+                item.posicao.nome,
+                style: AppCss.mediumRegular.setSize(14).setColor(Colors.grey[600]!),
+              ),
               const SizedBox(height: 20),
-              ...ElementoStatus.values.map((status) {
-                final isActive = status == elemento.status;
+              ...PosicaoStatus.values.map((status) {
+                final isActive = status == item.posicao.status;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: InkWell(
@@ -191,28 +221,23 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     );
   }
 
+  /// Auto-update: verifica status de TODAS as posições desta bitola/pedido
   Future<void> _checkAutoUpdatePedidoStatus() async {
-    final todosElementos = AppSupabaseClient.elementos.data
-        .where((e) => e.pedidoId == widget.produto.pedidoId)
-        .toList();
+    if (_posicoes.isEmpty) return;
 
-    if (todosElementos.isEmpty) return;
-
-    final todosProntos = todosElementos
-        .every((e) => e.status == ElementoStatus.pronto && e.qtdePronto >= e.qtde);
-    final algumArmando =
-        todosElementos.any((e) => e.status == ElementoStatus.armando);
+    final todosProntos = _posicoes.every((p) => p.posicao.status == PosicaoStatus.pronto);
+    final algumProduzindo = _posicoes.any((p) => p.posicao.status == PosicaoStatus.produzindo);
 
     PedidoProdutoStatus? novoStatus;
 
     if (todosProntos &&
         widget.produto.status.status != PedidoProdutoStatus.pronto) {
       novoStatus = PedidoProdutoStatus.pronto;
-    } else if (algumArmando &&
+    } else if (algumProduzindo &&
         widget.produto.status.status ==
             PedidoProdutoStatus.aguardandoProducao) {
       novoStatus = PedidoProdutoStatus.produzindo;
-    } else if (!algumArmando &&
+    } else if (!algumProduzindo &&
         !todosProntos &&
         widget.produto.status.status == PedidoProdutoStatus.produzindo) {
       novoStatus = PedidoProdutoStatus.aguardandoProducao;
@@ -224,6 +249,148 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
       await FirestoreClient.ordens.fetch();
       ordemCtrl.setOrdem(ordemCtrl.getOrdemById(widget.ordem.id));
     }
+  }
+
+  void _showDebugDialog(BuildContext context) {
+    final pedido = widget.produto.pedido;
+    final produto = widget.produto;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        insetPadding: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800, maxHeight: 600),
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[900],
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.bug_report, color: Colors.amber, size: 20),
+                    const SizedBox(width: 8),
+                    Text('DEBUG — Dados do Pedido/Elementos',
+                        style: AppCss.mediumBold.setSize(14).setColor(Colors.white)),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _debugSection('FILTRO: Ordem ${widget.ordem.localizator} · Bitola: ${widget.ordem.produto.descricao} (${widget.ordem.produto.id})', []),
+                      const SizedBox(height: 12),
+                      for (int i = 0; i < _elementos.length; i++) ...[
+                        for (int j = 0; j < _elementos[i].posicoes.length; j++)
+                          if (_elementos[i].posicoes[j].produtoId == widget.ordem.produto.id)
+                            _debugSection('${_elementos[i].nome} · Posição [${j}]', [
+                              ['elemento_posicoes', 'id', _elementos[i].posicoes[j].id],
+                              ['elemento_posicoes', 'elemento_id', _elementos[i].posicoes[j].elementoId],
+                              ['elemento_posicoes', 'nome', _elementos[i].posicoes[j].nome],
+                              ['elemento_posicoes', 'numero_os', _elementos[i].posicoes[j].numeroOs],
+                              ['elemento_posicoes', 'produto_id', _elementos[i].posicoes[j].produtoId],
+                              ['elemento_posicoes', 'produto.descricao', _elementos[i].posicoes[j].produto?.descricao ?? '(null)'],
+                              ['elemento_posicoes', 'peso_kg', _elementos[i].posicoes[j].pesoKg.toStringAsFixed(3)],
+                              ['elemento_posicoes', 'qtde', _elementos[i].posicoes[j].qtde.toString()],
+                              ['elementos', 'elemento.nome', _elementos[i].nome],
+                              ['elementos', 'elemento.qtde', _elementos[i].qtde.toString()],
+                              ['elementos', 'elemento.status', _elementos[i].status.name],
+                            ]),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _debugSection(String title, List<List<String>> rows) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          color: Colors.grey[200],
+          child: Text(title,
+              style: const TextStyle(
+                  fontSize: 12, fontWeight: FontWeight.w800, fontFamily: 'monospace')),
+        ),
+        Table(
+          border: TableBorder.all(color: Colors.grey[300]!, width: 0.5),
+          columnWidths: const {
+            0: FlexColumnWidth(2),
+            1: FlexColumnWidth(2),
+            2: FlexColumnWidth(3),
+          },
+          children: [
+            TableRow(
+              decoration: BoxDecoration(color: Colors.grey[100]),
+              children: const [
+                Padding(
+                  padding: EdgeInsets.all(6),
+                  child: Text('Tabela',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(6),
+                  child: Text('Campo',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(6),
+                  child: Text('Valor',
+                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
+                ),
+              ],
+            ),
+            ...rows.map((row) => TableRow(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Text(row[0],
+                          style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.blue[700],
+                              fontFamily: 'monospace')),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Text(row[1],
+                          style: const TextStyle(
+                              fontSize: 10, fontFamily: 'monospace')),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: SelectableText(row[2],
+                          style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey[800],
+                              fontFamily: 'monospace')),
+                    ),
+                  ],
+                )),
+          ],
+        ),
+      ],
+    );
   }
 
   @override
@@ -252,19 +419,34 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
                 ],
               ),
             ),
-            // Badge resumo
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '${_elementos.length} OS',
-                style: AppCss.minimumBold
-                    .setSize(12)
-                    .setColor(Colors.white),
+            // Badge resumo — clicável para debug
+            InkWell(
+              onTap: () => _showDebugDialog(context),
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.bug_report_outlined,
+                        size: 14, color: Colors.white.withValues(alpha: 0.7)),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${_posicoes.length} OS',
+                      style: AppCss.minimumBold
+                          .setSize(12)
+                          .setColor(Colors.white),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -284,25 +466,25 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
                 ],
               ),
             )
-          : _elementos.isEmpty
+          : _posicoes.isEmpty
               ? const EmptyData(
-                  message: 'Nenhum elemento/OS encontrado para este pedido.')
+                  message: 'Nenhuma posição encontrada para esta bitola.')
               : GridView.builder(
                   padding: const EdgeInsets.all(20),
                   gridDelegate:
                       const SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: 280,
-                    mainAxisExtent: 190,
+                    mainAxisExtent: 210,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
                   ),
-                  itemCount: _elementos.length,
+                  itemCount: _posicoes.length,
                   itemBuilder: (context, index) {
-                    final elemento = _elementos[index];
+                    final item = _posicoes[index];
                     return _ElementoOSCard(
-                      key: ValueKey(elemento.id),
-                      elemento: elemento,
-                      onTap: () => _onElementoTap(elemento),
+                      key: ValueKey('${item.elemento.id}_${item.posicao.id}'),
+                      item: item,
+                      onTap: () => _onPosicaoTap(item),
                     );
                   },
                 ),
@@ -310,43 +492,55 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
   }
 }
 
-// ─── CARD ESTILO INDUSTRIAL (CONFORME REFERÊNCIA) ────────────────────────────
+// ─── MODELO AUXILIAR: par elemento + posição ─────────────────────────────────
+
+class _PosicaoItem {
+  final ElementoModel elemento;
+  final ElementoPosicaoModel posicao;
+
+  const _PosicaoItem({required this.elemento, required this.posicao});
+}
+
+// ─── CARD ESTILO INDUSTRIAL (POR POSIÇÃO) ────────────────────────────────────
 
 class _ElementoOSCard extends StatelessWidget {
-  final ElementoModel elemento;
+  final _PosicaoItem item;
   final VoidCallback onTap;
 
   const _ElementoOSCard({
     super.key,
-    required this.elemento,
+    required this.item,
     required this.onTap,
   });
 
-  String _statusLabel(ElementoStatus status) {
+  ElementoModel get elemento => item.elemento;
+  ElementoPosicaoModel get posicao => item.posicao;
+
+  String _statusLabel(PosicaoStatus status) {
     switch (status) {
-      case ElementoStatus.aguardando:
+      case PosicaoStatus.aguardando:
         return 'AGUARDANDO';
-      case ElementoStatus.armando:
+      case PosicaoStatus.produzindo:
         return 'PRODUZINDO';
-      case ElementoStatus.pronto:
+      case PosicaoStatus.pronto:
         return 'PRONTO';
     }
   }
 
-  Color _statusTextColor(ElementoStatus status) {
+  Color _statusTextColor(PosicaoStatus status) {
     switch (status) {
-      case ElementoStatus.aguardando:
+      case PosicaoStatus.aguardando:
         return Colors.black87;
-      case ElementoStatus.armando:
+      case PosicaoStatus.produzindo:
         return Colors.orange[800]!;
-      case ElementoStatus.pronto:
+      case PosicaoStatus.pronto:
         return Colors.green[700]!;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final status = elemento.status;
+    final status = posicao.status;
     final statusColor = status.color;
 
     return InkWell(
@@ -359,7 +553,7 @@ class _ElementoOSCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: statusColor.withValues(alpha: 0.4),
-            width: status == ElementoStatus.armando ? 2.5 : 1.5,
+            width: status == PosicaoStatus.produzindo ? 2.5 : 1.5,
           ),
           boxShadow: [
             BoxShadow(
@@ -381,9 +575,7 @@ class _ElementoOSCard extends StatelessWidget {
                     const BorderRadius.vertical(top: Radius.circular(13)),
               ),
               child: Text(
-                elemento.posicoes.isNotEmpty
-                    ? elemento.posicoes.first.numeroOs
-                    : elemento.nome,
+                'OS - ${posicao.numeroOs}',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
@@ -395,50 +587,37 @@ class _ElementoOSCard extends StatelessWidget {
               ),
             ),
 
+            // ─── NOME DO ELEMENTO (X QTDE) ───
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                '${elemento.nome}${elemento.qtde > 1 ? ' (X ${elemento.qtde})' : ''}',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.black,
+                ),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+
             // ─── STATUS ───
             Expanded(
               child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _statusLabel(status),
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: _statusTextColor(status),
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                    if (elemento.qtde > 1 && elemento.isProntoParcial) ...[
-                      const SizedBox(height: 6),
-                      // Barra de progresso para parcial
-                      SizedBox(
-                        width: 100,
-                        child: LinearProgressIndicator(
-                          value: elemento.progressoPronto,
-                          backgroundColor: Colors.grey[200],
-                          valueColor: AlwaysStoppedAnimation(Colors.green[400]!),
-                          minHeight: 4,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${elemento.qtdePronto}/${elemento.qtde} pç',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey[500],
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ],
+                child: Text(
+                  _statusLabel(status),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: _statusTextColor(status),
+                    letterSpacing: 1.0,
+                  ),
                 ),
               ),
             ),
 
-            // ─── RODAPÉ: QTDE / PESO / OS ───
+            // ─── RODAPÉ: POSIÇÃO / QTDE / PESO ───
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
@@ -450,11 +629,11 @@ class _ElementoOSCard extends StatelessWidget {
                 ),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _footerItem('QTDE', '${elemento.qtde} pç'),
-                  _footerItem('PESO', elemento.pesoUnitario.toKg()),
-                  _footerItem('OS', '${elemento.posicoes.length} os'),
+                  _footerItem('POSIÇÃO', posicao.nome),
+                  _footerItem('QTDE', '${posicao.qtde * elemento.qtde}'),
+                  _footerItem('PESO', (posicao.pesoKg * elemento.qtde).toKg()),
                 ],
               ),
             ),

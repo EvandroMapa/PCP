@@ -36,6 +36,29 @@ enum ElementoStatus {
   }
 }
 
+// ─── STATUS DA POSIÇÃO (produção CD) ──────────────────────────────────────────
+enum PosicaoStatus {
+  aguardando,
+  produzindo,
+  pronto;
+
+  String get label {
+    switch (this) {
+      case PosicaoStatus.aguardando: return 'Aguardando';
+      case PosicaoStatus.produzindo: return 'Produzindo';
+      case PosicaoStatus.pronto: return 'Pronto';
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case PosicaoStatus.aguardando: return Colors.grey[400]!;
+      case PosicaoStatus.produzindo: return Colors.orange[700]!;
+      case PosicaoStatus.pronto: return Colors.green[600]!;
+    }
+  }
+}
+
 // ─── POSIÇÃO / OS ─────────────────────────────────────────────────────────────
 class ElementoPosicaoModel {
   final String id;
@@ -46,6 +69,7 @@ class ElementoPosicaoModel {
   ProdutoModel? produto;   // bitola do catálogo
   final double pesoKg;
   final int qtde;           // quantidade de peças/barras na posição
+  PosicaoStatus status;     // status de produção CD
   final DateTime createdAt;
 
   ElementoPosicaoModel({
@@ -58,6 +82,7 @@ class ElementoPosicaoModel {
     required this.createdAt,
     this.qtde = 0,
     this.produto,
+    this.status = PosicaoStatus.aguardando,
   });
 
   factory ElementoPosicaoModel.fromSupabaseMap(Map<String, dynamic> map) {
@@ -70,6 +95,9 @@ class ElementoPosicaoModel {
       produtoId: produtoId,
       pesoKg: double.tryParse((map['peso_kg'] ?? '0').toString()) ?? 0.0,
       qtde: int.tryParse((map['qtde'] ?? '0').toString()) ?? 0,
+      status: PosicaoStatus.values.firstWhere(
+          (e) => e.name == (map['status'] ?? 'aguardando'),
+          orElse: () => PosicaoStatus.aguardando),
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -87,6 +115,7 @@ class ElementoPosicaoModel {
         'produto_id': produtoId,
         'peso_kg': pesoKg,
         'qtde': qtde,
+        'status': status.name,
       };
 }
 
