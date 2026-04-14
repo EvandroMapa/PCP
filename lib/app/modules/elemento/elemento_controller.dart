@@ -813,7 +813,7 @@ class ElementoController {
 
       // Procura índices usando possíveis variações de nome na sua planilha
       final idxElemento = getIndex(['ELEMENTO']);
-      final idxQtdeElementos = getIndex(['QTDE_ELEMENTOS', 'QTDE ELEMENTOS', 'QTD_ELEMENTOS', 'QTD ELEMENTOS']);
+      final idxQtdeElementos = getIndex(['QTDE ELEM', 'QTDE_ELEMENTOS', 'QTDE ELEMENTOS', 'QTD_ELEMENTOS', 'QTD ELEMENTOS']);
       final idxOs = getIndex(['OS', 'O.S.', 'O.S']);
       final idxPosicao = getIndex(['POSICAO', 'POSIÇÃO', 'POS.']);
       final idxBitola = getIndex(['BITOLA', 'DIAMETRO']);
