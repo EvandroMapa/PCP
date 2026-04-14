@@ -507,7 +507,17 @@ class _ElementoArmacaoCard extends StatelessWidget {
               right: 0,
               child: GestureDetector(
                 onTap: onImagePressed,
-                child: const Icon(Icons.image_outlined, color: Colors.white, size: 20),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${elemento.arquivos.length}',
+                      style: AppCss.mediumBold.setSize(14).setColor(Colors.white),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(Icons.image_outlined, color: Colors.white, size: 20),
+                  ],
+                ),
               ),
             ),
         ],

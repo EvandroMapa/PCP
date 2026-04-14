@@ -77,4 +77,25 @@ class DashboardController {
       'Operação realizada com sucesso.',
     );
   }
+
+  /// ─── LÓGICA DE CONSUMO ESTIMADO (KPIs DASHBOARD) ──────────────────────────
+  Map<String, double> getConsumoEstimado() {
+    final pedidos = FirestoreClient.pedidos.data
+        .where((p) => !p.isArchived)
+        .where((p) => p.step.considerarConsumoRelatorioPedidos)
+        .toList();
+
+    final Map<String, double> consumo = {};
+
+    for (var pedido in pedidos) {
+      for (var produto in pedido.produtos) {
+        // Apenas o que AINDA NÃO FOI PRODUZIDO (Diferente de 'Pronto')
+        if (produto.statusess.last.status != PedidoProdutoStatus.pronto) {
+          final prodId = produto.produto.id;
+          consumo[prodId] = (consumo[prodId] ?? 0) + produto.qtde;
+        }
+      }
+    }
+    return consumo;
+  }
 }

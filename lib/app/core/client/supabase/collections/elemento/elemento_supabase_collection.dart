@@ -105,8 +105,9 @@ class ElementoSupabaseCollection {
   void _updateStreams() {
     _streamDebounce?.cancel();
     _streamDebounce = Timer(const Duration(milliseconds: 500), () {
-      _isStarted = false;
+      _isStarted = false; // Forçar que o start() ignore o cache anterior
       start();
+      log('Supabase Realtime: Elementos e Arquivos reatualizados.');
     });
   }
 }

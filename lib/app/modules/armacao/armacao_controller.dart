@@ -10,8 +10,8 @@ import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/automatizacao/automatizacao_controller.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
-import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:flutter/material.dart';
+import 'dart:convert';
 
 final armacaoCtrl = ArmacaoController();
 
@@ -54,6 +54,7 @@ class ArmacaoController {
     // Listener reativo para elementos
     AppSupabaseClient.elementos.dataStream.listen.listen((allElementos) {
       if (_currentPedidoId != null) {
+        log('ArmacaoController: Recebendo atualização de elementos para Pedido $_currentPedidoId');
         final filtered = allElementos
             .where((e) => e.pedidoId == _currentPedidoId)
             .toList();
