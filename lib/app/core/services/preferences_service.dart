@@ -74,7 +74,7 @@ class PreferencesService implements Service {
       }
     });
 
-    pdfOptimizationLevel.listen.listen((value) async {
+    pdfOptimizationLevel.listen.skip(1).listen((value) async {
       try {
         await SupabaseService.client
             .from('configs')
