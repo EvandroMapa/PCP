@@ -389,8 +389,9 @@ class ElementoController {
       document = await PdfDocument.openData(pdfBytes);
       final int pageCount = document.pagesCount;
 
+      final level = PreferencesService.pdfOptimizationLevel.value;
       for (int i = 1; i <= pageCount; i++) {
-        loadingMessageStream.add('Processando página $i de $pageCount...\nGerando imagem de alta resolução.');
+        loadingMessageStream.add('Processando página $i de $pageCount...\nOtimizando com nível $level');
         
         final page = await document.getPage(i);
         // Renderiza com escala e qualidade configuráveis (Configurações Gerais)

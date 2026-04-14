@@ -999,7 +999,6 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
                               if (await showConfirmDialog('Apagar anexo?', 'Deseja remover este arquivo permanentemente?')) {
                                 await elementoCtrl.onDeleteArquivo(arq, widget.pedido.id);
                                 setState(() {});
-                                if (context.mounted) Navigator.pop(context);
                               }
                             },
                             tooltip: 'Excluir',
