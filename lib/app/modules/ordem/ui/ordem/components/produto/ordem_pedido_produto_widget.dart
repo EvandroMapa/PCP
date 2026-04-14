@@ -3,13 +3,16 @@ import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/orde
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/tag/models/tag_model.dart';
+import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
+import 'package:aco_plus/app/core/services/preferences_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/materia_prima/ui/materia_prima_bottom.dart';
 import 'package:aco_plus/app/modules/materia_prima/ui/materias_primas_create_page.dart';
+import 'package:aco_plus/app/modules/ordem/ui/ordem/components/produto/ordem_pedido_elementos_dialog.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem/components/produto/ordem_pedido_produto_pause_widget.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem/components/produto/status/ordem_pedido_status_normal_widget.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem/components/produto/status/ordem_pedido_status_operator_widget.dart';
@@ -33,9 +36,19 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
     final status = produto.statusView.status;
     final statusColor = produto.isPaused ? Colors.orange : status.color;
 
+    // Verifica se deve usar modo "por OS"
+    final isModoPorOS = usuario.isOperador &&
+        PreferencesService.apontamentoProducaoCD.value == 'por_os' &&
+        _pedidoTemElementos();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Container(
+      child: InkWell(
+        onTap: isModoPorOS
+            ? () => _openElementosDialog(context)
+            : null,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
         decoration: BoxDecoration(
           color: produto.isPaused
               ? Colors.orange.withValues(alpha: 0.04)
@@ -149,22 +162,52 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _statusWidget(),
-                    if (produto.statusView.status == PedidoProdutoStatus.produzindo)
+                    _statusWidget(readOnly: isModoPorOS),
+                    if (!isModoPorOS && produto.statusView.status == PedidoProdutoStatus.produzindo)
                       OrdemPedidoProdutoPauseWidget(ordem: ordem, produto: produto),
+                    if (isModoPorOS)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.touch_app_outlined, size: 12, color: Colors.grey[400]),
+                            const SizedBox(width: 4),
+                            Text('Clique para abrir OS', style: TextStyle(fontSize: 10, color: Colors.grey[400])),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
             ],
           ),
         ),
+        ),
       ),
     );
   }
 
-  Widget _statusWidget() {
+  /// Verifica se o pedido associado a este produto tem elementos/OS cadastrados
+  bool _pedidoTemElementos() {
+    return AppSupabaseClient.elementos.data
+        .any((e) => e.pedidoId == produto.pedidoId);
+  }
+
+  /// Abre o dialog de controle por OS/Elemento
+  void _openElementosDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => OrdemPedidoElementosDialog(
+        produto: produto,
+        ordem: ordem,
+      ),
+    );
+  }
+
+  Widget _statusWidget({bool readOnly = false}) {
     return usuario.isOperador
-        ? OrdemPedidoStatusOperatorWidget(produto: produto, ordem: ordem)
+        ? OrdemPedidoStatusOperatorWidget(produto: produto, ordem: ordem, readOnly: readOnly)
         : OrdemPedidoStatusNormalWidget(produto: produto, ordem: ordem);
   }
 

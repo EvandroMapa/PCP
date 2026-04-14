@@ -8,10 +8,12 @@ import 'package:flutter/material.dart';
 class OrdemPedidoStatusOperatorWidget extends StatelessWidget {
   final PedidoProdutoModel produto;
   final OrdemModel ordem;
+  final bool readOnly;
   const OrdemPedidoStatusOperatorWidget({
     super.key,
     required this.produto,
     required this.ordem,
+    this.readOnly = false,
   });
 
   IconData _iconFor(PedidoProdutoStatus status) {
@@ -36,7 +38,7 @@ class OrdemPedidoStatusOperatorWidget extends StatelessWidget {
     ];
 
     return IgnorePointer(
-      ignoring: produto.isPaused,
+      ignoring: produto.isPaused || readOnly,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: statuses.map((status) {

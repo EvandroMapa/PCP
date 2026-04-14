@@ -11,6 +11,7 @@ class PreferencesService implements Service {
   static final AppStream<double> kanbanColumnWidth = AppStream<double>.seed(300.0);
   static final AppStream<int> maxElementosProducao = AppStream<int>.seed(10);
   static final AppStream<int> pdfOptimizationLevel = AppStream<int>.seed(5);
+  static final AppStream<String> apontamentoProducaoCD = AppStream<String>.seed('por_pedido');
 
   @override
   Future<void> initialize() async {
@@ -58,6 +59,23 @@ class PreferencesService implements Service {
       }
     }
 
+    // Recupera modo de apontamento de produção CD
+    try {
+      final apontConfig = await SupabaseService.client
+          .from('configs')
+          .select()
+          .eq('key', 'apontamento_producao_cd')
+          .maybeSingle();
+      if (apontConfig != null) {
+        final val = apontConfig['value'].toString();
+        if (val == 'por_pedido' || val == 'por_os') {
+          apontamentoProducaoCD.add(val);
+        }
+      }
+    } catch (e) {
+      log('Erro ao carregar apontamento CD: $e');
+    }
+
     // Listeners para salvamento automático
     kanbanColumnWidth.listen.listen((value) {
       instance.setDouble('kanbanColumnWidth', value);
@@ -81,6 +99,16 @@ class PreferencesService implements Service {
             .upsert({'key': 'pdf_optimization_level', 'value': value}, onConflict: 'key');
       } catch (e) {
         log('Erro ao salvar nível de otimização PDF: $e');
+      }
+    });
+
+    apontamentoProducaoCD.listen.skip(1).listen((value) async {
+      try {
+        await SupabaseService.client
+            .from('configs')
+            .upsert({'key': 'apontamento_producao_cd', 'value': value}, onConflict: 'key');
+      } catch (e) {
+        log('Erro ao salvar apontamento CD: $e');
       }
     });
   }

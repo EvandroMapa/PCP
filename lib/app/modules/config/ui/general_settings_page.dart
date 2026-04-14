@@ -29,6 +29,10 @@ class GeneralSettingsPage extends StatelessWidget {
           _sectionHeader('Interface'),
           const SizedBox(height: 16),
           _layoutSettings(),
+          const SizedBox(height: 32),
+          _sectionHeader('Apontamento CD'),
+          const SizedBox(height: 16),
+          _apontamentoSettings(),
         ],
       ),
     );
@@ -285,6 +289,113 @@ class GeneralSettingsPage extends StatelessWidget {
                 );
               },
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _apontamentoSettings() {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Colors.grey[200]!),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Modo de Apontamento de Produção CD',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Define como o operador controla a produção dos pedidos CD/CDA nas ordens de serviço.',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 24),
+            StreamOut<String>(
+              stream: PreferencesService.apontamentoProducaoCD.listen,
+              builder: (_, currentValue) {
+                return Column(
+                  children: [
+                    _apontamentoOption(
+                      title: 'Por Pedido',
+                      subtitle: 'Operador muda status diretamente no card do pedido (atual)',
+                      icon: Icons.receipt_long_outlined,
+                      value: 'por_pedido',
+                      currentValue: currentValue,
+                    ),
+                    const SizedBox(height: 12),
+                    _apontamentoOption(
+                      title: 'Por OS (Elemento)',
+                      subtitle: 'Operador controla produção no nível da OS/Elemento',
+                      icon: Icons.view_list_outlined,
+                      value: 'por_os',
+                      currentValue: currentValue,
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _apontamentoOption({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required String value,
+    required String currentValue,
+  }) {
+    final isSelected = value == currentValue;
+    final color = isSelected ? AppColors.secondary : Colors.grey[400]!;
+    return InkWell(
+      onTap: () => PreferencesService.apontamentoProducaoCD.add(value),
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected ? color.withValues(alpha: 0.08) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? color : Colors.grey[300]!,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color: isSelected ? color : Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Icon(Icons.check_circle, color: color, size: 24),
           ],
         ),
       ),
