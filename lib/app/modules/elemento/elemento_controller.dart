@@ -387,6 +387,19 @@ class ElementoController {
   Future<void> _optimizeAndUploadPdf(ElementoModel elemento, String originalName, Uint8List pdfBytes) async {
     PdfDocument? document;
     try {
+      // Busca o nível atualizado do banco antes de processar
+      try {
+        final configRaw = await SupabaseService.client
+            .from('configs')
+            .select()
+            .eq('key', 'pdf_optimization_level')
+            .maybeSingle();
+        if (configRaw != null) {
+          final val = int.tryParse(configRaw['value'].toString());
+          if (val != null) PreferencesService.pdfOptimizationLevel.add(val.clamp(0, 10));
+        }
+      } catch (_) {} // Se falhar, usa o valor em memória
+
       document = await PdfDocument.openData(pdfBytes);
       final int pageCount = document.pagesCount;
 
