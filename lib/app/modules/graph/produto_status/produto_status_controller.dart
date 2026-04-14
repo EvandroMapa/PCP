@@ -48,7 +48,10 @@ class ProdutoStatusController {
     List<PedidoProdutoModel> pedidosProdutos = [];
     for (var pedido in pedidos) {
       for (var produto in pedido.produtos) {
-        if (produto.status.getStatusMinified() == status) {
+        final currentStatus = produto.status.getStatusMinified();
+        if (currentStatus == status ||
+            (status == PedidoProdutoStatus.aguardandoProducao &&
+                currentStatus == PedidoProdutoStatus.separado)) {
           pedidosProdutos.add(produto.copyWith());
         }
       }

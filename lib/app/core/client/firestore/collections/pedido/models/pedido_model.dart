@@ -265,8 +265,8 @@ class PedidoModel {
     return getProdutos()
         .where(
           (e) =>
-              e.status.status ==
-              PedidoProdutoStatus.aguardandoProducao,
+              e.status.status == PedidoProdutoStatus.aguardandoProducao ||
+              e.status.status == PedidoProdutoStatus.separado,
         )
         .fold(0, (previousValue, element) => previousValue + element.qtde);
   }
