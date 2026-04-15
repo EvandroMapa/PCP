@@ -57,7 +57,7 @@ class DashboardPageState extends State<DashboardPage> {
                   children: [
                     _kpiCards(pedidos),
                     const H(32),
-                    
+
                     if (isMobile) ...[
                       _ordemProducaoWidget(),
                       const H(32),
@@ -85,7 +85,7 @@ class DashboardPageState extends State<DashboardPage> {
   Widget _kpiCards(List<PedidoModel> pedidos) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    
+
     final totalKg = pedidos.fold(0.0, (sum, p) => sum + p.getQtdeTotal());
     final entregasHoje = pedidos.where((p) => p.deliveryAt != null && p.deliveryAt!.isSameDay(today)).length;
     final atrasados = pedidos.where((p) => p.deliveryAt != null && p.deliveryAt!.isBefore(today) && !p.deliveryAt!.isSameDay(today)).length;
@@ -93,7 +93,7 @@ class DashboardPageState extends State<DashboardPage> {
 
     return LayoutBuilder(builder: (context, constraints) {
       final cardWidth = constraints.maxWidth > 1000 ? (constraints.maxWidth - 72) / 4 : (constraints.maxWidth - 24) / 2;
-      
+
       return Wrap(
         spacing: 24,
         runSpacing: 24,
@@ -140,7 +140,7 @@ class DashboardPageState extends State<DashboardPage> {
     final produtos = FirestoreClient.produtos.data
         .where((p) => consumoMap.containsKey(p.id))
         .toList();
-    
+
     produtos.sort((a, b) => a.number.compareTo(b.number));
 
     return Container(
@@ -228,18 +228,18 @@ class DashboardPageState extends State<DashboardPage> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryMain.withAlpha(25), 
+                      color: AppColors.primaryMain.withAlpha(25),
                       borderRadius: BorderRadius.circular(20)
                     ),
-                    child: Text('${ordensFiltradas.length} ORDENS ATIVAS', 
+                    child: Text('${ordensFiltradas.length} ORDENS ATIVAS',
                       style: AppCss.minimumBold.setSize(11).setColor(AppColors.primaryMain)),
                   ),
                 ],
               ),
             ),
             SizedBox(
-              height: 500,
-              child: ordensFiltradas.isEmpty 
+              height: 300,
+              child: ordensFiltradas.isEmpty
                 ? Center(child: Text('Nenhuma ordem em produção agora.', style: AppCss.mediumRegular.setColor(Colors.grey[400]!)))
                 : ListView.builder(
                     itemCount: ordensFiltradas.length,
