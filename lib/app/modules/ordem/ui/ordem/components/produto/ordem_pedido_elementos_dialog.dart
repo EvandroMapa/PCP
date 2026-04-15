@@ -477,8 +477,6 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     );
   }
 
-  }
-
   @override
   Widget build(BuildContext context) {
     final pedido = widget.produto.pedido;
