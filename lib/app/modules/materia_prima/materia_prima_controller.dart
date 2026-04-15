@@ -76,6 +76,27 @@ class MateriaPrimaController {
           await finalizarMateriaPrima(edit);
         }
         await FirestoreClient.materiaPrimas.update(edit);
+        // Propaga dados atualizados para todas as ordens que referenciam esta MP
+        for (var ordem in FirestoreClient.ordens.data.where(
+          (o) => o.materiaPrima?.id == edit.id,
+        )) {
+          ordem.materiaPrima = edit;
+          await FirestoreClient.ordens.update(ordem);
+        }
+        
+        // Propaga dados atualizados para todos os pedidos/produtos (itens do Kanban)
+        for (var pedido in FirestoreClient.pedidos.data) {
+          bool pedidoUpdated = false;
+          for (var produto in pedido.produtos) {
+            if (produto.materiaPrima?.id == edit.id) {
+              produto.materiaPrima = edit;
+              pedidoUpdated = true;
+            }
+          }
+          if (pedidoUpdated) {
+            await FirestoreClient.pedidos.update(pedido);
+          }
+        }
       } else {
         final materiaPrimaCreate = form.toMateriaPrimaModel();
         await FirestoreClient.materiaPrimas.add(materiaPrimaCreate);

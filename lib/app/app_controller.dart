@@ -40,28 +40,58 @@ class AppController {
   }
 
   Timer? _cascadeDebounce;
+  bool _isFirstLoad = true;
 
-  /// Quando Fabricantes ou Produtos mudam, re-faz fetch de MatériasPrimas e Ordens
-  /// para que o dynamic linking reconstrua os objetos com dados atualizados.
+  /// Cascade reativo em 2 níveis:
+  /// 1. Fabricantes/Produtos mudam → re-fetch MatériasPrimas + Ordens
+  /// 2. MatériasPrimas mudam → re-fetch Ordens
   void _setupCascadeListeners() {
+    // Nível 1: Fabricantes ou Produtos → MatériasPrimas + Ordens
     BackendClient.fabricantes.dataStream.listen.listen((_) {
-      _triggerCascadeRefetch();
+      if (_isFirstLoad) return; // Ignora carga inicial
+      _triggerFullCascade();
     });
     BackendClient.produtos.dataStream.listen.listen((_) {
-      _triggerCascadeRefetch();
+      if (_isFirstLoad) return;
+      _triggerFullCascade();
+    });
+
+    // Nível 2: MatériasPrimas → Ordens
+    BackendClient.materiaPrima.dataStream.listen.listen((_) {
+      if (_isFirstLoad) return;
+      _triggerOrdensCascade();
+    });
+
+    // Marca fim da carga inicial após 3 segundos
+    Timer(const Duration(seconds: 3), () {
+      _isFirstLoad = false;
+      log('AppController: Cascade listeners ativos');
     });
   }
 
-  void _triggerCascadeRefetch() {
-    // Debounce de 500ms para evitar múltiplos fetches simultâneos
+  void _triggerFullCascade() {
     _cascadeDebounce?.cancel();
-    _cascadeDebounce = Timer(const Duration(milliseconds: 500), () async {
+    _cascadeDebounce = Timer(const Duration(milliseconds: 300), () async {
       try {
         await BackendClient.materiaPrima.fetch();
         await BackendClient.ordens.fetch();
-        log('AppController: Cascade refetch concluído (fabricantes/produtos → materias_primas/ordens)');
+        log('AppController: Full cascade concluído (fab/prod → mp → ordens)');
       } catch (e) {
-        log('AppController: Erro no cascade refetch: $e');
+        log('AppController: Erro no full cascade: $e');
+      }
+    });
+  }
+
+  Timer? _ordensDebounce;
+
+  void _triggerOrdensCascade() {
+    _ordensDebounce?.cancel();
+    _ordensDebounce = Timer(const Duration(milliseconds: 300), () async {
+      try {
+        await BackendClient.ordens.fetch();
+        log('AppController: Ordens cascade concluído (mp → ordens)');
+      } catch (e) {
+        log('AppController: Erro no ordens cascade: $e');
       }
     });
   }
