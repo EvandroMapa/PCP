@@ -13,7 +13,11 @@ import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_m
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/ordem/ordem_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/core/services/supabase_service.dart';
+import 'package:aco_plus/app/core/services/preferences_service.dart';
+import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
 import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
@@ -616,6 +620,10 @@ class OrdemController {
     await FirestoreClient.pedidos.updateProdutoStatus(produto, status);
     final pedido = await FirestoreClient.pedidos.updatePedidoStatus(produto);
     if (pedido != null) await updateFeaturesByPedidoStatus(pedido);
+
+    // Sincroniza posições dos elementos quando no modo "por_pedido"
+    await _syncPosicoesByPedidoStatus(produto, status);
+
     if (!isAll) {
       await OrdemTimelineRegister.statusProdutoAlterada(
         ordem,
@@ -628,6 +636,63 @@ class OrdemController {
       await OrdemTimelineRegister.statusOrdem(updatedOrdem);
     }
     setOrdem(updatedOrdem);
+  }
+
+  /// Sincroniza todas as posições de um pedido com o status do card.
+  /// Chamado quando o operador muda status no modo "por_pedido".
+  Future<void> _syncPosicoesByPedidoStatus(
+    PedidoProdutoModel produto,
+    PedidoProdutoStatus pedidoStatus,
+  ) async {
+    // Converte PedidoProdutoStatus para PosicaoStatus
+    final PosicaoStatus? posicaoStatus;
+    switch (pedidoStatus) {
+      case PedidoProdutoStatus.aguardandoProducao:
+        posicaoStatus = PosicaoStatus.aguardando;
+        break;
+      case PedidoProdutoStatus.produzindo:
+        posicaoStatus = PosicaoStatus.produzindo;
+        break;
+      case PedidoProdutoStatus.pronto:
+        posicaoStatus = PosicaoStatus.pronto;
+        break;
+      default:
+        posicaoStatus = null;
+    }
+    if (posicaoStatus == null) return;
+
+    // Busca elementos do pedido
+    final elementos = AppSupabaseClient.elementos.data
+        .where((e) => e.pedidoId == produto.pedidoId)
+        .toList();
+    if (elementos.isEmpty) return;
+
+    // Busca a bitola da ordem para filtrar posições
+    final bitolaId = ordem.produto.id;
+
+    // Atualiza no Supabase em batch
+    final List<String> idsToUpdate = [];
+    for (final elemento in elementos) {
+      for (final posicao in elemento.posicoes) {
+        if (posicao.produtoId == bitolaId && posicao.status != posicaoStatus) {
+          idsToUpdate.add(posicao.id);
+          // Atualiza cache local
+          posicao.status = posicaoStatus;
+        }
+      }
+    }
+
+    if (idsToUpdate.isNotEmpty) {
+      // Persiste no Supabase
+      for (final id in idsToUpdate) {
+        await SupabaseService.client
+            .from('elemento_posicoes')
+            .update({'status': posicaoStatus.name})
+            .eq('id', id);
+      }
+      // Re-emite stream de elementos
+      AppSupabaseClient.elementos.dataStream.add(AppSupabaseClient.elementos.data);
+    }
   }
 
   Future<void> updateFeaturesByPedidoStatus(PedidoModel pedido) async {
