@@ -309,6 +309,144 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
       ordemCtrl.setOrdem(updatedOrdem);
     }
   }
+
+  /// Barra fixa de resumo de produção por status das posições
+  Widget _buildResumoBar() {
+    int qtdAg = 0, qtdProd = 0, qtdPronto = 0;
+    double pesoAg = 0, pesoProd = 0, pesoPronto = 0;
+
+    for (final item in _posicoes) {
+      final peso = item.posicao.pesoKg * item.elemento.qtde;
+      switch (item.posicao.status) {
+        case PosicaoStatus.aguardando:
+          qtdAg++;
+          pesoAg += peso;
+          break;
+        case PosicaoStatus.produzindo:
+          qtdProd++;
+          pesoProd += peso;
+          break;
+        case PosicaoStatus.pronto:
+          qtdPronto++;
+          pesoPronto += peso;
+          break;
+      }
+    }
+
+    final total = _posicoes.length;
+    final pesoTotal = pesoAg + pesoProd + pesoPronto;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      child: Row(
+        children: [
+          _resumoItem(
+            'AGUARDANDO',
+            PosicaoStatus.aguardando,
+            qtdAg,
+            pesoAg,
+            total,
+            pesoTotal,
+          ),
+          const SizedBox(width: 10),
+          _resumoItem(
+            'PRODUZINDO',
+            PosicaoStatus.produzindo,
+            qtdProd,
+            pesoProd,
+            total,
+            pesoTotal,
+          ),
+          const SizedBox(width: 10),
+          _resumoItem(
+            'PRONTO',
+            PosicaoStatus.pronto,
+            qtdPronto,
+            pesoPronto,
+            total,
+            pesoTotal,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _resumoItem(
+    String label,
+    PosicaoStatus status,
+    int qtd,
+    double peso,
+    int totalQtd,
+    double totalPeso,
+  ) {
+    final prcntQtd = totalQtd == 0 ? 0.0 : (qtd / totalQtd * 100);
+    final prcntPeso = totalPeso == 0 ? 0.0 : (peso / totalPeso * 100);
+
+    return Expanded(
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: status.color.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: status.color.withValues(alpha: 0.3), width: 1.5),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 8),
+              color: Colors.grey[800],
+              child: Text(
+                label,
+                textAlign: TextAlign.center,
+                style: AppCss.largeBold.setSize(13).setColor(Colors.white),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('OS', style: AppCss.largeBold.setSize(10).setColor(Colors.grey[500]!)),
+                      Text(
+                        '$qtd (${prcntQtd.toStringAsFixed(0)}%)',
+                        style: AppCss.largeBold.setSize(16).setColor(Colors.black),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text('PESO', style: AppCss.largeBold.setSize(10).setColor(Colors.grey[500]!)),
+                      Text(
+                        '${peso.toStringAsFixed(1)} kg (${prcntPeso.toStringAsFixed(0)}%)',
+                        style: AppCss.largeBold.setSize(14).setColor(Colors.black),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showDebugDialog(BuildContext context) {
     final pedido = widget.produto.pedido;
     final produto = widget.produto;
@@ -527,24 +665,31 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
           : _posicoes.isEmpty
               ? const EmptyData(
                   message: 'Nenhuma posição encontrada para esta bitola.')
-              : GridView.builder(
-                  padding: const EdgeInsets.all(20),
-                  gridDelegate:
-                      const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 280,
-                    mainAxisExtent: 210,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                  ),
-                  itemCount: _posicoes.length,
-                  itemBuilder: (context, index) {
-                    final item = _posicoes[index];
-                    return _ElementoOSCard(
-                      key: ValueKey('${item.elemento.id}_${item.posicao.id}'),
-                      item: item,
-                      onTap: () => _onPosicaoTap(item),
-                    );
-                  },
+              : Column(
+                  children: [
+                    _buildResumoBar(),
+                    Expanded(
+                      child: GridView.builder(
+                        padding: const EdgeInsets.all(20),
+                        gridDelegate:
+                            const SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 280,
+                          mainAxisExtent: 210,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                        ),
+                        itemCount: _posicoes.length,
+                        itemBuilder: (context, index) {
+                          final item = _posicoes[index];
+                          return _ElementoOSCard(
+                            key: ValueKey('${item.elemento.id}_${item.posicao.id}'),
+                            item: item,
+                            onTap: () => _onPosicaoTap(item),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
     );
   }

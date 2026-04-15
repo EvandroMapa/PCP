@@ -9,6 +9,8 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
+import 'package:aco_plus/app/core/services/preferences_service.dart';
+import 'package:aco_plus/app/core/utils/posicao_progresso_helper.dart';
 import 'package:flutter/material.dart';
 
 class OrdemModel {
@@ -73,6 +75,11 @@ class OrdemModel {
         );
 
   double quantideTotal() {
+    if (_isModoPorOs && produtos.isNotEmpty) {
+      final pedidoIds = pedidos.map((e) => e.id).toList();
+      final result = calcularProgressoOrdem(pedidoIds, produto.id);
+      if (result.hasData) return result.pesoTotal;
+    }
     return produtos.isEmpty
         ? 0
         : produtos.fold(
@@ -81,7 +88,14 @@ class OrdemModel {
           );
   }
 
+  bool get _isModoPorOs => PreferencesService.apontamentoProducaoCD.value == 'por_os';
+
   double qtdeAguardando() {
+    if (_isModoPorOs && produtos.isNotEmpty) {
+      final pedidoIds = pedidos.map((e) => e.id).toList();
+      final result = calcularProgressoOrdem(pedidoIds, produto.id);
+      if (result.hasData) return result.pesoAguardando;
+    }
     var where = produtos
         .where(
           (e) => e.statusView.status == PedidoProdutoStatus.aguardandoProducao,
@@ -96,6 +110,11 @@ class OrdemModel {
   }
 
   double qtdeProduzindo() {
+    if (_isModoPorOs && produtos.isNotEmpty) {
+      final pedidoIds = pedidos.map((e) => e.id).toList();
+      final result = calcularProgressoOrdem(pedidoIds, produto.id);
+      if (result.hasData) return result.pesoProduzindo;
+    }
     var where = produtos
         .where((e) => e.status.status == PedidoProdutoStatus.produzindo)
         .toList();
@@ -108,6 +127,13 @@ class OrdemModel {
   }
 
   double qtdePronto() {
+    if (_isModoPorOs && produtos.isNotEmpty) {
+      final pedidoIds = pedidos.map((e) => e.id).toList();
+      final result = calcularProgressoOrdem(pedidoIds, produto.id);
+      // Aqui usamos o percentual e multiplicamos pela quantidade total inteira
+      // Pois elementos fracionados podem não refletir o total do pedido até ficarem prontos na nova UI.
+      if (result.hasData) return result.pesoPronto;
+    }
     var where = produtos
         .where((e) => e.status.status == PedidoProdutoStatus.pronto)
         .toList();

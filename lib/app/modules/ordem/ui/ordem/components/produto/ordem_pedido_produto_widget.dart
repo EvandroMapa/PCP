@@ -6,7 +6,9 @@ import 'package:aco_plus/app/core/client/firestore/collections/tag/models/tag_mo
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
+import 'package:aco_plus/app/core/utils/posicao_progresso_helper.dart';
 import 'package:aco_plus/app/core/services/preferences_service.dart';
+import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
@@ -166,17 +168,7 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
                     if (!isModoPorOS && produto.statusView.status == PedidoProdutoStatus.produzindo)
                       OrdemPedidoProdutoPauseWidget(ordem: ordem, produto: produto),
                     if (isModoPorOS)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.touch_app_outlined, size: 12, color: Colors.grey[400]),
-                            const SizedBox(width: 4),
-                            Text('Clique para abrir OS', style: TextStyle(fontSize: 10, color: Colors.grey[400])),
-                          ],
-                        ),
-                      ),
+                      _buildMiniProgressOS(),
                   ],
                 ),
               ),
@@ -204,6 +196,84 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
           ordem: ordem,
         ),
       ),
+    );
+  }
+  Widget _buildMiniProgressOS() {
+    final result = calcularProgressoPosicoes(produto.pedidoId, ordem.produto.id);
+    if (!result.hasData) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.touch_app_outlined, size: 12, color: Colors.grey[400]),
+            const SizedBox(width: 4),
+            Text('Clique para abrir OS',
+                style: TextStyle(fontSize: 10, color: Colors.grey[400])),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: Column(
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _miniCircle('Ag.', result.prcntAguardando, PosicaoStatus.aguardando.color),
+              const SizedBox(width: 8),
+              _miniCircle('Prod.', result.prcntProduzindo, PosicaoStatus.produzindo.color),
+              const SizedBox(width: 8),
+              _miniCircle('Pronto', result.prcntPronto, PosicaoStatus.pronto.color),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.touch_app_outlined, size: 10, color: Colors.grey[400]),
+              const SizedBox(width: 3),
+              Text('Abrir OS',
+                  style: TextStyle(fontSize: 9, color: Colors.grey[400])),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _miniCircle(String label, double prcnt, Color color) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 30,
+          height: 30,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              CircularProgressIndicator(
+                value: prcnt,
+                backgroundColor: color.withValues(alpha: 0.15),
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation(color),
+              ),
+              Text(
+                '${(prcnt * 100).toStringAsFixed(0)}',
+                style: TextStyle(
+                    fontSize: 8,
+                    fontWeight: FontWeight.w700,
+                    color: color),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(label,
+            style: TextStyle(fontSize: 8, color: Colors.grey[500])),
+      ],
     );
   }
 
