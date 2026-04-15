@@ -444,8 +444,6 @@ class AppDrawerItem extends StatelessWidget {
                 KanbanCardNotificacaoWidget(),
               if (item.standalonePath != null)
                 IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
                   onPressed: () {
                     pop(context);
                     openInNewTab(item.standalonePath!);
@@ -458,7 +456,6 @@ class AppDrawerItem extends StatelessWidget {
                         : Colors.grey[450],
                   ),
                   tooltip: 'Abrir em nova janela',
-                  splashRadius: 16,
                 ),
             ],
           ),

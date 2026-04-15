@@ -153,6 +153,7 @@ class StepController {
   }
 
   void updateKanban() {
+    if (!utilsStream.hasValue) return;
     utils.kanban = mountKanban();
     utilsStream.update();
   }

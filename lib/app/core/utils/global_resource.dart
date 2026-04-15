@@ -3,7 +3,8 @@ import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:web/web.dart' as web;
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
 
 const String empty = '';
 
@@ -80,11 +81,7 @@ void setWebTitle(String title) {
 }
 
 void openInNewTab(String path) {
-  final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
-  anchor.href = Uri.base.origin + path;
-  anchor.target = '_blank';
-  web.document.body?.append(anchor);
-  anchor.click();
-  anchor.remove();
+  final url = Uri.base.origin + path;
+  html.window.open(url, '_blank');
 }
 
