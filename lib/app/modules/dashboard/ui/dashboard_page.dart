@@ -31,7 +31,7 @@ class DashboardPage extends StatefulWidget {
 class DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
-    setWebTitle('AçoPlus - Dashboard');
+    setWebTitle('AçoPlus - Gestão a Vista');
     super.initState();
   }
 
@@ -55,13 +55,6 @@ class DashboardPageState extends State<DashboardPage> {
                 child: ListView(
                   padding: const EdgeInsets.all(24),
                   children: [
-                    Text('Dashboard Industrial', 
-                      style: AppCss.largeBold.setSize(28).setColor(AppColors.primaryMain)),
-                    const H(8),
-                    Text('Monitoramento em tempo real da produção e consumo.', 
-                      style: AppCss.mediumRegular.setColor(Colors.grey[600]!)),
-                    const H(32),
-                    
                     _kpiCards(pedidos),
                     const H(32),
                     

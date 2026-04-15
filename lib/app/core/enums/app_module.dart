@@ -13,6 +13,8 @@ import 'package:aco_plus/app/modules/relatorio/ui/pedido/relatorios_pedido_page.
 import 'package:aco_plus/app/modules/relatorio/ui/producao/relatorios_producao_page.dart';
 import 'package:aco_plus/app/modules/step/ui/steps_page.dart';
 import 'package:aco_plus/app/modules/tag/ui/tags_page.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
+import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -72,6 +74,23 @@ extension AppModuleExt on AppModule {
     if (this == AppModule.kanban) {
       return const KanbanTopBarWidget();
     }
+    if (this == AppModule.dashboard) {
+      return AppBar(
+        iconTheme: const IconThemeData(color: Colors.white, size: 20),
+        backgroundColor: AppColors.primaryMain,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Gestão a Vista',
+                style: AppCss.mediumBold.setSize(20).setColor(Colors.white)),
+            Text('Monitoramento em tempo real de produção e consumo',
+                style: AppCss.minimumRegular
+                    .setSize(12)
+                    .setColor(Colors.white.withOpacity(0.8))),
+          ],
+        ),
+      );
+    }
     return null;
   }
 
@@ -113,7 +132,7 @@ extension AppModuleExt on AppModule {
   String get label {
     switch (this) {
       case AppModule.dashboard:
-        return 'Dashboard';
+        return 'Gestão a Vista';
       case AppModule.cliente:
         return 'Clientes';
       case AppModule.pedidos:

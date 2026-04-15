@@ -70,6 +70,7 @@ void setWebTitle(String title) {
     'AçoPlus - Kanban',
     'AçoPlus - Pedidos',
     'AçoPlus - Ordens de Produção',
+    'AçoPlus - Gestão a Vista',
     'AçoPlus - Planejamento e controle de Produção',
   ];
 
