@@ -263,9 +263,23 @@ class OrdemModel {
     final historyRaw = tryDecode(map['history']);
     final idPedidosProdutosRaw = tryDecode(map['idPedidosProdutos'] ?? map['id_pedidos_produtos']);
 
+    // Dynamic linking: busca Produto e MateriaPrima atualizados no cache reativo
+    final produtoId = ProdutoModel.fromMap(produtoRaw).id;
+    final produto = BackendClient.produtos.data.isNotEmpty
+        ? BackendClient.produtos.getById(produtoId)
+        : ProdutoModel.fromMap(produtoRaw);
+
+    MateriaPrimaModel? materiaPrima;
+    if (materiaPrimaRaw != null) {
+      final mpSnapshot = MateriaPrimaModel.fromMap(materiaPrimaRaw);
+      materiaPrima = BackendClient.materiaPrima.data.isNotEmpty
+          ? BackendClient.materiaPrima.getById(mpSnapshot.id)
+          : mpSnapshot;
+    }
+
     return OrdemModel(
       id: map['id'] ?? '',
-      produto: ProdutoModel.fromMap(produtoRaw),
+      produto: produto,
       createdAt: map['createdAt'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'])
           : map['created_at'] != null
@@ -302,9 +316,7 @@ class OrdemModel {
           : OrdemFreezedModel.static().copyWith(),
       isArchived: map['isArchived'] ?? map['is_archived'] ?? false,
       beltIndex: map['beltIndex'] ?? map['belt_index'],
-      materiaPrima: materiaPrimaRaw != null
-          ? MateriaPrimaModel.fromMap(materiaPrimaRaw)
-          : null,
+      materiaPrima: materiaPrima,
       history: () {
         if (historyRaw == null) return <OrdemHistoryModel>[];
         try {

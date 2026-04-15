@@ -1,3 +1,4 @@
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/enums/materia_prima_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
@@ -32,10 +33,19 @@ class MateriaPrimaModel {
   );
 
   factory MateriaPrimaModel.fromMap(Map<String, dynamic> map) {
+    final fabricanteSnapshot = FabricanteModel.fromMap(map['fabricanteModel']);
+    final produtoSnapshot = ProdutoModel.fromMap(map['produto']);
+    // Dynamic linking: busca versão mais recente no cache reativo
+    final fabricante = BackendClient.fabricantes.data.isNotEmpty
+        ? BackendClient.fabricantes.getById(fabricanteSnapshot.id)
+        : fabricanteSnapshot;
+    final produto = BackendClient.produtos.data.isNotEmpty
+        ? BackendClient.produtos.getById(produtoSnapshot.id)
+        : produtoSnapshot;
     return MateriaPrimaModel(
       id: map['id'] as String,
-      fabricanteModel: FabricanteModel.fromMap(map['fabricanteModel']),
-      produto: ProdutoModel.fromMap(map['produto']),
+      fabricanteModel: fabricante,
+      produto: produto,
       corridaLote: map['corridaLote'] as String,
       anexos: map['anexos'] != null
           ? (map['anexos'] as List<dynamic>)
@@ -47,10 +57,19 @@ class MateriaPrimaModel {
   }
 
   factory MateriaPrimaModel.fromSupabaseMap(Map<String, dynamic> map) {
+    final fabricanteSnapshot = FabricanteModel.fromMap(map['fabricante_model_raw']);
+    final produtoSnapshot = ProdutoModel.fromMap(map['produto_raw']);
+    // Dynamic linking: busca versão mais recente no cache reativo
+    final fabricante = BackendClient.fabricantes.data.isNotEmpty
+        ? BackendClient.fabricantes.getById(fabricanteSnapshot.id)
+        : fabricanteSnapshot;
+    final produto = BackendClient.produtos.data.isNotEmpty
+        ? BackendClient.produtos.getById(produtoSnapshot.id)
+        : produtoSnapshot;
     return MateriaPrimaModel(
       id: map['id'] as String,
-      fabricanteModel: FabricanteModel.fromMap(map['fabricante_model_raw']),
-      produto: ProdutoModel.fromMap(map['produto_raw']),
+      fabricanteModel: fabricante,
+      produto: produto,
       corridaLote: map['corrida_lote'] as String,
       anexos: map['anexos'] != null
           ? (map['anexos'] as List<dynamic>)
