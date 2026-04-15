@@ -3,8 +3,7 @@ import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
+import 'package:url_launcher/url_launcher_string.dart';
 
 const String empty = '';
 
@@ -81,5 +80,8 @@ void setWebTitle(String title) {
 }
 
 void openInNewTab(String path) {
-  html.window.open(path, '_blank');
+  // Concatena a URL base origin no navegador web para construir uma URL absoluta
+  final url = Uri.base.origin + path;
+  launchUrlString(url, webOnlyWindowName: '_blank');
 }
+

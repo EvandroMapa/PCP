@@ -436,11 +436,32 @@ class AppDrawerItem extends StatelessWidget {
               color: item == module ? AppColors.primaryMain : null,
             ),
           ),
-          trailing:
-              notificacoes.isNotEmpty &&
-                  ([AppModule.kanban, AppModule.pedidos].contains(item))
-              ? KanbanCardNotificacaoWidget()
-              : SizedBox(),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (notificacoes.isNotEmpty &&
+                  ([AppModule.kanban, AppModule.pedidos].contains(item)))
+                KanbanCardNotificacaoWidget(),
+              if (item.standalonePath != null)
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: () {
+                    pop(context);
+                    openInNewTab(item.standalonePath!);
+                  },
+                  icon: Icon(
+                    Icons.open_in_new,
+                    size: 16,
+                    color: item == module
+                        ? AppColors.primaryMain.withValues(alpha: 0.7)
+                        : Colors.grey[450],
+                  ),
+                  tooltip: 'Abrir em nova janela',
+                  splashRadius: 16,
+                ),
+            ],
+          ),
         );
       },
     );
