@@ -470,6 +470,9 @@ class OrdemController {
       final initialOrdem = ordem ?? getOrdemById(ordemId);
       ordemStream.add(initialOrdem);
       
+      // Re-lê config de apontamento para garantir valor atualizado
+      PreferencesService.refreshApontamentoCD();
+
       // Carrega os pedidos da ordem para garantir que os produtos (bitolas) apareçam
       _fetchPedidosDaOrdem(initialOrdem);
 

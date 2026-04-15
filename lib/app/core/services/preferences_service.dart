@@ -121,4 +121,23 @@ class PreferencesService implements Service {
   static int get pdfQuality {
     return (95 - (pdfOptimizationLevel.value / 10.0) * 40).round();
   }
+  /// Re-lê a configuração de apontamento de produção CD do Supabase.
+  /// Deve ser chamado ao abrir uma ordem para garantir valor atualizado.
+  static Future<void> refreshApontamentoCD() async {
+    try {
+      final apontConfig = await SupabaseService.client
+          .from('configs')
+          .select()
+          .eq('key', 'apontamento_producao_cd')
+          .maybeSingle();
+      if (apontConfig != null) {
+        final val = apontConfig['value'].toString();
+        if (val == 'por_pedido' || val == 'por_os') {
+          apontamentoProducaoCD.add(val);
+        }
+      }
+    } catch (e) {
+      log('Erro ao atualizar apontamento CD: $e');
+    }
+  }
 }
