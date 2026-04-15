@@ -117,23 +117,38 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     final newStatus = await _showStatusPicker(item);
     if (newStatus == null || newStatus == item.posicao.status) return;
 
-    // Atualiza status da posição no Supabase
-    item.posicao.status = newStatus;
-    await SupabaseService.client
-        .from('elemento_posicoes')
-        .update({'status': newStatus.name})
-        .eq('id', item.posicao.id);
+    // Atualização instantânea na UI
+    setState(() {
+      item.posicao.status = newStatus;
+    });
 
-    await _fetchElementos();
-    await _checkAutoUpdatePedidoStatus();
+    try {
+      // Persiste no Supabase
+      await SupabaseService.client
+          .from('elemento_posicoes')
+          .update({'status': newStatus.name})
+          .eq('id', item.posicao.id);
+
+      // Sincroniza status do pedido/ordem
+      await _checkAutoUpdatePedidoStatus();
+    } catch (e) {
+      log('Erro ao atualizar status da posição: $e');
+      // Opcional: reverter localmente em caso de erro crítico
+    }
   }
 
   /// Verifica se uma transição de status é permitida
   bool _canTransition(PosicaoStatus target, PosicaoStatus current) {
-    if (target == current) return false; // já 2é do mesmo
+    if (target == current) return false;
+
+    // Se houver qualquer item PRONTO, ninguém mais pode voltar/ficar em AGUARDANDO
+    final existeAlgumPronto =
+        _posicoes.any((p) => p.posicao.status == PosicaoStatus.pronto);
 
     switch (target) {
       case PosicaoStatus.aguardando:
+        // Bloqueia retorno a aguardando se houver algum item já pronto
+        if (existeAlgumPronto) return false;
         // Pode voltar 1 etapa: apenas de produzindo
         return current == PosicaoStatus.produzindo;
 
@@ -143,12 +158,10 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
             current == PosicaoStatus.pronto;
 
       case PosicaoStatus.pronto:
-        // Só pode avançar de produzindo E todos os outros devem estar
-        // ao menos em produzindo
+        // Só pode avançar de produzindo
         if (current != PosicaoStatus.produzindo) return false;
-        return _posicoes.every((p) =>
-            p.posicao.status == PosicaoStatus.produzindo ||
-            p.posicao.status == PosicaoStatus.pronto);
+        // Só permite ficar Pronto se TODOS os outros já saíram do 'Aguardando'
+        return _posicoes.every((p) => p.posicao.status != PosicaoStatus.aguardando);
     }
   }
 
@@ -256,13 +269,14 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
       ),
     );
   }
-
   /// Auto-update: sincroniza status da ordem/pedido com as posições
   Future<void> _checkAutoUpdatePedidoStatus() async {
     if (_posicoes.isEmpty) return;
 
-    final todosAguardando = _posicoes.every((p) => p.posicao.status == PosicaoStatus.aguardando);
-    final todosProntos = _posicoes.every((p) => p.posicao.status == PosicaoStatus.pronto);
+    final todosAguardando =
+        _posicoes.every((p) => p.posicao.status == PosicaoStatus.aguardando);
+    final todosProntos =
+        _posicoes.every((p) => p.posicao.status == PosicaoStatus.pronto);
 
     PedidoProdutoStatus novoStatus;
 
@@ -274,15 +288,27 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
       novoStatus = PedidoProdutoStatus.produzindo;
     }
 
-    // Só atualiza se mudou
-    if (novoStatus == widget.produto.status.status) return;
+    // Busca o status atual no Firestore para comparar corretamente
+    final currentPedido =
+        FirestoreClient.pedidos.getById(widget.produto.pedidoId);
+    final currentProduto = currentPedido?.produtos
+        .firstWhere((p) => p.id == widget.produto.id, orElse: () => widget.produto);
 
+    if (currentProduto != null && novoStatus == currentProduto.status.status) {
+      return;
+    }
+
+    // Atualiza no Firestore o status do item do pedido
     await FirestoreClient.pedidos
         .updateProdutoStatus(widget.produto, novoStatus);
-    await FirestoreClient.ordens.fetch();
-    ordemCtrl.setOrdem(ordemCtrl.getOrdemById(widget.ordem.id));
-  }
 
+    // Força atualização da lista de ordens para refletir nos indicadores laterais
+    await FirestoreClient.ordens.fetch();
+    final updatedOrdem = ordemCtrl.getOrdemById(widget.ordem.id);
+    if (updatedOrdem != null) {
+      ordemCtrl.setOrdem(updatedOrdem);
+    }
+  }
   void _showDebugDialog(BuildContext context) {
     final pedido = widget.produto.pedido;
     final produto = widget.produto;
