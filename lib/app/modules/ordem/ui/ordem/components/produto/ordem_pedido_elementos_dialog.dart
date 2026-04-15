@@ -122,6 +122,9 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
       item.posicao.status = newStatus;
     });
 
+    // Atualiza também o cache global de elementos para os gráficos
+    _updateGlobalElementosCache(item);
+
     try {
       // Persiste no Supabase
       await SupabaseService.client
@@ -131,9 +134,36 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
 
       // Sincroniza status do pedido/ordem
       await _checkAutoUpdatePedidoStatus();
+
+      // Força re-emit do stream de ordens para atualizar gráficos na lista
+      _notifyOrdensStream();
     } catch (e) {
       log('Erro ao atualizar status da posição: $e');
-      // Opcional: reverter localmente em caso de erro crítico
+    }
+  }
+
+  /// Atualiza o cache global de AppSupabaseClient.elementos com o novo status da posição
+  void _updateGlobalElementosCache(_PosicaoItem item) {
+    final globalElementos = AppSupabaseClient.elementos.data;
+    final idx = globalElementos.indexWhere((e) => e.id == item.elemento.id);
+    if (idx != -1) {
+      final posIdx = globalElementos[idx].posicoes.indexWhere((p) => p.id == item.posicao.id);
+      if (posIdx != -1) {
+        globalElementos[idx].posicoes[posIdx].status = item.posicao.status;
+        // Re-emite o stream de elementos para que outros modules percebam
+        AppSupabaseClient.elementos.dataStream.add(globalElementos);
+      }
+    }
+  }
+
+  /// Força re-emit dos streams de ordens para que gráficos recalculem
+  void _notifyOrdensStream() {
+    // Re-emite a mesma lista para forçar rebuild dos widgets que escutam
+    FirestoreClient.ordens.ordensNaoArquivadasStream
+        .add(FirestoreClient.ordens.ordensNaoArquivadas);
+    // Também notifica o stream da ordem aberta
+    if (ordemCtrl.ordemStream.controller.hasValue) {
+      ordemCtrl.ordemStream.add(ordemCtrl.ordemStream.value);
     }
   }
 
@@ -447,146 +477,6 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     );
   }
 
-  void _showDebugDialog(BuildContext context) {
-    final pedido = widget.produto.pedido;
-    final produto = widget.produto;
-
-    showDialog(
-      context: context,
-      builder: (ctx) => Dialog(
-        insetPadding: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800, maxHeight: 600),
-          child: Column(
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[900],
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.bug_report, color: Colors.amber, size: 20),
-                    const SizedBox(width: 8),
-                    Text('DEBUG — Dados do Pedido/Elementos',
-                        style: AppCss.mediumBold.setSize(14).setColor(Colors.white)),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white, size: 20),
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _debugSection('FILTRO: Ordem ${widget.ordem.localizator} · Bitola: ${widget.ordem.produto.descricao} (${widget.ordem.produto.id})', []),
-                      const SizedBox(height: 12),
-                      for (int i = 0; i < _elementos.length; i++) ...[
-                        for (int j = 0; j < _elementos[i].posicoes.length; j++)
-                          if (_elementos[i].posicoes[j].produtoId == widget.ordem.produto.id)
-                            _debugSection('${_elementos[i].nome} · Posição [${j}]', [
-                              ['elemento_posicoes', 'id', _elementos[i].posicoes[j].id],
-                              ['elemento_posicoes', 'elemento_id', _elementos[i].posicoes[j].elementoId],
-                              ['elemento_posicoes', 'nome', _elementos[i].posicoes[j].nome],
-                              ['elemento_posicoes', 'numero_os', _elementos[i].posicoes[j].numeroOs],
-                              ['elemento_posicoes', 'produto_id', _elementos[i].posicoes[j].produtoId],
-                              ['elemento_posicoes', 'produto.descricao', _elementos[i].posicoes[j].produto?.descricao ?? '(null)'],
-                              ['elemento_posicoes', 'peso_kg', _elementos[i].posicoes[j].pesoKg.toStringAsFixed(3)],
-                              ['elemento_posicoes', 'qtde', _elementos[i].posicoes[j].qtde.toString()],
-                              ['elementos', 'elemento.nome', _elementos[i].nome],
-                              ['elementos', 'elemento.qtde', _elementos[i].qtde.toString()],
-                              ['elementos', 'elemento.status', _elementos[i].status.name],
-                            ]),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _debugSection(String title, List<List<String>> rows) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          color: Colors.grey[200],
-          child: Text(title,
-              style: const TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w800, fontFamily: 'monospace')),
-        ),
-        Table(
-          border: TableBorder.all(color: Colors.grey[300]!, width: 0.5),
-          columnWidths: const {
-            0: FlexColumnWidth(2),
-            1: FlexColumnWidth(2),
-            2: FlexColumnWidth(3),
-          },
-          children: [
-            TableRow(
-              decoration: BoxDecoration(color: Colors.grey[100]),
-              children: const [
-                Padding(
-                  padding: EdgeInsets.all(6),
-                  child: Text('Tabela',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(6),
-                  child: Text('Campo',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(6),
-                  child: Text('Valor',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
-                ),
-              ],
-            ),
-            ...rows.map((row) => TableRow(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(6),
-                      child: Text(row[0],
-                          style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.blue[700],
-                              fontFamily: 'monospace')),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(6),
-                      child: Text(row[1],
-                          style: const TextStyle(
-                              fontSize: 10, fontFamily: 'monospace')),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(6),
-                      child: SelectableText(row[2],
-                          style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.grey[800],
-                              fontFamily: 'monospace')),
-                    ),
-                  ],
-                )),
-          ],
-        ),
-      ],
-    );
   }
 
   @override
@@ -615,34 +505,22 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
                 ],
               ),
             ),
-            // Badge resumo — clicável para debug
-            InkWell(
-              onTap: () => _showDebugDialog(context),
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.3),
-                  ),
+            // Badge resumo
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.3),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.bug_report_outlined,
-                        size: 14, color: Colors.white.withValues(alpha: 0.7)),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${_posicoes.length} OS',
-                      style: AppCss.minimumBold
-                          .setSize(12)
-                          .setColor(Colors.white),
-                    ),
-                  ],
-                ),
+              ),
+              child: Text(
+                '${_posicoes.length} OS',
+                style: AppCss.minimumBold
+                    .setSize(12)
+                    .setColor(Colors.white),
               ),
             ),
           ],
