@@ -161,6 +161,8 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     // Re-emite a mesma lista para forçar rebuild dos widgets que escutam
     FirestoreClient.ordens.ordensNaoArquivadasStream
         .add(FirestoreClient.ordens.ordensNaoArquivadas);
+    // Força rebuild da lista de ordens (StreamOut<OrdemUtils> aninhado)
+    ordemCtrl.utilsStream.update();
     // Também notifica o stream da ordem aberta
     if (ordemCtrl.ordemStream.controller.hasValue) {
       ordemCtrl.ordemStream.add(ordemCtrl.ordemStream.value);
