@@ -9,14 +9,16 @@ class ProdutoModel {
   final String descricao;
   final double massaFinal;
   final String codigoFinanceiro;
+  final int sortIndex;
 
   factory ProdutoModel.empty() => ProdutoModel(
-    id: HashService.get,
-    nome: 'Produto não encontrado',
-    descricao: 'Este produto não foi encontrado no sistema',
-    massaFinal: 0.0,
-    codigoFinanceiro: '',
-  );
+        id: HashService.get,
+        nome: 'Produto não encontrado',
+        descricao: 'Este produto não foi encontrado no sistema',
+        massaFinal: 0.0,
+        codigoFinanceiro: '',
+        sortIndex: 999,
+      );
 
   String get descricaoReplaced =>
       descricao.replaceAll('mm', '').replaceAll('.0', '');
@@ -30,6 +32,7 @@ class ProdutoModel {
     required this.descricao,
     required this.massaFinal,
     this.codigoFinanceiro = '',
+    this.sortIndex = 999,
   });
 
   String get label => '$nome - $descricao - $massaFinal';
@@ -43,6 +46,7 @@ class ProdutoModel {
       'descricao': descricao,
       'massaFinal': massaFinal,
       'codigoFinanceiro': codigoFinanceiro,
+      'sortIndex': sortIndex,
     };
   }
 
@@ -53,6 +57,7 @@ class ProdutoModel {
       'descricao': descricao,
       'massa_final': massaFinal,
       'codigo_financeiro': codigoFinanceiro,
+      'sort_index': sortIndex,
     };
   }
 
@@ -61,12 +66,18 @@ class ProdutoModel {
       id: map['id'] ?? '',
       nome: map['nome'] ?? '',
       descricao: map['descricao'] ?? '',
-      massaFinal: double.tryParse((map['massaFinal'] ?? map['massa_final'] ?? '0').toString()) ?? 0.0,
-      codigoFinanceiro: (map['codigoFinanceiro'] ?? map['codigo_financeiro'] ?? '').toString(),
+      massaFinal: double.tryParse(
+              (map['massaFinal'] ?? map['massa_final'] ?? '0').toString()) ??
+          0.0,
+      codigoFinanceiro:
+          (map['codigoFinanceiro'] ?? map['codigo_financeiro'] ?? '')
+              .toString(),
+      sortIndex: (map['sortIndex'] ?? map['sort_index'] ?? 999) as int,
     );
   }
 
-  factory ProdutoModel.fromSupabaseMap(Map<String, dynamic> map) => ProdutoModel.fromMap(map);
+  factory ProdutoModel.fromSupabaseMap(Map<String, dynamic> map) =>
+      ProdutoModel.fromMap(map);
 
   String toJson() => json.encode(toMap());
 
@@ -80,6 +91,7 @@ class ProdutoModel {
     FabricanteModel? fabricante,
     double? massaFinal,
     String? codigoFinanceiro,
+    int? sortIndex,
   }) {
     return ProdutoModel(
       id: id ?? this.id,
@@ -87,6 +99,7 @@ class ProdutoModel {
       descricao: descricao ?? this.descricao,
       massaFinal: massaFinal ?? this.massaFinal,
       codigoFinanceiro: codigoFinanceiro ?? this.codigoFinanceiro,
+      sortIndex: sortIndex ?? this.sortIndex,
     );
   }
 }

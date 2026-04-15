@@ -15,6 +15,7 @@ class ProdutoCreateModel {
   TextController massaFinal = TextController.number();
   TextController codigoFinanceiro = TextController();
   FabricanteModel? fabricante;
+  int sortIndex = 999;
   late bool isEdit;
 
   ProdutoCreateModel() : id = HashService.get, isEdit = false;
@@ -26,6 +27,7 @@ class ProdutoCreateModel {
     descricao.text = produto.descricao;
     massaFinal = TextController.number(value: produto.massaFinal);
     codigoFinanceiro.text = produto.codigoFinanceiro;
+    sortIndex = produto.sortIndex;
   }
 
   ProdutoModel toProdutoModel() => ProdutoModel(
@@ -34,5 +36,6 @@ class ProdutoCreateModel {
     descricao: descricao.text,
     massaFinal: massaFinal.doubleValue,
     codigoFinanceiro: codigoFinanceiro.text,
+    sortIndex: sortIndex,
   );
 }

@@ -100,9 +100,12 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
                       disable: form.isEdit,
                       label: 'Produto',
                       item: form.produto,
-                      itens: FirestoreClient.produtos.data
-                          .toList()
-                        ..sort((a, b) => a.descricao.compareTo(b.descricao)),
+                      itens: FirestoreClient.produtos.data.toList()
+                        ..sort((a, b) {
+                          final cmp = a.sortIndex.compareTo(b.sortIndex);
+                          if (cmp != 0) return cmp;
+                          return a.number.compareTo(b.number);
+                        }),
                       itemLabel: (e) => e!.descricao,
                       onSelect: (e) {
                         form.produto = e;

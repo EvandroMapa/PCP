@@ -1,7 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/app_field.dart';
-import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
@@ -45,7 +44,12 @@ class _ProdutosPageState extends State<ProdutosPage> {
           builder: (_, utils) {
             final produtos = produtoCtrl
                 .getProdutoesFiltered(utils.search.text, __)
-                .toList();
+                .toList()
+              ..sort((a, b) {
+                final cmp = a.sortIndex.compareTo(b.sortIndex);
+                if (cmp != 0) return cmp;
+                return a.number.compareTo(b.number);
+              });
             return Column(
               children: [
                 Padding(
@@ -60,15 +64,17 @@ class _ProdutosPageState extends State<ProdutosPage> {
                 Expanded(
                   child: produtos.isEmpty
                       ? const EmptyData()
-                      : RefreshIndicator(
-                          onRefresh: () async =>
-                              FirestoreClient.produtos.fetch(),
-                          child: ListView.separated(
-                            itemCount: produtos.length,
-                            separatorBuilder: (_, i) => Divisor(),
-                            itemBuilder: (_, i) =>
-                                _itemProdutoWidget(produtos[i]),
-                          ),
+                      : ReorderableListView.builder(
+                          buildDefaultDragHandles: false,
+                          itemCount: produtos.length,
+                          onReorder: (oldIndex, newIndex) {
+                            if (newIndex > oldIndex) newIndex -= 1;
+                            final item = produtos.removeAt(oldIndex);
+                            produtos.insert(newIndex, item);
+                            produtoCtrl.onReorder(produtos);
+                          },
+                          itemBuilder: (_, i) =>
+                              _itemProdutoWidget(produtos[i], i),
                         ),
                 ),
               ],
@@ -78,16 +84,34 @@ class _ProdutosPageState extends State<ProdutosPage> {
       );
   }
 
-  ListTile _itemProdutoWidget(ProdutoModel produto) {
-    return ListTile(
-      onTap: () => push(context, ProdutoCreatePage(produto: produto)),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      title: Text(produto.nome, style: AppCss.mediumBold),
-      subtitle: Text(produto.descricao),
-      trailing: Icon(
-        Icons.arrow_forward_ios,
-        size: 14,
-        color: AppColors.neutralMedium,
+  Widget _itemProdutoWidget(ProdutoModel produto, int index) {
+    return Container(
+      key: ValueKey(produto.id),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: Colors.grey[200]!, width: 1),
+        ),
+      ),
+      child: ListTile(
+        onTap: () => push(context, ProdutoCreatePage(produto: produto)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        leading: ReorderableDragStartListener(
+          index: index,
+          child: Container(
+            width: 36,
+            height: 36,
+            alignment: Alignment.center,
+            child: Icon(Icons.drag_handle, color: Colors.grey[400], size: 24),
+          ),
+        ),
+        title: Text(produto.nome, style: AppCss.mediumBold),
+        subtitle: Text(produto.descricao),
+        trailing: Icon(
+          Icons.arrow_forward_ios,
+          size: 14,
+          color: AppColors.neutralMedium,
+        ),
       ),
     );
   }

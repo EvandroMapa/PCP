@@ -121,4 +121,13 @@ class ProdutoController {
       }
     }
   }
+
+  /// Persiste a nova ordem de classificação dos produtos após o usuário arrastar
+  Future<void> onReorder(List<ProdutoModel> reordered) async {
+    for (int i = 0; i < reordered.length; i++) {
+      final updated = reordered[i].copyWith(sortIndex: i);
+      await FirestoreClient.produtos.update(updated);
+    }
+    await FirestoreClient.produtos.fetch();
+  }
 }

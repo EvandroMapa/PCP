@@ -171,7 +171,12 @@ class _OrdensPageState extends State<OrdensPage> {
                         AppDropDown<ProdutoModel?>(
                           label: 'Bitola',
                           item: utils.produto,
-                          itens: FirestoreClient.produtos.data.toList(),
+                          itens: FirestoreClient.produtos.data.toList()
+                            ..sort((a, b) {
+                              final cmp = a.sortIndex.compareTo(b.sortIndex);
+                              if (cmp != 0) return cmp;
+                              return a.number.compareTo(b.number);
+                            }),
                           itemLabel: (e) =>
                               e != null ? e.descricao : 'Selecione um produto',
                           onSelect: (e) {
@@ -214,8 +219,8 @@ class _OrdensPageState extends State<OrdensPage> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: ordensNaoConcluidas.length,
-                          itemBuilder: (_, i) =>
-                              _itemOrdemWidget(ordensNaoConcluidas[i]),
+                            itemBuilder: (_, i) =>
+                                _itemOrdemWidget(ordensNaoConcluidas[i], i),
                         );
                       }
                       return ReorderableListView.builder(
@@ -223,6 +228,7 @@ class _OrdensPageState extends State<OrdensPage> {
                         physics: const NeverScrollableScrollPhysics(),
                         cacheExtent: 200,
                         itemCount: ordensNaoConcluidas.length,
+                        buildDefaultDragHandles: false,
                         onReorder: (oldIndex, newIndex) {
                           if (newIndex > oldIndex) {
                             newIndex = newIndex - 1;
@@ -232,7 +238,7 @@ class _OrdensPageState extends State<OrdensPage> {
                           ordemCtrl.onReorder(ordensNaoConcluidas);
                         },
                         itemBuilder: (_, i) =>
-                            _itemOrdemWidget(ordensNaoConcluidas[i]),
+                            _itemOrdemWidget(ordensNaoConcluidas[i], i),
                       );
                     },
                   ),
@@ -254,7 +260,7 @@ class _OrdensPageState extends State<OrdensPage> {
                         cacheExtent: 200,
                         itemCount: ordensCongeladas.length,
                         itemBuilder: (_, i) =>
-                            _itemOrdemWidget(ordensCongeladas[i]),
+                            _itemOrdemWidget(ordensCongeladas[i], i),
                       );
                     },
                   ),
@@ -267,7 +273,7 @@ class _OrdensPageState extends State<OrdensPage> {
     );
   }
 
-  Widget _itemOrdemWidget(OrdemModel ordem) {
+  Widget _itemOrdemWidget(OrdemModel ordem, int index) {
     final isFreezed = ordem.freezed.isFreezed;
     final statusColor = isFreezed ? Colors.grey[500]! : ordem.status.color;
 
@@ -296,6 +302,21 @@ class _OrdensPageState extends State<OrdensPage> {
               children: [
                 // Borda lateral colorida pelo status
                 Container(width: 5, color: statusColor),
+                if (usuario.isNotOperador && !isFreezed)
+                  ReorderableDragStartListener(
+                    index: index,
+                    child: Container(
+                      width: 40,
+                      color: AppColors.black.withValues(alpha: 0.02),
+                      child: Center(
+                        child: Icon(
+                          Icons.drag_handle,
+                          color: Colors.grey[400],
+                          size: 26,
+                        ),
+                      ),
+                    ),
+                  ),
                 // Conteúdo principal
                 Expanded(
                   child: Padding(
