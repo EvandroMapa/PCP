@@ -1,6 +1,8 @@
 import 'package:aco_plus/app/app_controller.dart';
+import 'package:aco_plus/app/app_repository.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
+import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 // ignore: avoid_web_libraries_in_flutter
@@ -80,7 +82,13 @@ void setWebTitle(String title) {
   );
 }
 
-void openInNewTab(String path) {
+void openInNewTab(String path) async {
+  // Garante que o usuário atual esteja salvo no localStorage
+  // para que a nova aba consiga fazer auto-login
+  final currentUser = usuarioCtrl.usuario;
+  if (currentUser != null) {
+    await AppRepository.add(currentUser);
+  }
   final url = Uri.base.origin + path;
   html.window.open(url, '_blank');
 }

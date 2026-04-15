@@ -3,6 +3,7 @@ import 'package:aco_plus/app/app_widget.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
+import 'package:aco_plus/app/modules/sign/ui/sign_up_page.dart';
 import 'package:aco_plus/app/core/router/flutter_web_plugins_shim.dart'
     if (dart.library.html) 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:aco_plus/app/modules/kanban/ui/kanban_page.dart';
@@ -63,21 +64,25 @@ class GlobalLoadingWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamOutNull<UsuarioModel?>(
+    return StreamBuilder<UsuarioModel?>(
       stream: usuarioCtrl.usuarioStream.listen,
-      loading: const Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      child: (_, user) => user == null
-          ? const Scaffold(
-              backgroundColor: Colors.black,
-              body: Center(
-                child: Text('Processando login da aba...',
-                    style: TextStyle(color: Colors.white)),
-              ),
-            )
-          : child,
+      initialData: usuarioCtrl.usuarioStream.valueOrNull,
+      builder: (context, snapshot) {
+        // Se já temos um usuário (seja via initialData ou via stream)
+        if (snapshot.hasData && snapshot.data != null) {
+          return child;
+        }
+
+        // Se a conexão ainda tá esperando (stream não emitiu nada)
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Usuário é null → mostra login
+        return const SignUpPage();
+      },
     );
   }
 }
