@@ -1,6 +1,8 @@
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
+import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/ordem/view_models/ordem_view_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/user_permission_type.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
@@ -123,13 +125,15 @@ class _OrdensPageState extends State<OrdensPage> {
   }
 
   Widget body() {
-    return StreamOut<List<OrdemModel>>(
-      stream: FirestoreClient.ordens.ordensNaoArquivadasStream.listen,
-      builder: (_, __) => StreamOut<OrdemUtils>(
-        stream: ordemCtrl.utilsStream.listen,
-        builder: (_, utils) {
-          List<OrdemModel> ordens =
-              ordemCtrl.getOrdensFiltered(utils.search.text, __).toList();
+    return StreamOut<List<ElementoModel>>(
+      stream: AppSupabaseClient.elementos.dataStream.listen,
+      builder: (_, ___) => StreamOut<List<OrdemModel>>(
+        stream: FirestoreClient.ordens.ordensNaoArquivadasStream.listen,
+        builder: (_, __) => StreamOut<OrdemUtils>(
+          stream: ordemCtrl.utilsStream.listen,
+          builder: (_, utils) {
+            List<OrdemModel> ordens =
+                ordemCtrl.getOrdensFiltered(utils.search.text, __).toList();
           if (utils.status.isNotEmpty) {
             ordens = ordens.where((e) => utils.status.contains(e.status)).toList();
           }
@@ -257,7 +261,8 @@ class _OrdensPageState extends State<OrdensPage> {
               ],
             ),
           );
-        },
+          },
+        ),
       ),
     );
   }
