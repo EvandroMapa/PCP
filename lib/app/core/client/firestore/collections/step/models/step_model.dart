@@ -22,6 +22,7 @@ class StepModel {
   bool isPermiteProducao = false;
   bool considerarConsumoRelatorioPedidos = true;
   bool isExibirArmacao = false;
+  bool isExibirGraficoCDA = false;
 
   static StepModel notFound = StepModel(
     createdAt: DateTime.now(),
@@ -38,6 +39,7 @@ class StepModel {
     isPermiteProducao: false,
     considerarConsumoRelatorioPedidos: false,
     isExibirArmacao: false,
+    isExibirGraficoCDA: false,
   );
 
   List<StepModel> get fromSteps => fromStepsIds
@@ -65,6 +67,7 @@ class StepModel {
     required this.isPermiteProducao,
     required this.considerarConsumoRelatorioPedidos,
     required this.isExibirArmacao,
+    required this.isExibirGraficoCDA,
   });
 
   StepModel copyWith({
@@ -83,6 +86,7 @@ class StepModel {
     bool? isPermiteProducao,
     bool? considerarConsumoRelatorioPedidos,
     bool? isExibirArmacao,
+    bool? isExibirGraficoCDA,
   }) {
     return StepModel(
       id: id ?? this.id,
@@ -101,6 +105,7 @@ class StepModel {
           considerarConsumoRelatorioPedidos ??
           this.considerarConsumoRelatorioPedidos,
       isExibirArmacao: isExibirArmacao ?? this.isExibirArmacao,
+      isExibirGraficoCDA: isExibirGraficoCDA ?? this.isExibirGraficoCDA,
     );
   }
 
@@ -120,6 +125,7 @@ class StepModel {
       'isPermiteProducao': isPermiteProducao,
       'considerarConsumoRelatorioPedidos': considerarConsumoRelatorioPedidos,
       'isExibirArmacao': isExibirArmacao,
+      'isExibirGraficoCDA': isExibirGraficoCDA,
     };
   }
 
@@ -155,6 +161,7 @@ class StepModel {
         isPermiteProducao: false,
         considerarConsumoRelatorioPedidos: false,
         isExibirArmacao: map['isExibirArmacao'] ?? false,
+        isExibirGraficoCDA: map['isExibirGraficoCDA'] ?? false,
       );
     }
     return StepModel(
@@ -189,6 +196,7 @@ class StepModel {
       considerarConsumoRelatorioPedidos:
           map['considerarConsumoRelatorioPedidos'] ?? true,
       isExibirArmacao: map['isExibirArmacao'] ?? false,
+      isExibirGraficoCDA: map['isExibirGraficoCDA'] ?? false,
     );
   }
 
@@ -211,6 +219,7 @@ class StepModel {
       considerarConsumoRelatorioPedidos:
           map['considerar_consumo_relatorio_pedidos'] ?? true,
       isExibirArmacao: map['exibir_armacao'] ?? false,
+      isExibirGraficoCDA: map['exibir_grafico_cda'] ?? false,
     );
   }
 
@@ -264,6 +273,7 @@ class StepModel {
       'is_permite_producao': isPermiteProducao,
       'considerar_consumo_relatorio_pedidos': considerarConsumoRelatorioPedidos,
       'exibir_armacao': isExibirArmacao,
+      'exibir_grafico_cda': isExibirGraficoCDA,
     };
   }
 

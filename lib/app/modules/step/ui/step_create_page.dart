@@ -164,9 +164,18 @@ class _StepCreatePageState extends State<StepCreatePage> {
         const H(8),
         AppCheckbox(
           value: form.isExibirArmacao,
-          label: 'Mostrar conteúdo no perfil de armação',
+          label: 'Mostrar conteúdo no módulo de armação',
           onChanged: (e) {
             form.isExibirArmacao = !form.isExibirArmacao;
+            stepCtrl.formStream.update();
+          },
+        ),
+        const H(8),
+        AppCheckbox(
+          value: form.isExibirGraficoCDA,
+          label: 'Mostrar gráfico CDA no cartão do Kanban',
+          onChanged: (e) {
+            form.isExibirGraficoCDA = !form.isExibirGraficoCDA;
             stepCtrl.formStream.update();
           },
         ),

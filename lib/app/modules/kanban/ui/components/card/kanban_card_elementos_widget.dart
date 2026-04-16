@@ -2,16 +2,19 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedi
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:flutter/material.dart';
 
-/// Mini barra de progresso tricolor para status dos elementos de armação.
-/// Aparece somente em pedidos CDA com armacaoResumo preenchido.
+/// Barra de progresso CDA com contagem de elementos posicionados esquerda/centro/direita.
+/// Só aparece para pedidos CDA quando a etapa tem isExibirGraficoCDA = true.
 class KanbanCardElementosWidget extends StatelessWidget {
   final PedidoModel pedido;
   const KanbanCardElementosWidget({required this.pedido, super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Só exibe para CDA com resumo preenchido
+    // Só exibe para CDA
     if (pedido.tipo != PedidoTipo.cda) return const SizedBox.shrink();
+
+    // Respeita a configuração da etapa atual: só exibe se isExibirGraficoCDA == true
+    if (!pedido.step.isExibirGraficoCDA) return const SizedBox.shrink();
 
     final resumo = pedido.armacaoResumo;
     final totalQtd = (resumo['total_qtd'] ?? 0) as num;
@@ -27,7 +30,7 @@ class KanbanCardElementosWidget extends StatelessWidget {
     final pPronto = pronto / totalQtd;
 
     return Padding(
-      padding: const EdgeInsets.only(top: 6),
+      padding: const EdgeInsets.only(top: 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -57,27 +60,42 @@ class KanbanCardElementosWidget extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 3),
-          // ── Label ──
+          const SizedBox(height: 4),
+          // ── Contagem de elementos: Ag. | Armando | Pronto ──
           Row(
             children: [
-              Icon(Icons.construction_rounded, size: 10, color: Colors.grey[500]),
-              const SizedBox(width: 3),
-              Expanded(
-                child: Text(
-                  'Pronto ${pronto.toInt()}, Armando ${armando.toInt()}, Aguardando ${aguardando.toInt()}',
-                  style: TextStyle(
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w600,
-                    color: pronto == totalQtd
-                        ? Colors.green[700]
-                        : Colors.grey[700],
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
+              _countLabel(aguardando.toInt(), pAguardando, Colors.grey[500]!, 'Ag.'),
+              const Spacer(),
+              _countLabel(armando.toInt(), pArmando, Colors.amber[700]!, 'Armando'),
+              const Spacer(),
+              _countLabel(pronto.toInt(), pPronto, Colors.green[600]!, 'Pronto'),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _countLabel(int count, double pct, Color color, String label) {
+    final pctStr = '${(pct * 100).toStringAsFixed(0)}%';
+    return RichText(
+      text: TextSpan(
+        children: [
+          TextSpan(
+            text: '$count ($pctStr)',
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+          TextSpan(
+            text: ' $label',
+            style: TextStyle(
+              fontSize: 8,
+              fontWeight: FontWeight.w400,
+              color: Colors.grey[500],
+            ),
           ),
         ],
       ),

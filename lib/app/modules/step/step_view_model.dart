@@ -25,6 +25,7 @@ class StepCreateModel {
   bool isPermiteProducao = false;
   bool considerarConsumoRelatorioPedidos = true;
   bool isExibirArmacao = false;
+  bool isExibirGraficoCDA = false;
 
   late bool isEdit;
 
@@ -45,6 +46,7 @@ class StepCreateModel {
     isPermiteProducao = etapa.isPermiteProducao;
     considerarConsumoRelatorioPedidos = etapa.considerarConsumoRelatorioPedidos;
     isExibirArmacao = etapa.isExibirArmacao;
+    isExibirGraficoCDA = etapa.isExibirGraficoCDA;
   }
 
   StepModel toStepModel(StepModel? etapa) => StepModel(
@@ -62,5 +64,6 @@ class StepCreateModel {
     isPermiteProducao: isPermiteProducao,
     considerarConsumoRelatorioPedidos: considerarConsumoRelatorioPedidos,
     isExibirArmacao: isExibirArmacao,
+    isExibirGraficoCDA: isExibirGraficoCDA,
   );
 }
