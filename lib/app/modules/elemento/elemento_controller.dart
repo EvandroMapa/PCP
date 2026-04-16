@@ -837,11 +837,21 @@ class ElementoController {
       final idxPeso = getIndex(['PESO (KG)', 'PESO']);
       final idxQtde = getIndex(['QTDE', 'QUANTIDADE', 'QTD']); // qtde da posicao
 
-      if (idxElemento == -1 || idxPosicao == -1 || idxBitola == -1) {
+      if (idxElemento == -1 || idxPosicao == -1 || idxBitola == -1 || idxPeso == -1) {
         importProgressStream.add(null);
         return {
           'success': false,
-          'error': 'Colunas obrigatórias não encontradas no CSV (ELEMENTO, POSICAO, BITOLA).',
+          'error': 'O CSV fornecido não está no padrão de importação.\n\n'
+                   'Seu arquivo DEVE conter as seguintes colunas na primeira linha (cabeçalho):\n'
+                   '• ELEMENTO\n'
+                   '• POSICAO (ou POS.)\n'
+                   '• BITOLA (ou DIAMETRO)\n'
+                   '• PESO (ou PESO (KG))\n\n'
+                   'Colunas opcionais identificadas pelo sistema:\n'
+                   '• QTDE ELEMENTOS (Quantidade de conjuntos)\n'
+                   '• OS ou O.S. (Ordem de Serviço)\n'
+                   '• QTDE ou QUANTIDADE (Qtd de peças na posição)\n\n'
+                   'Dica: Salve sua planilha Excel como "CSV UTF-8 (separado por vírgulas)" (que no padrão do Excel BR usará ponto e vírgula).',
           'rawText': rawText
         };
       }
