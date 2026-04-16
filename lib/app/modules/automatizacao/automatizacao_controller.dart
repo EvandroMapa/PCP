@@ -43,6 +43,9 @@ class AutomatizacaoController {
             case PedidoTipo.cda:
               item = automatizacaoConfig.prontoArmacaoPedido;
               break;
+            case PedidoTipo.outros:
+              // Sem automação de etapa para pedidos do tipo 'Outros'
+              break;
           }
           break;
         // arquivado não é um status válido do enum

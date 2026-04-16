@@ -345,6 +345,12 @@ class PedidoController {
     if (form.step == null) {
       throw Exception('Selecione a etapa inicial do pedido');
     }
+    // Para pedidos do tipo 'Outros', exige pelo menos uma etiqueta
+    if (form.tipo == PedidoTipo.outros && form.tags.isEmpty) {
+      throw Exception(
+        'Pedidos do tipo "Outros" precisam ter pelo menos uma etiqueta selecionada',
+      );
+    }
   }
 
   //PEDIDO

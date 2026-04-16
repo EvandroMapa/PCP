@@ -60,6 +60,7 @@ class PedidoCreateModel {
   final TextController romaneio = TextController();
   List<String> pedidosVinculados = [];
   List<String> pedidosFilhos = [];
+  List<TagModel> tags = [];
   String? pai;
   bool isFilho = false;
   late bool isEdit;
@@ -136,6 +137,7 @@ class PedidoCreateModel {
     planilhamento.text = pedido.planilhamento;
     pedidosVinculados = pedido.pedidosVinculados;
     pedidosFilhos = pedido.pedidosFilhos;
+    tags = List<TagModel>.from(pedido.tags);
     pai = pedido.pai;
     isFilho = pedido.isFilho;
     romaneio.text = pedido.romaneio ?? '';
@@ -166,7 +168,7 @@ class PedidoCreateModel {
           .toList(),
       deliveryAt: deliveryAt,
       steps: pedido?.steps ?? [pedidoStepModel],
-      tags: pedido?.tags ?? [],
+      tags: tags.isNotEmpty ? tags : (pedido?.tags ?? []),
       checks: checklist?.checklist.map((e) => e.copyWith()).toList() ?? [],
       checklistId: checklist?.id,
       comments: pedido?.comments ?? [],

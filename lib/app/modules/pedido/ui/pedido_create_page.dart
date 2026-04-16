@@ -2,12 +2,14 @@ import 'package:aco_plus/app/core/client/firestore/collections/checklist/models/
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/tag/models/tag_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/user_permission_type.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/app_checkbox.dart';
 import 'package:aco_plus/app/core/components/app_drop_down.dart';
+import 'package:aco_plus/app/core/components/app_drop_down_list.dart';
 import 'package:aco_plus/app/core/components/app_field.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/date_picker_field.dart';
@@ -404,9 +406,47 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
           itemLabel: (e) => e!.label,
           onSelect: (e) {
             form.tipo = e;
+            // Limpa as tags ao trocar tipo
+            if (e != PedidoTipo.outros) form.tags.clear();
             pedidoCtrl.formStream.update();
           },
         ),
+        // ── Etiquetas obrigatórias para tipo Outros ──
+        if (form.tipo == PedidoTipo.outros) ...[
+          const H(8),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue[200]!),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, color: Colors.blue[700], size: 16),
+                const W(8),
+                Expanded(
+                  child: Text(
+                    'Pedidos do tipo "Outros" devem ter pelo menos uma etiqueta',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const H(8),
+          AppDropDownList<TagModel>(
+            label: 'Etiquetas *',
+            addeds: form.tags,
+            itens: FirestoreClient.tags.data.cast<TagModel>(),
+            itemLabel: (TagModel e) => e.nome,
+            onChanged: () => pedidoCtrl.formStream.update(),
+          ),
+        ],
         const H(16),
         AppField(
           label: 'Descrição',
