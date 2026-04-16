@@ -1,4 +1,6 @@
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/components/h.dart';
@@ -15,14 +17,13 @@ import 'package:aco_plus/app/modules/pedido/ui/components/pai/pai_pedido_filho_s
 import 'package:aco_plus/app/modules/pedido/ui/components/pai/pai_pedido_produtos_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pai/pai_pedido_sinalizador_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_anexos_widget.dart';
-import 'package:aco_plus/app/modules/pedido/ui/components/pedido_armacao_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_checks_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_comentarios_widget.dart';
-import 'package:aco_plus/app/modules/pedido/ui/components/pedido_corte_dobra_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_desc_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_entrega_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_filhos_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_financ_widget.dart';
+import 'package:aco_plus/app/modules/pedido/ui/components/pedido_producao_graph_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_produtos_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_status_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_steps_widget.dart';
@@ -351,26 +352,38 @@ class _PedidoPageState extends State<PedidoPage>
             contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           ),
 
-        // ── Corte/Dobra + Produtos + Armação (em produção) ──
+        // ── Produção CD (Corte e Dobra) ──
         if (pedido.pedidosFilhos.isEmpty && !pedido.isAguardandoEntradaProducao())
           _sectionCard(
             icon: Icons.content_cut_outlined,
-            title: 'CORTE, DOBRA & ARMAÇÃO',
+            title: 'PRODUÇÃO CD',
             accentColor: const Color(0xFFD97706), // amber-600
             children: [
-              PedidoCorteDobraWidget(pedido),
+              PedidoProducaoGraphWidget(
+                totalKg: pedido.getQtdeTotal(),
+                data: _buildCDGraphData(pedido),
+              ),
               Container(
                 margin: const EdgeInsets.symmetric(vertical: 12),
                 height: 1,
                 color: Colors.grey.shade100,
               ),
               PedidoProdutosWidget(pedido),
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 12),
-                height: 1,
-                color: Colors.grey.shade100,
+            ],
+            contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          ),
+
+        // ── Produção CDA (Armação) – Apenas para pedidos CDA ──
+        if (pedido.pedidosFilhos.isEmpty && !pedido.isAguardandoEntradaProducao() && pedido.tipo == PedidoTipo.cda)
+          _sectionCard(
+            icon: Icons.construction_rounded,
+            title: 'PRODUÇÃO CDA',
+            accentColor: const Color(0xFF059669), // emerald-600
+            children: [
+              PedidoProducaoGraphWidget(
+                totalKg: _getCDATotalKg(pedido),
+                data: _buildCDAGraphData(pedido),
               ),
-              PedidoArmacaoWidget(pedido),
             ],
             contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           ),
@@ -471,5 +484,80 @@ class _PedidoPageState extends State<PedidoPage>
           ),
       ],
     );
+  }
+
+  // ─── DADOS PARA O GRÁFICO DE PRODUÇÃO CD ─────────────────────────────────
+  List<ProducaoGraphData> _buildCDGraphData(PedidoModel pedido) {
+    final total = pedido.getQtdeTotal();
+    if (total <= 0) return [];
+
+    final aguardando = pedido.getQtdeAguardandoProducao();
+    final produzindo = pedido.getQtdeProduzindo();
+    final pronto = pedido.getQtdePronto();
+
+    return [
+      if (aguardando > 0)
+        ProducaoGraphData(
+          label: 'Aguardando',
+          pesoKg: aguardando,
+          percentual: aguardando / total,
+          color: PedidoProdutoStatus.aguardandoProducao.color,
+        ),
+      if (produzindo > 0)
+        ProducaoGraphData(
+          label: 'Produzindo',
+          pesoKg: produzindo,
+          percentual: produzindo / total,
+          color: PedidoProdutoStatus.produzindo.color,
+        ),
+      if (pronto > 0)
+        ProducaoGraphData(
+          label: 'Pronto',
+          pesoKg: pronto,
+          percentual: pronto / total,
+          color: PedidoProdutoStatus.pronto.color,
+        ),
+    ];
+  }
+
+  // ─── DADOS PARA O GRÁFICO DE PRODUÇÃO CDA ────────────────────────────────
+  List<ProducaoGraphData> _buildCDAGraphData(PedidoModel pedido) {
+    final resumo = pedido.armacaoResumo;
+    final totalPeso = ((resumo['total_peso'] ?? 0) as num).toDouble();
+    if (totalPeso <= 0) return [];
+
+    final details = resumo['details'] as Map<String, dynamic>? ?? {};
+
+    final aguardandoPeso = ((details['aguardando']?['peso'] ?? 0) as num).toDouble();
+    final armandoPeso = ((details['armando']?['peso'] ?? 0) as num).toDouble();
+    final prontoPeso = ((details['pronto']?['peso'] ?? 0) as num).toDouble();
+
+    return [
+      if (aguardandoPeso > 0)
+        ProducaoGraphData(
+          label: 'Aguardando',
+          pesoKg: aguardandoPeso,
+          percentual: totalPeso > 0 ? aguardandoPeso / totalPeso : 0,
+          color: Colors.grey[400]!,
+        ),
+      if (armandoPeso > 0)
+        ProducaoGraphData(
+          label: 'Armando',
+          pesoKg: armandoPeso,
+          percentual: totalPeso > 0 ? armandoPeso / totalPeso : 0,
+          color: Colors.amber[600]!,
+        ),
+      if (prontoPeso > 0)
+        ProducaoGraphData(
+          label: 'Pronto',
+          pesoKg: prontoPeso,
+          percentual: totalPeso > 0 ? prontoPeso / totalPeso : 0,
+          color: Colors.green[600]!,
+        ),
+    ];
+  }
+
+  double _getCDATotalKg(PedidoModel pedido) {
+    return ((pedido.armacaoResumo['total_peso'] ?? 0) as num).toDouble();
   }
 }
