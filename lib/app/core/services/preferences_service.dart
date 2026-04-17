@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'package:aco_plus/app/core/models/app_stream.dart';
+import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/models/service_model.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -13,6 +16,8 @@ class PreferencesService implements Service {
   static final AppStream<int> pdfOptimizationLevel = AppStream<int>.seed(5);
   static final AppStream<String> apontamentoProducaoCD = AppStream<String>.seed('por_pedido');
   static final AppStream<String> logoUrl = AppStream<String>.seed('');
+  static final AppStream<List<String>> stepsAcompanhamento = AppStream<List<String>>.seed([]);
+  static final AppStream<String> whatsappSuporte = AppStream<String>.seed('');
 
   @override
   Future<void> initialize() async {
@@ -137,6 +142,50 @@ class PreferencesService implements Service {
             .upsert({'key': 'logo_url', 'value': value}, onConflict: 'key');
       } catch (e) {
         log('Erro ao salvar logo URL: $e');
+      }
+    });
+
+    // Recupera etapas de acompanhamento e WhatsApp suporte
+    try {
+      final stepsConfig = await SupabaseService.client
+          .from('configs')
+          .select()
+          .eq('key', 'steps_acompanhamento')
+          .maybeSingle();
+      if (stepsConfig != null) {
+        final List<dynamic> val = json.decode(stepsConfig['value'].toString());
+        stepsAcompanhamento.add(val.cast<String>());
+      }
+
+      final waConfig = await SupabaseService.client
+          .from('configs')
+          .select()
+          .eq('key', 'whatsapp_suporte')
+          .maybeSingle();
+      if (waConfig != null) {
+        whatsappSuporte.add(waConfig['value'].toString());
+      }
+    } catch (e) {
+      log('Erro ao carregar configs de acompanhamento: $e');
+    }
+
+    stepsAcompanhamento.listen.skip(1).listen((value) async {
+      try {
+        await SupabaseService.client
+            .from('configs')
+            .upsert({'key': 'steps_acompanhamento', 'value': json.encode(value)}, onConflict: 'key');
+      } catch (e) {
+        log('Erro ao salvar etapas acompanhamento: $e');
+      }
+    });
+
+    whatsappSuporte.listen.skip(1).listen((value) async {
+      try {
+        await SupabaseService.client
+            .from('configs')
+            .upsert({'key': 'whatsapp_suporte', 'value': value}, onConflict: 'key');
+      } catch (e) {
+        log('Erro ao salvar WhatsApp suporte: $e');
       }
     });
   }

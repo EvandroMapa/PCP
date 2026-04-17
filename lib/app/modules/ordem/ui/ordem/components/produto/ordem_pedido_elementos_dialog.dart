@@ -326,7 +326,7 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     final currentProduto = currentPedido.produtos
         .firstWhere((p) => p.id == widget.produto.id, orElse: () => widget.produto);
 
-    if (currentProduto != null && novoStatus == currentProduto.status.status) {
+    if (novoStatus == currentProduto.status.status) {
       return;
     }
 

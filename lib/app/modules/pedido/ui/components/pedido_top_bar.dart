@@ -10,7 +10,9 @@ import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_create_page.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
   final PedidoModel pedido;
@@ -71,6 +73,7 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
             child: Icon(Icons.local_shipping, color: AppColors.white),
           ),
         ),
+        const W(12),
         const W(12),
         StreamOut<int>(
           stream: pedidoCtrl.activeTabStream.listen,

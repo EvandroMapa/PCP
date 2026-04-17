@@ -159,7 +159,12 @@ class _AppDropDown<T> extends State<AppDropDown<T>> {
               value: widget.item,
               isExpanded: true,
               underline: const SizedBox(),
-              onChanged: (value) => widget.onSelect.call(value as T),
+              onChanged: (value) {
+                widget.onSelect.call(value as T);
+                if (value != null && widget.nextFocus != null) {
+                  FocusScope.of(context).requestFocus(widget.nextFocus);
+                }
+              },
               hint: Text(widget.hint ?? 'Selecione'),
               icon: widget.disable
                   ? const SizedBox()

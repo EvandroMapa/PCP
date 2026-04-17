@@ -72,7 +72,7 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
                       ? 'A edição que realizou será perdida.'
                       : 'Os dados do cliente serão perdidos.',
                 );
-                if (confirm && mounted) {
+                if (confirm && context.mounted) {
                   pop(context);
                 }
               } else {

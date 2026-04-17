@@ -105,6 +105,8 @@ class PedidoModel {
 
   String get filtro => localizador + pedidoFinanceiro;
 
+  double get pesoTotal => getQtdeTotal();
+
   StepModel get step => steps.isNotEmpty ? steps.last.step : StepModel.notFound;
   PedidoStatus get status => statusess.isNotEmpty ? statusess.last.status : PedidoStatus.aguardandoProducaoCD;
 

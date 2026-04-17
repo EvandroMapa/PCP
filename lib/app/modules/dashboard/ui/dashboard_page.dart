@@ -48,22 +48,35 @@ class DashboardPageState extends State<DashboardPage> {
           stream: dashCtrl.utilsStream.listen,
           builder: (_, utils) => LayoutBuilder(
             builder: (context, constraints) {
-              final isMobile = constraints.maxWidth < 1000;
               return Container(
-                color: const Color(0xFFCBD5E1), // Fundo escurecido para separar dos cards brancos
+                color: const Color(0xFFCBD5E1),
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
                     _kpiCards(pedidos),
                     const H(16),
 
-                    if (isMobile) ...[
+                    if (constraints.maxWidth < 1000) ...[
+                      // 1 Coluna (Mobile)
                       _ordemProducaoWidget(),
                       const H(16),
                       _armacaoWidget(pedidos),
                       const H(16),
                       _consumoBitolaWidget(),
+                    ] else if (constraints.maxWidth < 1450) ...[
+                      // 2 Colunas (Telas Médias)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: _ordemProducaoWidget()),
+                          const W(16),
+                          Expanded(child: _armacaoWidget(pedidos)),
+                        ],
+                      ),
+                      const H(16),
+                      _consumoBitolaWidget(),
                     ] else ...[
+                      // 3 Colunas (Telas Grandes)
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -95,7 +108,14 @@ class DashboardPageState extends State<DashboardPage> {
     final novos24h = pedidos.where((p) => p.createdAt.isAfter(now.subtract(const Duration(days: 1)))).length;
 
     return LayoutBuilder(builder: (context, constraints) {
-      final cardWidth = constraints.maxWidth > 1000 ? (constraints.maxWidth - 72) / 4 : (constraints.maxWidth - 24) / 2;
+      double cardWidth;
+      if (constraints.maxWidth < 700) {
+        cardWidth = constraints.maxWidth; // 1 por linha
+      } else if (constraints.maxWidth < 1100) {
+        cardWidth = (constraints.maxWidth - 24) / 2; // 2 por linha
+      } else {
+        cardWidth = (constraints.maxWidth - 72) / 4; // 4 por linha
+      }
 
       return Wrap(
         spacing: 24,
@@ -299,32 +319,46 @@ class DashboardPageState extends State<DashboardPage> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(ordem.localizator, style: AppCss.mediumBold.setSize(14)),
+                    Text(
+                      ordem.localizator,
+                      style: AppCss.mediumBold.setSize(14),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     const H(4),
                     Text(
                       ordem.produto.nome,
-                      style: AppCss.mediumBold.setSize(13).setColor(AppColors.primaryMain),
+                      style: AppCss.mediumBold.setSize(12).setColor(AppColors.primaryMain),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const H(2),
                     Text(
                       ordem.produtos.fold(0.0, (sum, p) => sum + p.qtde).toKg(),
-                      style: AppCss.mediumBold.setSize(13).setColor(AppColors.primaryMain),
+                      style: AppCss.mediumBold.setSize(12).setColor(AppColors.primaryMain),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              const W(16),
-              if (ordem.produtos.isNotEmpty)
-                Row(
+              LayoutBuilder(builder: (context, c) {
+                // Se o espaço for muito curto (menos de 280px para o item), esconde os gráficos
+                if (c.maxWidth < 180) return const SizedBox();
+                
+                return Row(
                   children: [
+                    const W(16),
                     _progressChartWidget(PedidoProdutoStatus.aguardandoProducao, ordem.getPrcntgAguardando(), ordem.freezed.isFreezed),
-                    const W(12),
+                    const W(8),
                     _progressChartWidget(PedidoProdutoStatus.produzindo, ordem.getPrcntgProduzindo(), ordem.freezed.isFreezed),
-                    const W(12),
+                    const W(8),
                     _progressChartWidget(PedidoProdutoStatus.pronto, ordem.getPrcntgPronto(), ordem.freezed.isFreezed),
                   ],
-                ),
+                );
+              }),
             ],
           ),
         ),
@@ -477,12 +511,15 @@ class DashboardPageState extends State<DashboardPage> {
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Tooltip(
                     message: pedido.cliente.nome,
                     child: Text(
                       pedido.localizador,
                       style: AppCss.mediumBold.setSize(14),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const H(4),
@@ -495,30 +532,34 @@ class DashboardPageState extends State<DashboardPage> {
                   const H(2),
                   Text(
                     '${totalPeso.toStringAsFixed(1)} kg',
-                    style: AppCss.mediumBold.setSize(13).setColor(AppColors.primaryMain),
+                    style: AppCss.mediumBold.setSize(12).setColor(AppColors.primaryMain),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-            const W(8),
-            // Gráficos circulares com dados
-            Row(
-              children: [
-                _armacaoCircle(prcAguardando, Colors.blue.shade700,
-                    '${((aguardando['qtd'] ?? 0.0).toDouble()).round()} pc',
-                    '${((aguardando['peso'] ?? 0.0).toDouble()).toStringAsFixed(0)} kg'),
-                const W(6),
-                _armacaoCircle(prcArmando, Colors.orange.shade800,
-                    '${((armando['qtd'] ?? 0.0).toDouble()).round()} pc',
-                    '${((armando['peso'] ?? 0.0).toDouble()).toStringAsFixed(0)} kg'),
-                const W(6),
-                _armacaoCircle(prcPronto, Colors.green.shade700,
-                    '${((pronto['qtd'] ?? 0.0).toDouble()).round()} pc',
-                    '${((pronto['peso'] ?? 0.0).toDouble()).toStringAsFixed(0)} kg'),
-              ],
-            ),
+            LayoutBuilder(builder: (context, c) {
+              // Se o espaço for muito curto, esconde os gráficos circulares
+              if (c.maxWidth < 220) return const SizedBox();
+              
+              return Row(
+                children: [
+                  const W(8),
+                  _armacaoCircle(prcAguardando, Colors.blue.shade700,
+                      '${((aguardando['qtd'] ?? 0.0).toDouble()).round()} pc',
+                      '${((aguardando['peso'] ?? 0.0).toDouble()).toStringAsFixed(0)} kg'),
+                  const W(6),
+                  _armacaoCircle(prcArmando, Colors.orange.shade800,
+                      '${((armando['qtd'] ?? 0.0).toDouble()).round()} pc',
+                      '${((armando['peso'] ?? 0.0).toDouble()).toStringAsFixed(0)} kg'),
+                  const W(6),
+                  _armacaoCircle(prcPronto, Colors.green.shade700,
+                      '${((pronto['qtd'] ?? 0.0).toDouble()).round()} pc',
+                      '${((pronto['peso'] ?? 0.0).toDouble()).toStringAsFixed(0)} kg'),
+                ],
+              );
+            }),
           ],
         ),
       ),

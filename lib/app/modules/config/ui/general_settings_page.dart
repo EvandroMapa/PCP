@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
@@ -27,6 +28,7 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
     _SidebarItem(icon: Icons.picture_as_pdf_outlined, label: 'Desenho Técnico'),
     _SidebarItem(icon: Icons.dashboard_customize_outlined, label: 'Interface'),
     _SidebarItem(icon: Icons.assignment_outlined, label: 'Apontamento CD'),
+    _SidebarItem(icon: Icons.alt_route_outlined, label: 'Acompanhamento'),
     _SidebarItem(icon: Icons.image_outlined, label: 'Logomarca'),
   ];
 
@@ -157,6 +159,8 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
       case 3:
         return _apontamentoSettings();
       case 4:
+        return _trackingSettings();
+      case 5:
         return _logoSettings();
       default:
         return const SizedBox.shrink();
@@ -412,6 +416,96 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
           ),
         ],
       ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════
+  //  ACOMPANHAMENTO
+  // ═══════════════════════════════════════════════════
+  Widget _trackingSettings() {
+    return Column(
+      children: [
+        _settingsCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Etapas do Acompanhamento',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Selecione quais etapas serão visíveis para o cliente na linha do tempo. Elas aparecerão na ordem de cadastro.',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 16),
+              StreamOut<List<String>>(
+                stream: PreferencesService.stepsAcompanhamento.listen,
+                builder: (_, selectedIds) {
+                  final steps = FirestoreClient.steps.data.toList();
+                  steps.sort((a, b) => a.index.compareTo(b.index));
+
+                  return Column(
+                    children: steps.map((step) {
+                      final isSelected = selectedIds.contains(step.id);
+                      return CheckboxListTile(
+                        value: isSelected,
+                        title: Text(step.name, style: AppCss.mediumRegular),
+                        activeColor: AppColors.primaryMain,
+                        onChanged: (val) {
+                          final newList = List<String>.from(selectedIds);
+                          if (val == true) {
+                            newList.add(step.id);
+                          } else {
+                            newList.remove(step.id);
+                          }
+                          PreferencesService.stepsAcompanhamento.add(newList);
+                        },
+                        controlAffinity: ListTileControlAffinity.leading,
+                        contentPadding: EdgeInsets.zero,
+                      );
+                    }).toList(),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        _settingsCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'WhatsApp de Suporte',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Este número aparecerá para o cliente entrar em contato diretamente da página de rastreio.',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 24),
+              StreamOut<String>(
+                stream: PreferencesService.whatsappSuporte.listen,
+                builder: (_, value) {
+                  return TextFormField(
+                    initialValue: value,
+                    decoration: InputDecoration(
+                      hintText: 'Ex: 5511999999999',
+                      prefixIcon: const Icon(Icons.phone),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onChanged: (val) => PreferencesService.whatsappSuporte.add(val.replaceAll(RegExp(r'[^0-9]'), '')),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

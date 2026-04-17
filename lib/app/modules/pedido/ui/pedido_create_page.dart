@@ -13,7 +13,6 @@ import 'package:aco_plus/app/core/components/app_drop_down_list.dart';
 import 'package:aco_plus/app/core/components/app_field.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/date_picker_field.dart';
-import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/components/done_button.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -22,7 +21,6 @@ import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/enums/obra_status.dart';
 import 'package:aco_plus/app/core/formatters/uper_case_formatter.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
-import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
@@ -33,7 +31,6 @@ import 'package:aco_plus/app/modules/pedido/view_models/pedido_produto_view_mode
 import 'package:aco_plus/app/modules/pedido/view_models/pedido_view_model.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:overlay_support/overlay_support.dart';
 
 class PedidoCreatePage extends StatefulWidget {
   final PedidoModel? pedido;
@@ -45,34 +42,49 @@ class PedidoCreatePage extends StatefulWidget {
 }
 
 class _PedidoCreatePageState extends State<PedidoCreatePage> {
-  final FocusNode focusQtde = FocusNode();
-  ExpansibleController tileController = ExpansibleController();
+  int _selected = 0;
+  String _initialSnapshot = '';
+
+  String _snapshot(PedidoCreateModel form) {
+    return '${form.tipo?.name}|${form.localizador.text}|${form.planilhamento.text}|'
+        '${form.romaneio.text}|${form.descricao.text}|${form.cliente?.id}|'
+        '${form.obra?.id}|${form.checklist?.id}|${form.deliveryAt?.millisecondsSinceEpoch}|'
+        '${form.produtos.length}';
+  }
 
   @override
   void initState() {
     setWebTitle('Novo Pedido');
     pedidoCtrl.onInitCreatePage(widget.pedido, widget.pai);
+    _initialSnapshot = _snapshot(pedidoCtrl.form);
     super.initState();
   }
 
   String _getTitle(PedidoCreateModel form) {
     if (widget.pai != null) {
-      return form.isEdit ? 'Editar Pedido Parcial' : 'Adicionar Pedido Parcial';
+      return form.isEdit ? 'Editar Parcial' : 'Novo Parcial';
     }
-    return form.isEdit ? 'Editar Pedido' : 'Adicionar Pedido';
+    return form.isEdit ? 'Editar Pedido' : 'Novo Pedido';
   }
 
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
       resizeAvoid: true,
+      backgroundColor: AppColors.neutralLightest,
       appBar: AppBar(
         leading: IconButton(
           onPressed: () async {
-            if (await showConfirmDialog(
-              'Deseja realmente sair?',
-              'Os dados do pedido serão perdidos.',
-            )) {
+            final isDirty = _snapshot(pedidoCtrl.form) != _initialSnapshot;
+            if (isDirty) {
+              final confirm = await showConfirmDialog(
+                'Deseja realmente sair?',
+                'Os dados do pedido serão perdidos.',
+              );
+              if (confirm && context.mounted) {
+                pop(context);
+              }
+            } else {
               pop(context);
             }
           },
@@ -86,475 +98,531 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
         ),
         actions: [
           if ((widget.pedido != null &&
-                  usuario.permission.pedido.contains(
-                    UserPermissionType.update,
-                  )) ||
+                  usuario.permission.pedido.contains(UserPermissionType.update)) ||
               (widget.pedido == null &&
-                  usuario.permission.pedido.contains(
-                    UserPermissionType.create,
-                  )))
+                  usuario.permission.pedido.contains(UserPermissionType.create)))
             IconLoadingButton(
-              () async =>
-                  await pedidoCtrl.onConfirm(context, widget.pedido, false),
+              () async => await pedidoCtrl.onConfirm(context, widget.pedido, false),
             ),
         ],
         backgroundColor: AppColors.primaryMain,
       ),
       body: StreamOut(
         stream: pedidoCtrl.formStream.listen,
-        builder: (_, form) => body(form),
+        builder: (_, form) => Row(
+          children: [
+            _sidebar(form),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: KeyedSubtree(
+                  key: ValueKey(_selected),
+                  child: _sectionContent(form),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget body(PedidoCreateModel form) {
+  Widget _sidebar(PedidoCreateModel form) {
+    return Container(
+      width: 60,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        border: Border(right: BorderSide(color: const Color(0xFFE2E8F0))),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 16),
+          // Preview Pedido
+          Tooltip(
+            message: form.localizador.text.isEmpty ? 'Novo Pedido' : form.localizador.text,
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.primaryMain,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryMain.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  )
+                ],
+              ),
+              child: Center(
+                child: Text(
+                  form.localizador.text.isNotEmpty ? form.localizador.text.substring(0, 1).toUpperCase() : 'P',
+                  style: AppCss.minimumBold.setColor(AppColors.white).setSize(14),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          _sidebarItem(0, Icons.info_outline, 'Dados Gerais'),
+          if (form.tipo != PedidoTipo.outros)
+            _sidebarItem(1, Icons.inventory_2_outlined, 'Produtos'),
+          const Spacer(),
+          if (widget.pedido != null && usuario.permission.pedido.contains(UserPermissionType.delete))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Tooltip(
+                message: 'Excluir Pedido',
+                preferBelow: false,
+                child: InkWell(
+                  onTap: () => pedidoCtrl.onDelete(context, widget.pedido!),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sidebarItem(int index, IconData icon, String label) {
+    final isSelected = _selected == index;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Tooltip(
+        message: label,
+        preferBelow: false,
+        waitDuration: const Duration(milliseconds: 300),
+        child: InkWell(
+          onTap: () {
+            setState(() => _selected = index);
+            if (index == 1) {
+              Future.delayed(const Duration(milliseconds: 300), () {
+                pedidoCtrl.form.produto.produtoEC.focus.requestFocus();
+              });
+            }
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.primaryMain.withValues(alpha: 0.1) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+              border: isSelected ? Border.all(color: AppColors.primaryMain.withValues(alpha: 0.2)) : null,
+            ),
+            child: Icon(
+              icon,
+              size: 18,
+              color: isSelected ? AppColors.primaryMain : Colors.grey[400],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionContent(PedidoCreateModel form) {
+    if (_selected == 0) return _dadosGeraisSection(form);
+    return _produtosSection(form);
+  }
+
+  Widget _dadosGeraisSection(PedidoCreateModel form) {
     return ListView(
+      padding: const EdgeInsets.all(24),
       children: [
-        _pedidoDetalhesWidget(form),
-        const Divisor(),
-        if (widget.pai == null) _produtoAddWidget(form),
-        for (PedidoProdutoCreateModel produto in form.produtos)
-          _produtoItemWidget(form, produto),
+        _sectionPanel(
+          icon: Icons.info_outline,
+          title: 'INFORMAÇÕES PRINCIPAIS',
+          children: [
+            AppDropDown<PedidoTipo?>(
+              label: 'Tipo',
+              item: form.tipo,
+              itens: PedidoTipo.values,
+              itemLabel: (e) => e!.label,
+              onSelect: (e) async {
+                if (e == PedidoTipo.outros && form.produtos.isNotEmpty) {
+                  final confirm = await showConfirmDialog(
+                    'Alterar para Outros?',
+                    'A lista de produtos será limpa. Deseja continuar?',
+                  );
+                  if (!confirm) {
+                    pedidoCtrl.formStream.update();
+                    return;
+                  }
+                  form.produtos.clear();
+                }
+
+                form.tipo = e;
+                if (e == PedidoTipo.outros) {
+                  _selected = 0;
+                } else {
+                  form.tags.clear();
+                }
+                pedidoCtrl.formStream.update();
+              },
+            ),
+            if (form.tipo == PedidoTipo.outros) ...[
+              const H(16),
+              AppDropDownList<TagModel>(
+                label: 'Etiquetas *',
+                addeds: form.tags,
+                itens: FirestoreClient.tags.data.cast<TagModel>(),
+                itemLabel: (TagModel e) => e.nome,
+                onChanged: () => pedidoCtrl.formStream.update(),
+              ),
+            ],
+            const H(16),
+            if (widget.pai != null) ...[
+              AppField(
+                label: 'Pedido Total',
+                controller: TextController(text: widget.pai?.localizador),
+                isDisable: true,
+              ),
+              const H(16),
+            ],
+            AppField(
+              label: 'Localizador',
+              inputFormatters: [UpperCaseFormatter()],
+              capitalization: TextCapitalization.characters,
+              controller: form.localizador,
+              type: TextInputType.name,
+              onChanged: (_) => pedidoCtrl.formStream.update(),
+            ),
+            const H(16),
+            Row(
+              children: [
+                Expanded(
+                  child: AppField(
+                    label: 'Planilhamento',
+                    controller: form.planilhamento,
+                    onChanged: (_) => pedidoCtrl.formStream.update(),
+                  ),
+                ),
+                const W(16),
+                Expanded(
+                  child: AppField(
+                    label: 'Romaneio',
+                    controller: form.romaneio,
+                    onChanged: (_) => pedidoCtrl.formStream.update(),
+                  ),
+                ),
+              ],
+            ),
+            const H(16),
+            AppField(
+              label: 'Descrição',
+              controller: form.descricao,
+              onChanged: (_) => pedidoCtrl.formStream.update(),
+            ),
+          ],
+        ),
+        const H(24),
+        _sectionPanel(
+          icon: Icons.business_outlined,
+          title: 'CLIENTE E OBRA',
+          children: [
+            AppDropDown<ClienteModel?>(
+              hasFilter: true,
+              label: 'Cliente',
+              item: form.cliente,
+              itens: FirestoreClient.clientes.data,
+              onCreated: () async {
+                ClienteModel? created = await showClienteCreateSimplifyBottom();
+                if (created == null) return null;
+                final cliente = FirestoreClient.clientes.data.firstWhere((e) => e.id == created.id, orElse: () => created);
+                form.cliente = cliente;
+                form.obra = cliente.obras.firstOrNull;
+                pedidoCtrl.formStream.update();
+                return cliente;
+              },
+              itemLabel: (e) => e!.nome,
+              onSelect: (e) async {
+                if (form.cliente?.id != e?.id) {
+                  form.cliente = e;
+                  form.obra = null;
+                }
+                pedidoCtrl.formStream.update();
+              },
+            ),
+            const H(16),
+            AppDropDown<ObraModel?>(
+              label: 'Obra',
+              item: form.obra,
+              disable: form.cliente == null,
+              itens: form.cliente?.obras.where((e) => e.status == ObraStatus.emAndamento).toList() ?? [],
+              itemLabel: (e) => e != null ? '${e.descricao} - ${e.endereco?.localidade ?? ''}' : 'Selecione',
+              onSelect: (e) {
+                form.obra = e;
+                pedidoCtrl.formStream.update();
+              },
+            ),
+          ],
+        ),
+        const H(24),
+        _sectionPanel(
+          icon: Icons.settings_outlined,
+          title: 'CONFIGURAÇÕES E DATAS',
+          children: [
+            AppDropDown<ChecklistModel?>(
+              label: 'Modelo de checklist',
+              hasFilter: true,
+              item: form.checklist,
+              itens: FirestoreClient.checklists.data,
+              itemLabel: (e) => e!.nome,
+              onSelect: (e) {
+                form.checklist = e;
+                pedidoCtrl.formStream.update();
+              },
+            ),
+            if (widget.pedido == null) ...[
+              const H(16),
+              AppDropDown<StepModel?>(
+                label: 'Etapa Inicial',
+                item: form.step,
+                itens: FirestoreClient.steps.data,
+                itemLabel: (e) => e?.name ?? 'Selecione',
+                onSelect: (e) {
+                  form.step = e!;
+                  pedidoCtrl.formStream.update();
+                },
+              ),
+            ],
+            const H(16),
+            DatePickerField(
+              required: false,
+              label: 'Previsão de Entrega',
+              item: form.deliveryAt,
+              onChanged: (value) {
+                form.deliveryAt = value;
+                pedidoCtrl.formStream.update();
+              },
+            ),
+          ],
+        ),
+        const H(24),
+        _sectionPanel(
+          icon: Icons.payments_outlined,
+          title: 'FINANCEIRO E LOGÍSTICA',
+          children: [
+            AppField(
+              label: 'Pedido Financeiro',
+              controller: form.pedidoFinanceiro,
+              onChanged: (_) => pedidoCtrl.formStream.update(),
+            ),
+            const H(16),
+            AppField(
+              label: 'Instruções Financeiras',
+              controller: form.instrucoesFinanceiras,
+              onChanged: (_) => pedidoCtrl.formStream.update(),
+            ),
+            const H(16),
+            AppField(
+              label: 'Instruções de Entrega',
+              controller: form.instrucoesEntrega,
+              onChanged: (_) => pedidoCtrl.formStream.update(),
+            ),
+          ],
+        ),
       ],
     );
   }
 
-  Builder _produtoItemWidget(
-    PedidoCreateModel form,
-    PedidoProdutoCreateModel produto,
-  ) {
-    return Builder(
-      builder: (context) {
-        bool isDisabled =
-            !produto.isEnabled ||
-            (form.isEdit &&
-                FirestoreClient.ordens.data
-                    .expand((e) => e.produtos.map((e) => e.id))
-                    .any((e) => e == produto.id));
-        return ColorFiltered(
-          colorFilter: isDisabled
-              ? ColorFilter.mode(
-                  Colors.grey.withValues(alpha: 0.4),
-                  BlendMode.softLight,
-                )
-              : const ColorFilter.mode(Colors.transparent, BlendMode.color),
-          child: IgnorePointer(
-            ignoring: isDisabled,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: isDisabled ? Colors.grey[200] : Colors.transparent,
-                border: Border(
-                  bottom: BorderSide(color: Colors.grey[300]!, width: 1),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const W(24),
-                  Text(
-                    (form.produtos.indexOf(produto) + 1).toString(),
-                    style: AppCss.mediumBold,
-                  ),
-                  const W(18),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                produto.produtoModel?.descricao ?? '',
-                                style: AppCss.mediumBold.copyWith(
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                            ),
-                            if (isDisabled)
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                ),
-                                child: Text(
-                                  !produto.isEnabled
-                                      ? 'Quantidade já direcionada'
-                                      : 'Produto já foi adicionado há uma ordem',
-                                  style: AppCss.mediumRegular.copyWith(
-                                    color: Colors.red[500]!,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        Text('Quantidade: ${produto.qtde.text}Kg'),
-                        Builder(
-                          builder: (context) {
-                            if ((produto.qtdeDisponivel ?? 0) <= 0) {
-                              return SizedBox.shrink();
-                            }
-                            return Text(
-                              'Quantidade disponível: ${produto.qtdeDisponivel}Kg',
-                              style: AppCss.minimumRegular.copyWith(
-                                color: Colors.green,
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (!isDisabled) ...[
-                    IconButton(
-                      onPressed: () async {
-                        final qtde = await showPedidoOrderEditBottom(
-                          produto,
-                          produto.qtdeDisponivel,
-                        );
-                        if (qtde != null) {
-                          produto.qtde.text = qtde.toString();
-                          pedidoCtrl.formStream.update();
-                        }
-                      },
-                      style: ButtonStyle(
-                        backgroundColor: WidgetStateProperty.all(
-                          Colors.transparent,
-                        ),
-                      ),
-                      icon: const Icon(Icons.edit, color: Colors.red),
-                    ),
-                    const W(8),
-                    if (widget.pai == null)
-                      IconButton(
-                        onPressed: () {
-                          showConfirmDialog(
-                            'Deseja remover bitola?',
-                            'A bitola será removida do pedido',
-                          ).then((value) {
-                            if (value) {
-                              form.produtos.remove(produto);
-                              pedidoCtrl.formStream.update();
-                            }
-                          });
-                        },
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.all(
-                            Colors.transparent,
-                          ),
-                        ),
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                      ),
-                    if (widget.pai != null)
-                      AppCheckbox(
-                        value: produto.isSelected,
-                        onChanged: (value) {
-                          produto.isSelected = value;
-                          pedidoCtrl.formStream.update();
-                        },
-                      ),
-                  ],
-                  const W(16),
-                ],
-              ),
-            ),
+  Widget _produtosSection(PedidoCreateModel form) {
+    return Column(
+      children: [
+        if (widget.pai == null) _produtoAddCard(form),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+            itemCount: form.produtos.length,
+            itemBuilder: (_, i) => _produtoItemCard(form, form.produtos[i], i),
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 
-  Padding _produtoAddWidget(PedidoCreateModel form) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
+  Widget _produtoAddCard(PedidoCreateModel form) {
+    return Container(
+      margin: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[300]!, width: 1),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              children: [
-                AppDropDown<ProdutoModel?>(
+          Row(
+            children: [
+              Icon(Icons.add_circle_outline, color: AppColors.primaryMain),
+              const SizedBox(width: 12),
+              Text('ADICIONAR PRODUTO / BITOLA', style: AppCss.mediumBold.setSize(14)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                flex: 3,
+                child: AppDropDown<ProdutoModel?>(
                   label: 'Produto',
                   controller: form.produto.produtoEC,
                   nextFocus: form.produto.qtde.focus,
                   item: form.produto.produtoModel,
-                  itens: FirestoreClient.produtos.data
-                      .where(
-                        (e) => !form.produtos
-                            .map((e) => e.produtoModel?.id)
-                            .contains(e.id),
-                      )
-                      .toList(),
+                  itens: FirestoreClient.produtos.data.where((e) => !form.produtos.map((e) => e.produtoModel?.id).contains(e.id)).toList(),
                   itemLabel: (e) => e?.descricao ?? 'Selecione',
                   onSelect: (e) {
-                    //TODO
-                    // tileController.collapse();
                     form.produto.produtoModel = e;
-                    form.produto.qtde.focus.requestFocus();
                     pedidoCtrl.formStream.update();
                   },
                 ),
-                const H(6),
-                AppField(
+              ),
+              const W(16),
+              Expanded(
+                flex: 2,
+                child: AppField(
                   label: 'Quantidade',
-                  type: const TextInputType.numberWithOptions(
-                    decimal: true,
-                    signed: false,
-                  ),
+                  type: const TextInputType.numberWithOptions(decimal: true),
                   controller: form.produto.qtde,
                   action: TextInputAction.done,
                   suffixText: 'Kg',
                   onChanged: (_) => pedidoCtrl.formStream.update(),
                   onEditingComplete: () {
                     if (form.produto.isEnable) {
-                      FocusScope.of(context).unfocus();
                       form.produtos.add(form.produto);
                       form.produto = PedidoProdutoCreateModel();
-                      form.produto.produtoEC.controller.clear();
                       form.produto.produtoEC.focus.requestFocus();
                       pedidoCtrl.formStream.update();
                     }
                   },
                 ),
-              ],
-            ),
-          ),
-          const W(8),
-          Padding(
-            padding: const EdgeInsets.only(top: 28),
-            child: IconButton(
-              onPressed: !form.produto.isEnable
-                  ? null
-                  : () {
-                      form.produtos.add(form.produto);
-                      form.produto = PedidoProdutoCreateModel();
-                      form.produto.produtoEC.controller.clear();
-                      form.produto.produtoEC.focus.requestFocus();
-                      pedidoCtrl.formStream.update();
-                    },
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.all(
-                  form.produto.isEnable
-                      ? AppColors.primaryMain
-                      : AppColors.black.withValues(alpha: 0.3),
-                ),
               ),
-              icon: Icon(Icons.add, color: AppColors.white),
-            ),
+              const W(16),
+              IconButton(
+                onPressed: !form.produto.isEnable ? null : () {
+                  form.produtos.add(form.produto);
+                  form.produto = PedidoProdutoCreateModel();
+                  pedidoCtrl.formStream.update();
+                },
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.all(form.produto.isEnable ? AppColors.primaryMain : Colors.grey[300]),
+                  padding: WidgetStateProperty.all(const EdgeInsets.all(16)),
+                  shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                ),
+                icon: Icon(Icons.add, color: AppColors.white),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  ExpansionTile _pedidoDetalhesWidget(PedidoCreateModel form) {
-    return ExpansionTile(
-      initiallyExpanded: true,
-      maintainState: true,
-      controller: tileController,
-      key: const Key('pedidoDetalhes'),
-      leading: const Icon(Icons.info_outline),
-      title: Text('Informações do Pedido', style: AppCss.mediumBold),
-      subtitle: Text(form.getDetails(), style: AppCss.minimumRegular),
-      childrenPadding: const EdgeInsets.all(16),
-      children: [
-        if (widget.pai != null) ...[
-          AppField(
-            label: 'Pedido Total',
-            controller: TextController(text: widget.pai?.localizador),
-            onChanged: (_) => pedidoCtrl.formStream.update(),
-          ),
-          const H(16),
-        ],
-        AppField(
-          label: 'Localizador',
-          inputFormatters: [UpperCaseFormatter()],
-          capitalization: TextCapitalization.characters,
-          controller: form.localizador,
-          type: TextInputType.name,
-          action: TextInputAction.next,
-          onChanged: (_) => pedidoCtrl.formStream.update(),
-          onEditingComplete: () {
-            if (form.localizador.text.isEmpty) {
-              NotificationService.showNegative(
-                'Localizador não pode ser vazio',
-                'Não será possível salvar o pedido sem um localizador',
-                position: NotificationPosition.bottom,
-              );
-            } else {
-              FocusScope.of(context).unfocus();
-            }
-          },
-        ),
-        const H(16),
-        AppField(
-          label: 'Planilhamento',
-          controller: form.planilhamento,
-          onChanged: (_) => pedidoCtrl.formStream.update(),
-        ),
-        const H(16),
-        AppField(
-          label: 'ROMANEIO',
-          controller: form.romaneio,
-          onChanged: (_) => pedidoCtrl.formStream.update(),
-        ),
-        const H(16),
-        AppDropDown<PedidoTipo?>(
-          label: 'Tipo',
-          item: form.tipo,
-          itens: PedidoTipo.values,
-          itemLabel: (e) => e!.label,
-          onSelect: (e) {
-            form.tipo = e;
-            // Limpa as tags ao trocar tipo
-            if (e != PedidoTipo.outros) form.tags.clear();
-            pedidoCtrl.formStream.update();
-          },
-        ),
-        // ── Etiquetas obrigatórias para tipo Outros ──
-        if (form.tipo == PedidoTipo.outros) ...[
-          const H(8),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue[200]!),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline, color: Colors.blue[700], size: 16),
-                const W(8),
-                Expanded(
-                  child: Text(
-                    'Pedidos do tipo "Outros" devem ter pelo menos uma etiqueta',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue[700],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const H(8),
-          AppDropDownList<TagModel>(
-            label: 'Etiquetas *',
-            addeds: form.tags,
-            itens: FirestoreClient.tags.data.cast<TagModel>(),
-            itemLabel: (TagModel e) => e.nome,
-            onChanged: () => pedidoCtrl.formStream.update(),
-          ),
-        ],
-        const H(16),
-        AppField(
-          label: 'Descrição',
-          controller: form.descricao,
-          onChanged: (_) => pedidoCtrl.formStream.update(),
-        ),
-        const H(16),
-        AppDropDown<ClienteModel?>(
-          hasFilter: true,
-          label: 'Cliente',
-          item: form.cliente,
-          itens: FirestoreClient.clientes.data,
-          onCreated: () async {
-            ClienteModel? created = await showClienteCreateSimplifyBottom();
-            if (created == null) return null;
-            // Busca o objeto atualizado na lista (após fetch do Supabase)
-            final cliente = FirestoreClient.clientes.data
-                .firstWhere((e) => e.id == created.id, orElse: () => created);
-            // Pré-seleciona cliente e obra antes do onSelect ser chamado
-            form.cliente = cliente;
-            form.obra = cliente.obras.firstOrNull;
-            pedidoCtrl.formStream.update();
-            return cliente;
-          },
-          itemLabel: (e) => e!.nome,
-          onSelect: (e) async {
-            // Só reseta a obra se mudou de cliente
-            if (form.cliente?.id != e?.id) {
-              form.cliente = e;
-              form.obra = null;
-            }
-            pedidoCtrl.formStream.update();
-          },
-        ),
-        const H(16),
-        AppDropDown<ObraModel?>(
-          label: 'Obra',
-          item: form.obra,
-          disable: form.cliente == null,
-          itens:
-              form.cliente?.obras
-                  .where((e) => e.status == ObraStatus.emAndamento)
-                  .toList() ??
-              [],
-          itemLabel: (e) => e != null
-              ? '${e.descricao} - ${e.endereco?.localidade ?? 'Cidade não informada'}'
-              : 'Selecione',
-          onSelect: (e) {
-            form.obra = e;
-            pedidoCtrl.formStream.update();
-          },
-        ),
+  Widget _produtoItemCard(PedidoCreateModel form, PedidoProdutoCreateModel produto, int index) {
+    bool isDisabled = !produto.isEnabled || (form.isEdit && FirestoreClient.ordens.data.expand((e) => e.produtos.map((e) => e.id)).any((e) => e == produto.id));
 
-        const H(16),
-        AppDropDown<ChecklistModel?>(
-          label: 'Modelo de checklist',
-          hasFilter: true,
-          item: form.checklist,
-          itens: FirestoreClient.checklists.data,
-          itemLabel: (e) => e!.nome,
-          onSelect: (e) async {
-            form.checklist = e;
-            pedidoCtrl.formStream.update();
-          },
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: isDisabled ? Colors.grey[50] : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: isDisabled ? Colors.grey[200]! : Colors.grey[300]!),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(color: AppColors.primaryMain.withValues(alpha: 0.1), shape: BoxShape.circle),
+          child: Center(child: Text('${index + 1}', style: AppCss.minimumBold.setColor(AppColors.primaryMain))),
         ),
-        if (widget.pedido == null) ...[
-          const H(16),
-          AppDropDown<StepModel?>(
-            label: 'Etapa Inicial',
-            hasFilter: false,
-            item: form.step,
-            itens: FirestoreClient.steps.data,
-            itemLabel: (e) => e?.name ?? 'Selecione',
-            onSelect: (e) async {
-              form.step = e!;
-              pedidoCtrl.formStream.update();
-            },
+        title: Text(produto.produtoModel?.descricao ?? '', style: AppCss.mediumBold),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Quantidade: ${produto.qtde.text} Kg', style: AppCss.minimumRegular),
+            if (isDisabled)
+              Text(
+                !produto.isEnabled ? 'Quantidade já direcionada' : 'Produto vinculado a Ordem',
+                style: AppCss.minimumBold.setColor(AppColors.error).setSize(11),
+              ),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!isDisabled) ...[
+              IconButton(
+                onPressed: () async {
+                  final qtde = await showPedidoOrderEditBottom(produto, produto.qtdeDisponivel);
+                  if (qtde != null) {
+                    produto.qtde.text = qtde.toString();
+                    pedidoCtrl.formStream.update();
+                  }
+                },
+                icon: Icon(Icons.edit_outlined, color: Colors.blue[700], size: 20),
+              ),
+              if (widget.pai == null)
+                IconButton(
+                  onPressed: () async {
+                    if (await showConfirmDialog('Remover Produto', 'Deseja remover ${produto.produtoModel?.descricao}?')) {
+                      form.produtos.remove(produto);
+                      pedidoCtrl.formStream.update();
+                    }
+                  },
+                  icon: Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+                ),
+              if (widget.pai != null)
+                AppCheckbox(
+                  value: produto.isSelected,
+                  onChanged: (value) {
+                    produto.isSelected = value;
+                    pedidoCtrl.formStream.update();
+                  },
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionPanel({required IconData icon, required String title, required List<Widget> children}) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[300]!, width: 1),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: AppColors.primaryMain, size: 20),
+              const SizedBox(width: 12),
+              Text(title, style: AppCss.mediumBold.setSize(13).setColor(Colors.grey[700]!)),
+            ],
           ),
+          const SizedBox(height: 24),
+          ...children,
         ],
-        const H(16),
-        DatePickerField(
-          required: false,
-          label: 'Previsão de Entrega',
-          item: form.deliveryAt,
-          onChanged: (value) {
-            form.deliveryAt = value;
-            pedidoCtrl.formStream.update();
-          },
-        ),
-        const H(16),
-        AppField(
-          label: 'Pedido Financeiro',
-          controller: form.pedidoFinanceiro,
-          onChanged: (_) => pedidoCtrl.formStream.update(),
-        ),
-        const H(16),
-        AppField(
-          label: 'Instruções Financeiras',
-          controller: form.instrucoesFinanceiras,
-          onChanged: (_) => pedidoCtrl.formStream.update(),
-        ),
-        const H(16),
-        AppField(
-          label: 'Instruções de Entrega',
-          controller: form.instrucoesEntrega,
-          onChanged: (_) => pedidoCtrl.formStream.update(),
-        ),
-      ],
+      ),
     );
   }
 }
