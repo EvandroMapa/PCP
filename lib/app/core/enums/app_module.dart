@@ -86,7 +86,7 @@ extension AppModuleExt on AppModule {
             Text('Monitoramento em tempo real de produção e consumo',
                 style: AppCss.minimumRegular
                     .setSize(12)
-                    .setColor(Colors.white.withOpacity(0.8))),
+                    .setColor(Colors.white.withValues(alpha: 0.8))),
           ],
         ),
       );

@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:aco_plus/app/core/models/app_stream.dart';
-import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
-import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/models/service_model.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';

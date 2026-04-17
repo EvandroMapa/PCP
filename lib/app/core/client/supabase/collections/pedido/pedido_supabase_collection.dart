@@ -164,7 +164,8 @@ class PedidoSupabaseCollection extends PedidoCollection {
         return;
       }
 
-      final List<String> pIds = pedidosRaw.map((e) => e['id'].toString().trim()).toList();
+      final List<String> pIds =
+          pedidosRaw.map((e) => e['id'].toString().trim()).toList();
 
       Future<List<Map<String, dynamic>>> safeFetch(String table) async {
         try {
@@ -198,7 +199,8 @@ class PedidoSupabaseCollection extends PedidoCollection {
       final List<Map<String, dynamic>> tagsRaw = results[3];
       final List<Map<String, dynamic>> elementosRaw = results[4];
 
-      final List<String> eIds = elementosRaw.map((e) => e['id'].toString()).toList();
+      final List<String> eIds =
+          elementosRaw.map((e) => e['id'].toString()).toList();
       final List<Map<String, dynamic>> posicoesRaw = eIds.isEmpty
           ? []
           : List<Map<String, dynamic>>.from(await SupabaseService.client
@@ -211,12 +213,16 @@ class PedidoSupabaseCollection extends PedidoCollection {
         final pProdutos = produtosRaw
             .where((r) => (r['pedido_id'] ?? '').toString().trim() == pId)
             .toList();
-        
+
         return PedidoModel.fromSupabaseMap(
           pMap,
           produtosRaw: pProdutos,
-          statusRaw: statusRaw.where((r) => r['pedido_id'].toString().trim() == pId).toList(),
-          stepsRaw: stepsRaw.where((r) => r['pedido_id'].toString().trim() == pId).toList(),
+          statusRaw: statusRaw
+              .where((r) => r['pedido_id'].toString().trim() == pId)
+              .toList(),
+          stepsRaw: stepsRaw
+              .where((r) => r['pedido_id'].toString().trim() == pId)
+              .toList(),
           tagsIds: tagsRaw
               .where((r) => r['pedido_id'].toString().trim() == pId)
               .map((r) => r['tag_id'].toString())
@@ -227,10 +233,11 @@ class PedidoSupabaseCollection extends PedidoCollection {
             final String eId = e['id'].toString().trim();
             return {
               ...e,
-              'posicoesRaw': posicoesRaw.where((pos) => pos['elemento_id'].toString().trim() == eId).toList(),
+              'posicoesRaw': posicoesRaw
+                  .where((pos) => pos['elemento_id'].toString().trim() == eId)
+                  .toList(),
             };
           }).toList(),
-        );
         );
       }).toList();
 
@@ -494,18 +501,19 @@ class PedidoSupabaseCollection extends PedidoCollection {
     }
   }
 
-  Future<List<PedidoModel>> updateAll(List<PedidoModel> models) async {
+  @override
+  Future<List<PedidoModel>> updateAll(List<PedidoModel> pedidos) async {
     try {
-      if (models.isEmpty) return [];
+      if (pedidos.isEmpty) return [];
       
-      final payload = models.map((e) => e.toSupabaseMap()).toList();
+      final payload = pedidos.map((e) => e.toSupabaseMap()).toList();
       await SupabaseService.client
           .from(name)
           .upsert(payload);
           
       // O streaming cuidará de atualizar a UI local.
       // Retornamos a lista original para consistência.
-      return models;
+      return pedidos;
     } catch (e) {
       log('Supabase Error (Pedido.updateAll): $e');
       return [];
