@@ -10,9 +10,7 @@ import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_create_page.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_page.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher_string.dart';
 
 class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
   final PedidoModel pedido;
@@ -64,7 +62,6 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
             child: Icon(Icons.add, color: AppColors.white),
           ),
         ),
-        const W(12),
         Tooltip(
           message: 'Acompanhar pedido',
           child: InkWell(
@@ -74,33 +71,6 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ),
         const W(12),
-        Tooltip(
-          message: 'Compartilhar Link (WhatsApp)',
-          child: InkWell(
-            onTap: () {
-              final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
-              final text = Uri.encodeComponent('Olá! Acompanhe o seu pedido ${pedido.localizador}: $url');
-              launchUrlString('https://wa.me/?text=$text');
-            },
-            child: Icon(Icons.share, color: AppColors.white, size: 20),
-          ),
-        ),
-        const W(12),
-        Tooltip(
-          message: 'Copiar Link',
-          child: InkWell(
-            onTap: () async {
-              final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
-              await Clipboard.setData(ClipboardData(text: url));
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Link de acompanhamento copiado!')),
-                );
-              }
-            },
-            child: Icon(Icons.copy, color: AppColors.white, size: 20),
-          ),
-        ),
         const W(12),
         const W(12),
         StreamOut<int>(
@@ -193,32 +163,6 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
         child: IconButton(
           onPressed: () => context.push('/acompanhamento/pedidos/${pedido.id}'),
           icon: Icon(Icons.local_shipping, color: AppColors.white),
-        ),
-      ),
-      Tooltip(
-        message: 'Compartilhar Link (WhatsApp)',
-        child: IconButton(
-          onPressed: () {
-            final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
-            final text = Uri.encodeComponent('Olá! Acompanhe o seu pedido ${pedido.localizador}: $url');
-            launchUrlString('https://wa.me/?text=$text');
-          },
-          icon: const Icon(Icons.share, color: Colors.white),
-        ),
-      ),
-      Tooltip(
-        message: 'Copiar Link',
-        child: IconButton(
-          onPressed: () async {
-            final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
-            await Clipboard.setData(ClipboardData(text: url));
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Link de acompanhamento copiado!')),
-              );
-            }
-          },
-          icon: Icon(Icons.copy, color: AppColors.white),
         ),
       ),
       StreamOut<int>(

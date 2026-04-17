@@ -41,7 +41,6 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
     return StreamOut(
       stream: pedidoCtrl.pedidoStream.listen,
       builder: (_, pedido) {
-        final bool isGuest = SupabaseService.client.auth.currentUser == null;
         final String waNumber = PreferencesService.whatsappSuporte.value;
         final String waMessage = Uri.encodeComponent(
           'Olá, gostaria de informações sobre meu pedido ${pedido.localizador}',
@@ -50,39 +49,6 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
 
         return AppScaffold(
           backgroundColor: const Color(0xFFF8FAFC),
-          appBar: AppBar(
-            title: Text(
-              'Acompanhamento de Pedido',
-              style: AppCss.largeBold.setColor(AppColors.white),
-            ),
-            backgroundColor: AppColors.primaryMain,
-            elevation: 0,
-            actions: isGuest
-                ? null
-                : [
-                    IconButton(
-                      onPressed: () {
-                        final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
-                        final text = Uri.encodeComponent('Olá! Acompanhe o seu pedido ${pedido.localizador}: $url');
-                        launchUrlString('https://wa.me/?text=$text');
-                      },
-                      icon: const Icon(Icons.share, color: Colors.white),
-                    ),
-                    IconButton(
-                      onPressed: () async {
-                        final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
-                        await Clipboard.setData(ClipboardData(text: url));
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Link de acompanhamento copiado!')),
-                          );
-                        }
-                      },
-                      icon: Icon(Icons.copy, color: AppColors.white),
-                    ),
-                    const W(16),
-                  ],
-          ),
           body: SingleChildScrollView(
             child: Column(
               children: [
@@ -123,7 +89,7 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
   Widget _buildHeader(PedidoModel pedido) {
     return Container(
       width: double.maxFinite,
-      padding: const EdgeInsets.fromLTRB(24, 32, 24, 56), // Padding bottom maior para dar altura
+      padding: const EdgeInsets.fromLTRB(24, 48, 24, 56),
       decoration: BoxDecoration(
         color: AppColors.primaryMain,
         borderRadius: const BorderRadius.only(
@@ -133,6 +99,45 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
       ),
       child: Column(
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Acompanhamento',
+                style: AppCss.mediumBold.setColor(Colors.white).setSize(16),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
+                      final text = Uri.encodeComponent('Olá! Acompanhe o seu pedido ${pedido.localizador}: $url');
+                      launchUrlString('https://wa.me/?text=$text');
+                    },
+                    icon: const Icon(Icons.share, color: Colors.white, size: 20),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                  const SizedBox(width: 16),
+                  IconButton(
+                    onPressed: () async {
+                      final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
+                      await Clipboard.setData(ClipboardData(text: url));
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Link de acompanhamento copiado!')),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.copy, color: Colors.white, size: 20),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -300,6 +305,103 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
             ],
           )
         ],
+      ),
+    );
+  }
+
+  Widget _buildAdminActions(PedidoModel pedido) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.primaryMain.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.primaryMain.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.admin_panel_settings_outlined, size: 20, color: AppColors.primaryMain),
+              const SizedBox(width: 12),
+              Text(
+                'OPÇÕES DO ADMINISTRADOR',
+                style: AppCss.minimumBold.setColor(AppColors.primaryMain),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _actionButton(
+                  onTap: () {
+                    final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
+                    final text = Uri.encodeComponent('Olá! Acompanhe o seu pedido ${pedido.localizador}: $url');
+                    launchUrlString('https://wa.me/?text=$text');
+                  },
+                  icon: Icons.share,
+                  label: 'WhatsApp',
+                  color: const Color(0xFF25D366),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _actionButton(
+                  onTap: () async {
+                    final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
+                    await Clipboard.setData(ClipboardData(text: url));
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Link de acompanhamento copiado!')),
+                      );
+                    }
+                  },
+                  icon: Icons.copy,
+                  label: 'Copiar Link',
+                  color: AppColors.primaryMain,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionButton({
+    required VoidCallback onTap,
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: AppCss.minimumBold.setColor(color),
+            ),
+          ],
+        ),
       ),
     );
   }
