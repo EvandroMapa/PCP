@@ -17,6 +17,7 @@ import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
 import 'package:aco_plus/app/core/enums/sort_type.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
+import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/models/endereco_model.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
@@ -200,11 +201,11 @@ class PedidoController {
       final create = PedidoProdutoCreateModel(
         isEnabled: qtdeDisponivel > 0,
         qtdeDisponivel: qtdeDisponivel,
-        isSelected: qtdeDisponivel > 0,
+        isSelected: false, // Inicia desmarcado — só seleciona quando preenche quantidade
       );
       create.produtoModel = produtoBase;
       create.produtoEC.text = produtoBase.descricaoReplaced;
-      create.qtde.text = qtdeDisponivel.toString();
+      create.qtde.text = '0'; // Inicia zerado para o usuário preencher
       form.produtos.add(create);
     }
   }
@@ -261,6 +262,14 @@ class PedidoController {
       }
       if (form.isEdit) {
         final edit = form.toPedidoModel(pedido);
+        // Se NÃO é Mestre, qtdeOriginal deve acompanhar a qtde editada
+        if (edit.pedidosFilhos.isEmpty) {
+          for (int i = 0; i < edit.produtos.length; i++) {
+            edit.produtos[i] = edit.produtos[i].copyWith(
+              qtdeOriginal: edit.produtos[i].qtde,
+            );
+          }
+        }
         verificarTags(edit);
         final update = await BackendClient.pedidos.update(edit);
         if (update != null) {
@@ -277,7 +286,7 @@ class PedidoController {
             final produtoPai = pai.produtos.firstWhereOrNull(
               (e) => e.produto.id == produtoFilho.produto.id,
             );
-            if (produtoPai != null && (produtoFilho.qtde > produtoPai.qtde)) {
+            if (produtoPai != null && (produtoFilho.qtde.precision > produtoPai.qtde.precision)) {
               NotificationService.showNegative(
                 'Saldo Insuficiente',
                 'O produto ${produtoPai.produto.nome} possui apenas ${produtoPai.qtde}Kg disponíveis.',
@@ -309,7 +318,7 @@ class PedidoController {
             final produtoPaiIndex = pai.produtos.indexWhere((e) => e.produto.id == produtoFilho.produto.id);
             if (produtoPaiIndex != -1) {
               final produtoPai = pai.produtos[produtoPaiIndex];
-              double newQtde = produtoPai.qtde - produtoFilho.qtde;
+              double newQtde = (produtoPai.qtde - produtoFilho.qtde).precision;
               if (newQtde < 0) newQtde = 0;
               pai.produtos[produtoPaiIndex] = produtoPai.copyWith(qtde: newQtde);
             }
@@ -330,9 +339,10 @@ class PedidoController {
         position: NotificationPosition.bottom,
       );
     } catch (e) {
+      final msg = e.toString().replaceFirst('Exception: ', '');
       NotificationService.showNegative(
-        'Erro',
-        e.toString(),
+        'Atenção',
+        msg,
         position: NotificationPosition.bottom,
       );
     }
@@ -345,13 +355,27 @@ class PedidoController {
   }) async {
     if (await _isDeleteUnavailable(pedido)) return false;
 
-    // Se é parcial, desvincular do mestre antes de deletar (evita violação de FK)
+    // Se é parcial, desvincular do mestre e devolver quantidade antes de deletar
     if (pedido.isParcial) {
       try {
         final mestre = FirestoreClient.pedidos.getById(pedido.pai!);
         mestre.pedidosFilhos.remove(pedido.id);
+
+        // Devolver a quantidade do parcial de volta ao mestre
+        for (final produtoFilho in pedido.produtos) {
+          final idx = mestre.produtos.indexWhere(
+            (e) => e.produto.id == produtoFilho.produto.id,
+          );
+          if (idx != -1) {
+            final produtoMestre = mestre.produtos[idx];
+            mestre.produtos[idx] = produtoMestre.copyWith(
+              qtde: produtoMestre.qtde + produtoFilho.qtde,
+            );
+          }
+        }
+
         pedido.pai = null;
-        // Salva o pai sem o filho na lista, e zera o pai do filho
+        // Salva o mestre com quantidade restaurada e sem o filho na lista
         await BackendClient.pedidos.update(mestre);
         await BackendClient.pedidos.update(pedido);
       } catch (_) {}
@@ -401,12 +425,11 @@ class PedidoController {
     if (form.cliente == null) {
       throw Exception('Selecione o cliente do pedido');
     }
-
-    if (form.tipo == null) {
-      throw Exception('Selecione o tipo do pedido');
-    }
     if (form.obra == null) {
       throw Exception('Selecione a obra do pedido');
+    }
+    if (form.tipo == null) {
+      throw Exception('Selecione o tipo do pedido');
     }
     if (form.step == null) {
       throw Exception('Selecione a etapa inicial do pedido');
@@ -643,12 +666,17 @@ class PedidoController {
           .toSet()
           .toList();
 
-      relatorio.tipo = RelatorioPedidoTipo.pedidos;
+      relatorio.tipo = pedido.isMestre
+          ? RelatorioPedidoTipo.mestre
+          : RelatorioPedidoTipo.pedidos;
+
+      final pedidosRelatorio =
+          pedido.isMestre ? [pedido, ...pedido.getPedidosFilhos()] : [pedido];
 
       final model = RelatorioPedidoModel(
         relatorio.cliente,
         relatorio.status,
-        [pedido],
+        pedidosRelatorio,
         relatorio.tipo,
         relatorio.produtos,
       );

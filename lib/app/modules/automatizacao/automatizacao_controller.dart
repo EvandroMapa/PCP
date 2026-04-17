@@ -21,6 +21,9 @@ class AutomatizacaoController {
 
   Future<void> onSetStepByPedidoStatus(List<PedidoModel> pedidos) async {
     for (PedidoModel pedido in pedidos) {
+      // Pedidos Mestre não devem ser movidos pela automação — apenas parciais e pedidos normais
+      if (pedido.pedidosFilhos.isNotEmpty) continue;
+
       AutomatizacaoItemModel? item;
       switch (pedido.status) {
         case PedidoStatus.aguardandoProducaoCD:

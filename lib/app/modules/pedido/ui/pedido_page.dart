@@ -179,7 +179,7 @@ class _PedidoPageState extends State<PedidoPage>
                 ],
               ),
               tabs: [
-                const Tab(text: 'DASHBOARD'),
+                Tab(text: pedido.isMestre ? 'INFORMAÇÕES GERAIS' : 'DASHBOARD'),
                 const Tab(text: 'PRODUTOS'),
                 if (_lastShowElementos) const Tab(text: 'ELEMENTOS'),
               ],

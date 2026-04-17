@@ -41,6 +41,9 @@ class RelatorioPedidoPdfPage {
               .contains(model.tipo)) ...[
             _buildPedidosList(),
           ],
+          if (model.tipo == RelatorioPedidoTipo.mestre) ...[
+            _buildMestreSection(),
+          ],
         ],
       );
 
@@ -62,7 +65,10 @@ class RelatorioPedidoPdfPage {
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text('RELATÓRIO DE CONSUMO',
+                  pw.Text(
+                      model.tipo == RelatorioPedidoTipo.mestre
+                          ? 'RELATÓRIO DE PEDIDOS PARCIAIS'
+                          : 'RELATÓRIO DE CONSUMO',
                       style: pw.TextStyle(
                           fontSize: 16, fontWeight: pw.FontWeight.bold)),
                   pw.Text('Sistema de Controle de Produção - PCP',
@@ -284,6 +290,120 @@ class RelatorioPedidoPdfPage {
                       'TOTAL DO PEDIDO: ${pedido.getQtdeTotal().toKg()}',
                       style: pw.TextStyle(
                           fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildMestreSection() {
+    final mestre = model.pedidos.first;
+    final parciais = model.pedidos.skip(1).toList();
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text('RESUMO DE SALDO (MESTRE)',
+            style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 8),
+        pw.Table.fromTextArray(
+          headers: ['PRODUTO', 'ORIGINAL', 'PARCIAIS', 'SALDO'],
+          data: mestre.produtos.map((p) {
+            final double parciaisTotal = p.qtdeOriginal - p.qtde;
+            return [
+              '${p.produto.descricaoReplaced}mm',
+              p.qtdeOriginal.toKg(),
+              parciaisTotal.toKg(),
+              p.qtde.toKg(),
+            ];
+          }).toList(),
+          headerStyle:
+              pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+          cellStyle: const pw.TextStyle(fontSize: 8),
+          cellAlignment: pw.Alignment.centerLeft,
+          headerDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
+        ),
+        pw.SizedBox(height: 20),
+        pw.Text('DETALHAMENTO DE PEDIDOS PARCIAIS',
+            style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 10),
+        if (parciais.isEmpty)
+          pw.Padding(
+            padding: const pw.EdgeInsets.only(top: 10),
+            child: pw.Text('Nenhum pedido parcial gerado até o momento.',
+                style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic)),
+          ),
+        for (final parcial in parciais) ...[
+          _buildParcialItem(parcial),
+          pw.SizedBox(height: 12),
+        ],
+      ],
+    );
+  }
+
+  pw.Widget _buildParcialItem(PedidoModel parcial) {
+    return pw.Container(
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey200, width: 0.5),
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Container(
+            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: const pw.BoxDecoration(
+              color: PdfColors.grey50,
+              border: pw.Border(
+                  bottom: pw.BorderSide(color: PdfColors.grey200, width: 0.5)),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('PARCIAL: ${parcial.localizador}',
+                    style: pw.TextStyle(
+                        fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                pw.Text(
+                    'ETAPA: ${parcial.step.name.toUpperCase()}',
+                    style: pw.TextStyle(
+                        fontSize: 8,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.blue800)),
+              ],
+            ),
+          ),
+          pw.Padding(
+            padding: const pw.EdgeInsets.all(6),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                if (parcial.descricao.isNotEmpty)
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.only(bottom: 4),
+                    child: pw.Text('DESCRIÇÃO: ${parcial.descricao}',
+                        style: pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
+                  ),
+                pw.Table.fromTextArray(
+                  headers: ['PRODUTO', 'STATUS', 'PESO'],
+                  data: parcial.produtos
+                      .map((p) => [
+                            '${p.produto.descricaoReplaced}mm',
+                            p.status.status.label.toUpperCase(),
+                            p.qtde.toKg()
+                          ])
+                      .toList(),
+                  headerStyle:
+                      pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold),
+                  cellStyle: const pw.TextStyle(fontSize: 7),
+                  cellPadding: const pw.EdgeInsets.all(3),
+                  columnWidths: {
+                    0: const pw.FlexColumnWidth(2),
+                    1: const pw.FlexColumnWidth(1.5),
+                    2: const pw.FlexColumnWidth(1)
+                  },
                 ),
               ],
             ),

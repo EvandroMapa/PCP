@@ -1,3 +1,4 @@
+import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
@@ -105,9 +106,9 @@ class PaiPedidoSaldoTableWidget extends StatelessWidget {
             Expanded(
               flex: 2,
               child: Text(
-                '${p.produto.nome}\n${p.produto.descricao}',
+                p.produto.nome,
                 textAlign: TextAlign.right,
-                maxLines: 2,
+                maxLines: 1,
                 style: AppCss.minimumBold.copyWith(
                   color: const Color(0xFF64748B),
                   fontSize: 10,

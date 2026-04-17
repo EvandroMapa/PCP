@@ -63,13 +63,15 @@ class PedidoModel {
   /// true quando o pedido foi gerado como filho de outro
   bool get isParcial => pai != null && pai!.isNotEmpty;
 
-  /// Impede criação de parcial se já tem elementos ou produtos em produção,
-  /// pois torná-lo mestre removeria ele da produção.
+  /// Permite criação de parcial se:
+  /// - Não é ele mesmo um parcial (filho de outro)
+  /// - Não tem elementos vinculados
+  /// - Todos os produtos estão com status separado (quando não é mestre)
+  ///   OU já é mestre (pode continuar gerando parciais)
   bool get podeGerarParcial =>
-      !isMestre &&
       !isParcial &&
       elementos.isEmpty &&
-      produtos.every((p) => p.status.status == PedidoProdutoStatus.separado);
+      (isMestre || produtos.every((p) => p.status.status == PedidoProdutoStatus.separado));
 
   // New financial fields
   final double valorSubtotal;

@@ -14,5 +14,5 @@ extension TextControllerExt on TextController {
   }
 
   String get labelValue =>
-      (double.tryParse(text) ?? 0).toString().replaceAll('.0', '');
+      doubleValue.toString().replaceAll('.0', '');
 }

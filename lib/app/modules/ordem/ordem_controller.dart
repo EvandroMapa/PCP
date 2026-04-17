@@ -101,6 +101,8 @@ class OrdemController {
       ..._getPedidosProdutosAtual(ordem: ordem),
       ..._getPedidosProdutosSeparados(produto),
     ];
+    // Guard extra: excluir produtos de pedidos Mestre (que possuem parciais)
+    pedidos = pedidos.where((p) => p.pedido.pedidosFilhos.isEmpty).toList();
     onSortPedidos(pedidos);
     return pedidos;
   }

@@ -46,43 +46,56 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
             ),
             const W(16),
             Expanded(
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Flexible(
-                    child: Text(
-                      pedido.isArchived
-                          ? '${pedido.localizador} - Arquivado'
-                          : pedido.localizador,
-                      style: AppCss.largeBold.setColor(AppColors.white).setSize(20),
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          pedido.isArchived
+                              ? '${pedido.localizador} - Arquivado'
+                              : pedido.localizador,
+                          style: AppCss.largeBold.setColor(AppColors.white).setSize(20),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (pedido.isMestre) ...[
+                        const W(8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF3C7),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text('MESTRE',
+                              style: AppCss.minimumBold.copyWith(
+                                  fontSize: 9, color: const Color(0xFF92400E))),
+                        ),
+                      ],
+                      if (pedido.isParcial) ...[
+                        const W(8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDBEAFE),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text('PARCIAL',
+                              style: AppCss.minimumBold.copyWith(
+                                  fontSize: 9, color: const Color(0xFF1E40AF))),
+                        ),
+                      ],
+                    ],
                   ),
-                  if (pedido.isMestre) ...[
-                    const W(8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF3C7),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text('MESTRE',
-                          style: AppCss.minimumBold.copyWith(
-                              fontSize: 9, color: const Color(0xFF92400E))),
-                    ),
-                  ],
-                  if (pedido.isParcial) ...[
-                    const W(8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDBEAFE),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text('PARCIAL',
-                          style: AppCss.minimumBold.copyWith(
-                              fontSize: 9, color: const Color(0xFF1E40AF))),
-                    ),
-                  ],
+                  Text(
+                    pedido.cliente.nome,
+                    style: AppCss.minimumRegular
+                        .setColor(Colors.white.withValues(alpha: 0.7))
+                        .setSize(11),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ),
@@ -179,44 +192,57 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
       );
 
   Widget _pedidoWidget(BuildContext context) => AppBar(
-        title: Row(
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Flexible(
-              child: Text(
-                pedido.isArchived
-                    ? '${pedido.localizador} - Arquivado'
-                    : pedido.localizador,
-                style: AppCss.largeBold.setColor(AppColors.white).setSize(20),
-                overflow: TextOverflow.ellipsis,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    pedido.isArchived
+                        ? '${pedido.localizador} - Arquivado'
+                        : pedido.localizador,
+                    style: AppCss.largeBold.setColor(AppColors.white).setSize(20),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (pedido.isMestre) ...[
+                  const W(8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text('MESTRE',
+                        style: AppCss.minimumBold.copyWith(
+                            fontSize: 9, color: const Color(0xFF92400E))),
+                  ),
+                ],
+                if (pedido.isParcial) ...[
+                  const W(8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDBEAFE),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text('PARCIAL',
+                        style: AppCss.minimumBold.copyWith(
+                            fontSize: 9, color: const Color(0xFF1E40AF))),
+                  ),
+                ],
+              ],
             ),
-            if (pedido.isMestre) ...[
-              const W(8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text('MESTRE',
-                    style: AppCss.minimumBold.copyWith(
-                        fontSize: 9, color: const Color(0xFF92400E))),
-              ),
-            ],
-            if (pedido.isParcial) ...[
-              const W(8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDBEAFE),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text('PARCIAL',
-                    style: AppCss.minimumBold.copyWith(
-                        fontSize: 9, color: const Color(0xFF1E40AF))),
-              ),
-            ],
+            Text(
+              pedido.cliente.nome,
+              style: AppCss.minimumRegular
+                  .setColor(Colors.white.withValues(alpha: 0.7))
+                  .setSize(11),
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
         backgroundColor: AppColors.primaryMain,

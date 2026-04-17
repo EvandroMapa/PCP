@@ -1,10 +1,11 @@
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/components/h.dart';
+import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
+import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
-import 'package:aco_plus/app/modules/pedido/ui/components/pedido_item_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_create_page.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_page.dart';
 import 'package:flutter/material.dart';
@@ -20,95 +21,274 @@ class PedidoFilhosWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text('Pedidos Parciais',
-                    style: AppCss.smallBold.setSize(13)),
-              ),
-              InkWell(
-                onTap: () async => push(context, PedidoCreatePage(pai: pedido)),
-                child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryMain,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Icon(Icons.add, color: Colors.white, size: 26),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Cabeçalho ──
+        Row(
+          children: [
+            Expanded(
+              child: Text('Informações Gerais',
+                  style: AppCss.smallBold.setSize(13)),
+            ),
+            InkWell(
+              onTap: () => pedidoCtrl.onGeneratePDF(pedido),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                child: const Icon(Icons.picture_as_pdf_outlined,
+                    color: Colors.redAccent, size: 20),
               ),
-            ],
-          ),
-          if (filhos.isNotEmpty) ...[
-            const H(16),
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Color(0xFFC4CCD3), width: 2),
-              ),
-              child: Column(
-                children: filhos
-                    .map(
-                      (filho) => Container(
-                        color: Color(0xFFFFFFFF),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: PedidoItemWidget(
-                                info: PedidoItemInfo.page,
-                                onTap: (vinculado) async {
-                                  await push(
-                                    PedidoPage(
-                                      reason: PedidoInitReason.page,
-                                      pedido: vinculado,
-                                    ),
-                                  );
-                                  // Busca o mestre FRESCO do data list (pode ter mudado após delete de parcial)
-                                  final mestreAtualizado =
-                                      FirestoreClient.pedidos.getById(pedido.id);
-                                  pedidoCtrl.pedidoStream.add(mestreAtualizado);
-                                },
-                                pedido: filho,
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                              ),
-                              child: InkWell(
-                                onTap: () => pedidoCtrl.onRemovePedidoFilho(
-                                  pedido,
-                                  filho,
-                                ),
-                                child: Container(
-                                  margin: const EdgeInsets.only(left: 8),
-                                  width: 20,
-                                  height: 20,
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryMain,
-                                    borderRadius: BorderRadius.circular(3),
-                                  ),
-                                  child: const Icon(
-                                    Icons.remove,
-                                    color: Colors.white,
-                                    size: 14,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                    .toList(),
+            ),
+            const SizedBox(width: 8),
+            InkWell(
+              onTap: () async => push(context, PedidoCreatePage(pai: pedido)),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryMain,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.add, color: Colors.white, size: 20),
               ),
             ),
           ],
-        ],
+        ),
+        const SizedBox(height: 12),
+
+        // ── Grid de cards ──
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: filhos
+              .map((filho) => _ParcialCard(
+                    mestre: pedido,
+                    filho: filho,
+                  ))
+              .toList(),
+        ),
+      ],
+    );
+  }
+}
+
+/// Card compacto estilo armação: tarja preta + badge CD/CDA + hover produtos.
+class _ParcialCard extends StatefulWidget {
+  final PedidoModel mestre;
+  final PedidoModel filho;
+
+  const _ParcialCard({required this.mestre, required this.filho});
+
+  @override
+  State<_ParcialCard> createState() => _ParcialCardState();
+}
+
+class _ParcialCardState extends State<_ParcialCard> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final filho = widget.filho;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: InkWell(
+        onTap: () async {
+          await push(
+            context,
+            PedidoPage(pedido: filho, reason: PedidoInitReason.page),
+          );
+          final mestreAtualizado =
+              FirestoreClient.pedidos.getById(widget.mestre.id);
+          pedidoCtrl.pedidoStream.add(mestreAtualizado);
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: 264,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.black, width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: _isHovered ? 0.15 : 0.06),
+                blurRadius: _isHovered ? 16 : 8,
+                offset: Offset(0, _isHovered ? 6 : 3),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ── Tarja preta ──
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                decoration: const BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(14),
+                    topRight: Radius.circular(14),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        filho.localizador,
+                        style: AppCss.mediumBold
+                            .setSize(13)
+                            .setColor(Colors.white)
+                            .copyWith(letterSpacing: 0.5),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    // Badge CD/CDA
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            width: 0.5),
+                      ),
+                      child: Text(
+                        filho.tipo.name.toUpperCase(),
+                        style: AppCss.minimumBold.copyWith(
+                            fontSize: 9, color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    // Botão excluir
+                    InkWell(
+                      onTap: () async {
+                        final confirm = await showConfirmDialog(
+                          'Excluir Parcial',
+                          'Deseja excluir "${filho.localizador}"? O saldo será devolvido ao Mestre.',
+                        );
+                        if (confirm && context.mounted) {
+                          await pedidoCtrl.onDelete(context, filho);
+                        }
+                      },
+                      child: Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Icon(Icons.delete_outline,
+                            size: 13, color: Colors.white70),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ── Corpo: cliente + total ──
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      filho.descricao.isNotEmpty
+                          ? filho.descricao
+                          : 'Sem descrição',
+                      style: AppCss.minimumRegular.copyWith(
+                        fontSize: 11,
+                        color: Colors.grey[600],
+                        fontStyle: filho.descricao.isEmpty
+                            ? FontStyle.italic
+                            : FontStyle.normal,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.scale_outlined,
+                            size: 13, color: Colors.grey[500]),
+                        const SizedBox(width: 4),
+                        Text(
+                          filho.getQtdeTotal().toKg(),
+                          style: AppCss.minimumBold.copyWith(fontSize: 13),
+                        ),
+                        const Spacer(),
+                        Icon(Icons.chevron_right,
+                            size: 16, color: Colors.grey[400]),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // ── Produtos (hover) ──
+              AnimatedCrossFade(
+                firstChild: const SizedBox(width: double.infinity),
+                secondChild: Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    border: const Border(
+                      top: BorderSide(color: Color(0xFFE2E8F0)),
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(14),
+                      bottomRight: Radius.circular(14),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (final p in filho.produtos)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  p.produto.nome,
+                                  style: AppCss.minimumRegular
+                                      .copyWith(fontSize: 10),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Text(
+                                p.qtde.toKg(),
+                                style: AppCss.minimumBold.copyWith(
+                                    fontSize: 10,
+                                    color: const Color(0xFF374151)),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                crossFadeState: _isHovered
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
+                duration: const Duration(milliseconds: 200),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

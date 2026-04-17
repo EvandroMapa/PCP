@@ -190,10 +190,22 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       return;
     }
 
+    if (selectedCliente == null) {
+      NotificationService.showNegative(
+          'Atenção', 'Selecione o cliente do pedido.');
+      return;
+    }
+
+    if (selectedObra == null) {
+      NotificationService.showNegative(
+          'Atenção', 'Selecione a obra do pedido.');
+      return;
+    }
+
     setState(() => isUploading = true);
 
     try {
-      final ClienteModel finalCliente = selectedCliente ?? ClienteModel.empty();
+      final ClienteModel finalCliente = selectedCliente!;
 
       final List<String> missingProducts = [];
       final List<PedidoProdutoModel> produtosMapped = [];

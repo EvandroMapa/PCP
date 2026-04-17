@@ -28,9 +28,11 @@ import 'package:aco_plus/app/modules/cliente/ui/cliente_create_simplify_bottom.d
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_order_edit_bottom.dart';
 import 'package:aco_plus/app/modules/pedido/view_models/pedido_produto_view_model.dart';
+import 'package:aco_plus/app/core/extensions/text_controller_ext.dart';
 import 'package:aco_plus/app/modules/pedido/view_models/pedido_view_model.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
+import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:flutter/material.dart';
 
 class PedidoCreatePage extends StatefulWidget {
@@ -461,9 +463,14 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
   }
 
   Widget _produtosSection(PedidoCreateModel form) {
+    // ── Layout dedicado para criação de parcial ──
+    if (widget.pai != null) {
+      return _parcialProdutosSection(form);
+    }
     return Column(
       children: [
-        if (widget.pai == null) _produtoAddCard(form),
+        if (widget.pedido == null || widget.pedido!.pedidosFilhos.isEmpty)
+          _produtoAddCard(form),
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -472,6 +479,324 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
           ),
         ),
       ],
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // ── LAYOUT PARCIAL ── Seção dedicada para criação de pedidos parciais
+  // ══════════════════════════════════════════════════════════════════════════
+  Widget _parcialProdutosSection(PedidoCreateModel form) {
+    final pai = widget.pai!;
+    // Calcular total selecionado
+    double totalSelecionado = 0;
+    for (final p in form.produtos) {
+      if (p.isSelected && p.qtde.text.isNotEmpty) {
+        totalSelecionado += p.qtde.doubleValue.precision;
+      }
+    }
+    totalSelecionado = totalSelecionado.precision;
+
+    return Center(
+      child: FractionallySizedBox(
+        widthFactor: 0.6,
+        heightFactor: 0.8,
+        child: Column(
+      children: [
+        // ── Header do Mestre ──
+        Container(
+          margin: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFF1E293B),
+                const Color(0xFF334155),
+              ],
+            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.account_tree_outlined,
+                    color: Colors.white, size: 16),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Pedidos Parciais',
+                      style: AppCss.mediumBold
+                          .setColor(Colors.white)
+                          .setSize(13),
+                    ),
+                    Text(
+                      pai.localizador,
+                      style: AppCss.minimumRegular
+                          .setColor(Colors.white.withValues(alpha: 0.7))
+                          .setSize(11),
+                    ),
+                  ],
+                ),
+              ),
+              // Botão PDF
+              IconButton(
+                onPressed: () =>
+                    pedidoCtrl.onGeneratePDF(widget.pedido!),
+                icon: const Icon(Icons.picture_as_pdf_outlined,
+                    color: Colors.white, size: 20),
+                tooltip: 'Relatório de Pedidos Parciais',
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: totalSelecionado > 0
+                      ? AppColors.primaryMain.withValues(alpha: 0.9)
+                      : Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${totalSelecionado.toKg()} selecionado',
+                  style: AppCss.minimumBold.setColor(Colors.white).setSize(11),
+                ),
+              ),
+              const SizedBox(width: 10),
+              // Botão salvar com estado de loading
+              _SaveParcialButton(
+                totalSelecionado: totalSelecionado,
+                pedido: widget.pedido,
+              ),
+            ],
+          ),
+        ),
+        // ── Lista de Produtos ──
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius:
+                  const BorderRadius.vertical(bottom: Radius.circular(16)),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(bottom: Radius.circular(16)),
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: form.produtos.length,
+                separatorBuilder: (_, __) =>
+                    Divider(height: 1, color: Colors.grey[100]),
+                itemBuilder: (_, i) =>
+                    _parcialProdutoRow(form, form.produtos[i]),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+      ),
+    );
+  }
+
+  Widget _parcialProdutoRow(
+      PedidoCreateModel form, PedidoProdutoCreateModel produto) {
+    final double disponivel = (produto.qtdeDisponivel ?? 0).precision;
+    final double valor = produto.qtde.doubleValue.precision;
+    final double saldoRestante = (disponivel - valor).precision;
+    final bool excedeu = valor > disponivel;
+    final bool desabilitado = !produto.isEnabled;
+
+    // Cor do saldo
+    Color saldoColor;
+    if (excedeu) {
+      saldoColor = AppColors.error;
+    } else if (saldoRestante == 0 && disponivel > 0) {
+      saldoColor = Colors.green[700]!;
+    } else if (valor > 0) {
+      saldoColor = AppColors.primaryMain;
+    } else {
+      saldoColor = Colors.grey[400]!;
+    }
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      color: desabilitado
+          ? Colors.grey[50]
+          : valor > 0
+              ? AppColors.primaryMain.withValues(alpha: 0.03)
+              : Colors.white,
+      child: Row(
+        children: [
+          // Checkbox
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: Checkbox(
+              value: produto.isSelected,
+              onChanged: desabilitado
+                  ? null
+                  : (v) {
+                      produto.isSelected = v ?? false;
+                      if (!produto.isSelected) {
+                        produto.qtde.text = '0';
+                      }
+                      pedidoCtrl.formStream.update();
+                    },
+              activeColor: AppColors.primaryMain,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4)),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Produto info
+          Expanded(
+            flex: 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  produto.produtoModel?.descricao ?? '',
+                  style: AppCss.mediumBold.setSize(13).setColor(
+                        desabilitado ? Colors.grey[400]! : const Color(0xFF1E293B),
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Icon(Icons.inventory_2_outlined,
+                        size: 12, color: Colors.grey[400]),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Disponível: ${disponivel.toKg()}',
+                      style: AppCss.minimumRegular
+                          .setSize(11)
+                          .setColor(Colors.grey[500]!),
+                    ),
+                    if (desabilitado) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'ESGOTADO',
+                          style: AppCss.minimumBold
+                              .setSize(9)
+                              .setColor(AppColors.error),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Campo de quantidade inline
+          SizedBox(
+            width: 110,
+            child: IgnorePointer(
+              ignoring: desabilitado,
+              child: Opacity(
+                opacity: desabilitado ? 0.4 : 1.0,
+                child: TextField(
+                  controller: produto.qtde.controller,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  textAlign: TextAlign.center,
+                  style: AppCss.mediumBold.setSize(14).setColor(
+                        excedeu ? AppColors.error : const Color(0xFF1E293B),
+                      ),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    suffixText: 'Kg',
+                    suffixStyle: AppCss.minimumRegular
+                        .setSize(11)
+                        .setColor(Colors.grey[400]!),
+                    filled: true,
+                    fillColor: desabilitado
+                        ? Colors.grey[100]
+                        : const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: const Color(0xFFE2E8F0)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: valor > 0
+                            ? AppColors.primaryMain.withValues(alpha: 0.3)
+                            : const Color(0xFFE2E8F0),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: excedeu
+                            ? AppColors.error
+                            : AppColors.primaryMain,
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                  onChanged: (v) {
+                    produto.isSelected = produto.qtde.doubleValue > 0;
+                    pedidoCtrl.formStream.update();
+                  },
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Saldo remanescente
+          SizedBox(
+            width: 90,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  'Saldo',
+                  style: AppCss.minimumRegular
+                      .setSize(10)
+                      .setColor(Colors.grey[400]!),
+                ),
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 200),
+                  style: AppCss.mediumBold
+                      .setSize(13)
+                      .setColor(saldoColor),
+                  child: Text(saldoRestante.toKg()),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -620,6 +945,16 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
             if (!isDisabled) ...[
               IconButton(
                 onPressed: () async {
+                  // Mestre não pode alterar quantidade — parciais dependem do original
+                  if (widget.pedido != null &&
+                      widget.pedido!.pedidosFilhos.isNotEmpty) {
+                    NotificationService.showNegative(
+                      'Edição bloqueada',
+                      'Este pedido possui parciais vinculados. '
+                      'A quantidade original não pode ser alterada.',
+                    );
+                    return;
+                  }
                   final qtde = await showPedidoOrderEditBottom(
                       produto, produto.qtdeDisponivel);
                   if (qtde != null) {
@@ -630,7 +965,9 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
                 icon: Icon(Icons.edit_outlined,
                     color: Colors.blue[700], size: 20),
               ),
-              if (widget.pai == null)
+              if (widget.pai == null &&
+                  (widget.pedido == null ||
+                      widget.pedido!.pedidosFilhos.isEmpty))
                 IconButton(
                   onPressed: () async {
                     if (await showConfirmDialog('Remover Produto',
@@ -690,6 +1027,67 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
           const SizedBox(height: 24),
           ...children,
         ],
+      ),
+    );
+  }
+}
+
+class _SaveParcialButton extends StatefulWidget {
+  final double totalSelecionado;
+  final PedidoModel? pedido;
+  
+  const _SaveParcialButton({
+    required this.totalSelecionado,
+    required this.pedido,
+  });
+
+  @override
+  State<_SaveParcialButton> createState() => _SaveParcialButtonState();
+}
+
+class _SaveParcialButtonState extends State<_SaveParcialButton> {
+  bool isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = widget.totalSelecionado > 0;
+    
+    return InkWell(
+      onTap: enabled && !isLoading
+          ? () async {
+              setState(() => isLoading = true);
+              try {
+                await pedidoCtrl.onConfirm(context, widget.pedido, false);
+              } finally {
+                if (mounted) setState(() => isLoading = false);
+              }
+            }
+          : null,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: enabled
+              ? Colors.green.withValues(alpha: 0.8)
+              : Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: isLoading
+            ? const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Icon(
+                Icons.check,
+                size: 18,
+                color: enabled
+                    ? Colors.white
+                    : Colors.white.withValues(alpha: 0.3),
+              ),
       ),
     );
   }

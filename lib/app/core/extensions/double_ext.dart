@@ -24,4 +24,6 @@ extension DoubleExt on double {
 
   String toKg() =>
       '${NumberFormat.currency(locale: 'pt_BR', symbol: '', decimalDigits: 3).format(this).trim()}Kg';
+
+  double get precision => double.parse(toStringAsFixed(3));
 }
