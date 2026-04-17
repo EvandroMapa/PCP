@@ -10,6 +10,8 @@ import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_tracker_timeline_widget.dart';
+import 'package:aco_plus/app/modules/pedido/ui/components/pedido_progresso_widget.dart';
+import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher_string.dart';
@@ -39,6 +41,7 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
     return StreamOut(
       stream: pedidoCtrl.pedidoStream.listen,
       builder: (_, pedido) {
+        final bool isGuest = SupabaseService.client.auth.currentUser == null;
         final String waNumber = PreferencesService.whatsappSuporte.value;
         final String waMessage = Uri.encodeComponent(
           'Olá, gostaria de informações sobre meu pedido ${pedido.localizador}',
@@ -54,29 +57,31 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
             ),
             backgroundColor: AppColors.primaryMain,
             elevation: 0,
-            actions: [
-              IconButton(
-                onPressed: () {
-                  final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
-                  final text = Uri.encodeComponent('Olá! Acompanhe o seu pedido ${pedido.localizador}: $url');
-                  launchUrlString('https://wa.me/?text=$text');
-                },
-                icon: const Icon(Icons.share, color: Colors.white),
-              ),
-              IconButton(
-                onPressed: () async {
-                  final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
-                  await Clipboard.setData(ClipboardData(text: url));
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Link de acompanhamento copiado!')),
-                    );
-                  }
-                },
-                icon: Icon(Icons.copy, color: AppColors.white),
-              ),
-              const W(16),
-            ],
+            actions: isGuest
+                ? null
+                : [
+                    IconButton(
+                      onPressed: () {
+                        final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
+                        final text = Uri.encodeComponent('Olá! Acompanhe o seu pedido ${pedido.localizador}: $url');
+                        launchUrlString('https://wa.me/?text=$text');
+                      },
+                      icon: const Icon(Icons.share, color: Colors.white),
+                    ),
+                    IconButton(
+                      onPressed: () async {
+                        final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
+                        await Clipboard.setData(ClipboardData(text: url));
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Link de acompanhamento copiado!')),
+                          );
+                        }
+                      },
+                      icon: Icon(Icons.copy, color: AppColors.white),
+                    ),
+                    const W(16),
+                  ],
           ),
           body: SingleChildScrollView(
             child: Column(
@@ -94,6 +99,8 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
                   ],
                 ),
                 const SizedBox(height: 48), // Espaço para compensar a sobreposição
+                PedidoProgressoWidget(pedido: pedido),
+                const SizedBox(height: 24),
                 _buildTimelineSection(pedido),
                 _buildProductsSection(pedido),
                 const SizedBox(height: 100), // Espaço para o botão flutuante
@@ -101,14 +108,11 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
             ),
           ),
           fab: waNumber.isNotEmpty
-              ? FloatingActionButton.extended(
+              ? FloatingActionButton(
                   onPressed: () => launchUrlString(waUrl),
                   backgroundColor: const Color(0xFF25D366),
-                  icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-                  label: const Text(
-                    'PRECISA DE AJUDA? FALE CONOSCO',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
-                  ),
+                  tooltip: 'Fale Conosco',
+                  child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
                 )
               : null,
         );
