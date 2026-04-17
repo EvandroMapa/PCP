@@ -58,14 +58,20 @@ class _UsuarioTipoFormDialogState extends State<UsuarioTipoFormDialog> {
               CheckboxListTile(
                 title: const Text('Acessa como operador'),
                 value: form.isOperador,
-                onChanged: (v) => setState(() => form.isOperador = v ?? false),
+                onChanged: (v) => setState(() {
+                  form.isOperador = v ?? false;
+                  if (form.isOperador) form.isArmador = false;
+                }),
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
               ),
               CheckboxListTile(
                 title: const Text('Acessa como armador'),
                 value: form.isArmador,
-                onChanged: (v) => setState(() => form.isArmador = v ?? false),
+                onChanged: (v) => setState(() {
+                  form.isArmador = v ?? false;
+                  if (form.isArmador) form.isOperador = false;
+                }),
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
               ),
