@@ -95,12 +95,22 @@ class PedidoSupabaseCollection extends PedidoCollection {
         safeFetch('pedido_status_history'),
         safeFetch('pedido_steps_history'),
         safeFetch('pedido_tags'),
+        safeFetch('elementos'),
       ]);
 
       final List<Map<String, dynamic>> produtosRaw = results[0];
       final List<Map<String, dynamic>> statusRaw = results[1];
       final List<Map<String, dynamic>> stepsRaw = results[2];
       final List<Map<String, dynamic>> tagsRaw = results[3];
+      final List<Map<String, dynamic>> elementosRaw = results[4];
+
+      final List<String> eIds = elementosRaw.map((e) => e['id'].toString()).toList();
+      final List<Map<String, dynamic>> posicoesRaw = eIds.isEmpty
+          ? []
+          : List<Map<String, dynamic>>.from(await SupabaseService.client
+              .from('elemento_posicoes')
+              .select()
+              .filter('elemento_id', 'in', eIds));
 
       final pedidos = pedidosRaw.map((pMap) {
         final String pId = pMap['id'].toString().trim();
@@ -121,6 +131,15 @@ class PedidoSupabaseCollection extends PedidoCollection {
               .where((r) => r['pedido_id'].toString().trim() == pId)
               .map((r) => r['tag_id'].toString())
               .toList(),
+          elementosRaw: elementosRaw
+              .where((e) => e['pedido_id'].toString().trim() == pId)
+              .map((e) {
+            final String eId = e['id'].toString().trim();
+            return {
+              ...e,
+              'posicoesRaw': posicoesRaw.where((pos) => pos['elemento_id'].toString().trim() == eId).toList(),
+            };
+          }).toList(),
         );
       }).toList();
 
@@ -170,12 +189,22 @@ class PedidoSupabaseCollection extends PedidoCollection {
         safeFetch('pedido_status_history'),
         safeFetch('pedido_steps_history'),
         safeFetch('pedido_tags'),
+        safeFetch('elementos'),
       ]);
 
       final List<Map<String, dynamic>> produtosRaw = results[0];
       final List<Map<String, dynamic>> statusRaw = results[1];
       final List<Map<String, dynamic>> stepsRaw = results[2];
       final List<Map<String, dynamic>> tagsRaw = results[3];
+      final List<Map<String, dynamic>> elementosRaw = results[4];
+
+      final List<String> eIds = elementosRaw.map((e) => e['id'].toString()).toList();
+      final List<Map<String, dynamic>> posicoesRaw = eIds.isEmpty
+          ? []
+          : List<Map<String, dynamic>>.from(await SupabaseService.client
+              .from('elemento_posicoes')
+              .select()
+              .filter('elemento_id', 'in', eIds));
 
       final pedidos = pedidosRaw.map((pMap) {
         final String pId = pMap['id'].toString().trim();
@@ -192,6 +221,16 @@ class PedidoSupabaseCollection extends PedidoCollection {
               .where((r) => r['pedido_id'].toString().trim() == pId)
               .map((r) => r['tag_id'].toString())
               .toList(),
+          elementosRaw: elementosRaw
+              .where((e) => e['pedido_id'].toString().trim() == pId)
+              .map((e) {
+            final String eId = e['id'].toString().trim();
+            return {
+              ...e,
+              'posicoesRaw': posicoesRaw.where((pos) => pos['elemento_id'].toString().trim() == eId).toList(),
+            };
+          }).toList(),
+        );
         );
       }).toList();
 
@@ -248,7 +287,17 @@ class PedidoSupabaseCollection extends PedidoCollection {
         safeFetch('pedido_status_history'),
         safeFetch('pedido_steps_history'),
         safeFetch('pedido_tags'),
+        safeFetch('elementos'),
       ]);
+
+      final List<Map<String, dynamic>> elementosRaw = results[4];
+      final List<String> eIds = elementosRaw.map((e) => e['id'].toString()).toList();
+      final List<Map<String, dynamic>> posicoesRaw = eIds.isEmpty
+          ? []
+          : List<Map<String, dynamic>>.from(await SupabaseService.client
+              .from('elemento_posicoes')
+              .select()
+              .filter('elemento_id', 'in', eIds));
 
       return PedidoModel.fromSupabaseMap(
         pMap,
@@ -256,6 +305,13 @@ class PedidoSupabaseCollection extends PedidoCollection {
         statusRaw: results[1],
         stepsRaw: results[2],
         tagsIds: results[3].map((t) => (t['tag_id'] ?? '').toString()).toList(),
+        elementosRaw: elementosRaw.map((e) {
+          final String eId = e['id'].toString().trim();
+          return {
+            ...e,
+            'posicoesRaw': posicoesRaw.where((pos) => pos['elemento_id'].toString().trim() == eId).toList(),
+          };
+        }).toList(),
       );
     } catch (e) {
       log('Supabase Error (Pedido.getByIdSupabase): $e');
@@ -324,12 +380,22 @@ class PedidoSupabaseCollection extends PedidoCollection {
         safeFetch('pedido_status_history'),
         safeFetch('pedido_steps_history'),
         safeFetch('pedido_tags'),
+        safeFetch('elementos'),
       ]);
 
       final List<Map<String, dynamic>> produtosRaw = results[0];
       final List<Map<String, dynamic>> statusRaw = results[1];
       final List<Map<String, dynamic>> stepsRaw = results[2];
       final List<Map<String, dynamic>> tagsRaw = results[3];
+      final List<Map<String, dynamic>> elementosRaw = results[4];
+
+      final List<String> eIds = elementosRaw.map((e) => e['id'].toString()).toList();
+      final List<Map<String, dynamic>> posicoesRaw = eIds.isEmpty
+          ? []
+          : List<Map<String, dynamic>>.from(await SupabaseService.client
+              .from('elemento_posicoes')
+              .select()
+              .filter('elemento_id', 'in', eIds));
 
       final newPedidos = pedidosRaw.map((pMap) {
         final String pId = pMap['id'].toString().trim();
@@ -341,6 +407,16 @@ class PedidoSupabaseCollection extends PedidoCollection {
           tagsIds: tagsRaw
               .where((r) => r['pedido_id'].toString().trim() == pId)
               .map((r) => r['tag_id'].toString())
+              .toList(),
+          elementosRaw: elementosRaw
+              .where((e) => e['pedido_id'].toString().trim() == pId)
+              .map((e) {
+                final String eId = e['id'].toString().trim();
+                return {
+                  ...e,
+                  'posicoesRaw': posicoesRaw.where((pos) => pos['elemento_id'].toString().trim() == eId).toList(),
+                };
+              })
               .toList(),
         );
       }).toList();

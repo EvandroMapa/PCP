@@ -482,7 +482,17 @@ class PedidoModel {
         : <PedidoProdutoModel>[];
 
     final elementos = elementosRaw != null
-        ? elementosRaw.map((e) => ElementoModel.fromSupabaseMap(e)).toList()
+        ? elementosRaw
+            .map((e) => ElementoModel.fromSupabaseMap(
+                  e,
+                  posicoesRaw: e['posicoesRaw'] != null
+                      ? List<Map<String, dynamic>>.from(e['posicoesRaw'])
+                      : null,
+                  arquivosRaw: e['arquivosRaw'] != null
+                      ? List<Map<String, dynamic>>.from(e['arquivosRaw'])
+                      : null,
+                ))
+            .toList()
         : <ElementoModel>[];
 
     final pedido = PedidoModel(

@@ -10,12 +10,23 @@ class PedidoProgressoWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Corte e Dobra (CD)
-    final double cdTotal = pedido.getQtdeTotal();
-    final double cdPronto = pedido.getQtdePronto();
-    final double cdPercent = pedido.getPrcntgPronto();
+    // --- CÁLCULO CORTE E DOBRA (CD) ---
+    double cdTotal = pedido.getQtdeTotal();
+    double cdPronto = pedido.getQtdePronto();
 
-    // Armação (CDA)
+    // Adicionar posições dos elementos ao Corte e Dobra
+    for (final e in pedido.elementos) {
+      for (final pos in e.posicoes) {
+        final double pesoPosicaoTotal = pos.pesoKg * e.qtde;
+        cdTotal += pesoPosicaoTotal;
+        if (pos.status == PosicaoStatus.pronto) {
+          cdPronto += pesoPosicaoTotal;
+        }
+      }
+    }
+    final double cdPercent = cdTotal > 0 ? (cdPronto / cdTotal) : 0.0;
+
+    // --- CÁLCULO ARMAÇÃO (CDA) ---
     final double cdaTotal = pedido.elementos.fold(0.0, (sum, e) => sum + e.pesoTotal);
     final double cdaPronto = pedido.elementos.fold(0.0, (sum, e) => sum + e.pesoPronto);
     final double cdaPercent = cdaTotal > 0 ? (cdaPronto / cdaTotal) : 0.0;
