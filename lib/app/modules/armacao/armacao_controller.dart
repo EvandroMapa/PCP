@@ -11,7 +11,6 @@ import 'package:aco_plus/app/modules/automatizacao/automatizacao_controller.dart
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert';
 
 final armacaoCtrl = ArmacaoController();
 

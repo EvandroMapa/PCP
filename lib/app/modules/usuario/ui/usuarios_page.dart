@@ -8,7 +8,7 @@ import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
-import 'package:aco_plus/app/modules/usuario/ui/usuario_create_page.dart';
+import 'package:aco_plus/app/modules/usuario/ui/usuario_form_dialog.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_view_model.dart';
 import 'package:flutter/material.dart';
@@ -32,17 +32,7 @@ class _UsuariosPageState extends State<UsuariosPage> {
   Widget build(BuildContext context) {
     return AppScaffold(
       appBar: AppBar(
-        title: Text(
-          'Usuarios',
-          style: AppCss.largeBold.setColor(AppColors.white),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () => push(context, const UsuarioCreatePage()),
-            icon: Icon(Icons.add, color: AppColors.white),
-          ),
-        ],
-        backgroundColor: AppColors.primaryMain,
+        title: const Text('Usuários'),
       ),
       body: StreamOut<List<UsuarioModel>>(
         stream: FirestoreClient.usuarios.dataStream.listen,
@@ -80,19 +70,57 @@ class _UsuariosPageState extends State<UsuariosPage> {
           },
         ),
       ),
+      fab: FloatingActionButton(
+        backgroundColor: AppColors.primaryMain,
+        onPressed: () => showUsuarioFormDialog(context),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
 
   ListTile _itemUsuarioWidget(UsuarioModel usuario) {
     return ListTile(
-      onTap: () => push(context, UsuarioCreatePage(usuario: usuario)),
+      onTap: () => showUsuarioFormDialog(context, usuario: usuario),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       title: Text(usuario.nome, style: AppCss.mediumBold),
       subtitle: usuario.tipo != null ? Text(usuario.tipo!.nome) : null,
-      trailing: Icon(
-        Icons.arrow_forward_ios,
-        size: 14,
-        color: AppColors.neutralMedium,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            icon: const Icon(Icons.edit_outlined, size: 20),
+            onPressed: () => showUsuarioFormDialog(context, usuario: usuario),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+            onPressed: () => _confirmDelete(context, usuario),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, UsuarioModel usuario) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Excluir Usuário'),
+        content: Text('Deseja realmente excluir o usuário "${usuario.nome}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => usuarioCtrl.onDelete(context, usuario),
+            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }

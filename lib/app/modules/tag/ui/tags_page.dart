@@ -2,10 +2,8 @@ import 'package:aco_plus/app/core/client/firestore/collections/tag/models/tag_mo
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/app_field.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
-import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
-import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
@@ -70,9 +68,8 @@ class _TagsPageState extends State<TagsPage> {
                       ? const EmptyData()
                       : RefreshIndicator(
                           onRefresh: () async => FirestoreClient.tags.fetch(),
-                          child: ListView.separated(
+                          child: ListView.builder(
                             itemCount: tags.length,
-                            separatorBuilder: (_, i) => const Divisor(),
                             itemBuilder: (_, i) => _itemTagWidget(tags[i]),
                           ),
                         ),
@@ -85,50 +82,65 @@ class _TagsPageState extends State<TagsPage> {
     );
   }
 
-  ListTile _itemTagWidget(TagModel tag) {
-    return ListTile(
-      onTap: () => push(context, TagCreatePage(tag: tag)),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      title: Text(tag.nome, style: AppCss.mediumBold),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (tag.isDefaultCD)
-            Text(
-              'Esta etiqueta será vinculada automaticamente aos pedidos de corte e dobra',
-              style: AppCss.minimumBold.setColor(AppColors.secondary),
-            ),
-          if (tag.isDefaultCDA)
-            Text(
-              'Esta etiqueta será vinculada automaticamente aos pedidos de armado',
-              style: AppCss.minimumBold.setColor(AppColors.secondary),
-            ),
-          if (tag.descricao.isNotEmpty)
-            Text(tag.descricao, style: AppCss.minimumRegular)
-        ],
+  Widget _itemTagWidget(TagModel tag) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: Colors.grey[200]!, width: 1),
+        ),
       ),
-      trailing: SizedBox(
-        width: 50,
-        child: Row(
+      child: ListTile(
+        onTap: () => push(context, TagCreatePage(tag: tag)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        leading: Container(
+          width: 25,
+          height: 25,
+          decoration: BoxDecoration(
+            color: tag.color,
+            borderRadius: BorderRadius.circular(5),
+            border: Border.all(color: AppColors.neutralMedium),
+          ),
+        ),
+        title: Text(tag.nome, style: AppCss.mediumBold),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 25,
-              height: 25,
-              decoration: BoxDecoration(
-                color: tag.color,
-                borderRadius: BorderRadius.circular(5),
-                border: Border.all(color: AppColors.neutralMedium),
+            if (tag.isDefaultCD)
+              Text(
+                'Vinculada automaticamente a pedidos de Corte e Dobra',
+                style: AppCss.minimumBold.setColor(AppColors.secondary),
               ),
+            if (tag.isDefaultCDA)
+              Text(
+                'Vinculada automaticamente a pedidos de Armado',
+                style: AppCss.minimumBold.setColor(AppColors.secondary),
+              ),
+            if (tag.descricao.isNotEmpty)
+              Text(tag.descricao, style: AppCss.minimumRegular),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: Icon(Icons.edit_outlined, color: Colors.blue[600], size: 16),
+              iconSize: 16,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              padding: EdgeInsets.zero,
+              onPressed: () => push(context, TagCreatePage(tag: tag)),
             ),
-            const W(8),
-            Icon(
-              Icons.arrow_forward_ios,
-              size: 14,
-              color: AppColors.neutralMedium,
+            const SizedBox(width: 6),
+            IconButton(
+              icon: Icon(Icons.delete_outline, color: Colors.red[600], size: 16),
+              iconSize: 16,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              padding: EdgeInsets.zero,
+              onPressed: () => tagCtrl.onDelete(context, tag),
             ),
           ],
         ),
-        ),
-      );
+      ),
+    );
   }
 }

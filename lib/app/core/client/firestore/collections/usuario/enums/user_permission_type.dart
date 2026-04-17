@@ -8,7 +8,7 @@ extension UserPermissionTypeExtension on UserPermissionType {
       case UserPermissionType.read:
         return 'Ler';
       case UserPermissionType.update:
-        return 'Atualizar';
+        return 'Editar';
       case UserPermissionType.delete:
         return 'Deletar';
     }

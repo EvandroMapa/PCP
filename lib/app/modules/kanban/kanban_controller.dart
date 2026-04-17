@@ -14,7 +14,6 @@ import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_view_model.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedidos_vinculados_move_select_dialog.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/usuario_role.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -47,7 +46,7 @@ class StepController {
   void startDrag() => isDragging = true;
   void endDrag() {
     isDragging = false;
-    // NÃO faz fetch imediato — o estado local já está correto (optimistic).
+    // NÃƒO faz fetch imediato â€” o estado local jÃ¡ estÃ¡ correto (optimistic).
     // Agenda um fetch com delay para dar tempo do update() no Supabase terminar
     // antes de re-sincronizar os dados com o backend.
     _pendingDrop = true;
@@ -74,7 +73,7 @@ class StepController {
       final calendar = _mountCalendar();
       utilsStream.add(KanbanUtils(kanban: kanban, calendar: calendar));
 
-      // Timer de atualização automática a cada 3 segundos
+      // Timer de atualizaÃ§Ã£o automÃ¡tica a cada 3 segundos
       _refreshTimer?.cancel();
       _refreshTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
         if (!isDropLocked) {
@@ -107,7 +106,7 @@ class StepController {
       for (StepModel step in stepsData) {
         final pedidosStep = pedidos.where((e) => e.step.id == step.id).toList();
         
-        // Proteção contra index nulo ou erros de comparação
+        // ProteÃ§Ã£o contra index nulo ou erros de comparaÃ§Ã£o
         pedidosStep.sort((a, b) {
           try {
             return (a.index).compareTo(b.index);
@@ -134,13 +133,13 @@ class StepController {
   Map<String, List<PedidoModel>> _mountCalendar() {
     final calendar = <String, List<PedidoModel>>{};
     
-    // Filtramos apenas pedidos não arquivados que têm data de entrega
+    // Filtramos apenas pedidos nÃ£o arquivados que tÃªm data de entrega
     final pedidosCalendario = BackendClient.pedidos.pepidosUnarchiveds
         .where((e) => e.deliveryAt != null)
         .toList();
 
     for (final pedido in pedidosCalendario) {
-      // Formata a data de entrega ignorando o horário, apenas dia, mês e ano
+      // Formata a data de entrega ignorando o horÃ¡rio, apenas dia, mÃªs e ano
       final diaKey = DateFormat('dd/MM/yyyy').format(pedido.deliveryAt!);
       
       if (!calendar.containsKey(diaKey)) {
@@ -230,18 +229,19 @@ class StepController {
           .contains(pedido.step.id);
       if (!isStepAvailable) {
         NotificationService.showNegative(
-          'Operação não permitida',
-          'Etapa não aceita esta operação',
+          'OperaÃ§Ã£o nÃ£o permitida',
+          'Etapa nÃ£o aceita esta operaÃ§Ã£o',
         );
         return false;
       }
     }
     if (!auto) {
-      final isAdmin = usuario.role == UsuarioRole.administrador;
-      final destAllowed = step.moveRoles.isEmpty || step.moveRoles.contains(usuario.role);
-      final origAllowed = pedido.step.moveRoles.isEmpty || pedido.step.moveRoles.contains(usuario.role);
-      
-      if (!isAdmin && (!destAllowed || !origAllowed)) {
+      final destAllowed = step.moveRoles.isEmpty ||
+          step.moveRoles.contains(usuario.usuarioTipoId);
+      final origAllowed = pedido.step.moveRoles.isEmpty ||
+          pedido.step.moveRoles.contains(usuario.usuarioTipoId);
+
+      if (!destAllowed || !origAllowed) {
         NotificationService.showNegative(
           'Operação não permitida',
           'Usuário não tem permissão para alterar essa etapa',
@@ -261,8 +261,8 @@ class StepController {
     );
     pedido.addStep(step);
     BackendClient.pedidos.pedidosUnarchivedsStream.update();
-    // A chamada de update aqui já persiste a nova etapa e o novo índice do pedido
-    // Não usamos await para não travar a UI
+    // A chamada de update aqui jÃ¡ persiste a nova etapa e o novo Ã­ndice do pedido
+    // NÃ£o usamos await para nÃ£o travar a UI
     BackendClient.pedidos.update(pedido);
   }
 
@@ -304,13 +304,13 @@ class StepController {
     if (key == null) return;
     List<PedidoModel> pedidos = utils.kanban[key]!;
     
-    // Atualiza os índices locais
+    // Atualiza os Ã­ndices locais
     for (int i = 0; i < pedidos.length; i++) {
       pedidos[i].index = i;
     }
 
-    // Filtra os pedidos que NÃO são o que acabou de se mover 
-    // (pois este já terá um update individual via _onAddStep)
+    // Filtra os pedidos que NÃƒO sÃ£o o que acabou de se mover 
+    // (pois este jÃ¡ terÃ¡ um update individual via _onAddStep)
     final otherPedidos = pedidos.where((p) => p.id != movingPedidoId).toList();
     if (otherPedidos.isNotEmpty) {
       BackendClient.pedidos.updateAll(otherPedidos);
@@ -396,7 +396,7 @@ class StepController {
     final step = pedido.steps[pedido.steps.length - 2].step;
     if (!await showConfirmDialog(
       'Deseja voltar para etapa anterior?',
-      'Seu pedido será movido para ${step.name}',
+      'Seu pedido serÃ¡ movido para ${step.name}',
     )) {
       return;
     }

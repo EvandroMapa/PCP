@@ -49,7 +49,7 @@ class ClienteController {
   }
 
   final AppStream<ClienteCreateModel> formStream =
-      AppStream<ClienteCreateModel>();
+      AppStream<ClienteCreateModel>.seed(ClienteCreateModel());
   ClienteCreateModel get form => formStream.value;
 
   void init(ClienteModel? cliente) {

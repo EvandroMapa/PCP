@@ -17,6 +17,7 @@ import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/core/services/preferences_service.dart';
+import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
@@ -41,7 +42,6 @@ import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_ordem_view_model.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:pdf/widgets.dart' as pw;
 
@@ -796,8 +796,7 @@ class OrdemController {
 
     final pdf = pw.Document();
 
-    final img = await rootBundle.load('assets/images/logo.png');
-    final imageBytes = img.buffer.asUint8List();
+    final imageBytes = await LogoHelper.logoBytesForPdf();
 
     pdf.addPage(OrdemEtiquetasPdfPage(model).build(imageBytes));
 

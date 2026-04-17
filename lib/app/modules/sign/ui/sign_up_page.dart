@@ -1,11 +1,8 @@
-import 'package:aco_plus/app/core/components/app_field.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
-import 'package:aco_plus/app/core/components/app_text_button.dart';
-import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
-import 'package:aco_plus/app/core/utils/app_css.dart';
-import 'package:aco_plus/app/modules/sign/sign_controller.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
+import 'package:aco_plus/app/core/utils/logo_helper.dart';
+import 'package:aco_plus/app/modules/sign/sign_controller.dart';
 import 'package:flutter/material.dart';
 
 class SignUpPage extends StatefulWidget {
@@ -15,71 +12,309 @@ class SignUpPage extends StatefulWidget {
   State<SignUpPage> createState() => SignUpPageState();
 }
 
-class SignUpPageState extends State<SignUpPage> {
+class SignUpPageState extends State<SignUpPage>
+    with SingleTickerProviderStateMixin {
   final TextController email = TextController();
   final TextController senha = TextController();
-
   bool _rememberMe = false;
+  bool _obscure = true;
+  bool _loading = false;
+  late AnimationController _animCtrl;
+  late Animation<double> _fadeAnim;
+  late Animation<Offset> _slideAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _animCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut));
+    _animCtrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _animCtrl.dispose();
+    super.dispose();
+  }
+
+  void _doLogin() async {
+    FocusScope.of(context).unfocus();
+    setState(() => _loading = true);
+    // Pequeno delay visual para feedback
+    await Future.delayed(const Duration(milliseconds: 200));
+    signCtrl.onClickLogin(email.text, senha.text, _rememberMe);
+    if (mounted) setState(() => _loading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return body();
+    return AppScaffold(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF0F172A),
+              const Color(0xFF1E293B),
+              const Color(0xFF334155),
+            ],
+          ),
+        ),
+        child: Center(
+          child: FadeTransition(
+            opacity: _fadeAnim,
+            child: SlideTransition(
+              position: _slideAnim,
+              child: Container(
+                width: 400,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 44,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.25),
+                      blurRadius: 40,
+                      offset: const Offset(0, 16),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // ── Logo ──
+                    Container(
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.black, width: 2.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      child: LogoHelper.logoWidget(
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'AçoPlus',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF0F172A),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Controle de Produção',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    // ── Campo Login ──
+                    _buildField(
+                      controller: email,
+                      label: 'Login',
+                      icon: Icons.person_outline_rounded,
+                      action: TextInputAction.next,
+                      autofocus: true,
+                      onSubmit: () =>
+                          FocusScope.of(context).requestFocus(senha.focus),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Campo Senha ──
+                    _buildField(
+                      controller: senha,
+                      label: 'Senha',
+                      icon: Icons.lock_outline_rounded,
+                      obscure: _obscure,
+                      action: TextInputAction.go,
+                      onSubmit: _doLogin,
+                      suffix: IconButton(
+                        icon: Icon(
+                          _obscure
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          size: 20,
+                          color: Colors.grey[400],
+                        ),
+                        onPressed: () =>
+                            setState(() => _obscure = !_obscure),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // ── Manter conectado ──
+                    GestureDetector(
+                      onTap: () =>
+                          setState(() => _rememberMe = !_rememberMe),
+                      child: Row(
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 18,
+                            height: 18,
+                            decoration: BoxDecoration(
+                              color: _rememberMe
+                                  ? AppColors.primaryMain
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(5),
+                              border: Border.all(
+                                color: _rememberMe
+                                    ? AppColors.primaryMain
+                                    : Colors.grey[350]!,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: _rememberMe
+                                ? const Icon(Icons.check,
+                                    size: 13, color: Colors.white)
+                                : null,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Manter conectado',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+
+                    // ── Botão Entrar ──
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        onPressed: _loading ? null : _doLogin,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0F172A),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: _loading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text(
+                                    'Entrar',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.3,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: 18),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
-  Widget body() {
-    return AppScaffold(
-      body: Center(
-        child: SizedBox(
-          width: 300,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const H(20),
-              Image.asset('assets/images/logo.png', width: 100),
-              const H(20),
-              Text('AçoPlus', style: AppCss.largeBold.setSize(16)),
-              const H(20),
-              AppField(
-                controller: email,
-                label: 'Login',
-                action: TextInputAction.next,
-                onEditingComplete: () => FocusScope.of(context).requestFocus(senha.focus),
-              ),
-              const H(12),
-              AppField(
-                controller: senha,
-                label: 'Senha',
-                obscure: true,
-                maxLines: 1,
-                minLines: 1,
-                action: TextInputAction.go,
-                onEditingComplete: () {
-                  FocusScope.of(context).unfocus();
-                  signCtrl.onClickLogin(email.text, senha.text, _rememberMe);
-                },
-              ),
-              const H(8),
-              Theme(
-                data: Theme.of(context).copyWith(
-                  unselectedWidgetColor: Colors.grey[400],
-                ),
-                child: CheckboxListTile(
-                  value: _rememberMe,
-                  onChanged: (v) => setState(() => _rememberMe = v ?? false),
-                  title: Text('Manter conectado', style: AppCss.minimumRegular),
-                  controlAffinity: ListTileControlAffinity.leading,
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  activeColor: AppColors.primaryMain,
-                ),
-              ),
-              const H(12),
-              AppTextButton(
-                label: 'Entrar',
-                onPressed: () => signCtrl.onClickLogin(email.text, senha.text, _rememberMe),
-              ),
-            ],
+  Widget _buildField({
+    required TextController controller,
+    required String label,
+    required IconData icon,
+    bool obscure = false,
+    bool autofocus = false,
+    TextInputAction? action,
+    VoidCallback? onSubmit,
+    Widget? suffix,
+  }) {
+    return TextField(
+      controller: controller.controller,
+      focusNode: controller.focus,
+      obscureText: obscure,
+      autofocus: autofocus,
+      textInputAction: action,
+      onEditingComplete: onSubmit,
+      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+      cursorColor: const Color(0xFF0F172A),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(
+          fontSize: 13,
+          color: Colors.grey[500],
+          fontWeight: FontWeight.w500,
+        ),
+        floatingLabelStyle: TextStyle(
+          color: const Color(0xFF0F172A),
+          fontWeight: FontWeight.w600,
+        ),
+        prefixIcon: Icon(icon, size: 20, color: Colors.grey[400]),
+        suffixIcon: suffix,
+        filled: true,
+        fillColor: const Color(0xFFF8FAFC),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[200]!),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[200]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(
+            color: Color(0xFF0F172A),
+            width: 1.5,
           ),
         ),
       ),

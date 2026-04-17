@@ -61,4 +61,5 @@ extension TextStyleExt on TextStyle {
   TextStyle setSize(double size) => copyWith(fontSize: size);
   TextStyle setHeight(double height) => copyWith(height: height);
   TextStyle setWeight(FontWeight weight) => copyWith(fontWeight: weight);
+  TextStyle setLetterSpacing(double spacing) => copyWith(letterSpacing: spacing);
 }

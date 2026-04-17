@@ -1,9 +1,7 @@
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 
-
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
-import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/components/w.dart';
@@ -12,6 +10,7 @@ import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/dashboard/dashboard_controller.dart';
+import 'package:aco_plus/app/modules/armacao/ui/armacao_elementos_page.dart';
 
 import 'package:aco_plus/app/modules/ordem/ui/ordem/ordem_page.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
@@ -51,24 +50,28 @@ class DashboardPageState extends State<DashboardPage> {
             builder: (context, constraints) {
               final isMobile = constraints.maxWidth < 1000;
               return Container(
-                color: const Color(0xFFF8FAFC),
+                color: const Color(0xFFCBD5E1), // Fundo escurecido para separar dos cards brancos
                 child: ListView(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(16),
                   children: [
                     _kpiCards(pedidos),
-                    const H(32),
+                    const H(16),
 
                     if (isMobile) ...[
                       _ordemProducaoWidget(),
-                      const H(32),
+                      const H(16),
+                      _armacaoWidget(pedidos),
+                      const H(16),
                       _consumoBitolaWidget(),
                     ] else ...[
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(flex: 6, child: _ordemProducaoWidget()),
-                          const W(32),
-                          Expanded(flex: 4, child: _consumoBitolaWidget()),
+                          Expanded(child: _ordemProducaoWidget()),
+                          const W(16),
+                          Expanded(child: _armacaoWidget(pedidos)),
+                          const W(16),
+                          Expanded(child: _consumoBitolaWidget()),
                         ],
                       ),
                     ],
@@ -114,6 +117,7 @@ class DashboardPageState extends State<DashboardPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[400]!, width: 1.0),
         boxShadow: [
           BoxShadow(color: Colors.black.withAlpha(12), blurRadius: 10, offset: const Offset(0, 4)),
         ],
@@ -144,10 +148,11 @@ class DashboardPageState extends State<DashboardPage> {
     produtos.sort((a, b) => a.number.compareTo(b.number));
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      height: 450,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[400]!, width: 1.0),
         boxShadow: [
           BoxShadow(color: Colors.black.withAlpha(12), blurRadius: 10, offset: const Offset(0, 4)),
         ],
@@ -155,43 +160,56 @@ class DashboardPageState extends State<DashboardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Symbols.analytics, color: AppColors.primaryMain),
-              const W(12),
-              Text('CONSUMO ESTIMADO', style: AppCss.mediumBold.setSize(18)),
-            ],
-          ),
-          const H(8),
-          Text('Peso pendente por bitola (Corte e Dobra)', style: AppCss.minimumRegular.setColor(Colors.grey[600]!)),
-          const H(24),
-          if (produtos.isEmpty)
-            Center(child: Text('Nenhum consumo pendente.', style: AppCss.mediumRegular.setColor(Colors.grey[400]!)))
-          else
-            ...produtos.map((p) {
-              final peso = consumoMap[p.id] ?? 0.0;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Column(
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(p.descricao, style: AppCss.mediumBold.setSize(15)),
-                        Text(peso.toKg(), style: AppCss.mediumBold.setColor(AppColors.primaryMain)),
-                      ],
-                    ),
-                    const H(8),
-                    LinearProgressIndicator(
-                      value: 1.0,
-                      backgroundColor: Colors.grey[100],
-                      valueColor: AlwaysStoppedAnimation(AppColors.primaryMain.withAlpha(25)),
-                      minHeight: 4,
-                    ),
+                    Icon(Symbols.analytics, color: AppColors.primaryMain),
+                    const W(12),
+                    Text('CONSUMO ESTIMADO', style: AppCss.mediumBold.setSize(18)),
                   ],
                 ),
-              );
-            }),
+                const H(8),
+                Text('Peso pendente por bitola (Corte e Dobra)', style: AppCss.minimumRegular.setColor(Colors.grey[600]!)),
+              ],
+            ),
+          ),
+          Expanded(
+            child: produtos.isEmpty
+              ? Center(child: Text('Nenhum consumo pendente.', style: AppCss.mediumRegular.setColor(Colors.grey[400]!)))
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  itemCount: produtos.length,
+                  itemBuilder: (_, i) {
+                    final p = produtos[i];
+                    final peso = consumoMap[p.id] ?? 0.0;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(p.descricao, style: AppCss.mediumBold.setSize(15)),
+                              Text(peso.toKg(), style: AppCss.mediumBold.setColor(AppColors.primaryMain)),
+                            ],
+                          ),
+                          const H(8),
+                          LinearProgressIndicator(
+                            value: 1.0,
+                            backgroundColor: Colors.grey[100],
+                            valueColor: AlwaysStoppedAnimation(AppColors.primaryMain.withAlpha(25)),
+                            minHeight: 4,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+          ),
         ],
       ),
     );
@@ -207,9 +225,11 @@ class DashboardPageState extends State<DashboardPage> {
           .toList();
 
       return Container(
+        height: 450,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey[400]!, width: 1.0),
           boxShadow: [
             BoxShadow(color: Colors.black.withAlpha(12), blurRadius: 10, offset: const Offset(0, 4)),
           ],
@@ -237,11 +257,11 @@ class DashboardPageState extends State<DashboardPage> {
                 ],
               ),
             ),
-            SizedBox(
-              height: 300,
+            Expanded(
               child: ordensFiltradas.isEmpty
                 ? Center(child: Text('Nenhuma ordem em produção agora.', style: AppCss.mediumRegular.setColor(Colors.grey[400]!)))
                 : ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 8),
                     itemCount: ordensFiltradas.length,
                     itemBuilder: (_, i) => _ordemProducaoItemWidget(context, ordensFiltradas[i], i),
                   ),
@@ -260,9 +280,12 @@ class DashboardPageState extends State<DashboardPage> {
       InkWell(
         onTap: () => push(context, OrdemPage(ordem.id)),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: Colors.grey[100]!)),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey[300]!, width: 1.0),
           ),
           child: Row(
             children: [
@@ -280,8 +303,13 @@ class DashboardPageState extends State<DashboardPage> {
                     Text(ordem.localizator, style: AppCss.mediumBold.setSize(14)),
                     const H(4),
                     Text(
-                      '${ordem.produto.nome} ${ordem.produto.descricao} • ${ordem.produtos.fold(0.0, (sum, p) => sum + p.qtde).toKg()}',
-                      style: AppCss.minimumRegular.setSize(12).setColor(Colors.grey[600]!),
+                      ordem.produto.nome,
+                      style: AppCss.mediumBold.setSize(13).setColor(AppColors.primaryMain),
+                    ),
+                    const H(2),
+                    Text(
+                      ordem.produtos.fold(0.0, (sum, p) => sum + p.qtde).toKg(),
+                      style: AppCss.mediumBold.setSize(13).setColor(AppColors.primaryMain),
                     ),
                   ],
                 ),
@@ -307,22 +335,237 @@ class DashboardPageState extends State<DashboardPage> {
     double porcentagem,
     bool isFreezed,
   ) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        CircularProgressIndicator(
-          value: porcentagem,
-          backgroundColor: (isFreezed ? Colors.grey[600]! : status.color).withAlpha(50),
-          strokeWidth: 2,
-          valueColor: AlwaysStoppedAnimation(
-            isFreezed ? Colors.grey[600]! : status.color,
+    return SizedBox(
+      width: 54,
+      height: 54,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          SizedBox(
+            width: 54,
+            height: 54,
+            child: CircularProgressIndicator(
+              value: porcentagem,
+              backgroundColor: (isFreezed ? Colors.grey[600]! : status.color).withAlpha(50),
+              strokeWidth: 5,
+              valueColor: AlwaysStoppedAnimation(
+                isFreezed ? Colors.grey[600]! : status.color,
+              ),
+            ),
           ),
+          Text(
+            '${(porcentagem * 100).percent}%',
+            style: AppCss.mediumBold.setSize(13).setColor(Colors.black),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════
+  //  ARMAÇÃO
+  // ═══════════════════════════════════════════════════
+  Widget _armacaoWidget(List<PedidoModel> allPedidos) {
+    final pedidosArmacao = allPedidos
+        .where((p) => p.step.isExibirArmacao)
+        .toList();
+
+    pedidosArmacao.sort((a, b) =>
+        (a.deliveryAt ?? a.createdAt).compareTo(b.deliveryAt ?? b.createdAt));
+
+    return Container(
+      height: 450,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[400]!, width: 1.0),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withAlpha(12), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              children: [
+                Icon(Symbols.construction, color: Colors.orange[800]),
+                const W(12),
+                Text('ARMAÇÃO', style: AppCss.mediumBold.setSize(18)),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withAlpha(25),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${pedidosArmacao.length} PEDIDOS',
+                    style: AppCss.minimumBold.setSize(11).setColor(Colors.orange[800]!),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: pedidosArmacao.isEmpty
+                ? Center(
+                    child: Text(
+                      'Nenhum pedido em armação no momento.',
+                      style: AppCss.mediumRegular.setColor(Colors.grey[400]!),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    itemCount: pedidosArmacao.length,
+                    itemBuilder: (_, i) =>
+                        _armacaoItemWidget(context, pedidosArmacao[i], i),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _armacaoItemWidget(
+    BuildContext context,
+    PedidoModel pedido,
+    int index,
+  ) {
+    final resumo = pedido.armacaoResumo['details'] as Map? ?? {};
+    final totalQtd = pedido.armacaoResumo['total_qtd'] ?? 0;
+    final totalPeso = (pedido.armacaoResumo['total_peso'] ?? 0.0).toDouble();
+
+    final aguardando = resumo['aguardando'] ?? {};
+    final armando = resumo['armando'] ?? {};
+    final pronto = resumo['pronto'] ?? {};
+
+    final prcAguardando = (aguardando['prcnt_qtd'] ?? 0.0).toDouble();
+    final prcArmando = (armando['prcnt_qtd'] ?? 0.0).toDouble();
+    final prcPronto = (pronto['prcnt_qtd'] ?? 0.0).toDouble();
+
+    return InkWell(
+      onTap: () => push(context, ArmacaoElementosPage(pedido: pedido)),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[300]!, width: 1.0),
         ),
-        Text(
-          '${(porcentagem * 100).percent}%',
-          style: AppCss.minimumBold.setSize(10),
+        child: Row(
+          children: [
+            // Índice
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: Colors.orange.withAlpha(25),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  '${index + 1}',
+                  style: AppCss.minimumBold.setSize(12).setColor(Colors.orange[800]!),
+                ),
+              ),
+            ),
+            const W(16),
+            // Info do pedido
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Tooltip(
+                    message: pedido.cliente.nome,
+                    child: Text(
+                      pedido.localizador,
+                      style: AppCss.mediumBold.setSize(14),
+                    ),
+                  ),
+                  const H(4),
+                  Text(
+                    '$totalQtd elementos',
+                    style: AppCss.minimumRegular.setSize(12).setColor(Colors.grey[600]!),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const H(2),
+                  Text(
+                    '${totalPeso.toStringAsFixed(1)} kg',
+                    style: AppCss.mediumBold.setSize(13).setColor(AppColors.primaryMain),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const W(8),
+            // Gráficos circulares com dados
+            Row(
+              children: [
+                _armacaoCircle(prcAguardando, Colors.blue.shade700,
+                    '${((aguardando['qtd'] ?? 0.0).toDouble()).round()} pc',
+                    '${((aguardando['peso'] ?? 0.0).toDouble()).toStringAsFixed(0)} kg'),
+                const W(6),
+                _armacaoCircle(prcArmando, Colors.orange.shade800,
+                    '${((armando['qtd'] ?? 0.0).toDouble()).round()} pc',
+                    '${((armando['peso'] ?? 0.0).toDouble()).toStringAsFixed(0)} kg'),
+                const W(6),
+                _armacaoCircle(prcPronto, Colors.green.shade700,
+                    '${((pronto['qtd'] ?? 0.0).toDouble()).round()} pc',
+                    '${((pronto['peso'] ?? 0.0).toDouble()).toStringAsFixed(0)} kg'),
+              ],
+            ),
+          ],
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _armacaoCircle(double porcentagem, Color color, String qtdLabel, String kgLabel) {
+    return SizedBox(
+      width: 64,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 54,
+            height: 54,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 54,
+                  height: 54,
+                  child: CircularProgressIndicator(
+                    value: porcentagem,
+                    backgroundColor: color.withAlpha(40),
+                    strokeWidth: 5,
+                    valueColor: AlwaysStoppedAnimation(color),
+                  ),
+                ),
+                Text(
+                  '${(porcentagem * 100).round()}%',
+                  style: AppCss.mediumBold.setSize(13).setColor(Colors.black),
+                ),
+              ],
+            ),
+          ),
+          const H(3),
+          Text(
+            qtdLabel,
+            style: AppCss.minimumBold.setSize(11).setColor(Colors.grey[700]!),
+          ),
+          Text(
+            kgLabel,
+            style: AppCss.minimumRegular.setSize(10).setColor(Colors.grey[500]!),
+          ),
+        ],
+      ),
     );
   }
 }
+

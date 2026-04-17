@@ -12,6 +12,7 @@ class PreferencesService implements Service {
   static final AppStream<int> maxElementosProducao = AppStream<int>.seed(10);
   static final AppStream<int> pdfOptimizationLevel = AppStream<int>.seed(5);
   static final AppStream<String> apontamentoProducaoCD = AppStream<String>.seed('por_pedido');
+  static final AppStream<String> logoUrl = AppStream<String>.seed('');
 
   @override
   Future<void> initialize() async {
@@ -109,6 +110,33 @@ class PreferencesService implements Service {
             .upsert({'key': 'apontamento_producao_cd', 'value': value}, onConflict: 'key');
       } catch (e) {
         log('Erro ao salvar apontamento CD: $e');
+      }
+    });
+
+    // Recupera logo customizada
+    try {
+      final logoConfig = await SupabaseService.client
+          .from('configs')
+          .select()
+          .eq('key', 'logo_url')
+          .maybeSingle();
+      if (logoConfig != null) {
+        final val = logoConfig['value']?.toString() ?? '';
+        if (val.isNotEmpty) {
+          logoUrl.add(val);
+        }
+      }
+    } catch (e) {
+      log('Erro ao carregar logo customizada: $e');
+    }
+
+    logoUrl.listen.skip(1).listen((value) async {
+      try {
+        await SupabaseService.client
+            .from('configs')
+            .upsert({'key': 'logo_url', 'value': value}, onConflict: 'key');
+      } catch (e) {
+        log('Erro ao salvar logo URL: $e');
       }
     });
   }

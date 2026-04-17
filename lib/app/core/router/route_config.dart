@@ -1,6 +1,5 @@
 import 'package:aco_plus/app/app_controller.dart';
 import 'package:aco_plus/app/app_widget.dart';
-import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:aco_plus/app/modules/sign/ui/sign_up_page.dart';

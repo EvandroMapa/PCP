@@ -262,36 +262,6 @@ class _PedidoPageState extends State<PedidoPage>
     );
   }
 
-  // Compatibility wrapper
-  Widget _buildCard({required List<Widget> children, EdgeInsetsGeometry? padding}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: padding ?? const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade400, width: 0.6),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-            spreadRadius: 1,
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
-      ),
-    );
-  }
-
   /// Conteúdo original da tela de detalhe do pedido
   Widget _detalhesBody(PedidoModel pedido) {
     return ListView(

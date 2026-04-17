@@ -10,16 +10,10 @@ import 'package:aco_plus/app/modules/armacao/armacao_controller.dart';
 import 'package:dio/dio.dart';
 import 'package:pdfx/pdfx.dart';
 import 'dart:typed_data';
-import 'package:aco_plus/app/core/services/hash_service.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
-import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:flutter/material.dart';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
-import 'dart:ui_web' as ui;
 
 class ArmacaoElementosPage extends StatefulWidget {
   final PedidoModel pedido;
@@ -616,16 +610,6 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
     );
   }
 
-  Future<void> _openNativePdf(String url) async {
-    try {
-      final uri = Uri.parse(url);
-      await launchUrl(uri, mode: LaunchMode.externalNonBrowserApplication);
-    } catch (_) {
-      try {
-        await launchUrl(Uri.parse(url), mode: LaunchMode.platformDefault);
-      } catch (__) {}
-    }
-  }
 
   void _showImageFull(BuildContext context, String url) {
     showDialog(

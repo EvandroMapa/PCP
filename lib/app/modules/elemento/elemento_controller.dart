@@ -7,6 +7,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/core/services/preferences_service.dart';
+import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_arquivo_model.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
@@ -526,8 +527,7 @@ class ElementoController {
     showLoadingDialog();
     try {
       final pdf = pw.Document();
-      final img = await rootBundle.load('assets/images/logo.png');
-      final imageBytes = img.buffer.asUint8List();
+      final imageBytes = await LogoHelper.logoBytesForPdf();
       final fmt = NumberFormat('#,##0.000', 'pt_BR');
 
       // Agrupar totais por bitola para o resumo

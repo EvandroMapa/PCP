@@ -28,9 +28,15 @@ class ObraCreatePage extends StatefulWidget {
 }
 
 class _ObraCreatePageState extends State<ObraCreatePage> {
+  String _initialSnapshot = '';
+
+  String _snapshot(ObraCreateModel form) =>
+      '${form.descricao.text}|${form.telefoneFixo.text}|${form.status?.index}|${form.endereco?.name}';
+
   @override
   void initState() {
     obraCtrl.init(widget.obra, widget.endereco);
+    _initialSnapshot = _snapshot(obraCtrl.form);
     super.initState();
   }
 
@@ -38,13 +44,19 @@ class _ObraCreatePageState extends State<ObraCreatePage> {
   Widget build(BuildContext context) {
     return AppScaffold(
       resizeAvoid: true,
+      backgroundColor: const Color(0xFFCBD5E1),
       appBar: AppBar(
         leading: IconButton(
           onPressed: () async {
-            if (await showConfirmDialog(
-              'Deseja realmente sair?',
-              'Os dados da obra serão perdidos.',
-            )) {
+            final isDirty = _snapshot(obraCtrl.form) != _initialSnapshot;
+            if (isDirty) {
+              if (await showConfirmDialog(
+                'Deseja realmente sair?',
+                'Os dados da obra serão perdidos.',
+              )) {
+                pop(context);
+              }
+            } else {
               pop(context);
             }
           },
@@ -70,89 +82,123 @@ class _ObraCreatePageState extends State<ObraCreatePage> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        AppField(
-          label: 'Descrição',
-          controller: form.descricao,
-          onChanged: (_) => obraCtrl.formStream.update(),
-        ),
-        const H(16),
-        AppField(
-          label: 'Telefone Fixo',
-          required: false,
-          controller: form.telefoneFixo,
-          onChanged: (_) => obraCtrl.formStream.update(),
-        ),
-        const H(16),
-        AppDropDown<ObraStatus?>(
-          label: 'Status',
-          item: form.status,
-          itens: ObraStatus.values,
-          itemLabel: (e) => e?.label ?? 'Selecione um status',
-          onSelect: (e) {
-            form.status = e;
-            obraCtrl.formStream.update();
-          },
-        ),
-        const H(16),
-        InkWell(
-          onTap: () async {
-            final endereco = await push(
-              context,
-              EnderecoCreatePage(endereco: form.endereco),
-            );
-            if (endereco != null) {
-              form.endereco = endereco;
-              obraCtrl.formStream.update();
-            }
-          },
-          child: IgnorePointer(
-            child: AppField(
-              label: 'Endereço',
-              required: false,
-              suffixIconSize: 12,
-              suffixIcon: Icons.arrow_forward_ios,
-              controller: TextController(
-                text: form.endereco?.name.toString() ?? '',
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey[400]!, width: 1.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(12),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              onChanged: (_) => obraCtrl.formStream.update(),
-            ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.construction_outlined, color: AppColors.primaryMain),
+                  const SizedBox(width: 12),
+                  Text('DADOS DA OBRA', style: AppCss.mediumBold.setSize(16)),
+                ],
+              ),
+              const SizedBox(height: 24),
+              AppField(
+                label: 'Descrição',
+                controller: form.descricao,
+                onChanged: (_) => obraCtrl.formStream.update(),
+              ),
+              const H(16),
+              AppField(
+                label: 'Telefone Fixo',
+                required: false,
+                controller: form.telefoneFixo,
+                onChanged: (_) => obraCtrl.formStream.update(),
+              ),
+              const H(16),
+              AppDropDown<ObraStatus?>(
+                label: 'Status',
+                item: form.status,
+                itens: ObraStatus.values,
+                itemLabel: (e) => e?.label ?? 'Selecione um status',
+                onSelect: (e) {
+                  form.status = e;
+                  obraCtrl.formStream.update();
+                },
+              ),
+              const H(16),
+              InkWell(
+                onTap: () async {
+                  final endereco = await push(
+                    context,
+                    EnderecoCreatePage(endereco: form.endereco),
+                  );
+                  if (endereco != null) {
+                    form.endereco = endereco;
+                    obraCtrl.formStream.update();
+                  }
+                },
+                child: IgnorePointer(
+                  child: AppField(
+                    label: 'Endereço',
+                    required: false,
+                    suffixIconSize: 12,
+                    suffixIcon: Icons.arrow_forward_ios,
+                    controller: TextController(
+                      text: form.endereco?.name.toString() ?? '',
+                    ),
+                    onChanged: (_) => obraCtrl.formStream.update(),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        const H(16),
+        const H(24),
         if (form.isEdit)
-          TextButton.icon(
-            style: ButtonStyle(
-              fixedSize: const WidgetStatePropertyAll(
-                Size.fromWidth(double.maxFinite),
-              ),
-              foregroundColor: WidgetStatePropertyAll(AppColors.error),
-              backgroundColor: WidgetStatePropertyAll(AppColors.white),
-              shape: WidgetStatePropertyAll(
-                RoundedRectangleBorder(
-                  borderRadius: AppCss.radius8,
-                  side: BorderSide(color: AppColors.error),
-                ),
-              ),
-            ),
-            onPressed: () async {
-              if (!await onDeleteProcess(
-                deleteTitle: 'Excluir obra?',
-                deleteMessage:
-                    'Todos os dados da obra serão apagados do sistema',
-                infoMessage:
-                    'Não é possível excluir obra, pois há pedidos vinculados a ela',
-                conditional: FirestoreClient.pedidos.data.any(
-                  (e) => e.obra.id == widget.obra!.id,
-                ),
-              )) {
-                return;
-              }
-              Navigator.pop(context, obraDeleteObj);
-            },
-            label: const Text('Excluir'),
-            icon: const Icon(Icons.delete_outline),
-          ),
+          _buildDeleteButton(),
       ],
+    );
+  }
+
+  Widget _buildDeleteButton() {
+    return InkWell(
+      onTap: () async {
+        if (!await onDeleteProcess(
+          deleteTitle: 'Excluir obra?',
+          deleteMessage: 'Todos os dados da obra serão apagados do sistema',
+          infoMessage: 'Não é possível excluir obra, pois há pedidos vinculados a ela',
+          conditional: FirestoreClient.pedidos.data.any(
+            (e) => e.obra.id == widget.obra!.id,
+          ),
+        )) {
+          return;
+        }
+        Navigator.pop(context, obraDeleteObj);
+      },
+      child: Container(
+        height: 54,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.error.withAlpha(100), width: 1.0),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.delete_outline, color: AppColors.error),
+            const SizedBox(width: 8),
+            Text(
+              'EXCLUIR OBRA',
+              style: AppCss.mediumBold.setColor(AppColors.error).setSize(14),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

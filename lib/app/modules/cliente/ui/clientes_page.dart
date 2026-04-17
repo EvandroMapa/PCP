@@ -5,7 +5,6 @@ import 'package:aco_plus/app/core/components/app_field.dart';
 import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
-import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
@@ -42,62 +41,88 @@ class _ClientesPageState extends State<ClientesPage> {
   @override
   Widget build(BuildContext context) {
     return StreamOut<List<ClienteModel>>(
-        stream: FirestoreClient.clientes.dataStream.listen,
-        builder: (_, __) => StreamOut<ClienteUtils>(
-          stream: clienteCtrl.utilsStream.listen,
-          builder: (_, utils) {
-            final clientes = clienteCtrl
-                .getClienteesFiltered(utils.search.text, __)
-                .toList();
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: AppField(
-                    hint: 'Pesquisar',
-                    controller: utils.search,
-                    suffixIcon: Icons.search,
-                    onChanged: (_) => clienteCtrl.utilsStream.update(),
-                  ),
+      stream: FirestoreClient.clientes.dataStream.listen,
+      builder: (_, __) => StreamOut<ClienteUtils>(
+        stream: clienteCtrl.utilsStream.listen,
+        builder: (_, utils) {
+          final clientes = clienteCtrl
+              .getClienteesFiltered(utils.search.text, __)
+              .toList();
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: AppField(
+                  hint: 'Pesquisar',
+                  controller: utils.search,
+                  suffixIcon: Icons.search,
+                  onChanged: (_) => clienteCtrl.utilsStream.update(),
                 ),
-                Expanded(
-                  child: clientes.isEmpty
-                      ? const EmptyData()
-                      : RefreshIndicator(
-                          onRefresh: () async =>
-                              FirestoreClient.clientes.fetch(),
-                          child: ListView.separated(
-                            itemCount: clientes.length,
-                            separatorBuilder: (_, i) => const Divisor(),
-                            itemBuilder: (_, i) =>
-                                _itemClienteWidget(clientes[i]),
-                          ),
+              ),
+              Expanded(
+                child: clientes.isEmpty
+                    ? const EmptyData()
+                    : RefreshIndicator(
+                        onRefresh: () async =>
+                            FirestoreClient.clientes.fetch(),
+                        child: ListView.separated(
+                          itemCount: clientes.length,
+                          separatorBuilder: (_, i) => const Divisor(),
+                          itemBuilder: (_, i) =>
+                              _itemClienteWidget(clientes[i]),
                         ),
-                ),
-              ],
-            );
-          },
-        ),
-      );
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
-  ListTile _itemClienteWidget(ClienteModel usuario) {
+  ListTile _itemClienteWidget(ClienteModel cliente) {
     return ListTile(
-      onTap: () => push(context, ClienteCreatePage(cliente: usuario)),
+      onTap: () => push(context, ClienteCreatePage(cliente: cliente)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      title: Text('${usuario.codigo} - ${usuario.nome}', style: AppCss.mediumBold),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      title: Text('${cliente.codigo} - ${cliente.nome}', style: AppCss.mediumBold),
+      subtitle: Text('Tel: ${cliente.telefone} - Qtd. Obras: ${cliente.obras.length}'),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            'Tel: ${usuario.telefone} - Qtd. Obras: ${usuario.obras.length}',
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            icon: const Icon(Icons.edit_outlined, size: 20),
+            onPressed: () => push(context, ClienteCreatePage(cliente: cliente)),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+            onPressed: () => _confirmDelete(context, cliente),
           ),
         ],
       ),
-      trailing: Icon(
-        Icons.arrow_forward_ios,
-        size: 14,
-        color: AppColors.neutralMedium,
+    );
+  }
+
+  void _confirmDelete(BuildContext context, ClienteModel cliente) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Excluir Cliente'),
+        content: Text('Deseja realmente excluir o cliente "${cliente.nome}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => clienteCtrl.onDelete(context, cliente),
+            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }

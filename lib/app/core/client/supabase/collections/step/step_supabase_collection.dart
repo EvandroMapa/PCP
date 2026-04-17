@@ -62,7 +62,7 @@ class StepSupabaseCollection extends StepCollection {
         
         final roles = rolesRows
             .where((r) => r['step_id'] == row['id'])
-            .map((r) => r['role_index'] as int)
+            .map((r) => (r['perfil_id'] ?? '').toString()).where((s) => s.isNotEmpty && int.tryParse(s) == null)
             .toList();
 
         // Inject into map for model factory
@@ -117,7 +117,7 @@ class StepSupabaseCollection extends StepCollection {
       return model;
     } catch (e) {
       log('Supabase Error (Step.add): $e');
-      return null;
+      rethrow;
     }
   }
 
@@ -131,7 +131,7 @@ class StepSupabaseCollection extends StepCollection {
       return model;
     } catch (e) {
       log('Supabase Error (Step.update): $e');
-      return null;
+      rethrow;
     }
   }
 
@@ -149,15 +149,21 @@ class StepSupabaseCollection extends StepCollection {
       await SupabaseService.client.from('step_from_steps').insert(fromMapped);
     }
 
-    // 3. Insert new roles
+    // 3. Insert new roles (perfil_id = ID do UsuarioTipoModel)
     if (model.moveRoles.isNotEmpty) {
-      final rolesMapped = model.moveRoles.map((role) => {
+      final rolesMapped = model.moveRoles.map((perfilId) => {
         'step_id': model.id,
-        'role_index': role.index,
+        'perfil_id': perfilId,
       }).toList();
-      await SupabaseService.client.from('step_roles').insert(rolesMapped);
+      try {
+        await SupabaseService.client.from('step_roles').insert(rolesMapped);
+      } catch (e) {
+        log('Supabase Error (_syncRelationships step_roles insert): $e');
+        rethrow; // propaga para o catch do update/add mostrar ao usuário
+      }
     }
   }
+
 
   @override
   Future<void> delete(StepModel model) async {
@@ -169,3 +175,4 @@ class StepSupabaseCollection extends StepCollection {
     }
   }
 }
+

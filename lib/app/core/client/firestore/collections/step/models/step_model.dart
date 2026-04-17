@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_shipping_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/usuario_role.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +9,7 @@ class StepModel {
   final String id;
   final String name;
   final Color color;
-  final List<UsuarioRole> moveRoles;
+  final List<String> moveRoles; // IDs dos perfis (UsuarioTipoModel.id)
   final DateTime createdAt;
   final ScrollController scrollController = ScrollController();
   int index;
@@ -50,7 +49,7 @@ class StepModel {
       )
       .toList();
 
-  bool get isEnable => moveRoles.contains(usuario.role);
+  bool get isEnable => moveRoles.contains(usuario.usuarioTipoId);
 
   StepModel({
     required this.id,
@@ -76,7 +75,7 @@ class StepModel {
     Color? color,
     List<String>? fromStepsIds,
     List<String>? toStepsIds,
-    List<UsuarioRole>? moveRoles,
+    List<String>? moveRoles,
     DateTime? createdAt,
     int? index,
     bool? isDefault,
@@ -115,7 +114,7 @@ class StepModel {
       'name': name,
       'color': color.toARGB32(),
       'fromStepsIds': fromStepsIds,
-      'moveRoles': moveRoles.map((x) => x.index).toList(),
+      'moveRoles': moveRoles,
       'createdAt': createdAt.millisecondsSinceEpoch,
       'index': index,
       'isDefault': isDefault,
@@ -150,7 +149,7 @@ class StepModel {
         index: 0,
         color: Colors.tealAccent,
         fromStepsIds: <String>[],
-        moveRoles: <UsuarioRole>[],
+        moveRoles: <String>[],
         createdAt: DateTime.now(),
         isDefault: false,
         isShipping: map['isShipping'] ?? false,
@@ -176,13 +175,7 @@ class StepModel {
           ? ((map['perfis_movimentacao'] is String
                       ? json.decode(map['perfis_movimentacao'])
                       : map['perfis_movimentacao']) as List)
-                  .map((x) {
-                    if (x is int && x < UsuarioRole.values.length) {
-                      return UsuarioRole.values[x];
-                    }
-                    return null;
-                  })
-                  .whereType<UsuarioRole>()
+                  .map((x) => x.toString())
                   .toList()
           : [],
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
@@ -235,16 +228,11 @@ class StepModel {
     return List<String>.from(val);
   }
 
-  static List<UsuarioRole> _parseRoles(dynamic val) {
+  static List<String> _parseRoles(dynamic val) {
     if (val == null) return [];
     try {
       final list = val is String ? json.decode(val) : val;
-      return (list as List).map((x) {
-        if (x is int && x < UsuarioRole.values.length) {
-          return UsuarioRole.values[x];
-        }
-        return null;
-      }).whereType<UsuarioRole>().toList();
+      return (list as List).map((x) => x.toString()).toList();
     } catch (_) {
       return [];
     }

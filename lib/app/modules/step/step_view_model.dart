@@ -1,5 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/usuario_role.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_tipo_model.dart';
+import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
@@ -16,7 +17,8 @@ class StepCreateModel {
   TextController name = TextController();
   Color color = AppColors.primaryMain;
   List<StepModel> fromSteps = [];
-  List<UsuarioRole> moveRoles = [];
+  List<String> moveRoles = []; // IDs dos perfis (UsuarioTipoModel.id)
+  List<UsuarioTipoModel> addedTipos = []; // lista gerenciada pelo AppDropDownList
   DateTime createdAt = DateTime.now();
   bool isDefault = false;
   bool isShipping = false;
@@ -35,7 +37,10 @@ class StepCreateModel {
     name.text = etapa.name;
     color = etapa.color;
     fromSteps = List<StepModel>.from(etapa.fromSteps);
-    moveRoles = List<UsuarioRole>.from(etapa.moveRoles);
+    moveRoles = List<String>.from(etapa.moveRoles);
+    addedTipos = AppSupabaseClient.usuarioTipos.data
+        .where((t) => moveRoles.contains(t.id))
+        .toList();
     createdAt = etapa.createdAt;
     isDefault = etapa.isDefault;
     isShipping = etapa.isShipping;

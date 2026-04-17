@@ -323,7 +323,7 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     // Busca o status atual no Firestore para comparar corretamente
     final currentPedido =
         FirestoreClient.pedidos.getById(widget.produto.pedidoId);
-    final currentProduto = currentPedido?.produtos
+    final currentProduto = currentPedido.produtos
         .firstWhere((p) => p.id == widget.produto.id, orElse: () => widget.produto);
 
     if (currentProduto != null && novoStatus == currentProduto.status.status) {
@@ -337,9 +337,7 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     // Força atualização da lista de ordens para refletir nos indicadores laterais
     await FirestoreClient.ordens.fetch();
     final updatedOrdem = ordemCtrl.getOrdemById(widget.ordem.id);
-    if (updatedOrdem != null) {
-      ordemCtrl.setOrdem(updatedOrdem);
-    }
+    ordemCtrl.setOrdem(updatedOrdem);
   }
 
   /// Barra fixa de resumo de produção por status das posições

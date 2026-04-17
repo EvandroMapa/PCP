@@ -17,6 +17,7 @@ import 'package:aco_plus/app/modules/relatorio/ui/pedido/relatorio_pedido_pdf_pa
 import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_ordem_view_model.dart';
 import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_pedido_view_model.dart';
 import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_producao_view_model.dart';
+import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -155,8 +156,7 @@ class PedidoController {
   }) async {
     final pdf = pw.Document();
 
-    final img = await rootBundle.load('assets/images/logo.png');
-    final imageBytes = img.buffer.asUint8List();
+    final imageBytes = await LogoHelper.logoBytesForPdf();
 
     if (quantidade == RelatorioPedidoQuantidade.unico) {
       for (var pedido in pedidoViewModel.relatorio!.pedidos) {
@@ -394,8 +394,7 @@ class PedidoController {
   ) async {
     final pdf = pw.Document();
 
-    final img = await rootBundle.load('assets/images/logo.png');
-    final imageBytes = img.buffer.asUint8List();
+    final imageBytes = await LogoHelper.logoBytesForPdf();
 
     var isOrdemType = ordemViewModel.type == RelatorioOrdemType.ORDEM;
 
@@ -423,8 +422,7 @@ class PedidoController {
   ) async {
     final pdf = pw.Document();
 
-    final img = await rootBundle.load('assets/images/logo.png');
-    final imageBytes = img.buffer.asUint8List();
+    final imageBytes = await LogoHelper.logoBytesForPdf();
 
     pdf.addPage(
       RelatorioOrdemPdfOrdemPage(

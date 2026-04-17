@@ -16,6 +16,7 @@ import 'package:aco_plus/app/modules/notificacao/notificacao_controller.dart';
 import 'package:aco_plus/app/modules/notificacao/ui/notificacoes_page.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:aco_plus/app/core/utils/app_env.dart';
+import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:flutter/material.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -229,7 +230,10 @@ class AppDrawerHeader extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 40,
-                backgroundImage: AssetImage('assets/images/logo.png'),
+                backgroundColor: Colors.white24,
+                child: ClipOval(
+                  child: LogoHelper.logoWidget(width: 80, height: 80),
+                ),
               ),
               Spacer(),
               Text(

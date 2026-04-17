@@ -21,10 +21,16 @@ class ProdutoCreatePage extends StatefulWidget {
 }
 
 class _ProdutoCreatePageState extends State<ProdutoCreatePage> {
+  String _initialSnapshot = '';
+
+  String _snapshot(ProdutoCreateModel form) =>
+      '${form.nome.text}|${form.codigoFinanceiro.text}|${form.descricao.text}|${form.massaFinal.text}';
+
   @override
   void initState() {
     setWebTitle('Novo Produto');
     produtoCtrl.init(widget.produto);
+    _initialSnapshot = _snapshot(produtoCtrl.form);
     super.initState();
   }
 
@@ -32,15 +38,21 @@ class _ProdutoCreatePageState extends State<ProdutoCreatePage> {
   Widget build(BuildContext context) {
     return AppScaffold(
       resizeAvoid: true,
+      backgroundColor: const Color(0xFFCBD5E1),
       appBar: AppBar(
         leading: IconButton(
           onPressed: () async {
-            if (await showConfirmDialog(
-              'Deseja realmente sair?',
-              widget.produto != null
-                  ? 'A edição que realizou será perdida'
-                  : 'Os dados do produto serão perdidos.',
-            )) {
+            final isDirty = _snapshot(produtoCtrl.form) != _initialSnapshot;
+            if (isDirty) {
+              if (await showConfirmDialog(
+                'Deseja realmente sair?',
+                widget.produto != null
+                    ? 'A edição que realizou será perdida'
+                    : 'Os dados do produto serão perdidos.',
+              )) {
+                pop(context);
+              }
+            } else {
               pop(context);
             }
           },
@@ -68,51 +80,87 @@ class _ProdutoCreatePageState extends State<ProdutoCreatePage> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        AppField(
-          label: 'Nome',
-          controller: form.nome,
-          onChanged: (_) => produtoCtrl.formStream.update(),
-        ),
-        const H(16),
-        AppField(
-          label: 'Código Financeiro',
-          controller: form.codigoFinanceiro,
-          onChanged: (_) => produtoCtrl.formStream.update(),
-        ),
-        const H(16),
-        AppField(
-          label: 'Descrição',
-          controller: form.descricao,
-          onChanged: (_) => produtoCtrl.formStream.update(),
-        ),
-        const H(16),
-        AppField(
-          label: 'MASSA NOMINAL LINEAR (Kg/Metro)',
-          controller: form.massaFinal,
-          onChanged: (_) => produtoCtrl.formStream.update(),
-          suffixText: 'Kg',
-        ),
-        const H(16),
-        if (form.isEdit)
-          TextButton.icon(
-            style: ButtonStyle(
-              fixedSize: const WidgetStatePropertyAll(
-                Size.fromWidth(double.maxFinite),
+        Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey[300]!, width: 1.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              foregroundColor: WidgetStatePropertyAll(AppColors.error),
-              backgroundColor: WidgetStatePropertyAll(AppColors.white),
-              shape: WidgetStatePropertyAll(
-                RoundedRectangleBorder(
-                  borderRadius: AppCss.radius8,
-                  side: BorderSide(color: AppColors.error),
-                ),
-              ),
-            ),
-            onPressed: () => produtoCtrl.onDelete(context, widget.produto!),
-            label: const Text('Excluir'),
-            icon: const Icon(Icons.delete_outline),
+            ],
           ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.inventory_2_outlined, color: AppColors.primaryMain),
+                  const SizedBox(width: 12),
+                  Text('DADOS DO PRODUTO', style: AppCss.mediumBold.setSize(16)),
+                ],
+              ),
+              const SizedBox(height: 24),
+              AppField(
+                label: 'Nome',
+                controller: form.nome,
+                onChanged: (_) => produtoCtrl.formStream.update(),
+              ),
+              const H(16),
+              AppField(
+                label: 'Código Financeiro',
+                controller: form.codigoFinanceiro,
+                onChanged: (_) => produtoCtrl.formStream.update(),
+              ),
+              const H(16),
+              AppField(
+                label: 'Descrição',
+                controller: form.descricao,
+                onChanged: (_) => produtoCtrl.formStream.update(),
+              ),
+              const H(16),
+              AppField(
+                label: 'MASSA NOMINAL LINEAR (Kg/Metro)',
+                controller: form.massaFinal,
+                onChanged: (_) => produtoCtrl.formStream.update(),
+                suffixText: 'Kg',
+              ),
+            ],
+          ),
+        ),
+        const H(24),
+        if (form.isEdit)
+          _buildDeleteButton(),
       ],
+    );
+  }
+
+  Widget _buildDeleteButton() {
+    return InkWell(
+      onTap: () => produtoCtrl.onDelete(context, widget.produto!),
+      child: Container(
+        height: 54,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.error.withValues(alpha: 0.3), width: 1.0),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.delete_outline, color: AppColors.error),
+            const SizedBox(width: 8),
+            Text(
+              'EXCLUIR PRODUTO',
+              style: AppCss.mediumBold.setColor(AppColors.error).setSize(14),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
