@@ -54,6 +54,29 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
             ),
             backgroundColor: AppColors.primaryMain,
             elevation: 0,
+            actions: [
+              IconButton(
+                onPressed: () {
+                  final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
+                  final text = Uri.encodeComponent('Olá! Acompanhe o seu pedido ${pedido.localizador}: $url');
+                  launchUrlString('https://wa.me/?text=$text');
+                },
+                icon: const Icon(Icons.share, color: Colors.white),
+              ),
+              IconButton(
+                onPressed: () async {
+                  final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
+                  await Clipboard.setData(ClipboardData(text: url));
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Link de acompanhamento copiado!')),
+                    );
+                  }
+                },
+                icon: Icon(Icons.copy, color: AppColors.white),
+              ),
+              const W(16),
+            ],
           ),
           body: SingleChildScrollView(
             child: Column(
