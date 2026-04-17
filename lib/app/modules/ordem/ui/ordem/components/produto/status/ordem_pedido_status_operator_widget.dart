@@ -52,7 +52,8 @@ class OrdemPedidoStatusOperatorWidget extends StatelessWidget {
               child: InkWell(
                 onTap: isActive
                     ? null
-                    : () => ordemCtrl.onSelectProdutoStatus(ordem, produto, status),
+                    : () =>
+                        ordemCtrl.onSelectProdutoStatus(ordem, produto, status),
                 borderRadius: BorderRadius.circular(10),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
@@ -85,9 +86,11 @@ class OrdemPedidoStatusOperatorWidget extends StatelessWidget {
                             : status.label.toUpperCase()),
                         style: TextStyle(
                           fontSize: isActive ? 14 : 12,
-                          fontWeight: isActive ? FontWeight.w800 : FontWeight.w500,
+                          fontWeight:
+                              isActive ? FontWeight.w800 : FontWeight.w500,
                           // Texto sempre preto
-                          color: Colors.black.withValues(alpha: isActive ? 0.85 : 0.55),
+                          color: Colors.black
+                              .withValues(alpha: isActive ? 0.85 : 0.55),
                         ),
                       ),
                     ],
@@ -101,4 +104,3 @@ class OrdemPedidoStatusOperatorWidget extends StatelessWidget {
     );
   }
 }
-

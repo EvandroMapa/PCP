@@ -15,12 +15,13 @@ import 'package:flutter/material.dart';
 
 Future<void> showOrderCreatePedidosSelecionadosBottom(
   OrdemModel? ordem,
-) async => showModalBottomSheet(
-  backgroundColor: AppColors.white,
-  context: contextGlobal,
-  isScrollControlled: true,
-  builder: (_) => OrderCreatePedidosSelecionadosBottom(ordem),
-);
+) async =>
+    showModalBottomSheet(
+      backgroundColor: AppColors.white,
+      context: contextGlobal,
+      isScrollControlled: true,
+      builder: (_) => OrderCreatePedidosSelecionadosBottom(ordem),
+    );
 
 class OrderCreatePedidosSelecionadosBottom extends StatefulWidget {
   final OrdemModel? ordem;
@@ -172,11 +173,12 @@ class _OrderCreatePedidosSelecionadosBottomState
                       ],
                     ),
                   ),
-                  if(isEnable) TextButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.remove),
-                    label: const Text('Remover'),
-                  ),
+                  if (isEnable)
+                    TextButton.icon(
+                      onPressed: () {},
+                      icon: const Icon(Icons.remove),
+                      label: const Text('Remover'),
+                    ),
                 ],
               ),
             ),

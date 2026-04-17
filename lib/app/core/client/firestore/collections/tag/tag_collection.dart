@@ -81,12 +81,10 @@ class TagCollection {
             : collection)
         .snapshots()
         .listen((e) {
-          final countries = e.docs
-              .map((e) => TagModel.fromMap(e.data()))
-              .toList();
-          countries.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-          dataStream.add(countries);
-        });
+      final countries = e.docs.map((e) => TagModel.fromMap(e.data())).toList();
+      countries.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      dataStream.add(countries);
+    });
   }
 
   TagModel getById(String id) =>

@@ -20,5 +20,4 @@ class _PaiPedidoProdutosWidgetState extends State<PaiPedidoProdutosWidget> {
           .toList(),
     );
   }
-
 }

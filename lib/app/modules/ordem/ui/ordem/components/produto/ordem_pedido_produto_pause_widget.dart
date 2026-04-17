@@ -30,7 +30,11 @@ class OrdemPedidoProdutoPauseWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
         ),
         child: const Row(
-          children: [Icon(Icons.play_arrow, size: 15), Gap(2), Text('Continuar')],
+          children: [
+            Icon(Icons.play_arrow, size: 15),
+            Gap(2),
+            Text('Continuar')
+          ],
         ),
       ),
     );

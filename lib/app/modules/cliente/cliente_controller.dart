@@ -37,9 +37,13 @@ class ClienteController {
   Future<void> _checkMissingCodigos() async {
     // Aguarda carregar os dados
     await Future.delayed(const Duration(seconds: 3));
-    final clients = FirestoreClient.clientes.data.where((e) => e.codigo == 0).toList();
+    final clients =
+        FirestoreClient.clientes.data.where((e) => e.codigo == 0).toList();
     if (clients.isNotEmpty) {
-      int nextCodigo = (FirestoreClient.clientes.data.map((e) => e.codigo).toList()..sort()).lastOrNull ?? 0;
+      int nextCodigo =
+          (FirestoreClient.clientes.data.map((e) => e.codigo).toList()..sort())
+                  .lastOrNull ??
+              0;
       for (final c in clients) {
         nextCodigo++;
         await FirestoreClient.clientes.update(c.copyWith(codigo: nextCodigo));
@@ -79,7 +83,11 @@ class ClienteController {
         final edit = form.toClienteModel();
         await FirestoreClient.clientes.update(edit);
       } else {
-        int nextCodigo = (FirestoreClient.clientes.data.map((e) => e.codigo).toList()..sort()).lastOrNull ?? 0;
+        int nextCodigo =
+            (FirestoreClient.clientes.data.map((e) => e.codigo).toList()
+                      ..sort())
+                    .lastOrNull ??
+                0;
         form.codigo = nextCodigo + 1;
         await FirestoreClient.clientes.add(form.toClienteModel());
       }
@@ -116,15 +124,16 @@ class ClienteController {
 
   Future<bool> _isDeleteUnavailable(
     ClienteModel cliente,
-  ) async => !await onDeleteProcess(
-    deleteTitle: 'Deseja excluir o cliente?',
-    deleteMessage: 'Todos seus dados serão apagados do sistema',
-    infoMessage:
-        'Não é possível exlcuir o cliente, pois ele está vinculado a um pedido.',
-    conditional: FirestoreClient.pedidos.data.any(
-      (e) => e.cliente.id == cliente.id,
-    ),
-  );
+  ) async =>
+      !await onDeleteProcess(
+        deleteTitle: 'Deseja excluir o cliente?',
+        deleteMessage: 'Todos seus dados serão apagados do sistema',
+        infoMessage:
+            'Não é possível exlcuir o cliente, pois ele está vinculado a um pedido.',
+        conditional: FirestoreClient.pedidos.data.any(
+          (e) => e.cliente.id == cliente.id,
+        ),
+      );
 
   void onValid(ClienteModel? cliente) {
     String nomeForm = form.nome.text.trim();
@@ -137,11 +146,13 @@ class ClienteController {
       }
       if (cpfForm.isNotEmpty &&
           FirestoreClient.clientes.data.any((e) =>
-              e.cpf.trim() == cpfForm && e.id.toString().trim() != form.id.toString().trim())) {
+              e.cpf.trim() == cpfForm &&
+              e.id.toString().trim() != form.id.toString().trim())) {
         throw Exception('Já existe um cliente com esse CPF/CNPJ');
       }
     } else {
-      if (FirestoreClient.clientes.data.any((e) => e.nome.trim().toLowerCase() == nomeForm.toLowerCase())) {
+      if (FirestoreClient.clientes.data
+          .any((e) => e.nome.trim().toLowerCase() == nomeForm.toLowerCase())) {
         throw Exception('Já existe um cliente com esse nome');
       }
       if (cpfForm.isNotEmpty &&

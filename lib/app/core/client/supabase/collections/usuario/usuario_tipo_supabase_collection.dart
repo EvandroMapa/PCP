@@ -3,7 +3,8 @@ import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 
 class UsuarioTipoSupabaseCollection {
-  static final UsuarioTipoSupabaseCollection _instance = UsuarioTipoSupabaseCollection._();
+  static final UsuarioTipoSupabaseCollection _instance =
+      UsuarioTipoSupabaseCollection._();
   UsuarioTipoSupabaseCollection._();
   factory UsuarioTipoSupabaseCollection() => _instance;
 
@@ -24,7 +25,8 @@ class UsuarioTipoSupabaseCollection {
     if (_isStarted) return;
     _isStarted = true;
     try {
-      final response = await SupabaseService.client.from(tableName).select().order('nome');
+      final response =
+          await SupabaseService.client.from(tableName).select().order('nome');
       final tipos = List<Map<String, dynamic>>.from(response)
           .map((e) => UsuarioTipoModel.fromSupabaseMap(e))
           .toList();
@@ -43,17 +45,20 @@ class UsuarioTipoSupabaseCollection {
         .stream(primaryKey: ['id'])
         .order('nome')
         .listen((List<Map<String, dynamic>> data) {
-          final tipos = data.map((e) => UsuarioTipoModel.fromSupabaseMap(e)).toList();
+          final tipos =
+              data.map((e) => UsuarioTipoModel.fromSupabaseMap(e)).toList();
           dataStream.add(tipos);
         });
   }
 
-  UsuarioTipoModel getById(String id) =>
-      data.firstWhere((e) => e.id == id, orElse: () => UsuarioTipoModel.empty());
+  UsuarioTipoModel getById(String id) => data.firstWhere((e) => e.id == id,
+      orElse: () => UsuarioTipoModel.empty());
 
   Future<UsuarioTipoModel?> add(UsuarioTipoModel model) async {
     try {
-      await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      await SupabaseService.client
+          .from(tableName)
+          .insert(model.toSupabaseMap());
       await fetch();
       return model;
     } catch (e) {

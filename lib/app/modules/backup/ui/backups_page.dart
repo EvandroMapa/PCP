@@ -62,16 +62,19 @@ class _BackupsPageState extends State<BackupsPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.backup_outlined, size: 48, color: Colors.grey[400]),
+                  Icon(Icons.backup_outlined,
+                      size: 48, color: Colors.grey[400]),
                   const SizedBox(height: 12),
                   Text(
                     'Nenhum backup encontrado',
-                    style: AppCss.mediumRegular.copyWith(color: Colors.grey[500]),
+                    style:
+                        AppCss.mediumRegular.copyWith(color: Colors.grey[500]),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Clique em + para criar o primeiro',
-                    style: AppCss.smallRegular.copyWith(color: Colors.grey[400]),
+                    style:
+                        AppCss.smallRegular.copyWith(color: Colors.grey[400]),
                   ),
                 ],
               ),

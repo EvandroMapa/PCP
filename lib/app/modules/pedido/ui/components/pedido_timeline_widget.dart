@@ -25,8 +25,8 @@ class _PedidoTimelineWidgetState extends State<PedidoTimelineWidget> {
 
   @override
   Widget build(BuildContext context) {
-    List<PedidoHistoryModel> histories = widget.pedido.histories.reversed
-        .toList();
+    List<PedidoHistoryModel> histories =
+        widget.pedido.histories.reversed.toList();
     if (type != null) {
       histories = histories.where((e) => e.type == type).toList();
     }

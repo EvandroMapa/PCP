@@ -31,18 +31,18 @@ class AppContainer extends StatelessWidget {
       padding: padding == null
           ? null
           : padding!.length == 1
-          ? EdgeInsets.all(padding!.first)
-          : (padding!.length == 2
-                ? EdgeInsets.symmetric(
-                    horizontal: padding!.first,
-                    vertical: padding![1],
-                  )
-                : EdgeInsets.fromLTRB(
-                    padding![0],
-                    padding![1],
-                    padding![2],
-                    padding![3],
-                  )),
+              ? EdgeInsets.all(padding!.first)
+              : (padding!.length == 2
+                  ? EdgeInsets.symmetric(
+                      horizontal: padding!.first,
+                      vertical: padding![1],
+                    )
+                  : EdgeInsets.fromLTRB(
+                      padding![0],
+                      padding![1],
+                      padding![2],
+                      padding![3],
+                    )),
       width: width,
       height: height,
       decoration: BoxDecoration(

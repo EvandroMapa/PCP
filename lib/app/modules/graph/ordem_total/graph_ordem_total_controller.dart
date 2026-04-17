@@ -43,9 +43,8 @@ class GrahpOrdemTotalController {
       double volFinal = 0.0;
       double lengthFinal = 0.0;
       for (OrdemModel ordem in ordens) {
-        final pedidos = ordem.produtos
-            .where((p) => p.status.status == status)
-            .toList();
+        final pedidos =
+            ordem.produtos.where((p) => p.status.status == status).toList();
         double vol = pedidos.fold(.0, (a, b) => a + b.qtde);
         volFinal += vol;
         lengthFinal += pedidos.length;

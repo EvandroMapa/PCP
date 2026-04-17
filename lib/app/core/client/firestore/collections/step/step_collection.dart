@@ -12,8 +12,7 @@ class StepCollection {
   factory StepCollection() => _instance;
   String name = 'steps';
 
-  AppStream<List<StepModel>> dataStream =
-      AppStream<List<StepModel>>.seed([]);
+  AppStream<List<StepModel>> dataStream = AppStream<List<StepModel>>.seed([]);
   List<StepModel> get data => dataStream.value;
 
   CollectionReference<Map<String, dynamic>> get collection =>
@@ -30,9 +29,8 @@ class StepCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     final data = await FirebaseFirestore.instance.collection(name).get();
-    final countries = data.docs
-        .map((e) => StepModel.fromMap(e.data()))
-        .toList();
+    final countries =
+        data.docs.map((e) => StepModel.fromMap(e.data())).toList();
     countries.sort((a, b) {
       try {
         return (a.index).compareTo(b.index);
@@ -78,18 +76,16 @@ class StepCollection {
             : collection)
         .snapshots()
         .listen((e) {
-          final countries = e.docs
-              .map((e) => StepModel.fromMap(e.data()))
-              .toList();
-          countries.sort((a, b) {
-            try {
-              return (a.index).compareTo(b.index);
-            } catch (_) {
-              return 0;
-            }
-          });
-          dataStream.add(countries);
-        });
+      final countries = e.docs.map((e) => StepModel.fromMap(e.data())).toList();
+      countries.sort((a, b) {
+        try {
+          return (a.index).compareTo(b.index);
+        } catch (_) {
+          return 0;
+        }
+      });
+      dataStream.add(countries);
+    });
   }
 
   StepModel getById(String id) {

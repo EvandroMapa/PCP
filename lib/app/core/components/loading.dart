@@ -41,7 +41,8 @@ class LoadingStreamOut extends StatelessWidget {
       builder: (context, constraints) {
         return SizedBox(
           width: constraints.hasBoundedWidth ? constraints.maxWidth : size * 2,
-          height: constraints.hasBoundedHeight ? constraints.maxHeight : size * 2,
+          height:
+              constraints.hasBoundedHeight ? constraints.maxHeight : size * 2,
           child: Center(
             child: SizedBox(
               width: size,

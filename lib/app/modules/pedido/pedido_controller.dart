@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
 
-
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
@@ -80,7 +79,8 @@ class PedidoController {
     // Primeira atualização rápida após 1 segundo da abertura
     Future.delayed(const Duration(seconds: 1), () async {
       if (pedidoStream.hasValue) {
-        final updated = await BackendClient.pedidos.getByIdSupabase(pedidoStream.value.id);
+        final updated =
+            await BackendClient.pedidos.getByIdSupabase(pedidoStream.value.id);
         if (updated != null) {
           await BackendClient.ordens.fetch();
           await BackendClient.ordens.startOnlyArquivadas();
@@ -91,9 +91,11 @@ class PedidoController {
     });
 
     // Manutenção periódica a cada 3 segundos
-    _pagePollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) async {
+    _pagePollingTimer =
+        Timer.periodic(const Duration(seconds: 3), (timer) async {
       if (pedidoStream.hasValue) {
-        final updated = await BackendClient.pedidos.getByIdSupabase(pedidoStream.value.id);
+        final updated =
+            await BackendClient.pedidos.getByIdSupabase(pedidoStream.value.id);
         if (updated != null) {
           await BackendClient.ordens.fetch();
           await BackendClient.ordens.startOnlyArquivadas();
@@ -113,7 +115,8 @@ class PedidoController {
     BackendClient.pedidos.dataStream.listen.listen((pedidos) {
       if (pedidoStream.hasValue) {
         final currentId = pedidoStream.value.id;
-        final updatedPedido = pedidos.firstWhereOrNull((e) => e.id == currentId);
+        final updatedPedido =
+            pedidos.firstWhereOrNull((e) => e.id == currentId);
         if (updatedPedido != null) {
           pedidoStream.add(updatedPedido);
           SchedulerBinding.instance.scheduleFrame();
@@ -136,15 +139,12 @@ class PedidoController {
     BackendClient.checklists.dataStream.listen.listen((checklists) {
       if (formStream.hasValue && form.checklist == null) {
         form.checklist = checklists.firstWhereOrNull(
-          (e) =>
-              e.nome.toUpperCase().contains('PADRAO') ||
-              e.nome.toUpperCase().contains('PADRÃO'),
+          (e) => e.isPadrao,
         );
         formStream.update();
       }
     });
   }
-
 
   final AppStream<PedidoCreateModel> formStream =
       AppStream<PedidoCreateModel>();
@@ -156,9 +156,7 @@ class PedidoController {
     );
     if (!form.isEdit && form.checklist == null) {
       form.checklist = BackendClient.checklists.data.firstWhereOrNull(
-        (e) =>
-            e.nome.toUpperCase().contains('PADRAO') ||
-            e.nome.toUpperCase().contains('PADRÃO'),
+        (e) => e.isPadrao,
       );
     }
     if (pai != null) {
@@ -172,7 +170,8 @@ class PedidoController {
     form.tipo = pai.tipo;
     form.descricao.text = pai.descricao;
     form.cliente = BackendClient.clientes.getById(pai.cliente.id);
-    form.obra = BackendClient.clientes.getById(pai.cliente.id).obras.firstOrNull;
+    form.obra =
+        BackendClient.clientes.getById(pai.cliente.id).obras.firstOrNull;
     form.step = BackendClient.steps.getById(pai.step.id);
     if (pai.checklistId != null) {
       form.checklist = BackendClient.checklists.getById(pai.checklistId!);
@@ -224,11 +223,10 @@ class PedidoController {
     pedidos = utilsArquiveds.steps.isEmpty
         ? pedidos
         : pedidos
-              .where(
-                (e) =>
-                    utilsArquiveds.steps.map((e) => e.id).contains(e.step.id),
-              )
-              .toList();
+            .where(
+              (e) => utilsArquiveds.steps.map((e) => e.id).contains(e.step.id),
+            )
+            .toList();
     if (search.length < 3) return pedidos;
     List<PedidoModel> filtered = [];
     for (final pedido in pedidos) {
@@ -261,13 +259,16 @@ class PedidoController {
         }
       } else {
         PedidoModel pedidoModel = form.toPedidoModel(pedido);
-        
-        final defaultCDTags = FirestoreClient.tags.data.where((e) => e.isDefaultCD).toList();
-        final defaultCDATags = FirestoreClient.tags.data.where((e) => e.isDefaultCDA).toList();
-        
+
+        final defaultCDTags =
+            FirestoreClient.tags.data.where((e) => e.isDefaultCD).toList();
+        final defaultCDATags =
+            FirestoreClient.tags.data.where((e) => e.isDefaultCDA).toList();
+
         if (pedidoModel.tipo == PedidoTipo.cd && defaultCDTags.isNotEmpty) {
           pedidoModel.tags.addAll(defaultCDTags);
-        } else if (pedidoModel.tipo == PedidoTipo.cda && defaultCDATags.isNotEmpty) {
+        } else if (pedidoModel.tipo == PedidoTipo.cda &&
+            defaultCDATags.isNotEmpty) {
           pedidoModel.tags.addAll(defaultCDATags);
         }
 
@@ -318,15 +319,16 @@ class PedidoController {
 
   Future<bool> _isDeleteUnavailable(
     PedidoModel pedido,
-  ) async => !await onDeleteProcess(
-    deleteTitle: 'Deseja excluir o pedido?',
-    deleteMessage: 'Todos seus dados do pedido apagados do sistema',
-    infoMessage:
-        'Não é possível exlcuir o pedido, pois ele está vinculado a uma ordem de produção.',
-    conditional: FirestoreClient.ordens.data
-        .expand((e) => e.produtos.map((e) => e.pedidoId))
-        .any((e) => e == pedido.id),
-  );
+  ) async =>
+      !await onDeleteProcess(
+        deleteTitle: 'Deseja excluir o pedido?',
+        deleteMessage: 'Todos seus dados do pedido apagados do sistema',
+        infoMessage:
+            'Não é possível exlcuir o pedido, pois ele está vinculado a uma ordem de produção.',
+        conditional: FirestoreClient.ordens.data
+            .expand((e) => e.produtos.map((e) => e.pedidoId))
+            .any((e) => e == pedido.id),
+      );
 
   void onValid() {
     if (form.localizador.text.isEmpty) {
@@ -539,7 +541,7 @@ class PedidoController {
     showLoadingDialog();
     try {
       final RelatorioPedidoViewModel relatorio = RelatorioPedidoViewModel();
-    relatorio.cliente = BackendClient.clientes.getById(pedido.cliente.id);
+      relatorio.cliente = BackendClient.clientes.getById(pedido.cliente.id);
       relatorio.produtos = pedido.produtos
           .map((e) => e.copyWith())
           .map((e) => e.produto)
@@ -575,7 +577,6 @@ class PedidoController {
     }
     if (contextGlobal.mounted) Navigator.pop(contextGlobal);
   }
-
 
   void onFixComment(PedidoModel pedido, int index) {
     for (var i = 0; i < pedido.comments.length; i++) {

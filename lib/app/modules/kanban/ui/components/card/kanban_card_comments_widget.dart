@@ -25,7 +25,8 @@ class KanbanCardCommentsWidget extends StatelessWidget {
           const H(2),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: comments.map((comment) => _commentWidget(comment)).toList(),
+            children:
+                comments.map((comment) => _commentWidget(comment)).toList(),
           ),
         ],
       ),

@@ -97,7 +97,6 @@ class _ConfigPageState extends State<ConfigPage> {
             ),
           ),
           const Divisor(),
-
           ListTile(
             onTap: () => push(context, const TagsPage()),
             title: const Text('Etiquetas'),

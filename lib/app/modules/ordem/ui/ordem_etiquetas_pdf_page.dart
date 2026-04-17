@@ -14,13 +14,13 @@ class OrdemEtiquetasPdfPage {
   OrdemEtiquetasPdfPage(this.model);
 
   pw.Page build(Uint8List bytes) => pw.MultiPage(
-    margin: pw.EdgeInsets.zero,
-    orientation: pw.PageOrientation.portrait,
-    pageFormat: PdfPageFormat.a6,
-    build: (pw.Context context) => [
-      for (var etiqueta in model) _etiquetaItem(etiqueta, bytes),
-    ],
-  );
+        margin: pw.EdgeInsets.zero,
+        orientation: pw.PageOrientation.portrait,
+        pageFormat: PdfPageFormat.a6,
+        build: (pw.Context context) => [
+          for (var etiqueta in model) _etiquetaItem(etiqueta, bytes),
+        ],
+      );
 
   pw.Widget _etiquetaItem(OrdemEtiquetaModel etiqueta, Uint8List bytes) {
     return pw.Container(
@@ -88,7 +88,7 @@ class OrdemEtiquetasPdfPage {
             'MATERIA PRIMA',
             etiqueta.ordem.materiaPrima != null
                 ? '${etiqueta.ordem.materiaPrima?.fabricanteModel.nome} - ${etiqueta.ordem.materiaPrima?.corridaLote}'
-                      .toUpperCase()
+                    .toUpperCase()
                 : 'NÃO ESPECIFICADO',
           ),
           PdfDivisor.build(),

@@ -54,13 +54,13 @@ class PedidoPage extends StatefulWidget {
 
 class _PedidoPageState extends State<PedidoPage>
     with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
-
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: usuario.temAcessoElementos ? 2 : 1, vsync: this);
+    _tabController =
+        TabController(length: usuario.temAcessoElementos ? 2 : 1, vsync: this);
     _tabController.addListener(() {
       pedidoCtrl.activeTabStream.add(_tabController.index);
     });
@@ -76,7 +76,8 @@ class _PedidoPageState extends State<PedidoPage>
     _tabController.dispose();
     pedidoCtrl.onDisposePage();
     pedidoCtrl.setPedido(null);
-    elementoCtrl.onDispose(); // Limpa estado interno dos elementos e listener em tempo real
+    elementoCtrl
+        .onDispose(); // Limpa estado interno dos elementos e listener em tempo real
     super.dispose();
   }
 
@@ -110,8 +111,7 @@ class _PedidoPageState extends State<PedidoPage>
 
   Widget _kanbanReasonWidget(PedidoModel pedido) {
     return Material(
-        surfaceTintColor: Colors.transparent,
-        child: _bodyWithTabs(pedido));
+        surfaceTintColor: Colors.transparent, child: _bodyWithTabs(pedido));
   }
 
   Widget _bodyWithTabs(PedidoModel pedido) {
@@ -147,7 +147,10 @@ class _PedidoPageState extends State<PedidoPage>
                 borderRadius: BorderRadius.circular(20),
                 color: AppColors.primaryMain,
                 boxShadow: [
-                  BoxShadow(color: AppColors.primaryMain.withValues(alpha: 0.2), offset: const Offset(0, 2), blurRadius: 4),
+                  BoxShadow(
+                      color: AppColors.primaryMain.withValues(alpha: 0.2),
+                      offset: const Offset(0, 2),
+                      blurRadius: 4),
                 ],
               ),
               tabs: [
@@ -221,7 +224,8 @@ class _PedidoPageState extends State<PedidoPage>
                 topRight: Radius.circular(14),
               ),
               border: Border(
-                bottom: BorderSide(color: color.withValues(alpha: 0.08), width: 1),
+                bottom:
+                    BorderSide(color: color.withValues(alpha: 0.08), width: 1),
               ),
             ),
             child: Row(
@@ -269,9 +273,13 @@ class _PedidoPageState extends State<PedidoPage>
       children: [
         // ── Sinalizadores ──
         if (pedido.getPedidosFilhos().isNotEmpty)
-          Padding(padding: const EdgeInsets.only(bottom: 12), child: PaiPedidoSinalizadorWidget()),
+          Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: PaiPedidoSinalizadorWidget()),
         if (pedido.pai != null && pedido.pai != '')
-          Padding(padding: const EdgeInsets.only(bottom: 12), child: PaiPedidoFilhoSinalizadorWidget()),
+          Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: PaiPedidoFilhoSinalizadorWidget()),
 
         // ── Identificação ──
         _sectionCard(
@@ -311,7 +319,8 @@ class _PedidoPageState extends State<PedidoPage>
           ),
 
         // ── Produtos (aguardando entrada) ──
-        if (pedido.pedidosFilhos.isEmpty && pedido.isAguardandoEntradaProducao())
+        if (pedido.pedidosFilhos.isEmpty &&
+            pedido.isAguardandoEntradaProducao())
           _sectionCard(
             icon: Icons.inventory_2_outlined,
             title: 'PRODUTOS',
@@ -323,7 +332,8 @@ class _PedidoPageState extends State<PedidoPage>
           ),
 
         // ── Produção CD (Corte e Dobra) ──
-        if (pedido.pedidosFilhos.isEmpty && !pedido.isAguardandoEntradaProducao())
+        if (pedido.pedidosFilhos.isEmpty &&
+            !pedido.isAguardandoEntradaProducao())
           _sectionCard(
             icon: Icons.content_cut_outlined,
             title: 'PRODUÇÃO CD',
@@ -344,7 +354,9 @@ class _PedidoPageState extends State<PedidoPage>
           ),
 
         // ── Produção CDA (Armação) – Apenas para pedidos CDA ──
-        if (pedido.pedidosFilhos.isEmpty && !pedido.isAguardandoEntradaProducao() && pedido.tipo == PedidoTipo.cda)
+        if (pedido.pedidosFilhos.isEmpty &&
+            !pedido.isAguardandoEntradaProducao() &&
+            pedido.tipo == PedidoTipo.cda)
           _sectionCard(
             icon: Icons.construction_rounded,
             title: 'PRODUÇÃO CDA',
@@ -369,13 +381,15 @@ class _PedidoPageState extends State<PedidoPage>
               const H(16),
               PaiPedidoProdutosWidget(pedido),
               const H(16),
-              PedidoFilhosWidget(pedido: pedido, filhos: pedido.getPedidosFilhos()),
+              PedidoFilhosWidget(
+                  pedido: pedido, filhos: pedido.getPedidosFilhos()),
             ],
             contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           ),
 
         // ── Entrega & Financeiro ──
-        if (pedido.instrucoesEntrega.isNotEmpty || pedido.instrucoesFinanceiras.isNotEmpty)
+        if (pedido.instrucoesEntrega.isNotEmpty ||
+            pedido.instrucoesFinanceiras.isNotEmpty)
           _sectionCard(
             icon: Icons.local_shipping_outlined,
             title: 'ENTREGA & FINANCEIRO',
@@ -425,7 +439,8 @@ class _PedidoPageState extends State<PedidoPage>
             title: 'PEDIDOS VINCULADOS',
             accentColor: const Color(0xFF6366F1), // indigo-500
             children: [
-              PedidoVinculadosWidget(pedido: pedido, vinculados: pedido.getPedidosVinculados()),
+              PedidoVinculadosWidget(
+                  pedido: pedido, vinculados: pedido.getPedidosVinculados()),
             ],
             contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           ),
@@ -498,7 +513,8 @@ class _PedidoPageState extends State<PedidoPage>
 
     final details = resumo['details'] as Map<String, dynamic>? ?? {};
 
-    final aguardandoPeso = ((details['aguardando']?['peso'] ?? 0) as num).toDouble();
+    final aguardandoPeso =
+        ((details['aguardando']?['peso'] ?? 0) as num).toDouble();
     final armandoPeso = ((details['armando']?['peso'] ?? 0) as num).toDouble();
     final prontoPeso = ((details['pronto']?['peso'] ?? 0) as num).toDouble();
 

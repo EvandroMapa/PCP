@@ -129,21 +129,21 @@ class _CommentAddWidgetState extends State<CommentAddWidget> {
   }
 
   Widget _noEditingWidget() => InkWell(
-    onTap: () => setState(() {
-      _isEditing = true;
-    }),
-    child: Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      width: double.maxFinite,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        'Escrever um comentário...',
-        style: AppCss.mediumRegular.copyWith(fontSize: 16),
-      ),
-    ),
-  );
+        onTap: () => setState(() {
+          _isEditing = true;
+        }),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          width: double.maxFinite,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey[200],
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            'Escrever um comentário...',
+            style: AppCss.mediumRegular.copyWith(fontSize: 16),
+          ),
+        ),
+      );
 }

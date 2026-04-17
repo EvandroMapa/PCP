@@ -150,9 +150,9 @@ class PedidoHistoryModel {
     required this.type,
     required this.action,
     bool isFromAutomatizacao = false,
-  }) : id = HashService.get,
-       createdAt = DateTime.now(),
-       usuario = isFromAutomatizacao ? UsuarioModel.system : user.usuario;
+  })  : id = HashService.get,
+        createdAt = DateTime.now(),
+        usuario = isFromAutomatizacao ? UsuarioModel.system : user.usuario;
 
   Map<String, dynamic> toMap() {
     return {
@@ -161,9 +161,8 @@ class PedidoHistoryModel {
       'createdAt': createdAt.millisecondsSinceEpoch,
       'usuario': usuario.toMap(),
       'action': action.index,
-      'data': data is StepModel
-          ? (data as StepModel).toHistoryMap()
-          : data.toMap(),
+      'data':
+          data is StepModel ? (data as StepModel).toHistoryMap() : data.toMap(),
     };
   }
 

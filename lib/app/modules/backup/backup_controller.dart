@@ -53,12 +53,26 @@ class BackupController {
   // ─── CRIAR BACKUP ────────────────────────────────────────────────────────
   Future<void> onCreateBackup(BuildContext context) async {
     final tables = [
-      'usuarios', 'clientes', 'materia_primas', 'fabricantes', 'produtos',
-      'steps', 'step_from_steps', 'step_move_roles', 'tags',
-      'pedidos', 'pedido_produtos', 'pedido_status_history',
-      'pedido_steps_history', 'pedido_tags',
-      'ordens', 'ordem_produtos', 'ordem_status_history',
-      'checklists', 'notificacoes', 'automatizacao',
+      'usuarios',
+      'clientes',
+      'materia_primas',
+      'fabricantes',
+      'produtos',
+      'steps',
+      'step_from_steps',
+      'step_move_roles',
+      'tags',
+      'pedidos',
+      'pedido_produtos',
+      'pedido_status_history',
+      'pedido_steps_history',
+      'pedido_tags',
+      'ordens',
+      'ordem_produtos',
+      'ordem_status_history',
+      'checklists',
+      'notificacoes',
+      'automatizacao',
     ];
 
     // Exibe diálogo de progresso (não modal, com stream)
@@ -105,7 +119,7 @@ class BackupController {
         ..click();
 
       pop(contextGlobal); // fecha o progress dialog
-      await onFetch();    // atualiza a lista
+      await onFetch(); // atualiza a lista
     } catch (e) {
       pop(contextGlobal); // fecha o progress dialog
       print('BackupController.onCreateBackup erro: $e');
@@ -117,13 +131,28 @@ class BackupController {
   Future<void> onCreateBackupSilent() async {
     try {
       final tables = [
-        'usuarios', 'clientes', 'materia_primas', 'fabricantes', 'produtos',
-        'steps', 'step_from_steps', 'step_move_roles', 'tags',
-        'pedidos', 'pedido_produtos', 'pedido_status_history',
-        'pedido_steps_history', 'pedido_tags',
-        'ordens', 'ordem_produtos', 'ordem_status_history',
-        'checklists', 'notificacoes', 'automatizacao',
-        'elementos', 'elemento_posicoes',
+        'usuarios',
+        'clientes',
+        'materia_primas',
+        'fabricantes',
+        'produtos',
+        'steps',
+        'step_from_steps',
+        'step_move_roles',
+        'tags',
+        'pedidos',
+        'pedido_produtos',
+        'pedido_status_history',
+        'pedido_steps_history',
+        'pedido_tags',
+        'ordens',
+        'ordem_produtos',
+        'ordem_status_history',
+        'checklists',
+        'notificacoes',
+        'automatizacao',
+        'elementos',
+        'elemento_posicoes',
       ];
 
       final Map<String, dynamic> data = {};
@@ -154,7 +183,6 @@ class BackupController {
       print('❌ Erro no backup automático: $e');
     }
   }
-
 
   Future<void> onDownloadBackup(BackupModel backup) async {
     try {
@@ -192,23 +220,35 @@ class BackupController {
           jsonDecode(utf8.decode(result.files.first.bytes!));
 
       final deleteOrder = [
-        'pedido_status_history', 'pedido_steps_history',
-        'pedido_produtos', 'pedido_tags',
-        'ordem_produtos', 'ordem_status_history',
-        'step_from_steps', 'step_move_roles',
-        'pedidos', 'ordens', 'notificacoes', 'checklists',
-        'produtos', 'materia_primas', 'fabricantes', 'steps', 'tags',
-        'clientes', 'usuarios', 'automatizacao',
+        'pedido_status_history',
+        'pedido_steps_history',
+        'pedido_produtos',
+        'pedido_tags',
+        'ordem_produtos',
+        'ordem_status_history',
+        'step_from_steps',
+        'step_move_roles',
+        'pedidos',
+        'ordens',
+        'notificacoes',
+        'checklists',
+        'produtos',
+        'materia_primas',
+        'fabricantes',
+        'steps',
+        'tags',
+        'clientes',
+        'usuarios',
+        'automatizacao',
       ];
 
       // 2. Deleta (filhos -> pais)
       for (var i = 0; i < deleteOrder.length; i++) {
         final table = deleteOrder[i];
-        progressStream.add(
-            '(${i + 1}/${deleteOrder.length}) Limpando: $table...');
+        progressStream
+            .add('(${i + 1}/${deleteOrder.length}) Limpando: $table...');
         try {
-          final rows =
-              await SupabaseService.client.from(table).select('id');
+          final rows = await SupabaseService.client.from(table).select('id');
           final ids = rows.map((r) => r['id']).toList();
           for (var j = 0; j < ids.length; j += 200) {
             final chunk = ids.sublist(j, (j + 200).clamp(0, ids.length));
@@ -224,8 +264,7 @@ class BackupController {
       final insertOrder = deleteOrder.reversed.toList();
       for (var i = 0; i < insertOrder.length; i++) {
         final table = insertOrder[i];
-        final rows =
-            (data[table] as List?)?.cast<Map<String, dynamic>>();
+        final rows = (data[table] as List?)?.cast<Map<String, dynamic>>();
         if (rows == null || rows.isEmpty) continue;
         progressStream
             .add('(${i + 1}/${insertOrder.length}) Restaurando: $table...');
@@ -261,7 +300,8 @@ class _BackupProgressDialog extends StatelessWidget {
         final msg = snap.data ?? 'Iniciando...';
         return AlertDialog(
           backgroundColor: Colors.white,
-          title: const Text('Processando', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text('Processando',
+              style: TextStyle(fontWeight: FontWeight.bold)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

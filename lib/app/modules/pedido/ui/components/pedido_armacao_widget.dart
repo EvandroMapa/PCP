@@ -56,9 +56,7 @@ class PedidoArmacaoWidget extends StatelessWidget {
           ),
           child: Text(
             e.status.label,
-            style: AppCss.mediumRegular
-                .setSize(14)
-                .setColor(
+            style: AppCss.mediumRegular.setSize(14).setColor(
                   AppColors.black.withValues(
                     alpha: e.id == status.id ? 1 : 0.4,
                   ),

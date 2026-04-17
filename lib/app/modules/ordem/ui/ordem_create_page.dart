@@ -201,8 +201,8 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
                           ordem: widget.ordem,
                         )
                         .where(
-                          (produto) => !form.produtos
-                              .any((e) => e.id == produto.id),
+                          (produto) =>
+                              !form.produtos.any((e) => e.id == produto.id),
                         )
                         .toList();
 
@@ -215,7 +215,8 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
                         return _itemProduto(
                           isEnable: produto.isAvailable,
                           produto: produto,
-                          check: false, // Itens desta lista nunca estão no form.produtos (visto no filter acima)
+                          check:
+                              false, // Itens desta lista nunca estão no form.produtos (visto no filter acima)
                           onTap: () {
                             form.produtos.add(produto);
                             ordemCtrl.formStream.update();

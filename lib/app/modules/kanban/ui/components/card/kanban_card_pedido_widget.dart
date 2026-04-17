@@ -62,7 +62,6 @@ class KanbanCardPedidoWidget extends StatelessWidget {
               children: [
                 Row(
                   children: [
-
                     if (pedido.comments.any((e) => e.isFixed)) ...[
                       Icon(Icons.warning, color: Colors.orange, size: 16),
                       const W(4),
@@ -126,8 +125,6 @@ class KanbanCardPedidoWidget extends StatelessWidget {
       ),
     );
   }
-
-
 
   Color _getColor(PedidoModel pedido) {
     if (pedido.comments.any((e) => e.isFixed)) {

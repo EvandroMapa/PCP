@@ -18,11 +18,13 @@ class ProdutoCreateModel {
   int sortIndex = 999;
   late bool isEdit;
 
-  ProdutoCreateModel() : id = HashService.get, isEdit = false;
+  ProdutoCreateModel()
+      : id = HashService.get,
+        isEdit = false;
 
   ProdutoCreateModel.edit(ProdutoModel produto)
-    : id = produto.id,
-      isEdit = true {
+      : id = produto.id,
+        isEdit = true {
     nome.text = produto.nome;
     descricao.text = produto.descricao;
     massaFinal = TextController.number(value: produto.massaFinal);
@@ -31,11 +33,11 @@ class ProdutoCreateModel {
   }
 
   ProdutoModel toProdutoModel() => ProdutoModel(
-    id: id,
-    nome: nome.text,
-    descricao: descricao.text,
-    massaFinal: massaFinal.doubleValue,
-    codigoFinanceiro: codigoFinanceiro.text,
-    sortIndex: sortIndex,
-  );
+        id: id,
+        nome: nome.text,
+        descricao: descricao.text,
+        massaFinal: massaFinal.doubleValue,
+        codigoFinanceiro: codigoFinanceiro.text,
+        sortIndex: sortIndex,
+      );
 }

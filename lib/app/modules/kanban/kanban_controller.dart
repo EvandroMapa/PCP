@@ -35,13 +35,13 @@ class StepController {
 
   /// Bloqueia rebuilds do stream durante o arrasto de cartoes
   bool isDragging = false;
+
   /// Bloqueia fetch do backend por um curto periodo apos o drop,
   /// evitando que dados antigos sobreescrevam o estado otimista.
   bool _pendingDrop = false;
   bool get isDropLocked => isDragging || _pendingDrop;
   StreamSubscription? _pedidosSubscription;
   Timer? _refreshTimer;
-
 
   void startDrag() => isDragging = true;
   void endDrag() {
@@ -59,7 +59,8 @@ class StepController {
   Future<void> onInit() async {
     try {
       _pedidosSubscription?.cancel();
-      _pedidosSubscription = BackendClient.pedidos.dataStream.listen.listen((_) {
+      _pedidosSubscription =
+          BackendClient.pedidos.dataStream.listen.listen((_) {
         if (!isDropLocked) {
           updateKanban();
           SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -100,12 +101,12 @@ class StepController {
       final pedidos = BackendClient.pedidos.pepidosUnarchiveds.toList();
       final kanban = <StepModel, List<PedidoModel>>{};
       final stepsData = BackendClient.steps.data.toList();
-      
+
       if (stepsData.isEmpty) return kanban;
 
       for (StepModel step in stepsData) {
         final pedidosStep = pedidos.where((e) => e.step.id == step.id).toList();
-        
+
         // ProteÃ§Ã£o contra index nulo ou erros de comparaÃ§Ã£o
         pedidosStep.sort((a, b) {
           try {
@@ -114,7 +115,7 @@ class StepController {
             return 0;
           }
         });
-        
+
         kanban.addAll({step: pedidosStep});
       }
       return kanban;
@@ -132,7 +133,7 @@ class StepController {
 
   Map<String, List<PedidoModel>> _mountCalendar() {
     final calendar = <String, List<PedidoModel>>{};
-    
+
     // Filtramos apenas pedidos nÃ£o arquivados que tÃªm data de entrega
     final pedidosCalendario = BackendClient.pedidos.pepidosUnarchiveds
         .where((e) => e.deliveryAt != null)
@@ -141,13 +142,13 @@ class StepController {
     for (final pedido in pedidosCalendario) {
       // Formata a data de entrega ignorando o horÃ¡rio, apenas dia, mÃªs e ano
       final diaKey = DateFormat('dd/MM/yyyy').format(pedido.deliveryAt!);
-      
+
       if (!calendar.containsKey(diaKey)) {
         calendar[diaKey] = [];
       }
       calendar[diaKey]!.add(pedido);
     }
-    
+
     return calendar;
   }
 
@@ -190,8 +191,8 @@ class StepController {
 
   void setPreviousDay(DateTime currentDate) async {
     DateTime previousDate = currentDate.onlyDate().subtract(
-      const Duration(days: 1),
-    );
+          const Duration(days: 1),
+        );
     if (previousDate.weekday == DateTime.sunday) {
       previousDate = previousDate.subtract(const Duration(days: 2));
     }
@@ -210,7 +211,7 @@ class StepController {
     if (!onWillAccept(pedido, step, auto: auto)) return;
     _onMovePedido(pedido, step, index);
     utilsStream.update();
-    
+
     // Process secondary actions in background
     _onAddStep(pedido, step);
     onRemovePedidoFromPrioridadeIfNeeded(step, pedido);
@@ -224,9 +225,16 @@ class StepController {
 
   bool onWillAccept(PedidoModel pedido, StepModel step, {bool auto = false}) {
     if (pedido.step.id != step.id) {
-      final isStepAvailable = step.fromSteps
-          .map((e) => e.id)
-          .contains(pedido.step.id);
+      if (pedido.step.isBlockMoveWithoutElements && pedido.elementos.isEmpty) {
+        NotificationService.showNegative(
+          'Operação não permitida',
+          'Não é possível retirar desta etapa um pedido que não possua elementos cadastrados.',
+        );
+        return false;
+      }
+
+      final isStepAvailable =
+          step.fromSteps.map((e) => e.id).contains(pedido.step.id);
       if (!isStepAvailable) {
         NotificationService.showNegative(
           'OperaÃ§Ã£o nÃ£o permitida',
@@ -303,13 +311,13 @@ class StepController {
     final key = utils.kanban.keys.firstWhereOrNull((e) => e.id == stepId);
     if (key == null) return;
     List<PedidoModel> pedidos = utils.kanban[key]!;
-    
+
     // Atualiza os Ã­ndices locais
     for (int i = 0; i < pedidos.length; i++) {
       pedidos[i].index = i;
     }
 
-    // Filtra os pedidos que NÃƒO sÃ£o o que acabou de se mover 
+    // Filtra os pedidos que NÃƒO sÃ£o o que acabou de se mover
     // (pois este jÃ¡ terÃ¡ um update individual via _onAddStep)
     final otherPedidos = pedidos.where((p) => p.id != movingPedidoId).toList();
     if (otherPedidos.isNotEmpty) {
@@ -326,13 +334,14 @@ class StepController {
     }
   }
 
-  Future<List<PedidoModel>> _getPedidosVinculadosToMove(PedidoModel pedido, StepModel step) async {
+  Future<List<PedidoModel>> _getPedidosVinculadosToMove(
+      PedidoModel pedido, StepModel step) async {
     final pedidosVinculados = pedido.getPedidosVinculados();
-    final pedidosVinculadosFiltrados = pedidosVinculados
-        .where((p) => p.step.id != step.id)
-        .toList();
+    final pedidosVinculadosFiltrados =
+        pedidosVinculados.where((p) => p.step.id != step.id).toList();
     if (pedidosVinculadosFiltrados.isNotEmpty) {
-      final pedidosSelecionados = await showPedidosVinculadosMoveSelectDialog(pedido, step);
+      final pedidosSelecionados =
+          await showPedidosVinculadosMoveSelectDialog(pedido, step);
       if (pedidosSelecionados != null && pedidosSelecionados.isNotEmpty) {
         return pedidosSelecionados;
       }
@@ -349,10 +358,7 @@ class StepController {
   Future<void> onRemovePedidoFromPrioridadeIfNeeded(
     StepModel step,
     PedidoModel pedido,
-  ) async {
-
-  }
-
+  ) async {}
 
   Alignment? _getAlignByPosition(BuildContext context, Offset mouse) {
     const gap = 200;

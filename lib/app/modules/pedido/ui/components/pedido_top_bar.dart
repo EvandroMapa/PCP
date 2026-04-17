@@ -35,184 +35,189 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Widget _kanbanWidget(BuildContext context) => Container(
-    width: double.maxFinite,
-    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-    decoration: BoxDecoration(color: AppColors.primaryMain),
-    child: Row(
-      children: [
-        InkWell(
-          onTap: () => onDelete!(),
-          child: Icon(Icons.close, color: AppColors.white),
-        ),
-        const W(16),
-        Expanded(
-          child: Text(
-            pedido.isArchived
-                ? '${pedido.localizador} - Arquivado'
-                : pedido.localizador,
-            style: AppCss.largeBold.setColor(AppColors.white).setSize(20),
-          ),
-        ),
-        const Spacer(),
-        const W(12),
-        Tooltip(
-          message: 'Cria Pedido Parcial',
-          child: InkWell(
-            onTap: () async => push(context, PedidoCreatePage(pai: pedido)),
-            child: Icon(Icons.add, color: AppColors.white),
-          ),
-        ),
-        Tooltip(
-          message: 'Acompanhar pedido',
-          child: InkWell(
-            onTap: () async =>
-                context.push('/acompanhamento/pedidos/${pedido.id}'),
-            child: Icon(Icons.local_shipping, color: AppColors.white),
-          ),
-        ),
-        const W(12),
-        const W(12),
-        const W(12),
-        StreamOut<int>(
-          stream: pedidoCtrl.activeTabStream.listen,
-          builder: (_, index) {
-            final isElementos = index == 1;
-            return Tooltip(
-              message: isElementos
-                  ? 'Gerar Relatório de Elementos'
-                  : 'Gerar Relatório do Pedido',
-              child: IconButton(
-                onPressed: () => isElementos
-                    ? elementoCtrl.onGeneratePDF(pedido)
-                    : pedidoCtrl.onGeneratePDF(pedido),
-                icon: Icon(Icons.picture_as_pdf, color: AppColors.white),
+        width: double.maxFinite,
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        decoration: BoxDecoration(color: AppColors.primaryMain),
+        child: Row(
+          children: [
+            InkWell(
+              onTap: () => onDelete!(),
+              child: Icon(Icons.close, color: AppColors.white),
+            ),
+            const W(16),
+            Expanded(
+              child: Text(
+                pedido.isArchived
+                    ? '${pedido.localizador} - Arquivado'
+                    : pedido.localizador,
+                style: AppCss.largeBold.setColor(AppColors.white).setSize(20),
               ),
-            );
-          },
-        ),
-        const W(12),
-        if (pedido.step.isArchivedAvailable && !pedido.isArchived) ...[
-          Tooltip(
-            message: 'Arquivar pedido',
-            child: InkWell(
-              onTap: () async => pedidoCtrl
-                  .onArchive(context, pedido, isPedido: false)
-                  .then((result) {
+            ),
+            const Spacer(),
+            const W(12),
+            Tooltip(
+              message: 'Cria Pedido Parcial',
+              child: InkWell(
+                onTap: () async => push(context, PedidoCreatePage(pai: pedido)),
+                child: Icon(Icons.add, color: AppColors.white),
+              ),
+            ),
+            Tooltip(
+              message: 'Acompanhar pedido',
+              child: InkWell(
+                onTap: () async =>
+                    context.push('/acompanhamento/pedidos/${pedido.id}'),
+                child: Icon(Icons.local_shipping, color: AppColors.white),
+              ),
+            ),
+            const W(12),
+            const W(12),
+            const W(12),
+            StreamOut<int>(
+              stream: pedidoCtrl.activeTabStream.listen,
+              builder: (_, index) {
+                final isElementos = index == 1;
+                return Tooltip(
+                  message: isElementos
+                      ? 'Gerar Relatório de Elementos'
+                      : 'Gerar Relatório do Pedido',
+                  child: IconButton(
+                    onPressed: () => isElementos
+                        ? elementoCtrl.onGeneratePDF(pedido)
+                        : pedidoCtrl.onGeneratePDF(pedido),
+                    icon: Icon(Icons.picture_as_pdf, color: AppColors.white),
+                  ),
+                );
+              },
+            ),
+            const W(12),
+            if (pedido.step.isArchivedAvailable && !pedido.isArchived) ...[
+              Tooltip(
+                message: 'Arquivar pedido',
+                child: InkWell(
+                  onTap: () async => pedidoCtrl
+                      .onArchive(context, pedido, isPedido: false)
+                      .then((result) {
                     if (result) {
                       kanbanCtrl.setPedido(null);
                     }
                   }),
-              child: Icon(Icons.archive, color: AppColors.white, size: 20),
+                  child: Icon(Icons.archive, color: AppColors.white, size: 20),
+                ),
+              ),
+              const W(12),
+            ],
+            if (pedido.isArchived) ...[
+              Tooltip(
+                message: 'Desarquivar pedido',
+                child: IconButton(
+                  onPressed: () =>
+                      pedidoCtrl.onUnArchivePedido(context, pedido, 0),
+                  icon: Icon(Icons.unarchive, color: AppColors.white),
+                ),
+              ),
+              const W(12),
+            ],
+            Tooltip(
+              message: 'Editar pedido',
+              child: InkWell(
+                onTap: () async =>
+                    push(context, PedidoCreatePage(pedido: pedido)),
+                child: Icon(Icons.edit, color: AppColors.white, size: 20),
+              ),
             ),
-          ),
-          const W(12),
-        ],
-        if (pedido.isArchived) ...[
-          Tooltip(
-            message: 'Desarquivar pedido',
-            child: IconButton(
-              onPressed: () => pedidoCtrl.onUnArchivePedido(context, pedido, 0),
-              icon: Icon(Icons.unarchive, color: AppColors.white),
-            ),
-          ),
-          const W(12),
-        ],
-        Tooltip(
-          message: 'Editar pedido',
-          child: InkWell(
-            onTap: () async => push(context, PedidoCreatePage(pedido: pedido)),
-            child: Icon(Icons.edit, color: AppColors.white, size: 20),
-          ),
-        ),
-        const W(12),
-        Tooltip(
-          message: 'Excluir pedido',
-          child: InkWell(
-            onTap: () async =>
-                pedidoCtrl.onDelete(context, pedido, isPedido: false).then((e) {
+            const W(12),
+            Tooltip(
+              message: 'Excluir pedido',
+              child: InkWell(
+                onTap: () async => pedidoCtrl
+                    .onDelete(context, pedido, isPedido: false)
+                    .then((e) {
                   if (e) {
                     kanbanCtrl.setPedido(null);
                   }
                 }),
-            child: Icon(Icons.delete, color: AppColors.white, size: 20),
-          ),
+                child: Icon(Icons.delete, color: AppColors.white, size: 20),
+              ),
+            ),
+          ],
         ),
-      ],
-    ),
-  );
+      );
 
   Widget _pedidoWidget(BuildContext context) => AppBar(
-    title: Text(
-      pedido.isArchived
-          ? '${pedido.localizador} - Arquivado'
-          : pedido.localizador,
-      style: AppCss.largeBold.setColor(AppColors.white).setSize(20),
-    ),
-    backgroundColor: AppColors.primaryMain,
-    actions: [
-      const W(12),
-      Tooltip(
-        message: 'Cria Pedido Parcial',
-        child: IconButton(
-          onPressed: () => push(context, PedidoCreatePage(pai: pedido)),
-          icon: Icon(Icons.add, color: AppColors.white),
+        title: Text(
+          pedido.isArchived
+              ? '${pedido.localizador} - Arquivado'
+              : pedido.localizador,
+          style: AppCss.largeBold.setColor(AppColors.white).setSize(20),
         ),
-      ),
-      Tooltip(
-        message: 'Acompanhar pedido',
-        child: IconButton(
-          onPressed: () => context.push('/acompanhamento/pedidos/${pedido.id}'),
-          icon: Icon(Icons.local_shipping, color: AppColors.white),
-        ),
-      ),
-      StreamOut<int>(
-        stream: pedidoCtrl.activeTabStream.listen,
-        builder: (_, index) {
-          final isElementos = index == 1;
-          return Tooltip(
-            message: isElementos
-                ? 'Gerar Relatório de Elementos'
-                : 'Gerar Relatório do Pedido',
+        backgroundColor: AppColors.primaryMain,
+        actions: [
+          const W(12),
+          Tooltip(
+            message: 'Cria Pedido Parcial',
             child: IconButton(
-              onPressed: () => isElementos
-                  ? elementoCtrl.onGeneratePDF(pedido)
-                  : pedidoCtrl.onGeneratePDF(pedido),
-              icon: Icon(Icons.picture_as_pdf, color: AppColors.white),
+              onPressed: () => push(context, PedidoCreatePage(pai: pedido)),
+              icon: Icon(Icons.add, color: AppColors.white),
             ),
-          );
-        },
-      ),
-      if (pedido.step.isArchivedAvailable && !pedido.isArchived)
-        Tooltip(
-          message: 'Arquivar pedido',
-          child: IconButton(
-            onPressed: () => pedidoCtrl.onArchive(context, pedido),
-            icon: Icon(Icons.archive, color: AppColors.white),
           ),
-        ),
-      if (pedido.isArchived)
-        Tooltip(
-          message: 'Desarquivar pedido',
-          child: IconButton(
-            onPressed: () => pedidoCtrl.onUnArchivePedido(context, pedido, 2),
-            icon: Icon(Icons.unarchive, color: AppColors.white),
+          Tooltip(
+            message: 'Acompanhar pedido',
+            child: IconButton(
+              onPressed: () =>
+                  context.push('/acompanhamento/pedidos/${pedido.id}'),
+              icon: Icon(Icons.local_shipping, color: AppColors.white),
+            ),
           ),
-        ),
-      Tooltip(
-        message: 'Editar pedido',
-        child: IconButton(
-          onPressed: () async =>
-              push(context, PedidoCreatePage(pedido: pedido)),
-          icon: Icon(Icons.edit, color: AppColors.white),
-        ),
-      ),
-      Tooltip(
-        message: 'Excluir pedido',
-        child: IconButton(
-          onPressed: () async => pedidoCtrl.onDelete(context, pedido),
-          icon: Icon(Icons.delete, color: AppColors.white),
-        ),
-      ),
-    ],
-  );
+          StreamOut<int>(
+            stream: pedidoCtrl.activeTabStream.listen,
+            builder: (_, index) {
+              final isElementos = index == 1;
+              return Tooltip(
+                message: isElementos
+                    ? 'Gerar Relatório de Elementos'
+                    : 'Gerar Relatório do Pedido',
+                child: IconButton(
+                  onPressed: () => isElementos
+                      ? elementoCtrl.onGeneratePDF(pedido)
+                      : pedidoCtrl.onGeneratePDF(pedido),
+                  icon: Icon(Icons.picture_as_pdf, color: AppColors.white),
+                ),
+              );
+            },
+          ),
+          if (pedido.step.isArchivedAvailable && !pedido.isArchived)
+            Tooltip(
+              message: 'Arquivar pedido',
+              child: IconButton(
+                onPressed: () => pedidoCtrl.onArchive(context, pedido),
+                icon: Icon(Icons.archive, color: AppColors.white),
+              ),
+            ),
+          if (pedido.isArchived)
+            Tooltip(
+              message: 'Desarquivar pedido',
+              child: IconButton(
+                onPressed: () =>
+                    pedidoCtrl.onUnArchivePedido(context, pedido, 2),
+                icon: Icon(Icons.unarchive, color: AppColors.white),
+              ),
+            ),
+          Tooltip(
+            message: 'Editar pedido',
+            child: IconButton(
+              onPressed: () async =>
+                  push(context, PedidoCreatePage(pedido: pedido)),
+              icon: Icon(Icons.edit, color: AppColors.white),
+            ),
+          ),
+          Tooltip(
+            message: 'Excluir pedido',
+            child: IconButton(
+              onPressed: () async => pedidoCtrl.onDelete(context, pedido),
+              icon: Icon(Icons.delete, color: AppColors.white),
+            ),
+          ),
+        ],
+      );
 }

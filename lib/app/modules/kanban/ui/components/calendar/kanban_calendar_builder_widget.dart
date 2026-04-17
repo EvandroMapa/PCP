@@ -92,7 +92,8 @@ class _KanbanCalendarBuilderWidgetState
                 separatorBuilder: (_, __) => const H(8),
                 children: widget.pedidos
                     .map(
-                      (e) => widget.utils.isPedidoVisibleFiltered(e) ? KanbanCardMouseRegionCalendarWidget(
+                      (e) => widget.utils.isPedidoVisibleFiltered(e)
+                          ? KanbanCardMouseRegionCalendarWidget(
                               e,
                               calendarFormat: widget.calendarFormat,
                             )

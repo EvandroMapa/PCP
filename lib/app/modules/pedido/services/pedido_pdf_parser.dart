@@ -24,34 +24,61 @@ class PedidoPdfParser {
     final cleanText = text.replaceAll(RegExp(r'_{10,}'), '\n');
 
     // 2-5. Extração de Metadados e Financeiro
-    data['pedidoFinanceiro'] = _extractString(cleanText, r'Pedido\s*[:\-]?\s*(\d+)');
-    data['clienteCodigo'] = _extractString(cleanText, r'Cliente\s*[:\-]?\s*(\d+)');
-    data['clienteNome'] = _extractString(cleanText, r'Cliente\s*[:\-]?\s*\d+\s*[-]?\s*([^\n\r]+)');
-    data['planilhamento'] = _extractString(cleanText, r'(?:Planilhamento|Plan\.)\s*[:\-]?\s*([^\n\r]+)');
-    data['romaneio'] = _extractString(cleanText, r'(?:Romaneio|Rom\.)\s*[:\-]?\s*([^\n\r]+)');
+    data['pedidoFinanceiro'] =
+        _extractString(cleanText, r'Pedido\s*[:\-]?\s*(\d+)');
+    data['clienteCodigo'] =
+        _extractString(cleanText, r'Cliente\s*[:\-]?\s*(\d+)');
+    data['clienteNome'] = _extractString(
+        cleanText, r'Cliente\s*[:\-]?\s*\d+\s*[-]?\s*([^\n\r]+)');
+    data['planilhamento'] = _extractString(
+        cleanText, r'(?:Planilhamento|Plan\.)\s*[:\-]?\s*([^\n\r]+)');
+    data['romaneio'] =
+        _extractString(cleanText, r'(?:Romaneio|Rom\.)\s*[:\-]?\s*([^\n\r]+)');
     data['taxas'] = _extractValue(cleanText, r'Taxas\s*[:\-]?\s*([\d,.]+)');
-    data['desconto'] = _extractValue(cleanText, r'Desconto\s*[:\-]?\s*([\d,.]+)');
+    data['desconto'] =
+        _extractValue(cleanText, r'Desconto\s*[:\-]?\s*([\d,.]+)');
 
     // 6. Extrair Produtos
-    final List<String> units = ['KG', 'UN', 'PC', 'MT', 'PÇ', 'BAR', 'PCT', 'M2', 'CJ', 'UNID', 'Pç', 'FL', 'RL'];
+    final List<String> units = [
+      'KG',
+      'UN',
+      'PC',
+      'MT',
+      'PÇ',
+      'BAR',
+      'PCT',
+      'M2',
+      'CJ',
+      'UNID',
+      'Pç',
+      'FL',
+      'RL'
+    ];
 
     // Dividir pelo cabeçalho para evitar pegar fones/endereço como códigos
     int startIndex = cleanText.toLowerCase().indexOf('código');
-    if (startIndex == -1) startIndex = cleanText.toLowerCase().indexOf('descrição');
+    if (startIndex == -1)
+      startIndex = cleanText.toLowerCase().indexOf('descrição');
     if (startIndex == -1) startIndex = 0;
 
     final bodyText = cleanText.substring(startIndex);
 
     // ── ESTRATÉGIA 1: Regex concatenado (formato inline) ──────────────────────
     final String unitsPattern = units.join('|');
-    final itemRegExp = RegExp('(\\d{4,7})\\s*([A-Za-z][\\s\\S]+?)($unitsPattern)\\s*([\\d,.]+)', caseSensitive: false);
+    final itemRegExp = RegExp(
+        '(\\d{4,7})\\s*([A-Za-z][\\s\\S]+?)($unitsPattern)\\s*([\\d,.]+)',
+        caseSensitive: false);
     final matches = itemRegExp.allMatches(bodyText);
 
     for (final m in matches) {
       final codigo = m.group(1)!;
       if (codigo == data['pedidoFinanceiro']) continue;
 
-      String descricao = m.group(2)!.trim().replaceAll('\n', ' ').replaceAll(RegExp(r'\s+'), ' ');
+      String descricao = m
+          .group(2)!
+          .trim()
+          .replaceAll('\n', ' ')
+          .replaceAll(RegExp(r'\s+'), ' ');
       final unidade = m.group(3)!.toUpperCase();
       final numericTail = m.group(4)!;
 
@@ -79,7 +106,11 @@ class PedidoPdfParser {
     // Se a Estratégia 1 não encontrou nada, tenta parse sequencial
     if ((data['produtos'] as List).isEmpty) {
       log('Estratégia 1 vazia. Tentando parse linha a linha...');
-      final lines = bodyText.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+      final lines = bodyText
+          .split('\n')
+          .map((l) => l.trim())
+          .where((l) => l.isNotEmpty)
+          .toList();
 
       for (int i = 0; i < lines.length; i++) {
         final line = lines[i];
@@ -104,7 +135,9 @@ class PedidoPdfParser {
             break;
           }
           // Verificar se é "NÚMERO\nUNIDADE" pattern (ex: "1" seguido por "KG")
-          if (RegExp(r'^\d+$').hasMatch(lines[j]) && j + 1 < lines.length && units.contains(lines[j + 1].toUpperCase().trim())) {
+          if (RegExp(r'^\d+$').hasMatch(lines[j]) &&
+              j + 1 < lines.length &&
+              units.contains(lines[j + 1].toUpperCase().trim())) {
             // O número é a quantidade, a próxima linha é a unidade
             unidade = lines[j + 1].toUpperCase().trim();
             j += 2;
@@ -116,8 +149,11 @@ class PedidoPdfParser {
             if (upper.endsWith(' $u') || upper == u) {
               unidade = u;
               // Texto antes da unidade faz parte da descrição
-              final beforeUnit = lines[j].substring(0, lines[j].toUpperCase().lastIndexOf(u)).trim();
-              if (beforeUnit.isNotEmpty && !RegExp(r'^\d+$').hasMatch(beforeUnit)) {
+              final beforeUnit = lines[j]
+                  .substring(0, lines[j].toUpperCase().lastIndexOf(u))
+                  .trim();
+              if (beforeUnit.isNotEmpty &&
+                  !RegExp(r'^\d+$').hasMatch(beforeUnit)) {
                 descricao += ' $beforeUnit';
               }
               foundUnit = true;
@@ -171,12 +207,17 @@ class PedidoPdfParser {
     // 8. Totais Finais (Soma calculada e Subtotal de conferência)
     double vSubtotalCalculado = 0;
     for (final p in data['produtos']) {
-        vSubtotalCalculado += p['total'];
+      vSubtotalCalculado += p['total'];
     }
-    
-    final double subPDF = _extractValue(cleanText, r'Subtotal\s*[:\-]?\s*([\d,.]+)');
-    data['subtotal'] = vSubtotalCalculado > 0 ? double.parse(vSubtotalCalculado.toStringAsFixed(2)) : subPDF;
-    data['total'] = double.parse((data['subtotal'] + data['taxas'] - data['desconto']).toStringAsFixed(2));
+
+    final double subPDF =
+        _extractValue(cleanText, r'Subtotal\s*[:\-]?\s*([\d,.]+)');
+    data['subtotal'] = vSubtotalCalculado > 0
+        ? double.parse(vSubtotalCalculado.toStringAsFixed(2))
+        : subPDF;
+    data['total'] = double.parse(
+        (data['subtotal'] + data['taxas'] - data['desconto'])
+            .toStringAsFixed(2));
 
     log('RESUMO: Itens=${data['produtos'].length} | Subtotal=${data['subtotal']} | Total=${data['total']}');
 
@@ -194,30 +235,30 @@ class PedidoPdfParser {
   static List<double>? _breakConcatenatedNumbers(String numStr) {
     String clean = numStr.replaceAll('.', '');
     for (int i = 1; i < clean.length - 1; i++) {
-        for (int j = i + 1; j < clean.length; j++) {
-            String qStr = clean.substring(0, i);
-            String uStr = clean.substring(i, j);
-            String tStr = clean.substring(j);
+      for (int j = i + 1; j < clean.length; j++) {
+        String qStr = clean.substring(0, i);
+        String uStr = clean.substring(i, j);
+        String tStr = clean.substring(j);
 
-            int tCommaPos = tStr.indexOf(',');
-            if (tCommaPos == -1 || tStr.length - tCommaPos - 1 != 2) continue;
-            
-            if (uStr.isEmpty || uStr == ',') continue;
-            int uCommaPos = uStr.indexOf(',');
-            if (uCommaPos != -1 && uCommaPos != uStr.lastIndexOf(',')) continue;
-            
-            if (qStr.isEmpty || qStr == ',') continue;
-            int qCommaPos = qStr.indexOf(',');
-            if (qCommaPos != -1 && qCommaPos != qStr.lastIndexOf(',')) continue;
+        int tCommaPos = tStr.indexOf(',');
+        if (tCommaPos == -1 || tStr.length - tCommaPos - 1 != 2) continue;
 
-            double qVal = double.parse(qStr.replaceAll(',', '.'));
-            double uVal = double.parse(uStr.replaceAll(',', '.'));
-            double tVal = double.parse(tStr.replaceAll(',', '.'));
+        if (uStr.isEmpty || uStr == ',') continue;
+        int uCommaPos = uStr.indexOf(',');
+        if (uCommaPos != -1 && uCommaPos != uStr.lastIndexOf(',')) continue;
 
-            if ((qVal * uVal - tVal).abs() <= 0.05) {
-                return [qVal, uVal, tVal];
-            }
+        if (qStr.isEmpty || qStr == ',') continue;
+        int qCommaPos = qStr.indexOf(',');
+        if (qCommaPos != -1 && qCommaPos != qStr.lastIndexOf(',')) continue;
+
+        double qVal = double.parse(qStr.replaceAll(',', '.'));
+        double uVal = double.parse(uStr.replaceAll(',', '.'));
+        double tVal = double.parse(tStr.replaceAll(',', '.'));
+
+        if ((qVal * uVal - tVal).abs() <= 0.05) {
+          return [qVal, uVal, tVal];
         }
+      }
     }
     return null;
   }
@@ -227,16 +268,16 @@ class PedidoPdfParser {
       final regExp = RegExp(pattern, caseSensitive: false);
       final match = regExp.firstMatch(text);
       if (match != null) {
-        // Se pegou o grupo 1 (valor na mesma linha), usa ele. 
+        // Se pegou o grupo 1 (valor na mesma linha), usa ele.
         if (match.groupCount >= 1 && match.group(1) != null) {
-           return _parseDecimal(match.group(1)!);
+          return _parseDecimal(match.group(1)!);
         }
         // Senão, tenta na linha de baixo
         final index = match.end;
         final remainingText = text.substring(index);
         final valueMatch = RegExp(r'\s*([\d,.]+)').firstMatch(remainingText);
         if (valueMatch != null) {
-           return _parseDecimal(valueMatch.group(1) ?? '0');
+          return _parseDecimal(valueMatch.group(1) ?? '0');
         }
       }
     } catch (_) {}

@@ -33,7 +33,9 @@ class AppDrawer extends StatelessWidget {
             stream: FirestoreClient.notificacoes.dataStream.listen,
             builder: (context, snapshot) {
               final List<NotificacaoModel> notificacoes;
-              if (snapshot.hasData && snapshot.data != null && usuarioCtrl.usuario != null) {
+              if (snapshot.hasData &&
+                  snapshot.data != null &&
+                  usuarioCtrl.usuario != null) {
                 notificacoes = notificacaoCtrl.getNotificaoByUsuario(
                   snapshot.data!,
                   usuarioCtrl.usuario!,
@@ -68,7 +70,8 @@ class AppDrawer extends StatelessWidget {
                   ListTile(
                     onTap: () => usuarioCtrl.clearCurrentUser(),
                     leading: Icon(Icons.exit_to_app, color: AppColors.error),
-                    title: Text('Sair', style: TextStyle(color: AppColors.error)),
+                    title:
+                        Text('Sair', style: TextStyle(color: AppColors.error)),
                   ),
                 ],
               );
@@ -263,7 +266,8 @@ class AppDrawerHeader extends StatelessWidget {
               if (usuario.role == UsuarioRole.administrador) ...[
                 if (kIsDev)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.orange,
                       borderRadius: BorderRadius.circular(4),
@@ -393,7 +397,8 @@ class AppDrawerItem extends StatelessWidget {
         if (usuario.isArmador) {
           isEnabled = item == AppModule.armacao;
         } else if (usuario.isOperador) {
-          isEnabled = item == AppModule.ordens || item == AppModule.materiaPrima;
+          isEnabled =
+              item == AppModule.ordens || item == AppModule.materiaPrima;
         } else {
           switch (item) {
             case AppModule.cliente:

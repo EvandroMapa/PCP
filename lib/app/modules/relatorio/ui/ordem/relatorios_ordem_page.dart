@@ -58,52 +58,52 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
   Widget build(BuildContext context) {
     return StreamOut(
       stream: relatorioCtrl.ordemViewModelStream.listen,
-        builder: (_, model) => ListView(
-          children: [
-            _filterWidget(model),
-            Divisor(color: Colors.grey[700]!, height: 1.5),
-            if (model.type == RelatorioOrdemType.STATUS &&
-                model.relatorio != null) ...[
-              itemInfo(
-                'Total Geral',
-                relatorioCtrl.getOrdemTotal().toKg(),
-                labelStyle: AppCss.mediumBold,
-                valueStyle: AppCss.mediumBold,
-                padding: const EdgeInsets.all(16),
-              ),
-              Divisor(color: Colors.grey[700]!),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text('Totais por Bitola', style: AppCss.mediumBold),
-              ),
-              const Divisor(),
-              for (final produto in relatorioCtrl.getOrdemTotalProduto())
-                Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: itemInfo(
-                        produto.produto.descricao,
-                        produto.qtde.toKg(),
-                      ),
-                    ),
-                    const Divisor(),
-                  ],
-                ),
-            ],
+      builder: (_, model) => ListView(
+        children: [
+          _filterWidget(model),
+          Divisor(color: Colors.grey[700]!, height: 1.5),
+          if (model.type == RelatorioOrdemType.STATUS &&
+              model.relatorio != null) ...[
+            itemInfo(
+              'Total Geral',
+              relatorioCtrl.getOrdemTotal().toKg(),
+              labelStyle: AppCss.mediumBold,
+              valueStyle: AppCss.mediumBold,
+              padding: const EdgeInsets.all(16),
+            ),
             Divisor(color: Colors.grey[700]!),
-            if (model.relatorio != null)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text('Totais por Bitola', style: AppCss.mediumBold),
+            ),
+            const Divisor(),
+            for (final produto in relatorioCtrl.getOrdemTotalProduto())
               Column(
                 children: [
-                  if (model.type == RelatorioOrdemType.ORDEM)
-                    model.relatorio!.ordem,
-                  if (model.type == RelatorioOrdemType.STATUS)
-                    ...model.relatorio!.ordens,
-                ].map((e) => itemRelatorio(model, e)).toList(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: itemInfo(
+                      produto.produto.descricao,
+                      produto.qtde.toKg(),
+                    ),
+                  ),
+                  const Divisor(),
+                ],
               ),
           ],
-        ),
-      );
+          Divisor(color: Colors.grey[700]!),
+          if (model.relatorio != null)
+            Column(
+              children: [
+                if (model.type == RelatorioOrdemType.ORDEM)
+                  model.relatorio!.ordem,
+                if (model.type == RelatorioOrdemType.STATUS)
+                  ...model.relatorio!.ordens,
+              ].map((e) => itemRelatorio(model, e)).toList(),
+            ),
+        ],
+      ),
+    );
   }
 
   Padding _filterWidget(RelatorioOrdemViewModel model) {
@@ -202,8 +202,8 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
                       controller: TextController(
                         text: model.dates != null
                             ? ([model.dates!.start, model.dates!.end]
-                                  .map((e) => DateFormat('dd/MM/yyy').format(e))
-                                  .join(' até '))
+                                .map((e) => DateFormat('dd/MM/yyy').format(e))
+                                .join(' até '))
                             : 'Selecione',
                       ),
                     ),
@@ -353,8 +353,7 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
             Expanded(
               child: Text(
                 label,
-                style:
-                    labelStyle ??
+                style: labelStyle ??
                     AppCss.minimumRegular.copyWith(fontWeight: FontWeight.w500),
               ),
             ),
@@ -368,7 +367,7 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
             ),
           ],
         ),
-        ),
-      );
+      ),
+    );
   }
 }

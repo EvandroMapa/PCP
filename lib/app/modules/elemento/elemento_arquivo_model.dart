@@ -1,4 +1,3 @@
-
 class ElementoArquivoModel {
   final String id;
   final String elementoId;

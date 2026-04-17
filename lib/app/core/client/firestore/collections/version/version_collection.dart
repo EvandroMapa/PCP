@@ -72,13 +72,13 @@ class VersionCollection {
             : collection)
         .snapshots()
         .listen((e) async {
-          final first = e.docs.firstOrNull;
-          if (first != null) {
-            final version = VersionModel.fromMap(first.data());
-            dataStream.add(version);
-            _checkVersion(version);
-          }
-        });
+      final first = e.docs.firstOrNull;
+      if (first != null) {
+        final version = VersionModel.fromMap(first.data());
+        dataStream.add(version);
+        _checkVersion(version);
+      }
+    });
   }
 
   Future<void> _checkVersion(VersionModel version) async {

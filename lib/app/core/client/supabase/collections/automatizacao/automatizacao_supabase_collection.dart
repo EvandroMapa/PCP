@@ -29,9 +29,10 @@ class AutomatizacaoSupabaseCollection extends AutomatizacaoCollection {
           .from(tableName)
           .select()
           .eq('id', 'instance');
-      
+
       if (response.isNotEmpty) {
-        final automatizacao = AutomatizacaoModel.fromSupabaseMap(response.first);
+        final automatizacao =
+            AutomatizacaoModel.fromSupabaseMap(response.first);
         dataStream.add(automatizacao);
       } else {
         dataStream.add(AutomatizacaoModel.empty);
@@ -54,10 +55,8 @@ class AutomatizacaoSupabaseCollection extends AutomatizacaoCollection {
     try {
       final payload = model.toSupabaseMap();
       payload['id'] = 'instance';
-      
-      await SupabaseService.client
-          .from(tableName)
-          .upsert(payload);
+
+      await SupabaseService.client.from(tableName).upsert(payload);
       await fetch();
     } catch (e) {
       print('Supabase Error (Automatizacao.update): $e');
@@ -88,7 +87,8 @@ class AutomatizacaoSupabaseCollection extends AutomatizacaoCollection {
         .eq('id', 'instance')
         .listen((List<Map<String, dynamic>> data) {
           if (data.isNotEmpty) {
-            final automatizacao = AutomatizacaoModel.fromSupabaseMap(data.first);
+            final automatizacao =
+                AutomatizacaoModel.fromSupabaseMap(data.first);
             dataStream.add(automatizacao);
           }
         });

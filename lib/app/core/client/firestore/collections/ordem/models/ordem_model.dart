@@ -32,7 +32,8 @@ class OrdemModel {
           final produtoId = x['produtoId'] ?? x['produto_id'] ?? '';
           if (pedidoId.isEmpty || produtoId.isEmpty) continue;
 
-          final produto = BackendClient.pedidos.getProdutoByPedidoId(pedidoId, produtoId);
+          final produto =
+              BackendClient.pedidos.getProdutoByPedidoId(pedidoId, produtoId);
           result.add(produto);
         } catch (_) {
           // Ignora produtos que falham ao carregar para evitar trava na UI
@@ -45,9 +46,8 @@ class OrdemModel {
 
   set produtos(List<PedidoProdutoModel> value) {
     _produtosIniciais = value;
-    idPedidosProdutosRefs = value
-        .map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id})
-        .toList();
+    idPedidosProdutosRefs =
+        value.map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id}).toList();
   }
 
   bool selected = true;
@@ -59,12 +59,11 @@ class OrdemModel {
   String get localizator => id.contains('_') ? id.split('_').first : id;
 
   List<PedidoModel> get pedidos {
-    final pedidosIds = produtos
-        .map((e) => e.pedido)
-        .map((e) => e.id)
-        .toSet()
+    final pedidosIds =
+        produtos.map((e) => e.pedido).map((e) => e.id).toSet().toList();
+    return pedidosIds
+        .map<PedidoModel>((e) => BackendClient.pedidos.getById(e))
         .toList();
-    return pedidosIds.map<PedidoModel>((e) => BackendClient.pedidos.getById(e)).toList();
   }
 
   double get qtdeTotal => produtos.isEmpty
@@ -88,7 +87,8 @@ class OrdemModel {
           );
   }
 
-  bool get _isModoPorOs => PreferencesService.apontamentoProducaoCD.value == 'por_os';
+  bool get _isModoPorOs =>
+      PreferencesService.apontamentoProducaoCD.value == 'por_os';
 
   double qtdeAguardando() {
     if (_isModoPorOs && produtos.isNotEmpty) {
@@ -203,7 +203,8 @@ class OrdemModel {
   bool hasProduto(String produtoId) {
     if (produtoId.isEmpty) return false;
     return idPedidosProdutosRefs.any((ref) {
-      final id = (ref['produtoId'] ?? ref['produto_id'] ?? '').toString().trim();
+      final id =
+          (ref['produtoId'] ?? ref['produto_id'] ?? '').toString().trim();
       return id == produtoId.trim();
     });
   }
@@ -223,27 +224,29 @@ class OrdemModel {
     this.endAt,
     required this.history,
     this.idPedidosProdutosRefs = const [],
-  })  : _produtosIniciais = produtos {
+  }) : _produtosIniciais = produtos {
     if (idPedidosProdutosRefs.isEmpty && produtos.isNotEmpty) {
-       idPedidosProdutosRefs = produtos.map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id}).toList();
+      idPedidosProdutosRefs = produtos
+          .map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id})
+          .toList();
     }
   }
 
   Map<String, dynamic> toMap() => {
-    'id': id,
-    'createdAt': createdAt.millisecondsSinceEpoch,
-    'endAt': endAt?.millisecondsSinceEpoch,
-    'produto': produto.toMap(),
-    'idPedidosProdutos': produtos
-        .map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id})
-        .toList(),
-    'freezed': freezed.toMap(),
-    'beltIndex': beltIndex,
-    'materiaPrima': materiaPrima?.toMap(),
-    'isArchived': isArchived,
-    'updatedAt': updatedAt.millisecondsSinceEpoch,
-    'history': history.map((e) => e.toJson()).toList(),
-  };
+        'id': id,
+        'createdAt': createdAt.millisecondsSinceEpoch,
+        'endAt': endAt?.millisecondsSinceEpoch,
+        'produto': produto.toMap(),
+        'idPedidosProdutos': produtos
+            .map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id})
+            .toList(),
+        'freezed': freezed.toMap(),
+        'beltIndex': beltIndex,
+        'materiaPrima': materiaPrima?.toMap(),
+        'isArchived': isArchived,
+        'updatedAt': updatedAt.millisecondsSinceEpoch,
+        'history': history.map((e) => e.toJson()).toList(),
+      };
 
   factory OrdemModel.fromMap(Map<String, dynamic> map) {
     dynamic tryDecode(dynamic value) {
@@ -258,10 +261,12 @@ class OrdemModel {
     }
 
     final produtoRaw = tryDecode(map['produto'] ?? map['produto_raw']);
-    final materiaPrimaRaw = tryDecode(map['materiaPrima'] ?? map['materia_prima_raw']);
+    final materiaPrimaRaw =
+        tryDecode(map['materiaPrima'] ?? map['materia_prima_raw']);
     final freezedRaw = tryDecode(map['freezed']);
     final historyRaw = tryDecode(map['history']);
-    final idPedidosProdutosRaw = tryDecode(map['idPedidosProdutos'] ?? map['id_pedidos_produtos']);
+    final idPedidosProdutosRaw =
+        tryDecode(map['idPedidosProdutos'] ?? map['id_pedidos_produtos']);
 
     // Dynamic linking: busca Produto e MateriaPrima atualizados no cache reativo
     final produtoId = ProdutoModel.fromMap(produtoRaw).id;
@@ -303,8 +308,12 @@ class OrdemModel {
           return list.map((x) {
             final mapx = Map<String, dynamic>.from(x);
             return {
-              'pedidoId': (mapx['pedidoId'] ?? mapx['pedido_id'] ?? '').toString().trim(),
-              'produtoId': (mapx['produtoId'] ?? mapx['produto_id'] ?? '').toString().trim(),
+              'pedidoId': (mapx['pedidoId'] ?? mapx['pedido_id'] ?? '')
+                  .toString()
+                  .trim(),
+              'produtoId': (mapx['produtoId'] ?? mapx['produto_id'] ?? '')
+                  .toString()
+                  .trim(),
             };
           }).toList();
         } catch (_) {
@@ -329,7 +338,8 @@ class OrdemModel {
     );
   }
 
-  factory OrdemModel.fromSupabaseMap(Map<String, dynamic> map) => OrdemModel.fromMap(map);
+  factory OrdemModel.fromSupabaseMap(Map<String, dynamic> map) =>
+      OrdemModel.fromMap(map);
 
   factory OrdemModel.empty() => OrdemModel(
         id: '',
@@ -342,18 +352,18 @@ class OrdemModel {
       );
 
   Map<String, dynamic> toSupabaseMap() => {
-    'id': id,
-    'created_at': createdAt.toIso8601String(),
-    'updated_at': updatedAt.toIso8601String(),
-    'end_at': endAt?.toIso8601String(),
-    'produto_raw': produto.toMap(),
-    'id_pedidos_produtos': idPedidosProdutosRefs,
-    'freezed': freezed.toMap(),
-    'is_archived': isArchived,
-    'belt_index': beltIndex,
-    'materia_prima_raw': materiaPrima?.toMap(),
-    'history': history.map((e) => e.toJson()).toList(),
-  };
+        'id': id,
+        'created_at': createdAt.toIso8601String(),
+        'updated_at': updatedAt.toIso8601String(),
+        'end_at': endAt?.toIso8601String(),
+        'produto_raw': produto.toMap(),
+        'id_pedidos_produtos': idPedidosProdutosRefs,
+        'freezed': freezed.toMap(),
+        'is_archived': isArchived,
+        'belt_index': beltIndex,
+        'materia_prima_raw': materiaPrima?.toMap(),
+        'history': history.map((e) => e.toJson()).toList(),
+      };
 
   String toJson() => json.encode(toMap());
 
@@ -391,10 +401,10 @@ class OrdemFreezedModel {
   final DateTime updatedAt;
 
   static static() => OrdemFreezedModel(
-    isFreezed: false,
-    reason: TextController(),
-    updatedAt: DateTime.now(),
-  );
+        isFreezed: false,
+        reason: TextController(),
+        updatedAt: DateTime.now(),
+      );
 
   OrdemFreezedModel({
     required this.isFreezed,

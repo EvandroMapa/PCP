@@ -23,7 +23,13 @@ class _BackupScheduleDialogState extends State<BackupScheduleDialog> {
   bool _loading = true;
 
   final _diasNomes = {
-    1: 'Seg', 2: 'Ter', 3: 'Qua', 4: 'Qui', 5: 'Sex', 6: 'Sáb', 7: 'Dom',
+    1: 'Seg',
+    2: 'Ter',
+    3: 'Qua',
+    4: 'Qui',
+    5: 'Sex',
+    6: 'Sáb',
+    7: 'Dom',
   };
 
   @override
@@ -90,7 +96,8 @@ class _BackupScheduleDialogState extends State<BackupScheduleDialog> {
               color: AppColors.primaryMain.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(Icons.schedule_rounded, color: AppColors.primaryMain, size: 22),
+            child: Icon(Icons.schedule_rounded,
+                color: AppColors.primaryMain, size: 22),
           ),
           const SizedBox(width: 12),
           Column(
@@ -199,7 +206,8 @@ class _BackupScheduleDialogState extends State<BackupScheduleDialog> {
               onTap: _pickTime,
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -208,7 +216,8 @@ class _BackupScheduleDialogState extends State<BackupScheduleDialog> {
                     ],
                   ),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primaryMain.withValues(alpha: 0.3)),
+                  border: Border.all(
+                      color: AppColors.primaryMain.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -226,7 +235,8 @@ class _BackupScheduleDialogState extends State<BackupScheduleDialog> {
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: AppColors.primaryMain.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -287,7 +297,8 @@ class _BackupScheduleDialogState extends State<BackupScheduleDialog> {
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text('Cancelar',
-              style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w500)),
+              style: TextStyle(
+                  color: Colors.grey[600], fontWeight: FontWeight.w500)),
         ),
         const SizedBox(width: 4),
         ElevatedButton.icon(
@@ -295,7 +306,8 @@ class _BackupScheduleDialogState extends State<BackupScheduleDialog> {
             backgroundColor: AppColors.primaryMain,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             elevation: 0,
           ),
           icon: const Icon(Icons.save_rounded, size: 18),

@@ -87,12 +87,10 @@ class _AppTextButtonState extends State<AppTextButton> {
     final outlined = Fill.outlined == widget.fill;
     return ButtonStyle(
       fixedSize: const WidgetStatePropertyAll(Size(double.maxFinite, 43)),
-      foregroundColor: outlined
-          ? WidgetStatePropertyAll(AppColors.primaryMain)
-          : null,
-      backgroundColor: outlined
-          ? WidgetStatePropertyAll(AppColors.white)
-          : null,
+      foregroundColor:
+          outlined ? WidgetStatePropertyAll(AppColors.primaryMain) : null,
+      backgroundColor:
+          outlined ? WidgetStatePropertyAll(AppColors.white) : null,
       shape: outlined
           ? WidgetStatePropertyAll(
               RoundedRectangleBorder(

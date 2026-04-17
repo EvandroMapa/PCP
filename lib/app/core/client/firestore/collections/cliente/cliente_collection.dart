@@ -29,9 +29,8 @@ class ClienteCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     final data = await FirebaseFirestore.instance.collection(name).get();
-    final countries = data.docs
-        .map((e) => ClienteModel.fromMap(e.data()))
-        .toList();
+    final countries =
+        data.docs.map((e) => ClienteModel.fromMap(e.data())).toList();
     countries.sort((a, b) => a.nome.compareTo(b.nome));
     dataStream.add(countries);
   }
@@ -71,12 +70,11 @@ class ClienteCollection {
             : collection)
         .snapshots()
         .listen((e) {
-          final countries = e.docs
-              .map((e) => ClienteModel.fromMap(e.data()))
-              .toList();
-          countries.sort((a, b) => a.nome.compareTo(b.nome));
-          dataStream.add(countries);
-        });
+      final countries =
+          e.docs.map((e) => ClienteModel.fromMap(e.data())).toList();
+      countries.sort((a, b) => a.nome.compareTo(b.nome));
+      dataStream.add(countries);
+    });
   }
 
   ClienteModel getById(String id) =>

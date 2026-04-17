@@ -29,9 +29,8 @@ class UsuarioCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     final data = await FirebaseFirestore.instance.collection(name).get();
-    final usuarios = data.docs
-        .map((e) => UsuarioModel.fromMap(e.data()))
-        .toList();
+    final usuarios =
+        data.docs.map((e) => UsuarioModel.fromMap(e.data())).toList();
 
     dataStream.add(usuarios);
   }
@@ -71,11 +70,9 @@ class UsuarioCollection {
             : collection)
         .snapshots()
         .listen((e) {
-          final data = e.docs
-              .map((e) => UsuarioModel.fromMap(e.data()))
-              .toList();
-          dataStream.add(data);
-        });
+      final data = e.docs.map((e) => UsuarioModel.fromMap(e.data())).toList();
+      dataStream.add(data);
+    });
   }
 
   UsuarioModel getById(String id) =>

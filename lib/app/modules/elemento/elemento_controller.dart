@@ -60,35 +60,37 @@ class ElementoController {
 
     // Escuta mudanças globais em tempo real para sincronizar o status e dados básicos
     _globalElementosSub?.cancel();
-    _globalElementosSub = AppSupabaseClient.elementos.dataStream.listen.listen((globalElementos) {
+    _globalElementosSub =
+        AppSupabaseClient.elementos.dataStream.listen.listen((globalElementos) {
       if (_currentPedidoId == null) return;
 
       final currentList = elementosStream.value.toList();
       bool changed = false;
 
       for (final globalEl in globalElementos) {
-         if (globalEl.pedidoId != _currentPedidoId) continue;
-         final idx = currentList.indexWhere((e) => e.id == globalEl.id);
-         if (idx != -1) {
-            // Se o status, qtde, qtdePronto ou nome mudou globalmente, atualiza localmente
-            if (currentList[idx].status != globalEl.status ||
-                currentList[idx].qtde != globalEl.qtde ||
-                currentList[idx].qtdePronto != globalEl.qtdePronto ||
-                currentList[idx].nome != globalEl.nome) {
-               currentList[idx] = currentList[idx].copyWith(
-                 status: globalEl.status,
-                 qtde: globalEl.qtde,
-                 qtdePronto: globalEl.qtdePronto,
-                 nome: globalEl.nome,
-               );
-               changed = true;
-            }
-         }
+        if (globalEl.pedidoId != _currentPedidoId) continue;
+        final idx = currentList.indexWhere((e) => e.id == globalEl.id);
+        if (idx != -1) {
+          // Se o status, qtde, qtdePronto ou nome mudou globalmente, atualiza localmente
+          if (currentList[idx].status != globalEl.status ||
+              currentList[idx].qtde != globalEl.qtde ||
+              currentList[idx].qtdePronto != globalEl.qtdePronto ||
+              currentList[idx].nome != globalEl.nome) {
+            currentList[idx] = currentList[idx].copyWith(
+              status: globalEl.status,
+              qtde: globalEl.qtde,
+              qtdePronto: globalEl.qtdePronto,
+              nome: globalEl.nome,
+            );
+            changed = true;
+          }
+        }
       }
 
       if (changed) {
         // Ordenar alfabeticamente A-Z
-        currentList.sort((a, b) => a.nome.toLowerCase().trim().compareTo(b.nome.toLowerCase().trim()));
+        currentList.sort((a, b) =>
+            a.nome.toLowerCase().trim().compareTo(b.nome.toLowerCase().trim()));
         elementosStream.add(currentList);
         _validacaoDirty = true;
         // Recalcular o resumo de armação para refletir no Kanban
@@ -128,12 +130,14 @@ class ElementoController {
       if (elementosRaw.isEmpty) {
         elementosStream.add(<ElementoModel>[]);
         _validacaoDirty = true;
-        _updateArmacaoResumo(pedidoId, <ElementoModel>[]); // Zera o resumo do Kanban no BD
+        _updateArmacaoResumo(
+            pedidoId, <ElementoModel>[]); // Zera o resumo do Kanban no BD
         return;
       }
 
       final eIds = elementosRaw.map((e) => e['id'].toString()).toList();
-      loadingMessageStream.add('Montando ${elementosRaw.length} elementos detectados...\nBaixando posições e arquivos...');
+      loadingMessageStream.add(
+          'Montando ${elementosRaw.length} elementos detectados...\nBaixando posições e arquivos...');
 
       log('onFetch: 3 - Buscando posicoes e arquivos...');
       // Busca todas as posições e arquivos em paralelo (2 queries em vez de N*2)
@@ -159,13 +163,18 @@ class ElementoController {
         final eId = e['id'].toString();
         return ElementoModel.fromSupabaseMap(
           e,
-          posicoesRaw: allPosicoes.where((p) => p['elemento_id'].toString() == eId).toList(),
-          arquivosRaw: allArquivos.where((a) => a['elemento_id'].toString() == eId).toList(),
+          posicoesRaw: allPosicoes
+              .where((p) => p['elemento_id'].toString() == eId)
+              .toList(),
+          arquivosRaw: allArquivos
+              .where((a) => a['elemento_id'].toString() == eId)
+              .toList(),
         );
       }).toList();
 
       // Ordenar alfabeticamente A-Z (Garante ordem mesmo que o banco falte)
-      result.sort((a, b) => a.nome.toLowerCase().trim().compareTo(b.nome.toLowerCase().trim()));
+      result.sort((a, b) =>
+          a.nome.toLowerCase().trim().compareTo(b.nome.toLowerCase().trim()));
 
       elementosStream.add(result);
       // Injeta os dados novos na coleção global para atualizar outros módulos (Ex: Armação no Tablet) reativamente
@@ -182,7 +191,8 @@ class ElementoController {
   }
 
   // ─── RECÁLCULO DO RESUMO DE ARMAÇÃO ──────────────────────────────────────
-  Future<void> _updateArmacaoResumo(String pedidoId, List<ElementoModel> elementos) async {
+  Future<void> _updateArmacaoResumo(
+      String pedidoId, List<ElementoModel> elementos) async {
     try {
       int totalQtd = 0;
       double totalPeso = 0;
@@ -204,22 +214,32 @@ class ElementoController {
         totalPeso += e.pesoTotal;
 
         if (e.status == ElementoStatus.aguardando) {
-          qtdPorStatus[ElementoStatus.aguardando] = (qtdPorStatus[ElementoStatus.aguardando] ?? 0) + e.qtde;
-          pesoPorStatus[ElementoStatus.aguardando] = (pesoPorStatus[ElementoStatus.aguardando] ?? 0) + e.pesoTotal;
+          qtdPorStatus[ElementoStatus.aguardando] =
+              (qtdPorStatus[ElementoStatus.aguardando] ?? 0) + e.qtde;
+          pesoPorStatus[ElementoStatus.aguardando] =
+              (pesoPorStatus[ElementoStatus.aguardando] ?? 0) + e.pesoTotal;
         } else if (e.status == ElementoStatus.pronto) {
-          qtdPorStatus[ElementoStatus.pronto] = (qtdPorStatus[ElementoStatus.pronto] ?? 0) + e.qtde;
-          pesoPorStatus[ElementoStatus.pronto] = (pesoPorStatus[ElementoStatus.pronto] ?? 0) + e.pesoTotal;
+          qtdPorStatus[ElementoStatus.pronto] =
+              (qtdPorStatus[ElementoStatus.pronto] ?? 0) + e.qtde;
+          pesoPorStatus[ElementoStatus.pronto] =
+              (pesoPorStatus[ElementoStatus.pronto] ?? 0) + e.pesoTotal;
         } else {
           // armando — cálculo proporcional baseado no qtdePronto
           final qtdeProntoFrac = e.qtdePronto.toDouble();
           final qtdeArmandoFrac = (e.qtde - e.qtdePronto).toDouble();
           final pesoPorUnidade = e.qtde > 0 ? e.pesoTotal / e.qtde : 0.0;
 
-          qtdPorStatus[ElementoStatus.pronto] = (qtdPorStatus[ElementoStatus.pronto] ?? 0) + qtdeProntoFrac;
-          pesoPorStatus[ElementoStatus.pronto] = (pesoPorStatus[ElementoStatus.pronto] ?? 0) + (qtdeProntoFrac * pesoPorUnidade);
+          qtdPorStatus[ElementoStatus.pronto] =
+              (qtdPorStatus[ElementoStatus.pronto] ?? 0) + qtdeProntoFrac;
+          pesoPorStatus[ElementoStatus.pronto] =
+              (pesoPorStatus[ElementoStatus.pronto] ?? 0) +
+                  (qtdeProntoFrac * pesoPorUnidade);
 
-          qtdPorStatus[ElementoStatus.armando] = (qtdPorStatus[ElementoStatus.armando] ?? 0) + qtdeArmandoFrac;
-          pesoPorStatus[ElementoStatus.armando] = (pesoPorStatus[ElementoStatus.armando] ?? 0) + (qtdeArmandoFrac * pesoPorUnidade);
+          qtdPorStatus[ElementoStatus.armando] =
+              (qtdPorStatus[ElementoStatus.armando] ?? 0) + qtdeArmandoFrac;
+          pesoPorStatus[ElementoStatus.armando] =
+              (pesoPorStatus[ElementoStatus.armando] ?? 0) +
+                  (qtdeArmandoFrac * pesoPorUnidade);
         }
       }
 
@@ -230,20 +250,32 @@ class ElementoController {
           'aguardando': {
             'qtd': qtdPorStatus[ElementoStatus.aguardando],
             'peso': pesoPorStatus[ElementoStatus.aguardando],
-            'prcnt_qtd': totalQtd > 0 ? qtdPorStatus[ElementoStatus.aguardando]! / totalQtd : 0,
-            'prcnt_peso': totalPeso > 0 ? pesoPorStatus[ElementoStatus.aguardando]! / totalPeso : 0,
+            'prcnt_qtd': totalQtd > 0
+                ? qtdPorStatus[ElementoStatus.aguardando]! / totalQtd
+                : 0,
+            'prcnt_peso': totalPeso > 0
+                ? pesoPorStatus[ElementoStatus.aguardando]! / totalPeso
+                : 0,
           },
           'armando': {
             'qtd': qtdPorStatus[ElementoStatus.armando],
             'peso': pesoPorStatus[ElementoStatus.armando],
-            'prcnt_qtd': totalQtd > 0 ? qtdPorStatus[ElementoStatus.armando]! / totalQtd : 0,
-            'prcnt_peso': totalPeso > 0 ? pesoPorStatus[ElementoStatus.armando]! / totalPeso : 0,
+            'prcnt_qtd': totalQtd > 0
+                ? qtdPorStatus[ElementoStatus.armando]! / totalQtd
+                : 0,
+            'prcnt_peso': totalPeso > 0
+                ? pesoPorStatus[ElementoStatus.armando]! / totalPeso
+                : 0,
           },
           'pronto': {
             'qtd': qtdPorStatus[ElementoStatus.pronto],
             'peso': pesoPorStatus[ElementoStatus.pronto],
-            'prcnt_qtd': totalQtd > 0 ? qtdPorStatus[ElementoStatus.pronto]! / totalQtd : 0,
-            'prcnt_peso': totalPeso > 0 ? pesoPorStatus[ElementoStatus.pronto]! / totalPeso : 0,
+            'prcnt_qtd': totalQtd > 0
+                ? qtdPorStatus[ElementoStatus.pronto]! / totalQtd
+                : 0,
+            'prcnt_peso': totalPeso > 0
+                ? pesoPorStatus[ElementoStatus.pronto]! / totalPeso
+                : 0,
           },
         }
       };
@@ -251,12 +283,12 @@ class ElementoController {
       // Persistir no Supabase
       await SupabaseService.client
           .from('pedidos')
-          .update({'armacao_resumo': resume})
-          .eq('id', pedidoId);
+          .update({'armacao_resumo': resume}).eq('id', pedidoId);
 
       // Atualizar localmente no objeto pedido para refletir no Kanban
-      final pedido = BackendClient.pedidos.pepidosUnarchiveds
-          .firstWhere((p) => p.id == pedidoId, orElse: () => throw 'Pedido não encontrado');
+      final pedido = BackendClient.pedidos.pepidosUnarchiveds.firstWhere(
+          (p) => p.id == pedidoId,
+          orElse: () => throw 'Pedido não encontrado');
       pedido.armacaoResumo.clear();
       pedido.armacaoResumo.addAll(resume);
 
@@ -268,8 +300,7 @@ class ElementoController {
 
   // ─── SALVAR ELEMENTO3
   // ──────────────────────────────────────────────────────
-  Future<void> onSaveElemento(
-      ElementoCreateModel form, String pedidoId) async {
+  Future<void> onSaveElemento(ElementoCreateModel form, String pedidoId) async {
     try {
       final elementoMap = {
         'id': form.id,
@@ -278,9 +309,7 @@ class ElementoController {
         'qtde': form.qtdeInt,
       };
 
-      await SupabaseService.client
-          .from('elementos')
-          .upsert(elementoMap);
+      await SupabaseService.client.from('elementos').upsert(elementoMap);
 
       // Salva as posições
       if (form.isEdit) {
@@ -314,13 +343,20 @@ class ElementoController {
   Future<void> onDeleteElemento(ElementoModel elemento) async {
     try {
       if (elemento.status != ElementoStatus.aguardando) {
-         showInfoDialog('Não Permitido: Não é possível excluir um elemento que já está sendo armando ou pronto.');
-         return;
+        showInfoDialog(
+            'Não Permitido: Não é possível excluir um elemento que já está sendo armando ou pronto.');
+        return;
       }
       showLoadingDialog();
       // Remove dependências manualmente para evitar violar Foreign Keys caso não haja ON DELETE CASCADE
-      await SupabaseService.client.from('elemento_posicoes').delete().eq('elemento_id', elemento.id);
-      await SupabaseService.client.from('elemento_arquivos').delete().eq('elemento_id', elemento.id);
+      await SupabaseService.client
+          .from('elemento_posicoes')
+          .delete()
+          .eq('elemento_id', elemento.id);
+      await SupabaseService.client
+          .from('elemento_arquivos')
+          .delete()
+          .eq('elemento_id', elemento.id);
 
       await SupabaseService.client
           .from('elementos')
@@ -338,18 +374,21 @@ class ElementoController {
   }
 
   // ─── GERENCIAMENTO DE ARQUIVOS ─────────────────────────────────────────
-  Future<void> onAddArquivo(
-      ElementoModel elemento, String name, Uint8List bytes, String mimeType) async {
+  Future<void> onAddArquivo(ElementoModel elemento, String name,
+      Uint8List bytes, String mimeType) async {
     try {
-      final isPdf = mimeType == 'application/pdf' || name.toLowerCase().endsWith('.pdf');
+      final isPdf =
+          mimeType == 'application/pdf' || name.toLowerCase().endsWith('.pdf');
 
       if (isPdf) {
         // O dialog de loading com stream é aberto pela UI (_ElementoArquivosDialog)
         loadingMessageStream.add('Preparando otimização...');
         await _optimizeAndUploadPdf(elemento, name, bytes);
         await onFetch(elemento.pedidoId);
-        if (contextGlobal.mounted) Navigator.pop(contextGlobal); // Fecha o dialog da UI
-        NotificationService.showPositive('Sucesso', 'Desenho otimizado e anexado!');
+        if (contextGlobal.mounted)
+          Navigator.pop(contextGlobal); // Fecha o dialog da UI
+        NotificationService.showPositive(
+            'Sucesso', 'Desenho otimizado e anexado!');
         return;
       }
 
@@ -376,7 +415,8 @@ class ElementoController {
       await AppSupabaseClient.elementoArquivos.add(arquivo);
       await onFetch(elemento.pedidoId);
       if (contextGlobal.mounted) Navigator.pop(contextGlobal); // Fecha loading
-      NotificationService.showPositive('Sucesso', 'Arquivo anexado com sucesso!');
+      NotificationService.showPositive(
+          'Sucesso', 'Arquivo anexado com sucesso!');
     } catch (e) {
       if (contextGlobal.mounted) Navigator.pop(contextGlobal); // Fecha loading
       log('ElementoController.onAddArquivo erro: $e');
@@ -385,7 +425,8 @@ class ElementoController {
   }
 
   /// ─── MOTOR DE OTIMIZAÇÃO DE DESENHOS (PDF -> JPG HD) ──────────────
-  Future<void> _optimizeAndUploadPdf(ElementoModel elemento, String originalName, Uint8List pdfBytes) async {
+  Future<void> _optimizeAndUploadPdf(
+      ElementoModel elemento, String originalName, Uint8List pdfBytes) async {
     PdfDocument? document;
     try {
       // Busca o nível atualizado do banco antes de processar
@@ -397,7 +438,8 @@ class ElementoController {
             .maybeSingle();
         if (configRaw != null) {
           final val = int.tryParse(configRaw['value'].toString());
-          if (val != null) PreferencesService.pdfOptimizationLevel.add(val.clamp(0, 10));
+          if (val != null)
+            PreferencesService.pdfOptimizationLevel.add(val.clamp(0, 10));
         }
       } catch (_) {} // Se falhar, usa o valor em memória
 
@@ -406,7 +448,8 @@ class ElementoController {
 
       final level = PreferencesService.pdfOptimizationLevel.value;
       for (int i = 1; i <= pageCount; i++) {
-        loadingMessageStream.add('Processando página $i de $pageCount...\nOtimizando com nível $level');
+        loadingMessageStream.add(
+            'Processando página $i de $pageCount...\nOtimizando com nível $level');
 
         final page = await document.getPage(i);
         // Renderiza com escala e qualidade configuráveis (Configurações Gerais)
@@ -482,7 +525,8 @@ class ElementoController {
       }
       await onFetch(pedidoId);
       if (contextGlobal.mounted) Navigator.pop(contextGlobal); // Fecha loading
-      NotificationService.showPositive('Sucesso', 'Todos os arquivos removidos!');
+      NotificationService.showPositive(
+          'Sucesso', 'Todos os arquivos removidos!');
     } catch (e) {
       if (contextGlobal.mounted) Navigator.pop(contextGlobal); // Fecha loading
       log('ElementoController.onDeleteAllArquivos erro: $e');
@@ -493,18 +537,28 @@ class ElementoController {
   Future<void> onDeleteAllElementos(String pedidoId) async {
     try {
       if (elementos.any((e) => e.status != ElementoStatus.aguardando)) {
-         showInfoDialog('Operação Negada: Existem elementos que já estão em produção ou concluídos. Remova individualmente os que permite exclusão.');
-         return;
+        showInfoDialog(
+            'Operação Negada: Existem elementos que já estão em produção ou concluídos. Remova individualmente os que permite exclusão.');
+        return;
       }
       showLoadingDialog();
 
       // Resgata os IDs para deletar filhos
-      final eRaw = await SupabaseService.client.from('elementos').select('id').eq('pedido_id', pedidoId);
+      final eRaw = await SupabaseService.client
+          .from('elementos')
+          .select('id')
+          .eq('pedido_id', pedidoId);
       final eIds = eRaw.map((e) => e['id'].toString()).toList();
 
       if (eIds.isNotEmpty) {
-          await SupabaseService.client.from('elemento_posicoes').delete().filter('elemento_id', 'in', eIds);
-          await SupabaseService.client.from('elemento_arquivos').delete().filter('elemento_id', 'in', eIds);
+        await SupabaseService.client
+            .from('elemento_posicoes')
+            .delete()
+            .filter('elemento_id', 'in', eIds);
+        await SupabaseService.client
+            .from('elemento_arquivos')
+            .delete()
+            .filter('elemento_id', 'in', eIds);
       }
 
       await SupabaseService.client
@@ -514,7 +568,8 @@ class ElementoController {
 
       await onFetch(pedidoId);
       if (contextGlobal.mounted) Navigator.pop(contextGlobal); // fecha loading
-      NotificationService.showPositive('Sucesso', 'Todos os elementos foram removidos.');
+      NotificationService.showPositive(
+          'Sucesso', 'Todos os elementos foram removidos.');
     } catch (e) {
       if (contextGlobal.mounted) Navigator.pop(contextGlobal);
       log('ElementoController.onDeleteAllElementos erro: $e');
@@ -609,7 +664,8 @@ class ElementoController {
               pw.Text('Pedido: ${pedido.localizador}',
                   style: pw.TextStyle(
                       fontSize: 10, fontWeight: pw.FontWeight.bold)),
-              pw.Text('Data: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
+              pw.Text(
+                  'Data: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
                   style: pw.TextStyle(fontSize: 8)),
             ],
           ),
@@ -653,8 +709,11 @@ class ElementoController {
           ]),
           pw.SizedBox(height: 5),
           pw.Row(children: [
-            _pdfInfoCell('ENTREGA:',
-                pedido.deliveryAt != null ? DateFormat('dd/MM/yyyy').format(pedido.deliveryAt!) : 'N/D'),
+            _pdfInfoCell(
+                'ENTREGA:',
+                pedido.deliveryAt != null
+                    ? DateFormat('dd/MM/yyyy').format(pedido.deliveryAt!)
+                    : 'N/D'),
             _pdfInfoCell('TIPO:', pedido.tipo.name.toUpperCase()),
           ]),
         ],
@@ -732,7 +791,8 @@ class ElementoController {
     );
   }
 
-  pw.Widget _buildPDFSummaryTable(Map<String, double> resumo, NumberFormat fmt) {
+  pw.Widget _buildPDFSummaryTable(
+      Map<String, double> resumo, NumberFormat fmt) {
     final double totalGeral = resumo.values.fold(0, (a, b) => a + b);
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -743,16 +803,15 @@ class ElementoController {
         pw.TableHelper.fromTextArray(
           headers: ['BITOLA', 'PESO TOTAL (KG)'],
           data: [
-            ...resumo.entries
-                .map((e) => [e.key, '${fmt.format(e.value)} kg'])
-                ,
+            ...resumo.entries.map((e) => [e.key, '${fmt.format(e.value)} kg']),
             ['TOTAL GERAL', '${fmt.format(totalGeral)} kg'],
           ],
           headerStyle: pw.TextStyle(
               fontSize: 9,
               fontWeight: pw.FontWeight.bold,
               color: PdfColors.white),
-          headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey800),
+          headerDecoration:
+              const pw.BoxDecoration(color: PdfColors.blueGrey800),
           cellStyle: const pw.TextStyle(fontSize: 9),
           cellAlignment: pw.Alignment.centerLeft,
           columnWidths: {
@@ -766,7 +825,6 @@ class ElementoController {
 
   Future<Map<String, dynamic>> onImportCSV(
       Uint8List bytes, PedidoModel pedido, bool clearExisting) async {
-
     String rawText = '';
     _cancelImport = false;
     final List<String> createdElementIds = [];
@@ -776,7 +834,8 @@ class ElementoController {
         await onDeleteAllElementos(pedido.id);
       }
 
-      importProgressStream.add(ImportProgress(status: 'Lendo dados do arquivo CSV...'));
+      importProgressStream
+          .add(ImportProgress(status: 'Lendo dados do arquivo CSV...'));
 
       try {
         rawText = utf8.decode(bytes);
@@ -794,14 +853,19 @@ class ElementoController {
         };
       }
 
-      final lines = rawText.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+      final lines = rawText
+          .split('\n')
+          .map((l) => l.trim())
+          .where((l) => l.isNotEmpty)
+          .toList();
 
       // Validação básica se parece um CSV válido
       if (lines.length <= 1 || !lines.first.contains(';')) {
         importProgressStream.add(null);
         return {
           'success': false,
-          'error': 'O arquivo não parece ser um CSV válido separado por ponto-e-vírgula (;).',
+          'error':
+              'O arquivo não parece ser um CSV válido separado por ponto-e-vírgula (;).',
           'rawText': rawText
         };
       }
@@ -810,7 +874,8 @@ class ElementoController {
       ElementoCreateModel? currentElement;
 
       // Extrai a linha de cabeçalho (ignorando case e espaços)
-      final headerLine = lines.first.split(';').map((e) => e.trim().toUpperCase()).toList();
+      final headerLine =
+          lines.first.split(';').map((e) => e.trim().toUpperCase()).toList();
 
       // Cria mapa de índices para procurar colunas chaves
       final Map<String, int> headerIndex = {};
@@ -822,7 +887,8 @@ class ElementoController {
         for (String name in possibleNames) {
           if (headerIndex.containsKey(name)) return headerIndex[name]!;
           // Pesquisa com partially match se não achar exato (ex: PESO (KG) -> PESO)
-          final match = headerIndex.keys.firstWhereOrNull((k) => k.contains(name));
+          final match =
+              headerIndex.keys.firstWhereOrNull((k) => k.contains(name));
           if (match != null) return headerIndex[match]!;
         }
         return -1;
@@ -830,28 +896,38 @@ class ElementoController {
 
       // Procura índices usando possíveis variações de nome na sua planilha
       final idxElemento = getIndex(['ELEMENTO']);
-      final idxQtdeElementos = getIndex(['QTDE ELEM', 'QTDE_ELEMENTOS', 'QTDE ELEMENTOS', 'QTD_ELEMENTOS', 'QTD ELEMENTOS']);
+      final idxQtdeElementos = getIndex([
+        'QTDE ELEM',
+        'QTDE_ELEMENTOS',
+        'QTDE ELEMENTOS',
+        'QTD_ELEMENTOS',
+        'QTD ELEMENTOS'
+      ]);
       final idxOs = getIndex(['OS', 'O.S.', 'O.S']);
       final idxPosicao = getIndex(['POSICAO', 'POSIÇÃO', 'POS.']);
       final idxBitola = getIndex(['BITOLA', 'DIAMETRO']);
       final idxPeso = getIndex(['PESO (KG)', 'PESO']);
-      final idxQtde = getIndex(['QTDE', 'QUANTIDADE', 'QTD']); // qtde da posicao
+      final idxQtde =
+          getIndex(['QTDE', 'QUANTIDADE', 'QTD']); // qtde da posicao
 
-      if (idxElemento == -1 || idxPosicao == -1 || idxBitola == -1 || idxPeso == -1) {
+      if (idxElemento == -1 ||
+          idxPosicao == -1 ||
+          idxBitola == -1 ||
+          idxPeso == -1) {
         importProgressStream.add(null);
         return {
           'success': false,
           'error': 'O CSV fornecido não está no padrão de importação.\n\n'
-                   'Seu arquivo DEVE conter as seguintes colunas na primeira linha (cabeçalho):\n'
-                   '• ELEMENTO\n'
-                   '• POSICAO (ou POS.)\n'
-                   '• BITOLA (ou DIAMETRO)\n'
-                   '• PESO (ou PESO (KG))\n\n'
-                   'Colunas opcionais identificadas pelo sistema:\n'
-                   '• QTDE ELEMENTOS (Quantidade de conjuntos)\n'
-                   '• OS ou O.S. (Ordem de Serviço)\n'
-                   '• QTDE ou QUANTIDADE (Qtd de peças na posição)\n\n'
-                   'Dica: Salve sua planilha Excel como "CSV UTF-8 (separado por vírgulas)" (que no padrão do Excel BR usará ponto e vírgula).',
+              'Seu arquivo DEVE conter as seguintes colunas na primeira linha (cabeçalho):\n'
+              '• ELEMENTO\n'
+              '• POSICAO (ou POS.)\n'
+              '• BITOLA (ou DIAMETRO)\n'
+              '• PESO (ou PESO (KG))\n\n'
+              'Colunas opcionais identificadas pelo sistema:\n'
+              '• QTDE ELEMENTOS (Quantidade de conjuntos)\n'
+              '• OS ou O.S. (Ordem de Serviço)\n'
+              '• QTDE ou QUANTIDADE (Qtd de peças na posição)\n\n'
+              'Dica: Salve sua planilha Excel como "CSV UTF-8 (separado por vírgulas)" (que no padrão do Excel BR usará ponto e vírgula).',
           'rawText': rawText
         };
       }
@@ -864,12 +940,21 @@ class ElementoController {
         if (columns.length <= idxBitola) continue;
 
         final elNome = columns[idxElemento].trim();
-        final elQtdeStr = idxQtdeElementos != -1 && columns.length > idxQtdeElementos ? columns[idxQtdeElementos].trim() : '1';
-        final osNumber = idxOs != -1 && columns.length > idxOs ? columns[idxOs].trim() : '';
+        final elQtdeStr =
+            idxQtdeElementos != -1 && columns.length > idxQtdeElementos
+                ? columns[idxQtdeElementos].trim()
+                : '1';
+        final osNumber =
+            idxOs != -1 && columns.length > idxOs ? columns[idxOs].trim() : '';
         final posNome = columns[idxPosicao].trim();
-        final bitolaStr = columns[idxBitola].trim().replaceAll('mm', '').replaceAll(',', '.');
-        final pesoStr = idxPeso != -1 && columns.length > idxPeso ? columns[idxPeso].trim().replaceAll(',', '.') : '0';
-        final posQtdeStr = idxQtde != -1 && columns.length > idxQtde ? columns[idxQtde].trim() : '0';
+        final bitolaStr =
+            columns[idxBitola].trim().replaceAll('mm', '').replaceAll(',', '.');
+        final pesoStr = idxPeso != -1 && columns.length > idxPeso
+            ? columns[idxPeso].trim().replaceAll(',', '.')
+            : '0';
+        final posQtdeStr = idxQtde != -1 && columns.length > idxQtde
+            ? columns[idxQtde].trim()
+            : '0';
 
         if (elNome.isEmpty || posNome.isEmpty) continue;
 
@@ -893,17 +978,16 @@ class ElementoController {
           pos.pesoKg.text = pesoLido.toStringAsFixed(3);
           pos.qtde.text = posQtdeStr;
 
-          pos.produto = pedido.getProdutos()
-              .map((e) => e.produto)
-              .where((p) {
-                final textToSearch = '${p.nome} ${p.labelMinified}'.replaceAll(',', '.');
-                final extractedNumbers = RegExp(r'\d+(?:\.\d+)?').allMatches(textToSearch);
-                return extractedNumbers.any((match) {
-                   final extractedValue = double.tryParse(match.group(0)!);
-                   return extractedValue == bitola;
-                });
-              })
-              .firstOrNull;
+          pos.produto = pedido.getProdutos().map((e) => e.produto).where((p) {
+            final textToSearch =
+                '${p.nome} ${p.labelMinified}'.replaceAll(',', '.');
+            final extractedNumbers =
+                RegExp(r'\d+(?:\.\d+)?').allMatches(textToSearch);
+            return extractedNumbers.any((match) {
+              final extractedValue = double.tryParse(match.group(0)!);
+              return extractedValue == bitola;
+            });
+          }).firstOrNull;
 
           if (pos.produto != null) {
             currentElement.posicoes.add(pos);
@@ -1052,8 +1136,8 @@ class ElementoController {
       totalPedidoKg: totalPedido,
       totalElementosKg: totalElementos,
       divergencias: divergencias,
-      isOk: divergencias.isEmpty &&
-          (totalPedido - totalElementos).abs() < 0.001,
+      isOk:
+          divergencias.isEmpty && (totalPedido - totalElementos).abs() < 0.001,
     );
   }
 }

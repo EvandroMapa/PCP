@@ -76,31 +76,29 @@ class PedidoProdutoModel {
   List<PedidoProdutoTurno> getTurnos(OrdemModel ordem) {
     final turnos = <PedidoProdutoTurno>[];
 
-    final alteracoesStatus =
-        ordem.history
-            .where(
-              (e) =>
-                  e.type == OrdemHistoryTypeEnum.statusProdutoAlterada ||
-                  e.type == OrdemHistoryTypeEnum.pausada ||
-                  e.type == OrdemHistoryTypeEnum.despausada,
-            )
-            .where((e) {
-              switch (e.type) {
-                case OrdemHistoryTypeEnum.statusProdutoAlterada:
-                  final data = e.data as OrdemHistoryTypeStatusProdutoModel;
-                  return data.statusProdutos.produtos.any((e) => e.id == id);
-                case OrdemHistoryTypeEnum.pausada:
-                  final data = e.data as OrdemHistoryTypePausadaModel;
-                  return data.pedidoProdutoId == id;
-                case OrdemHistoryTypeEnum.despausada:
-                  final data = e.data as OrdemHistoryTypeDespausadaModel;
-                  return data.pedidoProdutoId == id;
-                default:
-                  return false;
-              }
-            })
-            .toList()
-          ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    final alteracoesStatus = ordem.history
+        .where(
+      (e) =>
+          e.type == OrdemHistoryTypeEnum.statusProdutoAlterada ||
+          e.type == OrdemHistoryTypeEnum.pausada ||
+          e.type == OrdemHistoryTypeEnum.despausada,
+    )
+        .where((e) {
+      switch (e.type) {
+        case OrdemHistoryTypeEnum.statusProdutoAlterada:
+          final data = e.data as OrdemHistoryTypeStatusProdutoModel;
+          return data.statusProdutos.produtos.any((e) => e.id == id);
+        case OrdemHistoryTypeEnum.pausada:
+          final data = e.data as OrdemHistoryTypePausadaModel;
+          return data.pedidoProdutoId == id;
+        case OrdemHistoryTypeEnum.despausada:
+          final data = e.data as OrdemHistoryTypeDespausadaModel;
+          return data.pedidoProdutoId == id;
+        default:
+          return false;
+      }
+    }).toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
     DateTime? inicioTurnoAtual;
     bool estaProduzindo = false;
@@ -116,8 +114,8 @@ class PedidoProdutoModel {
             inicioTurnoAtual = evento.createdAt;
             estaProduzindo = true;
             estaPausado = false;
-          }
-          else if (novoStatus == PedidoProdutoStatus.pronto && estaProduzindo) {
+          } else if (novoStatus == PedidoProdutoStatus.pronto &&
+              estaProduzindo) {
             if (inicioTurnoAtual != null) {
               final duracao = evento.createdAt.difference(inicioTurnoAtual);
               turnos.add(
@@ -141,8 +139,7 @@ class PedidoProdutoModel {
             inicioTurnoAtual = null;
             estaProduzindo = false;
             estaPausado = false;
-          }
-          else if (estaProduzindo &&
+          } else if (estaProduzindo &&
               novoStatus != PedidoProdutoStatus.produzindo &&
               novoStatus != PedidoProdutoStatus.pronto) {
             estaProduzindo = false;
@@ -210,17 +207,17 @@ class PedidoProdutoModel {
   }
 
   factory PedidoProdutoModel.empty(PedidoModel pedido) => PedidoProdutoModel(
-    id: '',
-    pedidoId: pedido.id,
-    clienteId: pedido.cliente.id,
-    obraId: pedido.obra.id,
-    produto: ProdutoModel.empty(),
-    statusess: [PedidoProdutoStatusModel.empty()],
-    qtde: 0,
-    isPaused: false,
-    valorUnitario: 0.0,
-    valorTotal: 0.0,
-  );
+        id: '',
+        pedidoId: pedido.id,
+        clienteId: pedido.cliente.id,
+        obraId: pedido.obra.id,
+        produto: ProdutoModel.empty(),
+        statusess: [PedidoProdutoStatusModel.empty()],
+        qtde: 0,
+        isPaused: false,
+        valorUnitario: 0.0,
+        valorTotal: 0.0,
+      );
   PedidoModel get pedido => FirestoreClient.pedidos.getById(pedidoId);
   bool get isAvailableToChanges => status.status.index < 2;
   bool get hasOrder => status.status == PedidoProdutoStatus.separado;
@@ -241,10 +238,10 @@ class PedidoProdutoModel {
       : PedidoProdutoStatusModel.create(PedidoProdutoStatus.pronto);
 
   PedidoProdutoStatusModel get statusView => status.copyWith(
-    status: status.status == PedidoProdutoStatus.separado
-        ? PedidoProdutoStatus.aguardandoProducao
-        : status.status,
-  );
+        status: status.status == PedidoProdutoStatus.separado
+            ? PedidoProdutoStatus.aguardandoProducao
+            : status.status,
+      );
 
   PedidoProdutoModel({
     required this.id,
@@ -326,14 +323,12 @@ class PedidoProdutoModel {
   }
 
   factory PedidoProdutoModel.fromSupabaseMap(Map<String, dynamic> map) {
-
-
     // produto_raw é prioritário; se não existir, busca pelo produto_id no cache local
     ProdutoModel produto = ProdutoModel.empty();
     try {
       if (map['produto_raw'] != null) {
-        final rawMap = map['produto_raw'] is String 
-            ? json.decode(map['produto_raw']) 
+        final rawMap = map['produto_raw'] is String
+            ? json.decode(map['produto_raw'])
             : map['produto_raw'];
         produto = ProdutoModel.fromMap(Map<String, dynamic>.from(rawMap));
       } else {
@@ -349,14 +344,17 @@ class PedidoProdutoModel {
 
     // statusess_raw: JSArray<dynamic> no Flutter Web não pode ser cast direto.
     // Usar List.from() para criar lista Dart nativa antes do .map()
-    List<PedidoProdutoStatusModel> statusess = [PedidoProdutoStatusModel.empty()];
+    List<PedidoProdutoStatusModel> statusess = [
+      PedidoProdutoStatusModel.empty()
+    ];
     try {
       if (map['statusess_raw'] != null) {
         final rawList = map['statusess_raw'] is String
             ? json.decode(map['statusess_raw']) as List
             : map['statusess_raw'] as List;
         statusess = List.from(rawList)
-            .map((e) => PedidoProdutoStatusModel.fromMap(Map<String, dynamic>.from(e)))
+            .map((e) =>
+                PedidoProdutoStatusModel.fromMap(Map<String, dynamic>.from(e)))
             .toList();
       }
     } catch (e) {
@@ -370,7 +368,8 @@ class PedidoProdutoModel {
         final rawMap = map['materia_prima_raw'] is String
             ? json.decode(map['materia_prima_raw'])
             : map['materia_prima_raw'];
-        materiaPrima = MateriaPrimaModel.fromMap(Map<String, dynamic>.from(rawMap));
+        materiaPrima =
+            MateriaPrimaModel.fromMap(Map<String, dynamic>.from(rawMap));
       }
     } catch (_) {}
 
@@ -382,7 +381,8 @@ class PedidoProdutoModel {
       pedidoId: (map['pedido_id'] ?? '').toString(),
       clienteId: (map['cliente_id'] ?? '').toString(),
       obraId: (map['obra_id'] ?? '').toString(),
-      statusess: statusess.isNotEmpty ? statusess : [PedidoProdutoStatusModel.empty()],
+      statusess:
+          statusess.isNotEmpty ? statusess : [PedidoProdutoStatusModel.empty()],
       valorUnitario: _parseNum(map['valor_unitario']),
       valorTotal: _parseNum(map['valor_total']),
     );

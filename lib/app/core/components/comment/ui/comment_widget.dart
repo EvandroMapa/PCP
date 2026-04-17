@@ -52,9 +52,7 @@ class CommentWidget extends StatelessWidget {
                       comment.isFixed
                           ? Icons.push_pin
                           : Icons.push_pin_outlined,
-                      color: comment.isFixed
-                          ? Colors.orange
-                          : Colors.grey[800],
+                      color: comment.isFixed ? Colors.orange : Colors.grey[800],
                       size: 22,
                     ),
                   ),

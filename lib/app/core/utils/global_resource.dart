@@ -93,4 +93,3 @@ void openInNewTab(String path) async {
   final url = Uri.base.origin + path;
   html.window.open(url, '_blank');
 }
-

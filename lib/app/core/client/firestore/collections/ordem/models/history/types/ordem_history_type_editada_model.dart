@@ -26,10 +26,14 @@ class OrdemHistoryTypeEditadaModel extends OrdemHistoryDataModel {
         json['materiaPrimaProdutos'],
       ),
       adicionados: List<PedidoProdutoModel>.from(
-        (json['adicionados'] ?? []).map((e) => PedidoProdutoModel.fromMap(e)).toList(),
+        (json['adicionados'] ?? [])
+            .map((e) => PedidoProdutoModel.fromMap(e))
+            .toList(),
       ),
       removidos: List<PedidoProdutoModel>.from(
-        (json['removidos'] ?? []).map((e) => PedidoProdutoModel.fromMap(e)).toList(),
+        (json['removidos'] ?? [])
+            .map((e) => PedidoProdutoModel.fromMap(e))
+            .toList(),
       ),
     );
   }

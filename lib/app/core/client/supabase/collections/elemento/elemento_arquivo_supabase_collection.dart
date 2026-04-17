@@ -5,7 +5,8 @@ import 'package:aco_plus/app/core/services/supabase_service.dart';
 class ElementoArquivoSupabaseCollection {
   final String tableName = 'elemento_arquivos';
   final List<ElementoArquivoModel> data = [];
-  final AppStream<List<ElementoArquivoModel>> stream = AppStream<List<ElementoArquivoModel>>.seed([]);
+  final AppStream<List<ElementoArquivoModel>> stream =
+      AppStream<List<ElementoArquivoModel>>.seed([]);
 
   Future<void> start() async {
     await fetch();
@@ -17,9 +18,10 @@ class ElementoArquivoSupabaseCollection {
           .from(tableName)
           .select()
           .order('criado_em', ascending: false);
-      
+
       data.clear();
-      data.addAll(response.map((e) => ElementoArquivoModel.fromMap(e)).toList());
+      data.addAll(
+          response.map((e) => ElementoArquivoModel.fromMap(e)).toList());
       stream.add(data);
     } catch (e) {
       print('Supabase Error (ElementoArquivo.fetch): $e');
@@ -33,7 +35,7 @@ class ElementoArquivoSupabaseCollection {
           .insert(model.toSupabaseMap())
           .select()
           .single();
-      
+
       final newItem = ElementoArquivoModel.fromMap(response);
       data.add(newItem);
       stream.add(data);
@@ -55,13 +57,12 @@ class ElementoArquivoSupabaseCollection {
   }
 
   void listen() {
-    SupabaseService.client
-        .from(tableName)
-        .stream(primaryKey: ['id'])
-        .listen((List<Map<String, dynamic>> response) {
-          data.clear();
-          data.addAll(response.map((e) => ElementoArquivoModel.fromMap(e)).toList());
-          stream.add(data);
-        });
+    SupabaseService.client.from(tableName).stream(primaryKey: ['id']).listen(
+        (List<Map<String, dynamic>> response) {
+      data.clear();
+      data.addAll(
+          response.map((e) => ElementoArquivoModel.fromMap(e)).toList());
+      stream.add(data);
+    });
   }
 }

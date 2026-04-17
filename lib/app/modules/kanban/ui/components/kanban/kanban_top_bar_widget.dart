@@ -13,6 +13,7 @@ import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:aco_plus/app/core/components/w.dart';
 import 'package:flutter/material.dart';
 import 'package:info_popup/info_popup.dart';
+import 'package:aco_plus/app/modules/pedido/ui/pedido_import_pdf_dialog.dart';
 
 class KanbanTopBarWidget extends StatelessWidget
     implements PreferredSizeWidget {
@@ -89,7 +90,9 @@ class _KanbanTopbarConcreteWidgetState
                       onPressed: () => controller.show(),
                       icon: Icon(
                         Icons.filter_list,
-                        color: utils.hasFilter() ? Colors.redAccent : AppColors.white,
+                        color: utils.hasFilter()
+                            ? Colors.redAccent
+                            : AppColors.white,
                       ),
                     ),
                     if (utils.hasFilter())
@@ -149,14 +152,46 @@ class _KanbanTopbarConcreteWidgetState
               ),
               const W(8),
               if (usuario.permission.pedido.contains(UserPermissionType.create))
-                IconButton(
-                  onPressed: () async {
-                    await push(context, const PedidoCreatePage());
-                    final pedidos = FirestoreClient.pedidos.data;
-                    pedidos.sort((a, b) => a.id.compareTo(b.id));
-                    kanbanCtrl.onAccept(pedidos.last.step, pedidos.last, 0);
-                  },
+                PopupMenuButton<int>(
+                  tooltip: 'Criar Pedido',
                   icon: Icon(Icons.add, color: AppColors.white),
+                  color: AppColors.white,
+                  surfaceTintColor: AppColors.white,
+                  offset: const Offset(0, 40),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 1,
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_document, size: 20, color: AppColors.primaryMain),
+                          const W(8),
+                          Text('Criar Cartão Manualmente', style: AppCss.minimumBold.setSize(13)),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    PopupMenuItem(
+                      value: 2,
+                      child: Row(
+                        children: [
+                          Icon(Icons.picture_as_pdf, size: 20, color: AppColors.primaryMain),
+                          const W(8),
+                          Text('Criar Cartão via PDF', style: AppCss.minimumBold.setSize(13)),
+                        ],
+                      ),
+                    ),
+                  ],
+                  onSelected: (val) async {
+                    if (val == 1) {
+                      await push(context, const PedidoCreatePage());
+                      final pedidos = FirestoreClient.pedidos.data;
+                      if (pedidos.isEmpty) return;
+                      pedidos.sort((a, b) => a.id.compareTo(b.id));
+                      kanbanCtrl.onAccept(pedidos.last.step, pedidos.last, 0);
+                    } else if (val == 2) {
+                      await showPedidoImportPdfDialog();
+                    }
+                  },
                 ),
               const W(8),
             ],

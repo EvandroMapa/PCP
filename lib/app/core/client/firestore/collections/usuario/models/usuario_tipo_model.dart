@@ -1,4 +1,3 @@
-
 class UsuarioTipoModel {
   final String id;
   final String nome;

@@ -16,16 +16,16 @@ class PedidoStepModel {
   });
 
   factory PedidoStepModel.create(StepModel step) => PedidoStepModel(
-    id: HashService.get,
-    step: step,
-    createdAt: DateTime.now(),
-  );
+        id: HashService.get,
+        step: step,
+        createdAt: DateTime.now(),
+      );
 
   factory PedidoStepModel.empty() => PedidoStepModel(
-    id: '',
-    step: StepModel.notFound,
-    createdAt: DateTime.now(),
-  );
+        id: '',
+        step: StepModel.notFound,
+        createdAt: DateTime.now(),
+      );
 
   Map<String, dynamic> toMap() {
     return {
@@ -56,8 +56,8 @@ class PedidoStepModel {
     return PedidoStepModel(
       id: map['id'] ?? '',
       step: FirestoreClient.steps.getById(map['step_id'] ?? ''),
-      createdAt: map['created_at'] != null 
-          ? DateTime.parse(map['created_at']) 
+      createdAt: map['created_at'] != null
+          ? DateTime.parse(map['created_at'])
           : DateTime.now(),
     );
   }

@@ -76,12 +76,12 @@ class AutomatizacaoCollection {
             : collection)
         .snapshots()
         .listen((e) async {
-          final first = e.docs.firstOrNull;
-          if (first != null) {
-            final automatizacao = AutomatizacaoModel.fromMap(first.data());
-            dataStream.add(automatizacao);
-          }
-        });
+      final first = e.docs.firstOrNull;
+      if (first != null) {
+        final automatizacao = AutomatizacaoModel.fromMap(first.data());
+        dataStream.add(automatizacao);
+      }
+    });
   }
 
   Future<void> update(AutomatizacaoModel model) async {

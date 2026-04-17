@@ -1,4 +1,3 @@
-
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/tag/models/tag_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
@@ -119,9 +118,7 @@ class _TagModelBottomState extends State<TagModelBottom> {
   List<TagModel> getTags() {
     final tags = FirestoreClient.tags.data
         .where(
-          (e) => !widget.pedido.tags
-              .map((e) => e.id)
-              .contains(e.id),
+          (e) => !widget.pedido.tags.map((e) => e.id).contains(e.id),
         )
         .toList();
 

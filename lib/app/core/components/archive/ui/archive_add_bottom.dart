@@ -216,7 +216,8 @@ class _ArchiveAddBottomState extends State<ArchiveAddBottom> {
       final chunks = <int>[];
       await xFile.openRead().forEach(chunks.addAll);
       final bytes = Uint8List.fromList(chunks);
-      final mime = lookupMimeType(kIsWeb ? xFile.name : xFile.path) ?? 'application/octet-stream';
+      final mime = lookupMimeType(kIsWeb ? xFile.name : xFile.path) ??
+          'application/octet-stream';
       archive = ArchiveModel.fromFile(
         bytes: bytes,
         createdAt: DateTime.now(),

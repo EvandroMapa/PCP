@@ -64,7 +64,8 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
                     ),
                   ],
                 ),
-                const SizedBox(height: 48), // Espaço para compensar a sobreposição
+                const SizedBox(
+                    height: 48), // Espaço para compensar a sobreposição
                 PedidoProgressoWidget(pedido: pedido),
                 const SizedBox(height: 24),
                 _buildTimelineSection(pedido),
@@ -78,7 +79,8 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
                   onPressed: () => launchUrlString(waUrl),
                   backgroundColor: const Color(0xFF25D366),
                   tooltip: 'Fale Conosco',
-                  child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+                  child: const Icon(Icons.chat_bubble_outline,
+                      color: Colors.white),
                 )
               : null,
         );
@@ -110,22 +112,27 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
                 children: [
                   IconButton(
                     onPressed: () {
-                      final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
-                      final text = Uri.encodeComponent('Olá! Acompanhe o seu pedido ${pedido.localizador}: $url');
+                      final url =
+                          '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
+                      final text = Uri.encodeComponent(
+                          'Olá! Acompanhe o seu pedido ${pedido.localizador}: $url');
                       launchUrlString('https://wa.me/?text=$text');
                     },
-                    icon: const Icon(Icons.share, color: Colors.white, size: 20),
+                    icon:
+                        const Icon(Icons.share, color: Colors.white, size: 20),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
                   const SizedBox(width: 16),
                   IconButton(
                     onPressed: () async {
-                      final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
+                      final url =
+                          '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
                       await Clipboard.setData(ClipboardData(text: url));
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Link de acompanhamento copiado!')),
+                          const SnackBar(
+                              content: Text('Link de acompanhamento copiado!')),
                         );
                       }
                     },
@@ -155,7 +162,8 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
           const SizedBox(height: 4),
           Text(
             'Acompanhe o progresso do seu pedido',
-            style: AppCss.mediumRegular.setColor(Colors.white.withValues(alpha: 0.8)),
+            style: AppCss.mediumRegular
+                .setColor(Colors.white.withValues(alpha: 0.8)),
             textAlign: TextAlign.center,
           ),
         ],
@@ -164,8 +172,10 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
   }
 
   Widget _buildStatusCard(PedidoModel pedido) {
-    final bool isLate = pedido.deliveryAt != null && pedido.deliveryAt!.isBefore(DateTime.now().subtract(const Duration(days: 1)));
-    
+    final bool isLate = pedido.deliveryAt != null &&
+        pedido.deliveryAt!
+            .isBefore(DateTime.now().subtract(const Duration(days: 1)));
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.all(24),
@@ -188,19 +198,22 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('LOCALIZADOR', style: AppCss.minimumBold.setColor(Colors.grey[500]!)),
+                  Text('LOCALIZADOR',
+                      style: AppCss.minimumBold.setColor(Colors.grey[500]!)),
                   Text(pedido.localizador, style: AppCss.largeBold.setSize(18)),
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: (isLate ? Colors.red[50]! : Colors.blue[50]!),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   pedido.step.name.toUpperCase(),
-                  style: AppCss.minimumBold.setColor(isLate ? Colors.red[800]! : Colors.blue[800]!),
+                  style: AppCss.minimumBold
+                      .setColor(isLate ? Colors.red[800]! : Colors.blue[800]!),
                 ),
               ),
             ],
@@ -208,7 +221,8 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
           const Divider(height: 32),
           Row(
             children: [
-              Icon(Icons.calendar_today_outlined, size: 18, color: isLate ? Colors.red : Colors.grey[600]!),
+              Icon(Icons.calendar_today_outlined,
+                  size: 18, color: isLate ? Colors.red : Colors.grey[600]!),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -216,7 +230,8 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
                   children: [
                     Text(
                       isLate ? 'PEDIDO EM ATRASO' : 'PREVISÃO DE ENTREGA',
-                      style: AppCss.minimumBold.setColor(isLate ? Colors.red : Colors.grey[500]!),
+                      style: AppCss.minimumBold
+                          .setColor(isLate ? Colors.red : Colors.grey[500]!),
                     ),
                     Text(
                       pedido.deliveryAt?.text() ?? 'A definir',
@@ -244,7 +259,10 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-            child: Text('LINHA DO TEMPO', style: AppCss.mediumBold.setSize(14).setColor(AppColors.secondary)),
+            child: Text('LINHA DO TEMPO',
+                style: AppCss.mediumBold
+                    .setSize(14)
+                    .setColor(AppColors.secondary)),
           ),
           PedidoTrackerTimelineWidget(pedido: pedido),
         ],
@@ -263,45 +281,51 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('DETALHES DO PEDIDO', style: AppCss.mediumBold.setSize(14).setColor(AppColors.secondary)),
+          Text('DETALHES DO PEDIDO',
+              style:
+                  AppCss.mediumBold.setSize(14).setColor(AppColors.secondary)),
           const SizedBox(height: 16),
           ...pedido.produtos.map((p) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryMain.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${p.qtde.round()}',
-                      style: AppCss.smallBold.setColor(AppColors.primaryMain),
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryMain.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${p.qtde.round()}',
+                          style:
+                              AppCss.smallBold.setColor(AppColors.primaryMain),
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(p.produto.descricao, style: AppCss.smallBold),
+                          Text('${p.qtde.toStringAsFixed(2)} Kg',
+                              style: AppCss.minimumRegular
+                                  .setColor(Colors.grey[600]!)),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(p.produto.descricao, style: AppCss.smallBold),
-                      Text('${p.qtde.toStringAsFixed(2)} Kg', style: AppCss.minimumRegular.setColor(Colors.grey[600]!)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          )),
+              )),
           const Divider(height: 32),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('PESO TOTAL:', style: AppCss.smallBold),
-              Text('${pedido.pesoTotal.toStringAsFixed(2)} Kg', style: AppCss.mediumBold.setColor(AppColors.primaryMain)),
+              Text('${pedido.pesoTotal.toStringAsFixed(2)} Kg',
+                  style: AppCss.mediumBold.setColor(AppColors.primaryMain)),
             ],
           )
         ],
@@ -323,7 +347,8 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
         children: [
           Row(
             children: [
-              Icon(Icons.admin_panel_settings_outlined, size: 20, color: AppColors.primaryMain),
+              Icon(Icons.admin_panel_settings_outlined,
+                  size: 20, color: AppColors.primaryMain),
               const SizedBox(width: 12),
               Text(
                 'OPÇÕES DO ADMINISTRADOR',
@@ -337,8 +362,10 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
               Expanded(
                 child: _actionButton(
                   onTap: () {
-                    final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
-                    final text = Uri.encodeComponent('Olá! Acompanhe o seu pedido ${pedido.localizador}: $url');
+                    final url =
+                        '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
+                    final text = Uri.encodeComponent(
+                        'Olá! Acompanhe o seu pedido ${pedido.localizador}: $url');
                     launchUrlString('https://wa.me/?text=$text');
                   },
                   icon: Icons.share,
@@ -350,11 +377,13 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
               Expanded(
                 child: _actionButton(
                   onTap: () async {
-                    final url = '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
+                    final url =
+                        '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
                     await Clipboard.setData(ClipboardData(text: url));
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Link de acompanhamento copiado!')),
+                        const SnackBar(
+                            content: Text('Link de acompanhamento copiado!')),
                       );
                     }
                   },

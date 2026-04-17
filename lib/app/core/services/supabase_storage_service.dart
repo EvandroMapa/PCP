@@ -11,7 +11,7 @@ class SupabaseStorageService {
   static String _sanitizeFileName(String name) {
     const from = 'àáâãäåæçèéêëìíîïðñòóôõöùúûüýÿ'
         'ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖÙÚÛÜÝ';
-    const to   = 'aaaaaaaceeeeiiiidnoooooouuuuyy'
+    const to = 'aaaaaaaceeeeiiiidnoooooouuuuyy'
         'AAAAAAACEEEEIIIIDNOOOOOOUUUUY';
     var result = name;
     for (var i = 0; i < from.length; i++) {
@@ -35,10 +35,10 @@ class SupabaseStorageService {
     final safeName = _sanitizeFileName(name);
     final fullPath = '$path/$safeName';
     await SupabaseService.client.storage.from(bucket).uploadBinary(
-      fullPath,
-      bytes,
-      fileOptions: FileOptions(contentType: mimeType, upsert: true),
-    );
+          fullPath,
+          bytes,
+          fileOptions: FileOptions(contentType: mimeType, upsert: true),
+        );
     return SupabaseService.client.storage.from(bucket).getPublicUrl(fullPath);
   }
 

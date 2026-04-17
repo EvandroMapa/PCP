@@ -30,9 +30,8 @@ class FabricanteCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     final data = await FirebaseFirestore.instance.collection(name).get();
-    final countries = data.docs
-        .map((e) => FabricanteModel.fromMap(e.data()))
-        .toList();
+    final countries =
+        data.docs.map((e) => FabricanteModel.fromMap(e.data())).toList();
     countries.sort((a, b) => a.nome.compareTo(b.nome));
     dataStream.add(countries);
   }
@@ -72,12 +71,11 @@ class FabricanteCollection {
             : collection)
         .snapshots()
         .listen((e) {
-          final countries = e.docs
-              .map((e) => FabricanteModel.fromMap(e.data()))
-              .toList();
-          countries.sort((a, b) => a.nome.compareTo(b.nome));
-          dataStream.add(countries);
-        });
+      final countries =
+          e.docs.map((e) => FabricanteModel.fromMap(e.data())).toList();
+      countries.sort((a, b) => a.nome.compareTo(b.nome));
+      dataStream.add(countries);
+    });
   }
 
   FabricanteModel getById(String id) =>

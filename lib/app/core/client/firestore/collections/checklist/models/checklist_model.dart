@@ -8,31 +8,36 @@ class ChecklistModel {
   final String nome;
   final List<CheckItemModel> checklist;
   final DateTime createdAt;
+  bool isPadrao;
   ChecklistModel({
     required this.id,
     required this.nome,
     required this.checklist,
     required this.createdAt,
+    this.isPadrao = false,
   });
-  
+
   factory ChecklistModel.empty() => ChecklistModel(
-    id: '',
-    nome: '',
-    checklist: [],
-    createdAt: DateTime.now(),
-  );
+        id: '',
+        nome: '',
+        checklist: [],
+        createdAt: DateTime.now(),
+        isPadrao: false,
+      );
 
   ChecklistModel copyWith({
     String? id,
     String? nome,
     List<CheckItemModel>? checklist,
     DateTime? createdAt,
+    bool? isPadrao,
   }) {
     return ChecklistModel(
       id: id ?? this.id,
       nome: nome ?? this.nome,
       checklist: checklist ?? this.checklist,
       createdAt: createdAt ?? this.createdAt,
+      isPadrao: isPadrao ?? this.isPadrao,
     );
   }
 
@@ -42,6 +47,7 @@ class ChecklistModel {
       'nome': nome,
       'checklist': checklist.map((x) => x.toMap()).toList(),
       'created_at': createdAt.toIso8601String(),
+      'is_padrao': isPadrao,
     };
   }
 
@@ -58,6 +64,7 @@ class ChecklistModel {
       createdAt: map['created_at'] != null
           ? DateTime.parse(map['created_at'])
           : DateTime.now(),
+      isPadrao: map['is_padrao'] ?? false,
     );
   }
 
@@ -67,6 +74,7 @@ class ChecklistModel {
       'nome': nome,
       'checklist': checklist.map((x) => x.toMap()).toList(),
       'createdAt': createdAt.millisecondsSinceEpoch,
+      'isPadrao': isPadrao,
     };
   }
 
@@ -82,6 +90,7 @@ class ChecklistModel {
       createdAt: map['createdAt'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'])
           : DateTime.now(),
+      isPadrao: map['isPadrao'] ?? false,
     );
   }
 
@@ -92,7 +101,7 @@ class ChecklistModel {
 
   @override
   String toString() {
-    return 'ChecklistModel(id: $id, nome: $nome, checklist: $checklist, createdAt: $createdAt)';
+    return 'ChecklistModel(id: $id, nome: $nome, checklist: $checklist, createdAt: $createdAt, isPadrao: $isPadrao)';
   }
 
   @override

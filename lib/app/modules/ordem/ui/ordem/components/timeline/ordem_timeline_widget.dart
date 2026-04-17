@@ -117,8 +117,8 @@ class _OrdemTimelineWidgetState extends State<OrdemTimelineWidget> {
                 Gap(8),
                 switch (item!.type) {
                   OrdemHistoryTypeEnum.criada => OrdemTimelineCreateDetails(
-                    data: item!.data as OrdemHistoryTypeCriadaModel,
-                  ),
+                      data: item!.data as OrdemHistoryTypeCriadaModel,
+                    ),
                   OrdemHistoryTypeEnum.statusProdutoAlterada =>
                     OrdemTimelineStatusProdutoDetails(
                       data: item!.data as OrdemHistoryTypeStatusProdutoModel,

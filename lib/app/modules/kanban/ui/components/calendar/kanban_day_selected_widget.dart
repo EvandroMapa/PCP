@@ -19,7 +19,6 @@ class KanbanDaySelectedWidget extends StatefulWidget {
 }
 
 class _KanbanDaySelectedWidgetState extends State<KanbanDaySelectedWidget> {
-
   @override
   Widget build(BuildContext context) {
     return StreamOut(

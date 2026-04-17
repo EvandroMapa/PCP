@@ -22,14 +22,14 @@ class NotificacaoModel {
   });
 
   static NotificacaoModel empty() => NotificacaoModel(
-    id: '',
-    title: '',
-    description: '',
-    viewed: false,
-    createdAt: DateTime.now(),
-    userId: '',
-    payload: '',
-  );
+        id: '',
+        title: '',
+        description: '',
+        viewed: false,
+        createdAt: DateTime.now(),
+        userId: '',
+        payload: '',
+      );
 
   NotificacaoModel copyWith({
     String? id,

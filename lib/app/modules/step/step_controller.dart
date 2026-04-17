@@ -54,7 +54,7 @@ class StepController {
     try {
       onValid();
       final newStep = form.toStepModel(step);
-      
+
       if (form.isEdit) {
         await FirestoreClient.steps.update(newStep);
       } else {

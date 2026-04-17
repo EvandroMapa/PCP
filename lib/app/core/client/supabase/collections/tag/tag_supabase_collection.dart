@@ -24,9 +24,7 @@ class TagSupabaseCollection extends TagCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     try {
-      final response = await SupabaseService.client
-          .from(tableName)
-          .select();
+      final response = await SupabaseService.client.from(tableName).select();
       final tags = List<Map<String, dynamic>>.from(response)
           .map((e) => TagModel.fromSupabaseMap(e))
           .toList();
@@ -47,7 +45,9 @@ class TagSupabaseCollection extends TagCollection {
   @override
   Future<TagModel?> add(TagModel model) async {
     try {
-      await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
+      await SupabaseService.client
+          .from(tableName)
+          .insert(model.toSupabaseMap());
       await fetch();
       return model;
     } catch (e) {
@@ -101,11 +101,10 @@ class TagSupabaseCollection extends TagCollection {
     _isListen = true;
     SupabaseService.client
         .from(tableName)
-        .stream(primaryKey: ['id'])
-        .listen((List<Map<String, dynamic>> data) {
-          final tags = data.map((e) => TagModel.fromSupabaseMap(e)).toList();
-          tags.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-          dataStream.add(tags);
-        });
+        .stream(primaryKey: ['id']).listen((List<Map<String, dynamic>> data) {
+      final tags = data.map((e) => TagModel.fromSupabaseMap(e)).toList();
+      tags.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      dataStream.add(tags);
+    });
   }
 }

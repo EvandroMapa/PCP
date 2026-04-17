@@ -25,7 +25,7 @@ extension SortOrderExt on SortOrder {
   String getName(SortType sortType) {
     switch (sortType) {
       case SortType.deliveryAt:
-      switch (this) {
+        switch (this) {
           case SortOrder.asc:
             return 'Mais proximo primeiro';
           case SortOrder.desc:

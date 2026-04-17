@@ -54,12 +54,10 @@ class OrdemTimelineRegister {
               .where((e) => e.status.status != PedidoProdutoStatus.pronto)
               .toList(),
         ),
-        adicionados: now.produtos
-            .where((e) => !old.produtos.contains(e))
-            .toList(),
-        removidos: old.produtos
-            .where((e) => !now.produtos.contains(e))
-            .toList(),
+        adicionados:
+            now.produtos.where((e) => !old.produtos.contains(e)).toList(),
+        removidos:
+            old.produtos.where((e) => !now.produtos.contains(e)).toList(),
       ),
     );
   }

@@ -25,7 +25,8 @@ class BackendClient {
       ? UsuarioCollection()
       : AppSupabaseClient.usuarios;
 
-  static UsuarioTipoSupabaseCollection get usuarioTipos => AppSupabaseClient.usuarioTipos;
+  static UsuarioTipoSupabaseCollection get usuarioTipos =>
+      AppSupabaseClient.usuarioTipos;
 
   static ClienteCollection get clientes => type == BackendType.firestore
       ? ClienteCollection()
@@ -39,11 +40,11 @@ class BackendClient {
       ? PedidoCollection()
       : AppSupabaseClient.pedidos;
 
-  static PedidoProdutoSupabaseCollection get pedidoProdutos => AppSupabaseClient.pedidoProdutos;
+  static PedidoProdutoSupabaseCollection get pedidoProdutos =>
+      AppSupabaseClient.pedidoProdutos;
 
-  static TagCollection get tags => type == BackendType.firestore
-      ? TagCollection()
-      : AppSupabaseClient.tags;
+  static TagCollection get tags =>
+      type == BackendType.firestore ? TagCollection() : AppSupabaseClient.tags;
 
   static ProdutoCollection get produtos => type == BackendType.firestore
       ? ProdutoCollection()
@@ -53,22 +54,23 @@ class BackendClient {
       ? FabricanteCollection()
       : AppSupabaseClient.fabricantes;
 
-  static MateriaPrimaCollection get materiaPrima => type == BackendType.firestore
-      ? MateriaPrimaCollection()
-      : AppSupabaseClient.materiaPrima;
+  static MateriaPrimaCollection get materiaPrima =>
+      type == BackendType.firestore
+          ? MateriaPrimaCollection()
+          : AppSupabaseClient.materiaPrima;
 
   static ChecklistCollection get checklists => type == BackendType.firestore
       ? ChecklistCollection()
       : AppSupabaseClient.checklists;
 
-  static AutomatizacaoCollection get automatizacao => type == BackendType.firestore
-      ? AutomatizacaoCollection()
-      : AppSupabaseClient.automatizacao;
+  static AutomatizacaoCollection get automatizacao =>
+      type == BackendType.firestore
+          ? AutomatizacaoCollection()
+          : AppSupabaseClient.automatizacao;
 
   static NotificacaoCollection get notificacoes => type == BackendType.firestore
       ? NotificacaoCollection()
       : AppSupabaseClient.notificacoes;
-
 
   static OrdemCollection get ordens => type == BackendType.firestore
       ? OrdemCollection()

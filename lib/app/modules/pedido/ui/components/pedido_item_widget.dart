@@ -56,7 +56,6 @@ class PedidoItemWidget extends StatelessWidget {
                               padding: EdgeInsets.only(right: 8),
                               child: KanbanCardNotificacaoWidget(),
                             ),
-
                           if (pedido.tags.isNotEmpty) ...[
                             for (final tag in pedido.tags) _tagWidget(tag),
                           ],
@@ -141,9 +140,8 @@ class PedidoItemWidget extends StatelessWidget {
                 ),
                 child: Text(
                   pedido.steps.last.step.name,
-                  style: AppCss.minimumBold
-                      .setSize(9)
-                      .setColor(Colors.grey[800]!),
+                  style:
+                      AppCss.minimumBold.setSize(9).setColor(Colors.grey[800]!),
                 ),
               ),
             ),
@@ -151,7 +149,6 @@ class PedidoItemWidget extends StatelessWidget {
       ),
     );
   }
-
 
   Container _tagWidget(TagModel tag) {
     return Container(

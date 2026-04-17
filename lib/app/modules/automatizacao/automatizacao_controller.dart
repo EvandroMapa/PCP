@@ -91,28 +91,31 @@ class AutomatizacaoController {
     // 3. Validar se tem elementos e se todos estão prontos
     final resumo = pedido.armacaoResumo;
     final total = int.tryParse(resumo['total_qtd']?.toString() ?? '0') ?? 0;
-    final pronto = int.tryParse(resumo['details']?['pronto']?['qtd']?.toString() ?? '0') ?? 0;
-    
+    final pronto =
+        int.tryParse(resumo['details']?['pronto']?['qtd']?.toString() ?? '0') ??
+            0;
+
     if (total == 0 || pronto < total) return null;
 
     // Se todos estiverem prontos
     final config = automatizacaoConfig.finalizacaoArmacaoPedido;
     final targetStep = config.step;
-    
+
     if (targetStep == null) return null;
 
     // Só sugere se não for mover para "trás" ou para a mesma etapa
     if (pedido.step.index < targetStep.index) {
       return FirestoreClient.steps.getById(targetStep.id);
     }
-    
+
     return null;
   }
 
-  Future<void> executeFinalizacaoArmacao(PedidoModel pedido, StepModel targetStep) async {
+  Future<void> executeFinalizacaoArmacao(
+      PedidoModel pedido, StepModel targetStep) async {
     log('executeFinalizacaoArmacao: EXECUTANDO MOVIMENTAÇÃO para ${targetStep.name}');
     pedido.steps.add(PedidoStepModel.create(targetStep));
-    
+
     // Registrar histórico
     pedidoCtrl.onAddHistory(
       pedido: pedido,

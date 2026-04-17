@@ -33,9 +33,8 @@ class NotificacaoCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     final data = await FirebaseFirestore.instance.collection(name).get();
-    final notiticacoes = data.docs
-        .map((e) => NotificacaoModel.fromMap(e.data()))
-        .toList();
+    final notiticacoes =
+        data.docs.map((e) => NotificacaoModel.fromMap(e.data())).toList();
     notiticacoes.sort((a, b) => a.createdAt.compareTo(b.createdAt));
     dataStream.add(notiticacoes);
   }
@@ -75,12 +74,11 @@ class NotificacaoCollection {
             : collection)
         .snapshots()
         .listen((e) {
-          final notificacoes = e.docs
-              .map((e) => NotificacaoModel.fromMap(e.data()))
-              .toList();
-          notificacoes.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-          dataStream.add(notificacoes);
-        });
+      final notificacoes =
+          e.docs.map((e) => NotificacaoModel.fromMap(e.data())).toList();
+      notificacoes.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      dataStream.add(notificacoes);
+    });
   }
 
   NotificacaoModel getById(String id) =>

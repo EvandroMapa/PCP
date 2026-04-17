@@ -27,7 +27,7 @@ class AutomatizacaoItemModel {
   Map<String, dynamic> toMap() {
     return {
       'type': type.index,
-      if(step != null) 'stepId': step!.id,
+      if (step != null) 'stepId': step!.id,
       if (steps != null) 'steps': steps!.map((e) => e.id).toList(),
     };
   }
@@ -45,7 +45,9 @@ class AutomatizacaoItemModel {
 
     return AutomatizacaoItemModel(
       type: AutomatizacaoItemType.values[map['type']],
-      step: parsedStepId != null ? FirestoreClient.steps.getById(parsedStepId) : null,
+      step: parsedStepId != null
+          ? FirestoreClient.steps.getById(parsedStepId)
+          : null,
       steps: map['steps']?.map<StepModel>((e) {
         if (e is Map) return FirestoreClient.steps.getById(e['id']);
         return FirestoreClient.steps.getById(e.toString());

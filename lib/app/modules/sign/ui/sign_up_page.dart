@@ -165,16 +165,14 @@ class SignUpPageState extends State<SignUpPage>
                           size: 20,
                           color: Colors.grey[400],
                         ),
-                        onPressed: () =>
-                            setState(() => _obscure = !_obscure),
+                        onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                     ),
                     const SizedBox(height: 12),
 
                     // ── Manter conectado ──
                     GestureDetector(
-                      onTap: () =>
-                          setState(() => _rememberMe = !_rememberMe),
+                      onTap: () => setState(() => _rememberMe = !_rememberMe),
                       child: Row(
                         children: [
                           AnimatedContainer(
@@ -247,8 +245,7 @@ class SignUpPageState extends State<SignUpPage>
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  const Icon(
-                                      Icons.arrow_forward_rounded,
+                                  const Icon(Icons.arrow_forward_rounded,
                                       size: 18),
                                 ],
                               ),

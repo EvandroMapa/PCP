@@ -58,8 +58,8 @@ class PaiPedidoCorteDobraWidget extends StatelessWidget {
               const H(8),
               LinearProgressIndicator(
                 value: pedido.getPrcntgProduzindo(),
-                backgroundColor: PedidoProdutoStatus.produzindo.color
-                    .withValues(alpha: 0.3),
+                backgroundColor:
+                    PedidoProdutoStatus.produzindo.color.withValues(alpha: 0.3),
                 valueColor: AlwaysStoppedAnimation(
                   PedidoProdutoStatus.produzindo.color,
                 ),

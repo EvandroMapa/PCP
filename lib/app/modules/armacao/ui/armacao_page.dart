@@ -20,7 +20,6 @@ class ArmacaoPage extends StatefulWidget {
 }
 
 class _ArmacaoPageState extends State<ArmacaoPage> {
-
   @override
   void initState() {
     setWebTitle('Armação');
@@ -50,7 +49,8 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
                 children: [
                   const CircularProgressIndicator(),
                   const SizedBox(height: 16),
-                  Text('Aguarde, carregando pedidos...', style: AppCss.mediumRegular),
+                  Text('Aguarde, carregando pedidos...',
+                      style: AppCss.mediumRegular),
                 ],
               ),
             );
@@ -58,10 +58,12 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
           return StreamOut<List<PedidoModel>>(
             stream: armacaoCtrl.pedidosStream.listen,
             builder: (_, pedidos) => pedidos.isEmpty
-                ? const EmptyData(message: 'Nenhum lote para armação encontrado!')
+                ? const EmptyData(
+                    message: 'Nenhum lote para armação encontrado!')
                 : GridView.builder(
                     padding: const EdgeInsets.all(24),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 3,
                       mainAxisExtent: 290, // Reduzido para caber sem rolar
                       crossAxisSpacing: 24,
@@ -88,7 +90,7 @@ class _PedidoArmacaoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resumo = pedido.armacaoResumo['details'] ?? {};
-    
+
     return InkWell(
       onTap: () => push(context, ArmacaoElementosPage(pedido: pedido)),
       borderRadius: BorderRadius.circular(25),
@@ -164,12 +166,17 @@ class _PedidoArmacaoCard extends StatelessWidget {
         children: [
           Text(
             pedido.localizador,
-            style: AppCss.largeBold.setSize(25).setColor(Colors.white).copyWith(letterSpacing: 2),
+            style: AppCss.largeBold
+                .setSize(25)
+                .setColor(Colors.white)
+                .copyWith(letterSpacing: 2),
           ),
           const SizedBox(height: 6),
           Text(
             pedido.cliente.nome.toUpperCase(),
-            style: AppCss.largeBold.setSize(15).setColor(Colors.white.withValues(alpha: 0.6)),
+            style: AppCss.largeBold
+                .setSize(15)
+                .setColor(Colors.white.withValues(alpha: 0.6)),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -191,12 +198,18 @@ class _PedidoArmacaoCard extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             pc,
-            style: AppCss.largeBold.setSize(24).setColor(Colors.black).copyWith(letterSpacing: -0.5),
+            style: AppCss.largeBold
+                .setSize(24)
+                .setColor(Colors.black)
+                .copyWith(letterSpacing: -0.5),
           ),
           const SizedBox(height: 8),
           Text(
             kg,
-            style: AppCss.largeBold.setSize(16).setColor(Colors.black).copyWith(letterSpacing: -0.3),
+            style: AppCss.largeBold
+                .setSize(16)
+                .setColor(Colors.black)
+                .copyWith(letterSpacing: -0.3),
           ),
         ],
       ),

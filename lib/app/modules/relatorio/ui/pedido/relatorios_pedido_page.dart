@@ -227,7 +227,8 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
                 double totalBitola =
                     relatorioCtrl.getPedidosTotalPorBitola(produto);
                 if (totalBitola <= 0) return const SizedBox();
-                final isExpanded = model.expandedProdutosIds.contains(produto.id);
+                final isExpanded =
+                    model.expandedProdutosIds.contains(produto.id);
                 return Column(
                   children: [
                     InkWell(
@@ -258,7 +259,8 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
                             ),
                             const W(8),
                             Expanded(
-                              child: Text('Bitola ${produto.descricaoReplaced}mm',
+                              child: Text(
+                                  'Bitola ${produto.descricaoReplaced}mm',
                                   style: AppCss.minimumBold),
                             ),
                             Text(totalBitola.toKg(), style: AppCss.minimumBold),
@@ -266,7 +268,8 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
                         ),
                       ),
                     ),
-                    if (isExpanded) _bitolaDetalheWidget(model, produto, totalBitola),
+                    if (isExpanded)
+                      _bitolaDetalheWidget(model, produto, totalBitola),
                   ],
                 );
               },
@@ -276,8 +279,8 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
     );
   }
 
-  Widget _bitolaDetalheWidget(
-      RelatorioPedidoViewModel model, ProdutoModel produto, double totalBitola) {
+  Widget _bitolaDetalheWidget(RelatorioPedidoViewModel model,
+      ProdutoModel produto, double totalBitola) {
     List<PedidoModel> pedidos = model.relatorio!.pedidos
         .where((p) => p.produtos.any((pr) => pr.produto.id == produto.id))
         .toList();
@@ -287,7 +290,8 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.horizontal(right: Radius.circular(12)),
-        border: Border(left: BorderSide(color: AppColors.primaryMain, width: 4)),
+        border:
+            Border(left: BorderSide(color: AppColors.primaryMain, width: 4)),
         boxShadow: [
           BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -420,7 +424,9 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
                 const W(4),
                 Text(
                   '${status.label}: ${qtde.toKg()} (${percent.toStringAsFixed(1)}%)',
-                  style: AppCss.minimumRegular.setSize(12).setColor(Colors.grey[700]!),
+                  style: AppCss.minimumRegular
+                      .setSize(12)
+                      .setColor(Colors.grey[700]!),
                 ),
               ],
             );
@@ -453,7 +459,8 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: AppColors.primaryMain.withValues(alpha: 0.05),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(16)),
               border: Border(
                   bottom: BorderSide(
                       color: AppColors.primaryMain.withValues(alpha: 0.1))),

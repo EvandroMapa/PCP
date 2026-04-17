@@ -6,7 +6,8 @@ import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 
 class FabricanteSupabaseCollection extends FabricanteCollection {
-  static final FabricanteSupabaseCollection _instance = FabricanteSupabaseCollection._();
+  static final FabricanteSupabaseCollection _instance =
+      FabricanteSupabaseCollection._();
   FabricanteSupabaseCollection._() : super.base() {
     dataStream = AppStream.seed([]);
   }
@@ -99,10 +100,10 @@ class FabricanteSupabaseCollection extends FabricanteCollection {
     _isListen = true;
     SupabaseService.client
         .from(name)
-        .stream(primaryKey: ['id'])
-        .listen((List<Map<String, dynamic>> data) {
-          final fabricantes = data.map((e) => FabricanteModel.fromSupabaseMap(e)).toList();
-          dataStream.add(fabricantes);
-        });
+        .stream(primaryKey: ['id']).listen((List<Map<String, dynamic>> data) {
+      final fabricantes =
+          data.map((e) => FabricanteModel.fromSupabaseMap(e)).toList();
+      dataStream.add(fabricantes);
+    });
   }
 }

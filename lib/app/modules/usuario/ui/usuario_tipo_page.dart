@@ -50,13 +50,15 @@ class _UsuarioTipoPageState extends State<UsuarioTipoPage> {
                       visualDensity: VisualDensity.compact,
                       padding: EdgeInsets.zero,
                       icon: const Icon(Icons.edit_outlined, size: 20),
-                      onPressed: () => showUsuarioTipoFormDialog(context, tipo: tipo),
+                      onPressed: () =>
+                          showUsuarioTipoFormDialog(context, tipo: tipo),
                     ),
                     const SizedBox(width: 8),
                     IconButton(
                       visualDensity: VisualDensity.compact,
                       padding: EdgeInsets.zero,
-                      icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                      icon: const Icon(Icons.delete_outline,
+                          size: 20, color: Colors.red),
                       onPressed: () => _confirmDelete(context, tipo),
                     ),
                   ],
@@ -81,7 +83,8 @@ class _UsuarioTipoPageState extends State<UsuarioTipoPage> {
         title: const Text('Excluir Perfil'),
         content: Text('Deseja realmente excluir o perfil "${tipo.nome}"?'),
         actions: [
-          TextButton(onPressed: () => pop(context), child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => pop(context), child: const Text('Cancelar')),
           TextButton(
             onPressed: () {
               pop(context);

@@ -42,9 +42,8 @@ class ItemLabel extends StatelessWidget {
                 )
                 .copyWith(
                   decoration: isDisable ? TextDecoration.lineThrough : null,
-                  color: isDisable
-                      ? AppColors.black.withValues(alpha: 0.3)
-                      : null,
+                  color:
+                      isDisable ? AppColors.black.withValues(alpha: 0.3) : null,
                 ),
           ),
         if (isEditable)
@@ -61,9 +60,8 @@ class ItemLabel extends StatelessWidget {
                         color: AppColors.black.withValues(alpha: 0.8),
                       )
                       .copyWith(
-                        decoration: isDisable
-                            ? TextDecoration.lineThrough
-                            : null,
+                        decoration:
+                            isDisable ? TextDecoration.lineThrough : null,
                         color: isDisable
                             ? AppColors.black.withValues(alpha: 0.3)
                             : null,
@@ -87,30 +85,37 @@ class ItemLabel extends StatelessWidget {
               ],
             ),
           ),
-        Builder(
-          builder: (context) {
-            final isAUrl = isURL(value);
-            return InkWell(
-              onTap: isAUrl ? () {
-                if (isAUrl) {
-                  launchUrl(Uri.parse(value));
-                }
-              } : null,
-              child: Text(
-                value,
-                style: AppCss.minimumRegular.setSize(13)
-                    .setColor(color ?? AppColors.black)
-                    .copyWith(
-                      decorationColor: isAUrl ? Colors.blue : null,
-                      decoration: isAUrl ? TextDecoration.underline : isDisable ? TextDecoration.lineThrough : null,
-                      color: isAUrl ? Colors.blue : isDisable
-                          ? AppColors.black.withValues(alpha: 0.3)
-                          : null,
-                    ),
-              ),
-            );
-          }
-        ),
+        Builder(builder: (context) {
+          final isAUrl = isURL(value);
+          return InkWell(
+            onTap: isAUrl
+                ? () {
+                    if (isAUrl) {
+                      launchUrl(Uri.parse(value));
+                    }
+                  }
+                : null,
+            child: Text(
+              value,
+              style: AppCss.minimumRegular
+                  .setSize(13)
+                  .setColor(color ?? AppColors.black)
+                  .copyWith(
+                    decorationColor: isAUrl ? Colors.blue : null,
+                    decoration: isAUrl
+                        ? TextDecoration.underline
+                        : isDisable
+                            ? TextDecoration.lineThrough
+                            : null,
+                    color: isAUrl
+                        ? Colors.blue
+                        : isDisable
+                            ? AppColors.black.withValues(alpha: 0.3)
+                            : null,
+                  ),
+            ),
+          );
+        }),
       ],
     );
   }

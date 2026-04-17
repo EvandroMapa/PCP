@@ -18,7 +18,8 @@ class StepCreateModel {
   Color color = AppColors.primaryMain;
   List<StepModel> fromSteps = [];
   List<String> moveRoles = []; // IDs dos perfis (UsuarioTipoModel.id)
-  List<UsuarioTipoModel> addedTipos = []; // lista gerenciada pelo AppDropDownList
+  List<UsuarioTipoModel> addedTipos =
+      []; // lista gerenciada pelo AppDropDownList
   DateTime createdAt = DateTime.now();
   bool isDefault = false;
   bool isShipping = false;
@@ -28,12 +29,17 @@ class StepCreateModel {
   bool considerarConsumoRelatorioPedidos = true;
   bool isExibirArmacao = false;
   bool isExibirGraficoCDA = false;
+  bool isBlockMoveWithoutElements = false;
 
   late bool isEdit;
 
-  StepCreateModel() : id = HashService.get, isEdit = false;
+  StepCreateModel()
+      : id = HashService.get,
+        isEdit = false;
 
-  StepCreateModel.edit(StepModel etapa) : id = etapa.id, isEdit = true {
+  StepCreateModel.edit(StepModel etapa)
+      : id = etapa.id,
+        isEdit = true {
     name.text = etapa.name;
     color = etapa.color;
     fromSteps = List<StepModel>.from(etapa.fromSteps);
@@ -52,23 +58,25 @@ class StepCreateModel {
     considerarConsumoRelatorioPedidos = etapa.considerarConsumoRelatorioPedidos;
     isExibirArmacao = etapa.isExibirArmacao;
     isExibirGraficoCDA = etapa.isExibirGraficoCDA;
+    isBlockMoveWithoutElements = etapa.isBlockMoveWithoutElements;
   }
 
   StepModel toStepModel(StepModel? etapa) => StepModel(
-    id: id,
-    name: name.text,
-    color: color,
-    fromStepsIds: fromSteps.map((e) => e.id).toList(),
-    moveRoles: moveRoles,
-    createdAt: createdAt,
-    index: etapa?.index ?? FirestoreClient.steps.data.length,
-    isDefault: isDefault,
-    isShipping: isShipping,
-    shipping: shipping?.toStepShippingModel(),
-    isArchivedAvailable: isArchivedAvailable,
-    isPermiteProducao: isPermiteProducao,
-    considerarConsumoRelatorioPedidos: considerarConsumoRelatorioPedidos,
-    isExibirArmacao: isExibirArmacao,
-    isExibirGraficoCDA: isExibirGraficoCDA,
-  );
+        id: id,
+        name: name.text,
+        color: color,
+        fromStepsIds: fromSteps.map((e) => e.id).toList(),
+        moveRoles: moveRoles,
+        createdAt: createdAt,
+        index: etapa?.index ?? FirestoreClient.steps.data.length,
+        isDefault: isDefault,
+        isShipping: isShipping,
+        shipping: shipping?.toStepShippingModel(),
+        isArchivedAvailable: isArchivedAvailable,
+        isPermiteProducao: isPermiteProducao,
+        considerarConsumoRelatorioPedidos: considerarConsumoRelatorioPedidos,
+        isExibirArmacao: isExibirArmacao,
+        isExibirGraficoCDA: isExibirGraficoCDA,
+        isBlockMoveWithoutElements: isBlockMoveWithoutElements,
+      );
 }

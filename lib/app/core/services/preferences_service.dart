@@ -7,20 +7,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class PreferencesService implements Service {
   static late SharedPreferences instance;
-  
+
   // AppStream permite que a UI seja reativa a qualquer mudança de largura instantaneamente
-  static final AppStream<double> kanbanColumnWidth = AppStream<double>.seed(300.0);
+  static final AppStream<double> kanbanColumnWidth =
+      AppStream<double>.seed(300.0);
   static final AppStream<int> maxElementosProducao = AppStream<int>.seed(10);
   static final AppStream<int> pdfOptimizationLevel = AppStream<int>.seed(5);
-  static final AppStream<String> apontamentoProducaoCD = AppStream<String>.seed('por_pedido');
+  static final AppStream<String> apontamentoProducaoCD =
+      AppStream<String>.seed('por_pedido');
   static final AppStream<String> logoUrl = AppStream<String>.seed('');
-  static final AppStream<List<String>> stepsAcompanhamento = AppStream<List<String>>.seed([]);
+  static final AppStream<List<String>> stepsAcompanhamento =
+      AppStream<List<String>>.seed([]);
   static final AppStream<String> whatsappSuporte = AppStream<String>.seed('');
 
   @override
   Future<void> initialize() async {
     instance = await SharedPreferences.getInstance();
-    
+
     // Recupera largura do Kanban
     final savedWidth = instance.getDouble('kanbanColumnWidth');
     if (savedWidth != null) {
@@ -88,9 +91,9 @@ class PreferencesService implements Service {
     maxElementosProducao.listen.listen((value) async {
       instance.setInt('maxElementosProducao', value);
       try {
-        await SupabaseService.client
-            .from('configs')
-            .upsert({'key': 'max_elementos_producao', 'value': value}, onConflict: 'key');
+        await SupabaseService.client.from('configs').upsert(
+            {'key': 'max_elementos_producao', 'value': value},
+            onConflict: 'key');
       } catch (e) {
         log('Erro ao salvar limite global: $e');
       }
@@ -98,9 +101,9 @@ class PreferencesService implements Service {
 
     pdfOptimizationLevel.listen.skip(1).listen((value) async {
       try {
-        await SupabaseService.client
-            .from('configs')
-            .upsert({'key': 'pdf_optimization_level', 'value': value}, onConflict: 'key');
+        await SupabaseService.client.from('configs').upsert(
+            {'key': 'pdf_optimization_level', 'value': value},
+            onConflict: 'key');
       } catch (e) {
         log('Erro ao salvar nível de otimização PDF: $e');
       }
@@ -108,9 +111,9 @@ class PreferencesService implements Service {
 
     apontamentoProducaoCD.listen.skip(1).listen((value) async {
       try {
-        await SupabaseService.client
-            .from('configs')
-            .upsert({'key': 'apontamento_producao_cd', 'value': value}, onConflict: 'key');
+        await SupabaseService.client.from('configs').upsert(
+            {'key': 'apontamento_producao_cd', 'value': value},
+            onConflict: 'key');
       } catch (e) {
         log('Erro ao salvar apontamento CD: $e');
       }
@@ -169,9 +172,9 @@ class PreferencesService implements Service {
 
     stepsAcompanhamento.listen.skip(1).listen((value) async {
       try {
-        await SupabaseService.client
-            .from('configs')
-            .upsert({'key': 'steps_acompanhamento', 'value': json.encode(value)}, onConflict: 'key');
+        await SupabaseService.client.from('configs').upsert(
+            {'key': 'steps_acompanhamento', 'value': json.encode(value)},
+            onConflict: 'key');
       } catch (e) {
         log('Erro ao salvar etapas acompanhamento: $e');
       }
@@ -179,9 +182,9 @@ class PreferencesService implements Service {
 
     whatsappSuporte.listen.skip(1).listen((value) async {
       try {
-        await SupabaseService.client
-            .from('configs')
-            .upsert({'key': 'whatsapp_suporte', 'value': value}, onConflict: 'key');
+        await SupabaseService.client.from('configs').upsert(
+            {'key': 'whatsapp_suporte', 'value': value},
+            onConflict: 'key');
       } catch (e) {
         log('Erro ao salvar WhatsApp suporte: $e');
       }
@@ -196,6 +199,7 @@ class PreferencesService implements Service {
   static int get pdfQuality {
     return (95 - (pdfOptimizationLevel.value / 10.0) * 40).round();
   }
+
   /// Re-lê a configuração de apontamento de produção CD do Supabase.
   /// Deve ser chamado ao abrir uma ordem para garantir valor atualizado.
   static Future<void> refreshApontamentoCD() async {

@@ -50,16 +50,20 @@ class TagController {
     try {
       onValid(tag);
       final newTag = form.toTagModel();
-      
+
       if (newTag.isDefaultCD) {
-        for (var t in FirestoreClient.tags.data.where((e) => e.isDefaultCD && e.id != newTag.id).toList()) {
+        for (var t in FirestoreClient.tags.data
+            .where((e) => e.isDefaultCD && e.id != newTag.id)
+            .toList()) {
           final updated = t.copyWith(isDefaultCD: false);
           await FirestoreClient.tags.update(updated);
         }
       }
-      
+
       if (newTag.isDefaultCDA) {
-        for (var t in FirestoreClient.tags.data.where((e) => e.isDefaultCDA && e.id != newTag.id).toList()) {
+        for (var t in FirestoreClient.tags.data
+            .where((e) => e.isDefaultCDA && e.id != newTag.id)
+            .toList()) {
           final updated = t.copyWith(isDefaultCDA: false);
           await FirestoreClient.tags.update(updated);
         }

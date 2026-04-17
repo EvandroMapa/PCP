@@ -12,21 +12,38 @@ class ChecklistCreateModel {
   TextController nome = TextController();
   List<CheckItemModel> checklist = [];
   DateTime createdAt = DateTime.now();
+  bool isPadrao = false;
 
   late bool isEdit;
 
-  ChecklistCreateModel() : id = HashService.get, isEdit = false;
+  ChecklistCreateModel()
+      : id = HashService.get,
+        isEdit = false;
 
-  ChecklistCreateModel.edit(ChecklistModel tag) : id = tag.id, isEdit = true {
-    checklist = tag.checklist;
+  ChecklistModel? _original;
+
+  ChecklistCreateModel.edit(ChecklistModel tag)
+      : id = tag.id,
+        isEdit = true {
+    _original = tag;
+    checklist = tag.checklist.map((e) => e.copyWith()).toList();
     createdAt = tag.createdAt;
     nome.text = tag.nome;
+    isPadrao = tag.isPadrao;
+  }
+
+  bool get isDirty {
+    if (!isEdit) {
+      return nome.text.isNotEmpty || checklist.isNotEmpty || isPadrao;
+    }
+    return toChecklistModel() != _original;
   }
 
   ChecklistModel toChecklistModel() => ChecklistModel(
-    id: id,
-    nome: nome.text,
-    checklist: checklist,
-    createdAt: createdAt,
-  );
+        id: id,
+        nome: nome.text,
+        checklist: checklist,
+        createdAt: createdAt,
+        isPadrao: isPadrao,
+      );
 }

@@ -14,16 +14,16 @@ class PedidoStatusModel {
   });
 
   factory PedidoStatusModel.create(PedidoStatus status) => PedidoStatusModel(
-    id: HashService.get,
-    createdAt: DateTime.now(),
-    status: status,
-  );
+        id: HashService.get,
+        createdAt: DateTime.now(),
+        status: status,
+      );
 
   factory PedidoStatusModel.empty() => PedidoStatusModel(
-    id: '',
-    createdAt: DateTime.now(),
-    status: PedidoStatus.aguardandoProducaoCD,
-  );
+        id: '',
+        createdAt: DateTime.now(),
+        status: PedidoStatus.aguardandoProducaoCD,
+      );
 
   Map<String, dynamic> toMap() {
     return {
@@ -36,9 +36,10 @@ class PedidoStatusModel {
   factory PedidoStatusModel.fromMap(Map<String, dynamic> map) {
     return PedidoStatusModel(
       id: map['id'],
-      status: (map['status'] is int && map['status'] < PedidoStatus.values.length)
-          ? PedidoStatus.values[map['status']]
-          : PedidoStatus.aguardandoProducaoCD,
+      status:
+          (map['status'] is int && map['status'] < PedidoStatus.values.length)
+              ? PedidoStatus.values[map['status']]
+              : PedidoStatus.aguardandoProducaoCD,
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
     );
   }
@@ -59,8 +60,8 @@ class PedidoStatusModel {
         (e) => e.name == map['status'],
         orElse: () => PedidoStatus.aguardandoProducaoCD,
       ),
-      createdAt: map['created_at'] != null 
-          ? DateTime.parse(map['created_at']) 
+      createdAt: map['created_at'] != null
+          ? DateTime.parse(map['created_at'])
           : DateTime.now(),
     );
   }

@@ -39,43 +39,43 @@ class _FabricantesPageState extends State<FabricantesPage> {
   @override
   Widget build(BuildContext context) {
     return StreamOut<List<FabricanteModel>>(
-        stream: FirestoreClient.fabricantes.dataStream.listen,
-        builder: (_, __) => StreamOut<FabricanteUtils>(
-          stream: fabricanteCtrl.utilsStream.listen,
-          builder: (_, utils) {
-            final fabricantes = fabricanteCtrl
-                .getFabricanteesFiltered(utils.search.text, __)
-                .toList();
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: AppField(
-                    hint: 'Pesquisar',
-                    controller: utils.search,
-                    suffixIcon: Icons.search,
-                    onChanged: (_) => fabricanteCtrl.utilsStream.update(),
-                  ),
+      stream: FirestoreClient.fabricantes.dataStream.listen,
+      builder: (_, __) => StreamOut<FabricanteUtils>(
+        stream: fabricanteCtrl.utilsStream.listen,
+        builder: (_, utils) {
+          final fabricantes = fabricanteCtrl
+              .getFabricanteesFiltered(utils.search.text, __)
+              .toList();
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: AppField(
+                  hint: 'Pesquisar',
+                  controller: utils.search,
+                  suffixIcon: Icons.search,
+                  onChanged: (_) => fabricanteCtrl.utilsStream.update(),
                 ),
-                Expanded(
-                  child: fabricantes.isEmpty
-                      ? const EmptyData()
-                      : RefreshIndicator(
-                          onRefresh: () async =>
-                              FirestoreClient.fabricantes.fetch(),
-                          child: ListView.separated(
-                            itemCount: fabricantes.length,
-                            separatorBuilder: (_, i) => const Divisor(),
-                            itemBuilder: (_, i) =>
-                                _itemFabricanteWidget(fabricantes[i]),
-                          ),
+              ),
+              Expanded(
+                child: fabricantes.isEmpty
+                    ? const EmptyData()
+                    : RefreshIndicator(
+                        onRefresh: () async =>
+                            FirestoreClient.fabricantes.fetch(),
+                        child: ListView.separated(
+                          itemCount: fabricantes.length,
+                          separatorBuilder: (_, i) => const Divisor(),
+                          itemBuilder: (_, i) =>
+                              _itemFabricanteWidget(fabricantes[i]),
                         ),
-                ),
-              ],
-            );
-          },
-        ),
-      );
+                      ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   ListTile _itemFabricanteWidget(FabricanteModel usuario) {

@@ -99,9 +99,11 @@ class _ProdutoCreatePageState extends State<ProdutoCreatePage> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.inventory_2_outlined, color: AppColors.primaryMain),
+                  Icon(Icons.inventory_2_outlined,
+                      color: AppColors.primaryMain),
                   const SizedBox(width: 12),
-                  Text('DADOS DO PRODUTO', style: AppCss.mediumBold.setSize(16)),
+                  Text('DADOS DO PRODUTO',
+                      style: AppCss.mediumBold.setSize(16)),
                 ],
               ),
               const SizedBox(height: 24),
@@ -133,8 +135,7 @@ class _ProdutoCreatePageState extends State<ProdutoCreatePage> {
           ),
         ),
         const H(24),
-        if (form.isEdit)
-          _buildDeleteButton(),
+        if (form.isEdit) _buildDeleteButton(),
       ],
     );
   }
@@ -147,7 +148,8 @@ class _ProdutoCreatePageState extends State<ProdutoCreatePage> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.error.withValues(alpha: 0.3), width: 1.0),
+          border: Border.all(
+              color: AppColors.error.withValues(alpha: 0.3), width: 1.0),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

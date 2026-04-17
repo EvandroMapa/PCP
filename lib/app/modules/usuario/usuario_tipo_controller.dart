@@ -13,15 +13,19 @@ class UsuarioTipoController {
   UsuarioTipoController._();
   factory UsuarioTipoController() => _instance;
 
-  final AppStream<List<UsuarioTipoModel>> tiposStream = BackendClient.usuarioTipos.dataStream;
+  final AppStream<List<UsuarioTipoModel>> tiposStream =
+      BackendClient.usuarioTipos.dataStream;
   List<UsuarioTipoModel> get tipos => tiposStream.value;
 
-  final AppStream<UsuarioTipoCreateModel> formStream = AppStream<UsuarioTipoCreateModel>();
+  final AppStream<UsuarioTipoCreateModel> formStream =
+      AppStream<UsuarioTipoCreateModel>();
   UsuarioTipoCreateModel get form => formStream.value;
 
   void init(UsuarioTipoModel? tipo) {
     formStream.add(
-      tipo != null ? UsuarioTipoCreateModel.edit(tipo) : UsuarioTipoCreateModel(),
+      tipo != null
+          ? UsuarioTipoCreateModel.edit(tipo)
+          : UsuarioTipoCreateModel(),
     );
   }
 
@@ -55,13 +59,15 @@ class UsuarioTipoController {
   Future<void> onDelete(BuildContext context, UsuarioTipoModel tipo) async {
     try {
       // Verificar se há usuários vinculados
-      final usuariosComEsteTipo = BackendClient.usuarios.data.where((u) => u.usuarioTipoId == tipo.id);
+      final usuariosComEsteTipo =
+          BackendClient.usuarios.data.where((u) => u.usuarioTipoId == tipo.id);
       if (usuariosComEsteTipo.isNotEmpty) {
-        throw Exception('Não é possível excluir um perfil que possui usuários vinculados.');
+        throw Exception(
+            'Não é possível excluir um perfil que possui usuários vinculados.');
       }
 
       await BackendClient.usuarioTipos.delete(tipo);
-      
+
       NotificationService.showPositive(
         'Perfil Excluído',
         'Operação realizada com sucesso',
@@ -86,7 +92,9 @@ class UsuarioTipoCreateModel {
   bool isArmador = false;
   bool isEdit = false;
 
-  UsuarioTipoCreateModel() : id = '', isEdit = false;
+  UsuarioTipoCreateModel()
+      : id = '',
+        isEdit = false;
 
   UsuarioTipoCreateModel.edit(UsuarioTipoModel m)
       : id = m.id,

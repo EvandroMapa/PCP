@@ -26,9 +26,11 @@ void main() async {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(20),
-            child: Text('Erro ao iniciar o AçoPlus: $e',
+            child: Text(
+              'Erro ao iniciar o AçoPlus: $e',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                  color: Colors.red, fontWeight: FontWeight.bold),
             ),
           ),
         ),

@@ -13,25 +13,34 @@ enum ElementoStatus {
 
   String get label {
     switch (this) {
-      case ElementoStatus.aguardando: return 'Aguardando';
-      case ElementoStatus.armando: return 'Armando';
-      case ElementoStatus.pronto: return 'Pronto';
+      case ElementoStatus.aguardando:
+        return 'Aguardando';
+      case ElementoStatus.armando:
+        return 'Armando';
+      case ElementoStatus.pronto:
+        return 'Pronto';
     }
   }
 
   Color get color {
     switch (this) {
-      case ElementoStatus.aguardando: return Colors.grey[400]!;
-      case ElementoStatus.armando: return Colors.yellow[700]!;
-      case ElementoStatus.pronto: return Colors.green[600]!;
+      case ElementoStatus.aguardando:
+        return Colors.grey[400]!;
+      case ElementoStatus.armando:
+        return Colors.yellow[700]!;
+      case ElementoStatus.pronto:
+        return Colors.green[600]!;
     }
   }
 
   Color get backgroundColor {
     switch (this) {
-      case ElementoStatus.aguardando: return Colors.grey[100]!;
-      case ElementoStatus.armando: return Colors.yellow[50]!;
-      case ElementoStatus.pronto: return Colors.green[50]!;
+      case ElementoStatus.aguardando:
+        return Colors.grey[100]!;
+      case ElementoStatus.armando:
+        return Colors.yellow[50]!;
+      case ElementoStatus.pronto:
+        return Colors.green[50]!;
     }
   }
 }
@@ -44,17 +53,23 @@ enum PosicaoStatus {
 
   String get label {
     switch (this) {
-      case PosicaoStatus.aguardando: return 'Aguardando';
-      case PosicaoStatus.produzindo: return 'Produzindo';
-      case PosicaoStatus.pronto: return 'Pronto';
+      case PosicaoStatus.aguardando:
+        return 'Aguardando';
+      case PosicaoStatus.produzindo:
+        return 'Produzindo';
+      case PosicaoStatus.pronto:
+        return 'Pronto';
     }
   }
 
   Color get color {
     switch (this) {
-      case PosicaoStatus.aguardando: return Colors.grey[400]!;
-      case PosicaoStatus.produzindo: return Colors.orange[700]!;
-      case PosicaoStatus.pronto: return Colors.green[600]!;
+      case PosicaoStatus.aguardando:
+        return Colors.grey[400]!;
+      case PosicaoStatus.produzindo:
+        return Colors.orange[700]!;
+      case PosicaoStatus.pronto:
+        return Colors.green[600]!;
     }
   }
 }
@@ -63,13 +78,13 @@ enum PosicaoStatus {
 class ElementoPosicaoModel {
   final String id;
   final String elementoId;
-  final String nome;       // nome da posição (ex: "Pilar P1")
-  final String numeroOs;   // número da OS (ex: "OS 1", "001")
+  final String nome; // nome da posição (ex: "Pilar P1")
+  final String numeroOs; // número da OS (ex: "OS 1", "001")
   final String produtoId;
-  ProdutoModel? produto;   // bitola do catálogo
+  ProdutoModel? produto; // bitola do catálogo
   final double pesoKg;
-  final int qtde;           // quantidade de peças/barras na posição
-  PosicaoStatus status;     // status de produção CD
+  final int qtde; // quantidade de peças/barras na posição
+  PosicaoStatus status; // status de produção CD
   final DateTime createdAt;
 
   ElementoPosicaoModel({
@@ -144,12 +159,10 @@ class ElementoModel {
   });
 
   /// Peso total calculado (soma das posições * qtde)
-  double get pesoTotal =>
-      posicoes.fold(0.0, (sum, p) => sum + p.pesoKg) * qtde;
+  double get pesoTotal => posicoes.fold(0.0, (sum, p) => sum + p.pesoKg) * qtde;
 
   /// Peso unitário de um elemento (soma das posições)
-  double get pesoUnitario =>
-      posicoes.fold(0.0, (sum, p) => sum + p.pesoKg);
+  double get pesoUnitario => posicoes.fold(0.0, (sum, p) => sum + p.pesoKg);
 
   ElementoModel copyWith({
     String? id,
@@ -188,7 +201,8 @@ class ElementoModel {
   bool get isProntoParcial => qtdePronto > 0 && qtdePronto < qtde;
 
   /// Progresso de conclusão (0.0 a 1.0)
-  double get progressoPronto => qtde > 0 ? (qtdePronto / qtde).clamp(0.0, 1.0) : 0.0;
+  double get progressoPronto =>
+      qtde > 0 ? (qtdePronto / qtde).clamp(0.0, 1.0) : 0.0;
 
   /// Peso já concluído proporcionalmente
   double get pesoPronto => pesoTotal * progressoPronto;
@@ -255,9 +269,13 @@ class ElementoPosicaoCreateModel {
   }
 
   bool get isValid =>
-      nome.text.isNotEmpty && numeroOs.text.isNotEmpty && produto != null && pesoDouble > 0;
+      nome.text.isNotEmpty &&
+      numeroOs.text.isNotEmpty &&
+      produto != null &&
+      pesoDouble > 0;
 
-  double get pesoDouble => double.tryParse(pesoKg.text.replaceAll(',', '.')) ?? 0.0;
+  double get pesoDouble =>
+      double.tryParse(pesoKg.text.replaceAll(',', '.')) ?? 0.0;
   int get qtdeInt => int.tryParse(qtde.text) ?? 0;
 
   ElementoPosicaoModel toModel(String elementoId) => ElementoPosicaoModel(
@@ -287,9 +305,8 @@ class ElementoCreateModel {
         isEdit = true {
     nome.text = m.nome;
     qtde.text = m.qtde.toString();
-    posicoes = m.posicoes
-        .map((p) => ElementoPosicaoCreateModel.fromModel(p))
-        .toList();
+    posicoes =
+        m.posicoes.map((p) => ElementoPosicaoCreateModel.fromModel(p)).toList();
   }
 
   int get qtdeInt => int.tryParse(qtde.text) ?? 1;
@@ -297,5 +314,6 @@ class ElementoCreateModel {
   double get pesoTotal =>
       posicoes.fold(0.0, (sum, p) => sum + p.pesoDouble) * qtdeInt;
 
-  bool get isValid => (nome.text.isNotEmpty || isEdit) && posicoes.isNotEmpty && qtdeInt > 0;
+  bool get isValid =>
+      (nome.text.isNotEmpty || isEdit) && posicoes.isNotEmpty && qtdeInt > 0;
 }

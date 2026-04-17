@@ -116,8 +116,7 @@ class _KanbanCardCalendarWidgetState extends State<KanbanCardCalendarWidget> {
                             if (widget.pedido.users.isNotEmpty)
                               KanbanCardUsersWidget(
                                 widget.pedido,
-                                viewMode:
-                                    stepViewMode ==
+                                viewMode: stepViewMode ==
                                             KanbanCardStepViewMode.expanded ||
                                         widget.calendarFormat ==
                                             CalendarFormat.week

@@ -29,9 +29,8 @@ class ProdutoCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     final data = await FirebaseFirestore.instance.collection(name).get();
-    final countries = data.docs
-        .map((e) => ProdutoModel.fromMap(e.data()))
-        .toList();
+    final countries =
+        data.docs.map((e) => ProdutoModel.fromMap(e.data())).toList();
     countries.sort((a, b) => a.number.compareTo(b.number));
     dataStream.add(countries);
   }
@@ -71,12 +70,11 @@ class ProdutoCollection {
             : collection)
         .snapshots()
         .listen((e) {
-          final countries = e.docs
-              .map((e) => ProdutoModel.fromMap(e.data()))
-              .toList();
-          countries.sort((a, b) => a.number.compareTo(b.number));
-          dataStream.add(countries);
-        });
+      final countries =
+          e.docs.map((e) => ProdutoModel.fromMap(e.data())).toList();
+      countries.sort((a, b) => a.number.compareTo(b.number));
+      dataStream.add(countries);
+    });
   }
 
   ProdutoModel getById(String id) =>

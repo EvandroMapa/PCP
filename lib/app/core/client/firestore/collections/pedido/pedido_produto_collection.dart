@@ -11,7 +11,8 @@ class PedidoProdutoCollection {
   factory PedidoProdutoCollection() => _instance;
   String name = 'pedido_produtos';
 
-  AppStream<List<PedidoProdutoModel>> dataStream = AppStream<List<PedidoProdutoModel>>();
+  AppStream<List<PedidoProdutoModel>> dataStream =
+      AppStream<List<PedidoProdutoModel>>();
   List<PedidoProdutoModel> get data => dataStream.value;
 
   Future<void> start({bool lock = true, GetOptions? options}) async {}

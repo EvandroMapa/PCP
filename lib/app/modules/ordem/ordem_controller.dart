@@ -107,24 +107,23 @@ class OrdemController {
 
   List<PedidoProdutoModel> _getPedidosProdutosAtual({OrdemModel? ordem}) =>
       ordem != null
-      ? ordem.produtos
-            .map(
-              (e) => e.copyWith(
-                isSelected: true,
-                isAvailable: e.isAvailableToChanges,
-              ),
-            )
-            .toList()
-      : [];
+          ? ordem.produtos
+              .map(
+                (e) => e.copyWith(
+                  isSelected: true,
+                  isAvailable: e.isAvailableToChanges,
+                ),
+              )
+              .toList()
+          : [];
 
   List<PedidoProdutoModel> _getPedidosProdutosSeparados(ProdutoModel produto) {
     List<PedidoProdutoModel> pedidos = [];
-    for (final pedido
-        in FirestoreClient.pedidos.data
-            .where(
-              (e) => e.pedidosFilhos.isEmpty && e.step.isPermiteProducao,
-            )
-            .toList()) {
+    for (final pedido in FirestoreClient.pedidos.data
+        .where(
+          (e) => e.pedidosFilhos.isEmpty && e.step.isPermiteProducao,
+        )
+        .toList()) {
       final pedidoProdutos = pedido.produtos
           .where(
             (e) =>
@@ -133,8 +132,7 @@ class OrdemController {
           )
           .toList();
       for (final pedidoProduto in pedidoProdutos) {
-        final isFiltered =
-            form.localizador.text.isEmpty ||
+        final isFiltered = form.localizador.text.isEmpty ||
             pedidoProduto.pedido.localizador.toCompare.contains(
               form.localizador.text.toCompare,
             );
@@ -187,8 +185,10 @@ class OrdemController {
         .first
         .replaceAll(RegExp(r'[^0-9]'), '');
 
-    form.id =
-        'OP$bitola-${[...FirestoreClient.ordens.ordensNaoArquivadas, ...FirestoreClient.ordens.ordensArquivadas].length + 1}_${HashService.get}';
+    form.id = 'OP$bitola-${[
+          ...FirestoreClient.ordens.ordensNaoArquivadas,
+          ...FirestoreClient.ordens.ordensArquivadas
+        ].length + 1}_${HashService.get}';
 
     final ordemCriada = form.toOrdemModelCreate();
     if (ordemCriada.produtos.isEmpty) {
@@ -212,8 +212,11 @@ class OrdemController {
         produto.materiaPrima = ordemCriada.materiaPrima;
       }
 
-      if (produto.statusess.isEmpty || produto.statusess.last.status != PedidoProdutoStatus.aguardandoProducao) {
-        produto.statusess.add(PedidoProdutoStatusModel.create(PedidoProdutoStatus.aguardandoProducao));
+      if (produto.statusess.isEmpty ||
+          produto.statusess.last.status !=
+              PedidoProdutoStatus.aguardandoProducao) {
+        produto.statusess.add(PedidoProdutoStatusModel.create(
+            PedidoProdutoStatus.aguardandoProducao));
       }
     }
 
@@ -228,7 +231,8 @@ class OrdemController {
     } else {
       // Fallback para Firestore (Legado)
       for (var update in mpUpdates) {
-        await FirestoreClient.pedidos.updateProdutoMateriaPrima(update.$1, update.$2);
+        await FirestoreClient.pedidos
+            .updateProdutoMateriaPrima(update.$1, update.$2);
       }
       for (var update in statusUpdates) {
         await FirestoreClient.pedidos.updateProdutoStatus(update.$1, update.$2);
@@ -236,7 +240,7 @@ class OrdemController {
     }
 
     await FirestoreClient.ordens.add(ordemCriada);
-    
+
     // Atualiza status dos pedidos pai de forma otimizada
     for (var pedidoId in pedidosAfetados) {
       final pedido = FirestoreClient.pedidos.getById(pedidoId);
@@ -292,19 +296,20 @@ class OrdemController {
     // Produtos na ordem editada
     for (PedidoProdutoModel produto in ordemEditada.produtos) {
       pedidosAfetados.add(produto.pedidoId);
-      
+
       // Atualizar Matéria-Prima se necessário
       if (produto.status.status != PedidoProdutoStatus.pronto) {
         if (ordemEditada.materiaPrima?.id != produto.materiaPrima?.id) {
           mpUpdates.add((produto, ordemEditada.materiaPrima!));
         }
       }
-      
+
       // Atualizar Status
       PedidoProdutoStatus newStatus = produto.status.status;
       if (newStatus == PedidoProdutoStatus.separado) {
         newStatus = PedidoProdutoStatus.aguardandoProducao;
-        produto.statusess.add(PedidoProdutoStatusModel.create(newStatus)); // Atualiza na memória pra UI não piscar
+        produto.statusess.add(PedidoProdutoStatusModel.create(
+            newStatus)); // Atualiza na memória pra UI não piscar
       }
       statusUpdates.add((produto, newStatus));
     }
@@ -321,14 +326,15 @@ class OrdemController {
     } else {
       // Fallback para Firestore (Legado)
       for (var update in mpUpdates) {
-        await FirestoreClient.pedidos.updateProdutoMateriaPrima(update.$1, update.$2);
+        await FirestoreClient.pedidos
+            .updateProdutoMateriaPrima(update.$1, update.$2);
       }
       for (var update in statusUpdates) {
         await FirestoreClient.pedidos.updateProdutoStatus(update.$1, update.$2);
       }
     }
 
-    // Sem removeWhere! Se era para deletar, não deveria estar no array para começar. 
+    // Sem removeWhere! Se era para deletar, não deveria estar no array para começar.
     // Além disso, se ele acabou de entrar na ordem, não será deletado.
     await FirestoreClient.ordens.update(ordemEditada);
 
@@ -346,7 +352,7 @@ class OrdemController {
     await FirestoreClient.pedidos.fetch();
     await automatizacaoCtrl.onSetStepByPedidoStatus(ordemEditada.pedidos);
     await OrdemTimelineRegister.editada(ordemEditada, ordem);
-    
+
     Navigator.pop(value);
     Navigator.pop(value);
     NotificationService.showPositive(
@@ -367,15 +373,14 @@ class OrdemController {
 
   Future<void> onDelete(value, OrdemModel ordem) async {
     if (await _isDeleteUnavailable(ordem)) return;
-    for (var pedidoProduto
-        in ordem.produtos
-            .map<PedidoProdutoModel>(
-              (e) => FirestoreClient.pedidos.getProdutoByPedidoId(
-                e.pedidoId,
-                e.id,
-              ),
-            )
-            .toList()) {
+    for (var pedidoProduto in ordem.produtos
+        .map<PedidoProdutoModel>(
+          (e) => FirestoreClient.pedidos.getProdutoByPedidoId(
+            e.pedidoId,
+            e.id,
+          ),
+        )
+        .toList()) {
       pedidoProduto.statusess.clear();
       pedidoProduto.statusess.add(
         PedidoProdutoStatusModel(
@@ -469,14 +474,15 @@ class OrdemController {
     try {
       final initialOrdem = ordem ?? getOrdemById(ordemId);
       ordemStream.add(initialOrdem);
-      
+
       // Re-lê config de apontamento para garantir valor atualizado
       PreferencesService.refreshApontamentoCD();
 
       // Carrega os pedidos da ordem para garantir que os produtos (bitolas) apareçam
       _fetchPedidosDaOrdem(initialOrdem);
 
-      subscription = FirestoreClient.ordens.listenById(ordemId).listen((ordemFetched) {
+      subscription =
+          FirestoreClient.ordens.listenById(ordemId).listen((ordemFetched) {
         // Agora aceita que a lista de produtos seja esvaziada (permitido pela UI).
         ordemStream.add(ordemFetched);
         _fetchPedidosDaOrdem(ordemFetched);
@@ -489,11 +495,16 @@ class OrdemController {
 
   Future<void> _fetchPedidosDaOrdem(OrdemModel ordem) async {
     if (ordem.id.isEmpty) return;
-    final pedidoIds = ordem.idPedidosProdutosRefs.map((e) => e['pedidoId'] ?? e['pedido_id'] ?? '').where((id) => id.isNotEmpty).toSet().toList();
+    final pedidoIds = ordem.idPedidosProdutosRefs
+        .map((e) => e['pedidoId'] ?? e['pedido_id'] ?? '')
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList();
     if (pedidoIds.isNotEmpty) {
       // Busca os pedidos no banco para popular a memória local e as bitolas aparecerem
       await FirestoreClient.pedidos.fetchByIds(pedidoIds);
-      ordemStream.update(); // Força a re-renderização com os produtos agora carregados
+      ordemStream
+          .update(); // Força a re-renderização com os produtos agora carregados
     }
   }
 
@@ -504,7 +515,8 @@ class OrdemController {
 
   OrdemModel getOrdemById(String ordemId) {
     try {
-      final ordem = FirestoreClient.ordens.data.firstWhereOrNull((e) => e.id == ordemId);
+      final ordem =
+          FirestoreClient.ordens.data.firstWhereOrNull((e) => e.id == ordemId);
       return ordem ?? OrdemModel.empty();
     } catch (_) {
       return OrdemModel.empty();
@@ -552,7 +564,8 @@ class OrdemController {
     // Busca o produto atualizado no cache para garantir que a matéria prima está populada
     final produtoAtualizado = FirestoreClient.pedidos
         .getProdutoByPedidoId(produto.pedidoId, produto.id);
-    final materiaPrimaEfetiva = produtoAtualizado.materiaPrima ?? produto.materiaPrima;
+    final materiaPrimaEfetiva =
+        produtoAtualizado.materiaPrima ?? produto.materiaPrima;
     if ((status == PedidoProdutoStatus.pronto ||
             status == PedidoProdutoStatus.produzindo) &&
         materiaPrimaEfetiva == null) {
@@ -575,7 +588,8 @@ class OrdemController {
     // Busca o produto atualizado no cache para garantir que a matéria prima está populada
     final produtoAtualizado = FirestoreClient.pedidos
         .getProdutoByPedidoId(produto.pedidoId, produto.id);
-    final materiaPrimaEfetiva = produtoAtualizado.materiaPrima ?? produto.materiaPrima;
+    final materiaPrimaEfetiva =
+        produtoAtualizado.materiaPrima ?? produto.materiaPrima;
     if ((status == PedidoProdutoStatus.pronto ||
             status == PedidoProdutoStatus.produzindo) &&
         materiaPrimaEfetiva == null) {
@@ -690,11 +704,11 @@ class OrdemController {
       for (final id in idsToUpdate) {
         await SupabaseService.client
             .from('elemento_posicoes')
-            .update({'status': posicaoStatus.name})
-            .eq('id', id);
+            .update({'status': posicaoStatus.name}).eq('id', id);
       }
       // Re-emite stream de elementos
-      AppSupabaseClient.elementos.dataStream.add(AppSupabaseClient.elementos.data);
+      AppSupabaseClient.elementos.dataStream
+          .add(AppSupabaseClient.elementos.data);
     }
   }
 
@@ -825,13 +839,14 @@ class OrdemController {
 
   Future<bool> _isArchiveUnavailable(
     OrdemModel ordem,
-  ) async => !await onDeleteProcess(
-    deleteTitle: 'Deseja arquivar a ordem?',
-    deleteMessage: 'A ordem será movida para a lista de ordens arquivadas.',
-    infoMessage:
-        'A ordem só pode ser arquivada se todos os produtos estiverem prontos.',
-    conditional: ordem.status != PedidoProdutoStatus.pronto,
-  );
+  ) async =>
+      !await onDeleteProcess(
+        deleteTitle: 'Deseja arquivar a ordem?',
+        deleteMessage: 'A ordem será movida para a lista de ordens arquivadas.',
+        infoMessage:
+            'A ordem só pode ser arquivada se todos os produtos estiverem prontos.',
+        conditional: ordem.status != PedidoProdutoStatus.pronto,
+      );
 
   Future<void> onUnarchive(
     BuildContext context,

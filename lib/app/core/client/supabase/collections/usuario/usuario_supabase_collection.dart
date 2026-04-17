@@ -8,7 +8,8 @@ import 'dart:async';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/usuario_collection.dart';
 
 class UsuarioSupabaseCollection extends UsuarioCollection {
-  static final UsuarioSupabaseCollection _instance = UsuarioSupabaseCollection._();
+  static final UsuarioSupabaseCollection _instance =
+      UsuarioSupabaseCollection._();
   UsuarioSupabaseCollection._() : super.base() {
     dataStream = AppStream.seed([]);
   }
@@ -36,7 +37,8 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     try {
-      final response = await SupabaseService.client.from(name).select('*, perfis(*)');
+      final response =
+          await SupabaseService.client.from(name).select('*, perfis(*)');
       final usuarios = List<Map<String, dynamic>>.from(response)
           .map((e) => UsuarioModel.fromSupabaseMap(e))
           .toList();
@@ -66,13 +68,12 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
     _isListen = true;
     SupabaseService.client
         .from(name)
-        .stream(primaryKey: ['id'])
-        .listen((List<Map<String, dynamic>> data) {
-          _streamDebounce?.cancel();
-          _streamDebounce = Timer(const Duration(milliseconds: 500), () {
-            start(lock: false);
-          });
-        });
+        .stream(primaryKey: ['id']).listen((List<Map<String, dynamic>> data) {
+      _streamDebounce?.cancel();
+      _streamDebounce = Timer(const Duration(milliseconds: 500), () {
+        start(lock: false);
+      });
+    });
   }
 
   @override

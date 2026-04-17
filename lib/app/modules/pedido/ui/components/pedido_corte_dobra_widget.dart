@@ -50,7 +50,8 @@ class PedidoCorteDobraWidget extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text('Produzindo', style: AppCss.minimumRegular.setSize(12)),
+                    child: Text('Produzindo',
+                        style: AppCss.minimumRegular.setSize(12)),
                   ),
                   Text(
                     '${pedido.getQtdeProduzindo().toKg()} (${(pedido.getPrcntgProduzindo() * 100).percent}%)',
@@ -60,8 +61,8 @@ class PedidoCorteDobraWidget extends StatelessWidget {
               const H(8),
               LinearProgressIndicator(
                 value: pedido.getPrcntgProduzindo(),
-                backgroundColor: PedidoProdutoStatus.produzindo.color
-                    .withValues(alpha: 0.3),
+                backgroundColor:
+                    PedidoProdutoStatus.produzindo.color.withValues(alpha: 0.3),
                 valueColor: AlwaysStoppedAnimation(
                   PedidoProdutoStatus.produzindo.color,
                 ),
@@ -73,7 +74,9 @@ class PedidoCorteDobraWidget extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(child: Text('Pronto', style: AppCss.minimumRegular.setSize(12))),
+                  Expanded(
+                      child: Text('Pronto',
+                          style: AppCss.minimumRegular.setSize(12))),
                   Text(
                     '${pedido.getQtdePronto().toKg()} (${(pedido.getPrcntgPronto() * 100).percent}%)',
                   ),

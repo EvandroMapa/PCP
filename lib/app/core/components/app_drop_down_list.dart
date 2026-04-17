@@ -49,9 +49,8 @@ class _AppDropDownList<T> extends State<AppDropDownList<T>> {
           if (widget.label.isNotEmpty) const H(4),
           Container(
             decoration: BoxDecoration(
-              color: widget.enable
-                  ? null
-                  : AppColors.black.withValues(alpha: 0.3),
+              color:
+                  widget.enable ? null : AppColors.black.withValues(alpha: 0.3),
               border: Border.all(color: AppColors.neutralMedium),
               borderRadius: AppCss.radius8,
             ),
@@ -115,8 +114,7 @@ class _AppDropDownList<T> extends State<AppDropDownList<T>> {
                               child: AppContainer(
                                 padding: const [6, 4],
                                 radius: 4,
-                                color:
-                                    widget.itemColor?.call(e) ??
+                                color: widget.itemColor?.call(e) ??
                                     AppColors.primaryMedium,
                                 child: Row(
                                   children: [

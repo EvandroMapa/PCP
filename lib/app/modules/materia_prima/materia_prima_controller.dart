@@ -83,7 +83,7 @@ class MateriaPrimaController {
           ordem.materiaPrima = edit;
           await FirestoreClient.ordens.update(ordem);
         }
-        
+
         // Propaga dados atualizados para todos os pedidos/produtos (itens do Kanban)
         for (var pedido in FirestoreClient.pedidos.data) {
           bool pedidoUpdated = false;
@@ -108,11 +108,13 @@ class MateriaPrimaController {
         )) {
           ordem.materiaPrima = materiaPrimaCreate;
           await FirestoreClient.ordens.update(ordem);
-          final produtosAlterarMateriaPrima = ordem.produtos.where(
-            (e) =>
-                e.materiaPrima == null &&
-                e.status.status == PedidoProdutoStatus.aguardandoProducao,
-          ).toList();
+          final produtosAlterarMateriaPrima = ordem.produtos
+              .where(
+                (e) =>
+                    e.materiaPrima == null &&
+                    e.status.status == PedidoProdutoStatus.aguardandoProducao,
+              )
+              .toList();
           for (var produto in produtosAlterarMateriaPrima) {
             produto.materiaPrima = materiaPrimaCreate;
             await FirestoreClient.pedidos.updateProdutoMateriaPrima(
@@ -175,8 +177,8 @@ class MateriaPrimaController {
           throw Exception('Já existe uma matéria prima com essa corrida/lote');
         }
       } else {
-        if (FirestoreClient.materiaPrimas.data.any(
-            (e) => e.corridaLote.trim().toLowerCase() == corridaForm.toLowerCase())) {
+        if (FirestoreClient.materiaPrimas.data.any((e) =>
+            e.corridaLote.trim().toLowerCase() == corridaForm.toLowerCase())) {
           throw Exception('Já existe uma matéria prima com essa corrida/lote');
         }
       }
@@ -221,8 +223,7 @@ class MateriaPrimaController {
             await FirestoreClient.ordens.update(ordem);
           }
           for (final produto in ordem.produtos.where(
-            (e) =>
-                e.status.status == PedidoProdutoStatus.aguardandoProducao,
+            (e) => e.status.status == PedidoProdutoStatus.aguardandoProducao,
           )) {
             if (produto.materiaPrima?.id == materiaPrima.id) {
               await FirestoreClient.pedidos.updateProdutoMateriaPrima(
@@ -251,13 +252,15 @@ class MateriaPrimaController {
 
   Future<bool> _isDeleteUnavailable(
     MateriaPrimaModel materiaPrima,
-  ) async => !await onDeleteProcess(
-    deleteTitle: 'Deseja apagar a Matéria Prima?',
-    deleteMessage: 'Todos os dados da Matéria Prima serão apagados do sistema',
-    infoMessage:
-        'Não é possível excluir a Matéria Prima, pois ela está vinculada a pedidos.',
-    conditional: FirestoreClient.pedidos.data.any(
-      (e) => e.produtos.any((p) => p.materiaPrima?.id == materiaPrima.id),
-    ),
-  );
+  ) async =>
+      !await onDeleteProcess(
+        deleteTitle: 'Deseja apagar a Matéria Prima?',
+        deleteMessage:
+            'Todos os dados da Matéria Prima serão apagados do sistema',
+        infoMessage:
+            'Não é possível excluir a Matéria Prima, pois ela está vinculada a pedidos.',
+        conditional: FirestoreClient.pedidos.data.any(
+          (e) => e.produtos.any((p) => p.materiaPrima?.id == materiaPrima.id),
+        ),
+      );
 }

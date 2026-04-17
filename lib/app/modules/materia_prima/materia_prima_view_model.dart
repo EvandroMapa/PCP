@@ -22,11 +22,13 @@ class MateriaPrimaCreateModel {
 
   late bool isEdit;
 
-  MateriaPrimaCreateModel() : id = HashService.get, isEdit = false;
+  MateriaPrimaCreateModel()
+      : id = HashService.get,
+        isEdit = false;
 
   MateriaPrimaCreateModel.edit(MateriaPrimaModel materiaPrima)
-    : id = materiaPrima.id,
-      isEdit = true {
+      : id = materiaPrima.id,
+        isEdit = true {
     fabricanteModel = FirestoreClient.fabricantes.getById(
       materiaPrima.fabricanteModel.id,
     );
@@ -37,11 +39,11 @@ class MateriaPrimaCreateModel {
   }
 
   MateriaPrimaModel toMateriaPrimaModel() => MateriaPrimaModel(
-    id: id,
-    fabricanteModel: fabricanteModel!,
-    produto: produtoModel!,
-    corridaLote: corridaLote.text,
-    anexos: anexos,
-    status: status,
-  );
+        id: id,
+        fabricanteModel: fabricanteModel!,
+        produto: produtoModel!,
+        corridaLote: corridaLote.text,
+        anexos: anexos,
+        status: status,
+      );
 }

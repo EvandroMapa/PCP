@@ -44,7 +44,8 @@ class KanbanCardVinculadosWidget extends StatelessWidget {
 
   Widget _vinculadoWidget(BuildContext context, PedidoModel vinculado) {
     return InkWell(
-      onTap: () => push(context, PedidoPage(pedido: vinculado, reason: PedidoInitReason.page)),
+      onTap: () => push(context,
+          PedidoPage(pedido: vinculado, reason: PedidoInitReason.page)),
       child: Container(
         margin: const EdgeInsets.only(bottom: 2),
         decoration: BoxDecoration(

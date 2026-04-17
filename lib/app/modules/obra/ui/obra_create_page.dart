@@ -101,7 +101,8 @@ class _ObraCreatePageState extends State<ObraCreatePage> {
             children: [
               Row(
                 children: [
-                  Icon(Icons.construction_outlined, color: AppColors.primaryMain),
+                  Icon(Icons.construction_outlined,
+                      color: AppColors.primaryMain),
                   const SizedBox(width: 12),
                   Text('DADOS DA OBRA', style: AppCss.mediumBold.setSize(16)),
                 ],
@@ -159,8 +160,7 @@ class _ObraCreatePageState extends State<ObraCreatePage> {
           ),
         ),
         const H(24),
-        if (form.isEdit)
-          _buildDeleteButton(),
+        if (form.isEdit) _buildDeleteButton(),
       ],
     );
   }
@@ -171,7 +171,8 @@ class _ObraCreatePageState extends State<ObraCreatePage> {
         if (!await onDeleteProcess(
           deleteTitle: 'Excluir obra?',
           deleteMessage: 'Todos os dados da obra serão apagados do sistema',
-          infoMessage: 'Não é possível excluir obra, pois há pedidos vinculados a ela',
+          infoMessage:
+              'Não é possível excluir obra, pois há pedidos vinculados a ela',
           conditional: FirestoreClient.pedidos.data.any(
             (e) => e.obra.id == widget.obra!.id,
           ),

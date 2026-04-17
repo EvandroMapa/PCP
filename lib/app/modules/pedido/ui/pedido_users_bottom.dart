@@ -88,8 +88,7 @@ class _PedidoUsersBottomState extends State<PedidoUsersBottom> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 children: FirestoreClient.usuarios.data.toList().map((user) {
                   bool isCurrentUser = user.id == usuario.id;
-                  bool isEnable =
-                      isCurrentUser ||
+                  bool isEnable = isCurrentUser ||
                       !widget.pedido.users.map((e) => e.id).contains(user.id);
                   return IgnorePointer(
                     ignoring: !isEnable,

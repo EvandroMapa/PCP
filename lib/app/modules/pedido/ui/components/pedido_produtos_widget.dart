@@ -24,9 +24,8 @@ class PedidoProdutosWidget extends StatelessWidget {
     return IgnorePointer(
       ignoring: pedido.isAguardandoEntradaProducao(),
       child: Column(
-        children: pedido.produtos
-            .map((produto) => _produtoWidget(produto))
-            .toList(),
+        children:
+            pedido.produtos.map((produto) => _produtoWidget(produto)).toList(),
       ),
     );
   }
@@ -78,7 +77,10 @@ class PedidoProdutosWidget extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: produto.status.getStatusView().color.withValues(alpha: 0.4),
+                    color: produto.status
+                        .getStatusView()
+                        .color
+                        .withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
@@ -88,7 +90,8 @@ class PedidoProdutosWidget extends StatelessWidget {
                 ),
             ],
           ),
-          trailing: pedido.isAguardandoEntradaProducao() ? const SizedBox() : null,
+          trailing:
+              pedido.isAguardandoEntradaProducao() ? const SizedBox() : null,
           childrenPadding: const EdgeInsets.all(16),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,7 +137,8 @@ class PedidoProdutosWidget extends StatelessWidget {
                 in produto.statusess.map((e) => e.copyWith()).toList())
               Builder(
                 builder: (context) {
-                  final isLast = produto.statusess.isNotEmpty && status.id == produto.statusess.last.id;
+                  final isLast = produto.statusess.isNotEmpty &&
+                      status.id == produto.statusess.last.id;
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8),
@@ -154,9 +158,7 @@ class PedidoProdutosWidget extends StatelessWidget {
                           ),
                           child: Text(
                             status.status.label,
-                            style: AppCss.mediumRegular
-                                .setSize(14)
-                                .setColor(
+                            style: AppCss.mediumRegular.setSize(14).setColor(
                                   AppColors.black.withValues(
                                     alpha: isLast ? 1 : 0.4,
                                   ),

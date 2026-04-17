@@ -22,17 +22,17 @@ class KanbanStepWidget extends StatelessWidget {
         borderRadius: const BorderRadius.all(Radius.circular(8)),
         child: Container(
           width: width,
-        decoration: BoxDecoration(
-          color: AppColors.neutralLightest.withValues(alpha: 0.5),
-          borderRadius: const BorderRadius.all(Radius.circular(8)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            KanbanStepTitleWidget(utils, step, pedidos),
-            Expanded(child: KanbanStepBodyWidget(utils, step, pedidos)),
-          ],
-        ),
+          decoration: BoxDecoration(
+            color: AppColors.neutralLightest.withValues(alpha: 0.5),
+            borderRadius: const BorderRadius.all(Radius.circular(8)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              KanbanStepTitleWidget(utils, step, pedidos),
+              Expanded(child: KanbanStepBodyWidget(utils, step, pedidos)),
+            ],
+          ),
         ),
       ),
     );

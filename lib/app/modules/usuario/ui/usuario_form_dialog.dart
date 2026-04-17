@@ -15,7 +15,8 @@ import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_view_model.dart';
 import 'package:flutter/material.dart';
 
-Future<void> showUsuarioFormDialog(BuildContext context, {UsuarioModel? usuario}) async {
+Future<void> showUsuarioFormDialog(BuildContext context,
+    {UsuarioModel? usuario}) async {
   usuarioCtrl.init(usuario);
   await showDialog(
     context: context,
@@ -78,7 +79,8 @@ class _UsuarioFormDialogState extends State<UsuarioFormDialog> {
                       flex: 1,
                       child: AppDropDown<UsuarioTipoModel?>(
                         label: 'Perfil',
-                        item: BackendClient.usuarioTipos.getById(form.usuarioTipoId),
+                        item: BackendClient.usuarioTipos
+                            .getById(form.usuarioTipoId),
                         itens: BackendClient.usuarioTipos.data,
                         itemLabel: (e) => e?.nome ?? 'Selecione',
                         onSelect: (e) {
@@ -92,9 +94,12 @@ class _UsuarioFormDialogState extends State<UsuarioFormDialog> {
                                 UserPermissionType.update,
                               ];
                             } else {
-                              form.permission.cliente = UserPermissionType.values.toList();
-                              form.permission.pedido = UserPermissionType.values.toList();
-                              form.permission.ordem = UserPermissionType.values.toList();
+                              form.permission.cliente =
+                                  UserPermissionType.values.toList();
+                              form.permission.pedido =
+                                  UserPermissionType.values.toList();
+                              form.permission.ordem =
+                                  UserPermissionType.values.toList();
                             }
                           }
                           usuarioCtrl.formStream.update();
@@ -127,7 +132,9 @@ class _UsuarioFormDialogState extends State<UsuarioFormDialog> {
                 ),
                 const H(24),
                 // ── Área de Permissões ou Banner de Operador ──
-                if (!BackendClient.usuarioTipos.getById(form.usuarioTipoId).isOperador) ...[
+                if (!BackendClient.usuarioTipos
+                    .getById(form.usuarioTipoId)
+                    .isOperador) ...[
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -175,7 +182,8 @@ class _UsuarioFormDialogState extends State<UsuarioFormDialog> {
                         Expanded(
                           child: Text(
                             'Operadores podem visualizar apenas ordens pendentes',
-                            style: TextStyle(color: Colors.amber[900], fontSize: 13),
+                            style: TextStyle(
+                                color: Colors.amber[900], fontSize: 13),
                           ),
                         ),
                       ],
@@ -197,9 +205,11 @@ class _UsuarioFormDialogState extends State<UsuarioFormDialog> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryMain,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
-            onPressed: () async => await usuarioCtrl.onConfirm(context, widget.usuario),
+            onPressed: () async =>
+                await usuarioCtrl.onConfirm(context, widget.usuario),
             child: const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text('Salvar'),
@@ -249,7 +259,8 @@ class _UsuarioFormDialogState extends State<UsuarioFormDialog> {
               final isActive = selected.contains(perm);
               return FilterChip(
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                visualDensity:
+                    const VisualDensity(horizontal: -4, vertical: -4),
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
                 showCheckmark: false,
                 label: Text(

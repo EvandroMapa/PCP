@@ -68,7 +68,6 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
               children: [
                 _buildSectionHeader('Regras de Transição de Etapas'),
                 const SizedBox(height: 16),
-                
                 _buildSingleStepRule(
                   '01 - Criação de pedido',
                   'Novos pedidos serão alocados na etapa:',
@@ -77,83 +76,83 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                   (step) => setState(() => model = model.copyWith(
                       criacaoPedido: model.criacaoPedido.copyWith(step: step))),
                 ),
-
                 _buildSingleStepRule(
                   '02 - Produto separado',
                   'Ao Marcar produto como separado:',
                   model.produtoPedidoSeparado.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
-                      produtoPedidoSeparado: model.produtoPedidoSeparado.copyWith(step: step))),
+                      produtoPedidoSeparado:
+                          model.produtoPedidoSeparado.copyWith(step: step))),
                 ),
-
                 _buildSingleStepRule(
                   '03 - Produto entra pra produção (Corte e Dobra ou Armado)',
                   'Quando o item entrar numa Ordem de Produção, mover para:',
                   model.produzindoCDPedido.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
-                      produzindoCDPedido: model.produzindoCDPedido.copyWith(step: step))),
+                      produzindoCDPedido:
+                          model.produzindoCDPedido.copyWith(step: step))),
                 ),
-
                 _buildSingleStepRule(
                   '04 - Produção da Etapa de Corte e dobra Finalizado (CD)',
                   'Quando todos os itens estiverem prontos, mover para:',
                   model.prontoCDPedido.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
-                      prontoCDPedido: model.prontoCDPedido.copyWith(step: step))),
+                      prontoCDPedido:
+                          model.prontoCDPedido.copyWith(step: step))),
                 ),
-
                 _buildSingleStepRule(
                   '05 - Produção da Etapa de Corte e dobra Finalizado (CDA)',
                   'Quando todos os itens estiverem prontos, mover para:',
                   model.aguardandoArmacaoPedido.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
-                      aguardandoArmacaoPedido: model.aguardandoArmacaoPedido.copyWith(step: step))),
+                      aguardandoArmacaoPedido:
+                          model.aguardandoArmacaoPedido.copyWith(step: step))),
                 ),
-
                 _buildSingleStepRule(
                   '06 - Produzindo Armação',
                   'Muda status para Produzindo Armação:',
                   model.produzindoArmacaoPedido.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
-                      produzindoArmacaoPedido: model.produzindoArmacaoPedido.copyWith(step: step))),
+                      produzindoArmacaoPedido:
+                          model.produzindoArmacaoPedido.copyWith(step: step))),
                 ),
-
                 _buildSingleStepRule(
                   '07 - Pronto Armação',
                   'Ao finalizar a produção de Armação:',
                   model.prontoArmacaoPedido.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
-                      prontoArmacaoPedido: model.prontoArmacaoPedido.copyWith(step: step))),
+                      prontoArmacaoPedido:
+                          model.prontoArmacaoPedido.copyWith(step: step))),
                 ),
-                
                 _buildSingleStepRule(
                   '07.1 - Finalização de Armação (CDA)',
                   'Quando todos os elementos cadastrados forem finalizados (Prontos), mover para:',
                   model.finalizacaoArmacaoPedido.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
-                      finalizacaoArmacaoPedido: model.finalizacaoArmacaoPedido.copyWith(step: step))),
+                      finalizacaoArmacaoPedido:
+                          model.finalizacaoArmacaoPedido.copyWith(step: step))),
                 ),
-
                 const SizedBox(height: 24),
                 _buildSectionHeader('Regras de Filtro / Ocultação'),
                 const SizedBox(height: 16),
-
                 _buildMultiStepRule(
                   '08 - Não Mostrar no Calendário',
                   'Selecionar etapas onde o Pedido não deve constar na visualização de calendário:',
                   model.naoMostrarNoCalendario.steps ?? [],
                   steps,
                   () => setState(() => model = model.copyWith(
-                      naoMostrarNoCalendario: model.naoMostrarNoCalendario.copyWith(steps: List.from(model.naoMostrarNoCalendario.steps ?? [])))),
+                      naoMostrarNoCalendario: model.naoMostrarNoCalendario
+                          .copyWith(
+                              steps: List.from(
+                                  model.naoMostrarNoCalendario.steps ?? [])))),
                 ),
-
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: isSaving ? null : _onSave,
@@ -161,7 +160,9 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                     backgroundColor: AppColors.primaryMain,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  child: const Text('Salvar Automações', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: const Text('Salvar Automações',
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(height: 60),
               ],
@@ -231,9 +232,12 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(targetName, style: AppCss.largeBold.copyWith(fontSize: 15)),
+                Text(targetName,
+                    style: AppCss.largeBold.copyWith(fontSize: 15)),
                 const SizedBox(height: 4),
-                Text(description, style: AppCss.smallRegular.copyWith(color: AppColors.neutralDark)),
+                Text(description,
+                    style: AppCss.smallRegular
+                        .copyWith(color: AppColors.neutralDark)),
               ],
             ),
           ),
@@ -288,9 +292,12 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(targetName, style: AppCss.largeBold.copyWith(fontSize: 15)),
+                Text(targetName,
+                    style: AppCss.largeBold.copyWith(fontSize: 15)),
                 const SizedBox(height: 4),
-                Text(description, style: AppCss.smallRegular.copyWith(color: AppColors.neutralDark)),
+                Text(description,
+                    style: AppCss.smallRegular
+                        .copyWith(color: AppColors.neutralDark)),
               ],
             ),
           ),

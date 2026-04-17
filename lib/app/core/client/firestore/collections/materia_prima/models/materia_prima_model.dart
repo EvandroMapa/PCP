@@ -24,13 +24,13 @@ class MateriaPrimaModel {
   String get label => '${fabricanteModel.nome} - $corridaLote';
 
   static MateriaPrimaModel empty() => MateriaPrimaModel(
-    id: 'register_unavailable',
-    fabricanteModel: FabricanteModel.empty(),
-    produto: ProdutoModel.empty(),
-    corridaLote: 'Não especificado',
-    anexos: [],
-    status: MateriaPrimaStatus.disponivel,
-  );
+        id: 'register_unavailable',
+        fabricanteModel: FabricanteModel.empty(),
+        produto: ProdutoModel.empty(),
+        corridaLote: 'Não especificado',
+        anexos: [],
+        status: MateriaPrimaStatus.disponivel,
+      );
 
   factory MateriaPrimaModel.fromMap(Map<String, dynamic> map) {
     final fabricanteSnapshot = FabricanteModel.fromMap(map['fabricanteModel']);
@@ -49,15 +49,16 @@ class MateriaPrimaModel {
       corridaLote: map['corridaLote'] as String,
       anexos: map['anexos'] != null
           ? (map['anexos'] as List<dynamic>)
-                .map((e) => ArchiveModel.fromMap(e))
-                .toList()
+              .map((e) => ArchiveModel.fromMap(e))
+              .toList()
           : [],
       status: MateriaPrimaStatus.values[map['status']],
     );
   }
 
   factory MateriaPrimaModel.fromSupabaseMap(Map<String, dynamic> map) {
-    final fabricanteSnapshot = FabricanteModel.fromMap(map['fabricante_model_raw']);
+    final fabricanteSnapshot =
+        FabricanteModel.fromMap(map['fabricante_model_raw']);
     final produtoSnapshot = ProdutoModel.fromMap(map['produto_raw']);
     // Dynamic linking: busca versão mais recente no cache reativo
     final fabricante = BackendClient.fabricantes.data.isNotEmpty
@@ -73,8 +74,8 @@ class MateriaPrimaModel {
       corridaLote: map['corrida_lote'] as String,
       anexos: map['anexos'] != null
           ? (map['anexos'] as List<dynamic>)
-                .map((e) => ArchiveModel.fromMap(e))
-                .toList()
+              .map((e) => ArchiveModel.fromMap(e))
+              .toList()
           : [],
       status: MateriaPrimaStatus.values[map['status']],
     );

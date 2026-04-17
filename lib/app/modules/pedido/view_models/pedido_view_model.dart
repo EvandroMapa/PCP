@@ -66,21 +66,22 @@ class PedidoCreateModel {
   late bool isEdit;
 
   PedidoCreateModel(PedidoModel? pai)
-    : id = HashService.get,
-      isEdit = false,
-      step = (FirestoreClient.steps.data.firstWhereOrNull((e) => e.isDefault) ??
-          FirestoreClient.steps.data.firstWhereOrNull(
-            (e) => e.id == FirestoreClient.automatizacao.data.criacaoPedido.step?.id,
-          ) ??
-          FirestoreClient.steps.data.firstOrNull),
-      checklist = (FirestoreClient.checklists.data.firstWhereOrNull(
-            (e) =>
-                e.nome.toUpperCase().contains('PADRAO') ||
-                e.nome.toUpperCase().contains('PADRÃO'),
-          ) ??
-          FirestoreClient.checklists.data.firstOrNull),
-      tipo = PedidoTipo.cd,
-      pai = pai?.id;
+      : id = HashService.get,
+        isEdit = false,
+        step =
+            (FirestoreClient.steps.data.firstWhereOrNull((e) => e.isDefault) ??
+                FirestoreClient.steps.data.firstWhereOrNull(
+                  (e) =>
+                      e.id ==
+                      FirestoreClient.automatizacao.data.criacaoPedido.step?.id,
+                ) ??
+                FirestoreClient.steps.data.firstOrNull),
+        checklist = (FirestoreClient.checklists.data.firstWhereOrNull(
+              (e) => e.isPadrao,
+            ) ??
+            FirestoreClient.checklists.data.firstOrNull),
+        tipo = PedidoTipo.cd,
+        pai = pai?.id;
 
   String getDetails() {
     List<String> localizador = [];
@@ -101,19 +102,20 @@ class PedidoCreateModel {
     return localizador.join(' - ');
   }
 
-  PedidoCreateModel.edit(PedidoModel pedido) : id = pedido.id, isEdit = true {
+  PedidoCreateModel.edit(PedidoModel pedido)
+      : id = pedido.id,
+        isEdit = true {
     localizador.text = pedido.localizador;
     descricao.text = pedido.descricao;
     cliente = FirestoreClient.clientes.getById(pedido.cliente.id);
     obra = cliente?.obras.firstWhereOrNull((e) => e.id == pedido.obra.id);
     tipo = pedido.tipo;
-    produtos = pedido.produtos
-        .map((e) => PedidoProdutoCreateModel.edit(e))
-        .toList();
+    produtos =
+        pedido.produtos.map((e) => PedidoProdutoCreateModel.edit(e)).toList();
     deliveryAt = pedido.deliveryAt;
     final firstStep = pedido.steps.firstOrNull;
-    step = firstStep != null 
-        ? FirestoreClient.steps.getById(firstStep.step.id) 
+    step = firstStep != null
+        ? FirestoreClient.steps.getById(firstStep.step.id)
         : null;
     if (pedido.checklistId != null) {
       checklist = FirestoreClient.checklists.getById(pedido.checklistId!);
@@ -163,7 +165,9 @@ class PedidoCreateModel {
       createdAt: pedido?.createdAt ?? DateTime.now(),
       cliente: cliente!,
       obra: obra!,
-      produtos: produtos.where((e) => e.isSelected).toList()
+      produtos: produtos
+          .where((e) => e.isSelected)
+          .toList()
           .map((e) => e.toPedidoProdutoModel(id, cliente!, obra!).copyWith())
           .toList(),
       deliveryAt: deliveryAt,
@@ -176,8 +180,7 @@ class PedidoCreateModel {
       index: pedido?.index ?? 0,
       isArchived: pedido?.isArchived ?? false,
       archives: pedido?.archives ?? [],
-      histories:
-          pedido?.histories ??
+      histories: pedido?.histories ??
           [
             PedidoHistoryModel(
               action: PedidoHistoryAction.create,
@@ -195,7 +198,6 @@ class PedidoCreateModel {
       instrucoesFinanceiras: instrucoesFinanceiras.text,
       pedidoFinanceiro: pedidoFinanceiro.text,
       planilhamento: planilhamento.text,
-
       pedidosVinculados: pedidosVinculados,
       pedidosFilhos: pedidosFilhos,
       pai: pai,

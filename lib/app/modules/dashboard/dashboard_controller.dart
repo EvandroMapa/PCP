@@ -30,10 +30,13 @@ class DashboardController {
     if (clientesData.isEmpty) return rankings;
 
     for (ClienteModel transportadora in clientesData) {
-      final map = clientesData.map(
-        (e) => getClienteValueByType(e),
-      ).where((e) => e > 0).toList();
-      
+      final map = clientesData
+          .map(
+            (e) => getClienteValueByType(e),
+          )
+          .where((e) => e > 0)
+          .toList();
+
       final num = (map.isNotEmpty ? map.reduce((a, b) => a + b) : 0).toDouble();
       rankings.add(
         RankingModel<ClienteModel>(
@@ -55,7 +58,9 @@ class DashboardController {
             .where((e) => e.cliente.id == cliente.id)
             .map((e) => e.getQtdeTotal())
             .toList();
-        return pedidos.isNotEmpty ? pedidos.reduce((a, b) => a + b).toDouble() : 0;
+        return pedidos.isNotEmpty
+            ? pedidos.reduce((a, b) => a + b).toDouble()
+            : 0;
     }
   }
 

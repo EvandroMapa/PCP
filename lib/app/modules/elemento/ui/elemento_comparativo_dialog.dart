@@ -68,98 +68,105 @@ class ElementoComparativoDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            Text(
-              ok
-                  ? 'Excelente! O somatório dos elementos coincide perfeitamente com o total planejado no pedido.'
-                  : 'Atenção! Foram encontradas divergências entre o planejado no pedido e a soma dos elementos cadastrados.',
-              style: AppCss.mediumRegular.copyWith(color: Colors.grey[700]),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: _TotalBox(
-                    label: 'TOTAL DO PEDIDO',
-                    value: '${_fmt(validacao.totalPedidoKg)} kg',
-                    color: Colors.blueGrey,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _TotalBox(
-                    label: 'TOTAL ELEMENTOS',
-                    value: '${_fmt(validacao.totalElementosKg)} kg',
-                    color: color,
-                  ),
-                ),
-              ],
-            ),
-            if (validacao.divergencias.isNotEmpty) ...[
+              Text(
+                ok
+                    ? 'Excelente! O somatório dos elementos coincide perfeitamente com o total planejado no pedido.'
+                    : 'Atenção! Foram encontradas divergências entre o planejado no pedido e a soma dos elementos cadastrados.',
+                style: AppCss.mediumRegular.copyWith(color: Colors.grey[700]),
+              ),
               const SizedBox(height: 24),
               Row(
                 children: [
-                  const Icon(Icons.list_alt_rounded, size: 18, color: Colors.red),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Divergências por Bitola:',
-                    style: AppCss.mediumBold.setColor(Colors.red.shade700),
+                  Expanded(
+                    child: _TotalBox(
+                      label: 'TOTAL DO PEDIDO',
+                      value: '${_fmt(validacao.totalPedidoKg)} kg',
+                      color: Colors.blueGrey,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _TotalBox(
+                      label: 'TOTAL ELEMENTOS',
+                      value: '${_fmt(validacao.totalElementosKg)} kg',
+                      color: color,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              ...validacao.divergencias.map((d) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red.shade100, width: 1.2),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              d.produto.produto.labelMinified,
-                              style: AppCss.mediumBold.setColor(Colors.red.shade900),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.red.shade100,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'Dif: ${_fmt(d.diferencaKg)} kg',
-                              style: AppCss.minimumBold.setColor(Colors.red.shade900),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _miniLabel('Esperado', _fmt(d.esperadoKg)),
-                          ),
-                          Expanded(
-                            child: _miniLabel('Calculado', _fmt(d.calculadoKg)),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+              if (validacao.divergencias.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    const Icon(Icons.list_alt_rounded,
+                        size: 18, color: Colors.red),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Divergências por Bitola:',
+                      style: AppCss.mediumBold.setColor(Colors.red.shade700),
+                    ),
+                  ],
                 ),
-              )),
+                const SizedBox(height: 12),
+                ...validacao.divergencias.map((d) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                              color: Colors.red.shade100, width: 1.2),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    d.produto.produto.labelMinified,
+                                    style: AppCss.mediumBold
+                                        .setColor(Colors.red.shade900),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.shade100,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    'Dif: ${_fmt(d.diferencaKg)} kg',
+                                    style: AppCss.minimumBold
+                                        .setColor(Colors.red.shade900),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _miniLabel(
+                                      'Esperado', _fmt(d.esperadoKg)),
+                                ),
+                                Expanded(
+                                  child: _miniLabel(
+                                      'Calculado', _fmt(d.calculadoKg)),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    )),
+              ],
+              const SizedBox(height: 8),
             ],
-            const SizedBox(height: 8),
-          ],
           ),
         ),
       ),
@@ -173,7 +180,8 @@ class ElementoComparativoDialog extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 16),
               elevation: 4,
               shadowColor: AppColors.primaryMain.withValues(alpha: 0.4),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () => Navigator.pop(context),
             child: const Text(
@@ -190,8 +198,11 @@ class ElementoComparativoDialog extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppCss.minimumRegular.copyWith(color: Colors.grey[500], fontSize: 10)),
-        Text('$value kg', style: AppCss.smallBold.copyWith(color: Colors.grey[800])),
+        Text(label,
+            style: AppCss.minimumRegular
+                .copyWith(color: Colors.grey[500], fontSize: 10)),
+        Text('$value kg',
+            style: AppCss.smallBold.copyWith(color: Colors.grey[800])),
       ],
     );
   }
@@ -201,7 +212,8 @@ class _TotalBox extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
-  const _TotalBox({required this.label, required this.value, required this.color});
+  const _TotalBox(
+      {required this.label, required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {

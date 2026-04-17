@@ -19,9 +19,13 @@ class UsuarioCreateModel {
   String usuarioTipoId = '';
   late bool isEdit;
 
-  UsuarioCreateModel() : id = HashService.get, isEdit = false;
+  UsuarioCreateModel()
+      : id = HashService.get,
+        isEdit = false;
 
-  UsuarioCreateModel.edit(UsuarioModel user) : id = user.id, isEdit = true {
+  UsuarioCreateModel.edit(UsuarioModel user)
+      : id = user.id,
+        isEdit = true {
     nome.text = user.nome;
     email.text = user.email;
     role = user.role;
@@ -31,16 +35,16 @@ class UsuarioCreateModel {
   }
 
   UsuarioModel toUsuarioModel() => UsuarioModel(
-    id: id,
-    nome: nome.text,
-    email: email.text,
-    role: role ?? UsuarioRole.operador,
-    usuarioTipoId: usuarioTipoId,
-    senha: senha.text,
-    permission: permission.toUserPermissionModel(),
-    steps: [],
-    deviceTokens: [],
-  );
+        id: id,
+        nome: nome.text,
+        email: email.text,
+        role: role ?? UsuarioRole.operador,
+        usuarioTipoId: usuarioTipoId,
+        senha: senha.text,
+        permission: permission.toUserPermissionModel(),
+        steps: [],
+        deviceTokens: [],
+      );
 }
 
 class UsuarioPermissionCreateModel {
@@ -50,11 +54,13 @@ class UsuarioPermissionCreateModel {
   List<UserPermissionType> ordem = UserPermissionType.values.toList();
   late bool isEdit;
 
-  UsuarioPermissionCreateModel() : id = HashService.get, isEdit = false;
+  UsuarioPermissionCreateModel()
+      : id = HashService.get,
+        isEdit = false;
 
   UsuarioPermissionCreateModel.edit(UsuarioModel user)
-    : id = user.id,
-      isEdit = true {
+      : id = user.id,
+        isEdit = true {
     cliente = List<UserPermissionType>.from(user.permission.cliente);
     pedido = List<UserPermissionType>.from(user.permission.pedido);
     ordem = List<UserPermissionType>.from(user.permission.ordem);

@@ -49,7 +49,8 @@ class RelatorioPedidoPdfPage {
       margin: const pw.EdgeInsets.only(bottom: 20),
       padding: const pw.EdgeInsets.only(bottom: 10),
       decoration: pw.BoxDecoration(
-        border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
+        border: pw.Border(
+            bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
       ),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -62,9 +63,11 @@ class RelatorioPedidoPdfPage {
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
                   pw.Text('RELATÓRIO DE CONSUMO',
-                      style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                      style: pw.TextStyle(
+                          fontSize: 16, fontWeight: pw.FontWeight.bold)),
                   pw.Text('Sistema de Controle de Produção - PCP',
-                      style: pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                      style:
+                          pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
                 ],
               ),
             ],
@@ -72,9 +75,11 @@ class RelatorioPedidoPdfPage {
           pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
-              pw.Text('Data: ${DateFormat('dd/MM/yyyy HH:mm').format(model.createdAt)}',
+              pw.Text(
+                  'Data: ${DateFormat('dd/MM/yyyy HH:mm').format(model.createdAt)}',
                   style: pw.TextStyle(fontSize: 9)),
-              pw.Text('PCP v1.0', style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
+              pw.Text('PCP v1.0',
+                  style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
             ],
           ),
         ],
@@ -87,7 +92,8 @@ class RelatorioPedidoPdfPage {
       margin: const pw.EdgeInsets.only(top: 20),
       padding: const pw.EdgeInsets.only(top: 10),
       decoration: pw.BoxDecoration(
-        border: pw.Border(top: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
+        border:
+            pw.Border(top: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
       ),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -113,14 +119,16 @@ class RelatorioPedidoPdfPage {
         children: [
           pw.Row(
             children: [
-              _infoCell('CLIENTE:', model.cliente?.nome ?? 'TODOS OS CLIENTES', flex: 2),
+              _infoCell('CLIENTE:', model.cliente?.nome ?? 'TODOS OS CLIENTES',
+                  flex: 2),
               _infoCell('TIPO:', model.tipo.label, flex: 1),
             ],
           ),
           pw.SizedBox(height: 5),
           pw.Row(
             children: [
-              _infoCell('STATUS:', model.status.map((e) => e.label).join(', '), flex: 2),
+              _infoCell('STATUS:', model.status.map((e) => e.label).join(', '),
+                  flex: 2),
               _infoCell('PEDIDOS:', model.pedidos.length.toString(), flex: 1),
             ],
           ),
@@ -137,7 +145,8 @@ class RelatorioPedidoPdfPage {
           children: [
             pw.TextSpan(
                 text: '$label ',
-                style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+                style:
+                    pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
             pw.TextSpan(text: value, style: pw.TextStyle(fontSize: 8)),
           ],
         ),
@@ -160,13 +169,23 @@ class RelatorioPedidoPdfPage {
         pw.Table.fromTextArray(
           headers: ['DESCRIÇÃO', 'PESO TOTAL (KG)'],
           data: [
-            ['TOTAL GERAL DE PEDIDOS FILTRADOS', relatorioCtrl.getPedidosTotal().toKg()],
+            [
+              'TOTAL GERAL DE PEDIDOS FILTRADOS',
+              relatorioCtrl.getPedidosTotal().toKg()
+            ],
           ],
-          headerStyle: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
-          headerDecoration: const pw.BoxDecoration(color: PdfColors.blueGrey800),
+          headerStyle: pw.TextStyle(
+              fontSize: 9,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.white),
+          headerDecoration:
+              const pw.BoxDecoration(color: PdfColors.blueGrey800),
           cellStyle: const pw.TextStyle(fontSize: 9),
           cellAlignment: pw.Alignment.centerLeft,
-          columnWidths: {0: const pw.FlexColumnWidth(3), 1: const pw.FlexColumnWidth(1)},
+          columnWidths: {
+            0: const pw.FlexColumnWidth(3),
+            1: const pw.FlexColumnWidth(1)
+          },
         ),
         if (statusTotals.isNotEmpty) ...[
           pw.SizedBox(height: 15),
@@ -176,10 +195,12 @@ class RelatorioPedidoPdfPage {
           pw.Table.fromTextArray(
             headers: ['STATUS', 'PESO'],
             data: statusTotals,
-            headerStyle: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+            headerStyle:
+                pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
             cellStyle: const pw.TextStyle(fontSize: 8),
             rowDecoration: const pw.BoxDecoration(
-              border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey200, width: 0.5)),
+              border: pw.Border(
+                  bottom: pw.BorderSide(color: PdfColors.grey200, width: 0.5)),
             ),
             oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey50),
           ),
@@ -218,8 +239,10 @@ class RelatorioPedidoPdfPage {
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text('PEDIDO: ${pedido.localizador}',
-                    style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                pw.Text('CRIADO EM: ${DateFormat('dd/MM/yyyy HH:mm').format(pedido.createdAt)}',
+                    style: pw.TextStyle(
+                        fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                pw.Text(
+                    'CRIADO EM: ${DateFormat('dd/MM/yyyy HH:mm').format(pedido.createdAt)}',
                     style: pw.TextStyle(fontSize: 8)),
               ],
             ),
@@ -231,17 +254,21 @@ class RelatorioPedidoPdfPage {
               children: [
                 pw.Row(children: [
                   _infoCell('CLIENTE:', pedido.cliente.nome, flex: 2),
-                  _infoCell('ENTREGA:', pedido.deliveryAt?.text() ?? 'N/D', flex: 1),
+                  _infoCell('ENTREGA:', pedido.deliveryAt?.text() ?? 'N/D',
+                      flex: 1),
                 ]),
                 pw.SizedBox(height: 8),
                 pw.Table.fromTextArray(
                   headers: ['BITOLA', 'STATUS', 'QUANTIDADE'],
-                  data: pedido.produtos.map((p) => [
-                    '${p.produto.descricaoReplaced}mm',
-                    p.status.status.label.toUpperCase(),
-                    p.qtde.toKg()
-                  ]).toList(),
-                  headerStyle: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                  data: pedido.produtos
+                      .map((p) => [
+                            '${p.produto.descricaoReplaced}mm',
+                            p.status.status.label.toUpperCase(),
+                            p.qtde.toKg()
+                          ])
+                      .toList(),
+                  headerStyle:
+                      pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
                   cellStyle: const pw.TextStyle(fontSize: 8),
                   cellAlignment: pw.Alignment.centerLeft,
                   columnWidths: {
@@ -253,8 +280,10 @@ class RelatorioPedidoPdfPage {
                 pw.Container(
                   alignment: pw.Alignment.centerRight,
                   padding: const pw.EdgeInsets.only(top: 8),
-                  child: pw.Text('TOTAL DO PEDIDO: ${pedido.getQtdeTotal().toKg()}',
-                      style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                  child: pw.Text(
+                      'TOTAL DO PEDIDO: ${pedido.getQtdeTotal().toKg()}',
+                      style: pw.TextStyle(
+                          fontSize: 9, fontWeight: pw.FontWeight.bold)),
                 ),
               ],
             ),

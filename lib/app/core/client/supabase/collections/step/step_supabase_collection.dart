@@ -39,15 +39,13 @@ class StepSupabaseCollection extends StepCollection {
           .from(name)
           .select()
           .order('index', ascending: true);
-      
+
       // 2. Fetch relationships
-      final fromStepsResponse = await SupabaseService.client
-          .from('step_from_steps')
-          .select();
-      
-      final rolesResponse = await SupabaseService.client
-          .from('step_roles')
-          .select();
+      final fromStepsResponse =
+          await SupabaseService.client.from('step_from_steps').select();
+
+      final rolesResponse =
+          await SupabaseService.client.from('step_roles').select();
 
       final rows = List<Map<String, dynamic>>.from(stepsResponse);
       final fromStepsRows = List<Map<String, dynamic>>.from(fromStepsResponse);
@@ -59,10 +57,11 @@ class StepSupabaseCollection extends StepCollection {
             .where((r) => r['step_id'] == row['id'])
             .map((r) => r['from_step_id'].toString())
             .toList();
-        
+
         final roles = rolesRows
             .where((r) => r['step_id'] == row['id'])
-            .map((r) => (r['perfil_id'] ?? '').toString()).where((s) => s.isNotEmpty && int.tryParse(s) == null)
+            .map((r) => (r['perfil_id'] ?? '').toString())
+            .where((s) => s.isNotEmpty && int.tryParse(s) == null)
             .toList();
 
         // Inject into map for model factory
@@ -99,8 +98,7 @@ class StepSupabaseCollection extends StepCollection {
     _isListen = true;
     SupabaseService.client
         .from(name)
-        .stream(primaryKey: ['id'])
-        .listen((_) => start(lock: false));
+        .stream(primaryKey: ['id']).listen((_) => start(lock: false));
   }
 
   @override
@@ -137,24 +135,34 @@ class StepSupabaseCollection extends StepCollection {
 
   Future<void> _syncRelationships(StepModel model) async {
     // 1. Delete old
-    await SupabaseService.client.from('step_from_steps').delete().eq('step_id', model.id);
-    await SupabaseService.client.from('step_roles').delete().eq('step_id', model.id);
+    await SupabaseService.client
+        .from('step_from_steps')
+        .delete()
+        .eq('step_id', model.id);
+    await SupabaseService.client
+        .from('step_roles')
+        .delete()
+        .eq('step_id', model.id);
 
     // 2. Insert new "from steps"
     if (model.fromStepsIds.isNotEmpty) {
-      final fromMapped = model.fromStepsIds.map((fromId) => {
-        'step_id': model.id,
-        'from_step_id': fromId,
-      }).toList();
+      final fromMapped = model.fromStepsIds
+          .map((fromId) => {
+                'step_id': model.id,
+                'from_step_id': fromId,
+              })
+          .toList();
       await SupabaseService.client.from('step_from_steps').insert(fromMapped);
     }
 
     // 3. Insert new roles (perfil_id = ID do UsuarioTipoModel)
     if (model.moveRoles.isNotEmpty) {
-      final rolesMapped = model.moveRoles.map((perfilId) => {
-        'step_id': model.id,
-        'perfil_id': perfilId,
-      }).toList();
+      final rolesMapped = model.moveRoles
+          .map((perfilId) => {
+                'step_id': model.id,
+                'perfil_id': perfilId,
+              })
+          .toList();
       try {
         await SupabaseService.client.from('step_roles').insert(rolesMapped);
       } catch (e) {
@@ -163,7 +171,6 @@ class StepSupabaseCollection extends StepCollection {
       }
     }
   }
-
 
   @override
   Future<void> delete(StepModel model) async {
@@ -175,4 +182,3 @@ class StepSupabaseCollection extends StepCollection {
     }
   }
 }
-

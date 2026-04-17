@@ -104,8 +104,7 @@ class ChecklistSupabaseCollection extends ChecklistCollection {
     _isListen = true;
     SupabaseService.client
         .from(tableName)
-        .stream(primaryKey: ['id'])
-        .listen((List<Map<String, dynamic>> data) {
+        .stream(primaryKey: ['id']).listen((List<Map<String, dynamic>> data) {
       final checklists =
           data.map((e) => ChecklistModel.fromSupabaseMap(e)).toList();
       checklists.sort((a, b) => a.createdAt.compareTo(b.createdAt));

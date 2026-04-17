@@ -15,7 +15,8 @@ class BackupRestoreDialog extends StatelessWidget {
           title: const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Processando...', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text('Processando...',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 4),
               Text(
                 'Não feche o aplicativo enquanto o processo estiver em andamento.',

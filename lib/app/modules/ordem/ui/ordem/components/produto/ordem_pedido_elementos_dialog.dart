@@ -129,8 +129,7 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
       // Persiste no Supabase
       await SupabaseService.client
           .from('elemento_posicoes')
-          .update({'status': newStatus.name})
-          .eq('id', item.posicao.id);
+          .update({'status': newStatus.name}).eq('id', item.posicao.id);
 
       // Sincroniza status do pedido/ordem
       await _checkAutoUpdatePedidoStatus();
@@ -147,7 +146,9 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     final globalElementos = AppSupabaseClient.elementos.data;
     final idx = globalElementos.indexWhere((e) => e.id == item.elemento.id);
     if (idx != -1) {
-      final posIdx = globalElementos[idx].posicoes.indexWhere((p) => p.id == item.posicao.id);
+      final posIdx = globalElementos[idx]
+          .posicoes
+          .indexWhere((p) => p.id == item.posicao.id);
       if (posIdx != -1) {
         globalElementos[idx].posicoes[posIdx].status = item.posicao.status;
         // Re-emite o stream de elementos para que outros modules percebam
@@ -193,7 +194,8 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
         // Só pode avançar de produzindo
         if (current != PosicaoStatus.produzindo) return false;
         // Só permite ficar Pronto se TODOS os outros já saíram do 'Aguardando'
-        return _posicoes.every((p) => p.posicao.status != PosicaoStatus.aguardando);
+        return _posicoes
+            .every((p) => p.posicao.status != PosicaoStatus.aguardando);
     }
   }
 
@@ -210,7 +212,9 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
             children: [
               Text(
                 'ALTERAR STATUS',
-                style: AppCss.mediumBold.setSize(16).setColor(AppColors.primaryMain),
+                style: AppCss.mediumBold
+                    .setSize(16)
+                    .setColor(AppColors.primaryMain),
               ),
               const SizedBox(height: 6),
               Text(
@@ -220,12 +224,15 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
               ),
               Text(
                 item.posicao.nome,
-                style: AppCss.mediumRegular.setSize(14).setColor(Colors.grey[600]!),
+                style: AppCss.mediumRegular
+                    .setSize(14)
+                    .setColor(Colors.grey[600]!),
               ),
               const SizedBox(height: 20),
               ...PosicaoStatus.values.map((status) {
                 final isActive = status == item.posicao.status;
-                final canSelect = isActive || _canTransition(status, item.posicao.status);
+                final canSelect =
+                    isActive || _canTransition(status, item.posicao.status);
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: Opacity(
@@ -245,9 +252,8 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
                                 : Colors.grey[50],
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: isActive
-                                  ? status.color
-                                  : Colors.grey[300]!,
+                              color:
+                                  isActive ? status.color : Colors.grey[300]!,
                               width: isActive ? 2.5 : 1,
                             ),
                           ),
@@ -301,6 +307,7 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
       ),
     );
   }
+
   /// Auto-update: sincroniza status da ordem/pedido com as posições
   Future<void> _checkAutoUpdatePedidoStatus() async {
     if (_posicoes.isEmpty) return;
@@ -323,8 +330,9 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     // Busca o status atual no Firestore para comparar corretamente
     final currentPedido =
         FirestoreClient.pedidos.getById(widget.produto.pedidoId);
-    final currentProduto = currentPedido.produtos
-        .firstWhere((p) => p.id == widget.produto.id, orElse: () => widget.produto);
+    final currentProduto = currentPedido.produtos.firstWhere(
+        (p) => p.id == widget.produto.id,
+        orElse: () => widget.produto);
 
     if (novoStatus == currentProduto.status.status) {
       return;
@@ -429,7 +437,8 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
         decoration: BoxDecoration(
           color: status.color.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: status.color.withValues(alpha: 0.3), width: 1.5),
+          border: Border.all(
+              color: status.color.withValues(alpha: 0.3), width: 1.5),
         ),
         child: Column(
           children: [
@@ -451,20 +460,28 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('OS', style: AppCss.largeBold.setSize(10).setColor(Colors.grey[500]!)),
+                      Text('OS',
+                          style: AppCss.largeBold
+                              .setSize(10)
+                              .setColor(Colors.grey[500]!)),
                       Text(
                         '$qtd (${prcntQtd.toStringAsFixed(0)}%)',
-                        style: AppCss.largeBold.setSize(16).setColor(Colors.black),
+                        style:
+                            AppCss.largeBold.setSize(16).setColor(Colors.black),
                       ),
                     ],
                   ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text('PESO', style: AppCss.largeBold.setSize(10).setColor(Colors.grey[500]!)),
+                      Text('PESO',
+                          style: AppCss.largeBold
+                              .setSize(10)
+                              .setColor(Colors.grey[500]!)),
                       Text(
                         '${peso.toStringAsFixed(1)} kg (${prcntPeso.toStringAsFixed(0)}%)',
-                        style: AppCss.largeBold.setSize(14).setColor(Colors.black),
+                        style:
+                            AppCss.largeBold.setSize(14).setColor(Colors.black),
                       ),
                     ],
                   ),
@@ -505,8 +522,7 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
             ),
             // Badge resumo
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(20),
@@ -516,9 +532,7 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
               ),
               child: Text(
                 '${_posicoes.length} OS',
-                style: AppCss.minimumBold
-                    .setSize(12)
-                    .setColor(Colors.white),
+                style: AppCss.minimumBold.setSize(12).setColor(Colors.white),
               ),
             ),
           ],
@@ -533,8 +547,7 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
                 children: [
                   const CircularProgressIndicator(),
                   const SizedBox(height: 16),
-                  Text('Carregando elementos...',
-                      style: AppCss.mediumRegular),
+                  Text('Carregando elementos...', style: AppCss.mediumRegular),
                 ],
               ),
             )
@@ -558,7 +571,8 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
                         itemBuilder: (context, index) {
                           final item = _posicoes[index];
                           return _ElementoOSCard(
-                            key: ValueKey('${item.elemento.id}_${item.posicao.id}'),
+                            key: ValueKey(
+                                '${item.elemento.id}_${item.posicao.id}'),
                             item: item,
                             onTap: () => _onPosicaoTap(item),
                           );

@@ -27,7 +27,8 @@ class PedidoFilhosWidget extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text('Pedidos Parciais', style: AppCss.smallBold.setSize(13)),
+                child: Text('Pedidos Parciais',
+                    style: AppCss.smallBold.setSize(13)),
               ),
               InkWell(
                 onTap: () async => push(context, PedidoCreatePage(pai: pedido)),
@@ -65,7 +66,7 @@ class PedidoFilhosWidget extends StatelessWidget {
                                       reason: PedidoInitReason.page,
                                       pedido: vinculado,
                                     ),
-                                  );    
+                                  );
                                   pedidoCtrl.pedidoStream.add(pedido);
                                 },
                                 pedido: filho,

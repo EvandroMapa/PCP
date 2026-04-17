@@ -102,9 +102,8 @@ class _AppFieldState extends State<AppField> {
             minLines: widget.minLines,
             decoration: InputDecoration(
               filled: true,
-              fillColor: widget.isDisable
-                  ? Colors.grey[400]!
-                  : Colors.transparent,
+              fillColor:
+                  widget.isDisable ? Colors.grey[400]! : Colors.transparent,
               hintText: widget.hint,
               hintStyle: AppCss.smallRegular.setColor(AppColors.neutralDark),
               prefixIcon: widget.icon != null

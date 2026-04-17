@@ -10,12 +10,11 @@ enum OrdemPedidoProdutoPauseMotivo { cafe, almoco, fimExpediente, outro }
 extension OrdemPedidoProdutoPauseMotivoExtension
     on OrdemPedidoProdutoPauseMotivo {
   String get name => switch (this) {
-    OrdemPedidoProdutoPauseMotivo.cafe => 'Café',
-    OrdemPedidoProdutoPauseMotivo.almoco => 'Almoço',
-    OrdemPedidoProdutoPauseMotivo.fimExpediente => 'Fim de Expediente',
-    OrdemPedidoProdutoPauseMotivo.outro => 'Outro',
-  };
-
+        OrdemPedidoProdutoPauseMotivo.cafe => 'Café',
+        OrdemPedidoProdutoPauseMotivo.almoco => 'Almoço',
+        OrdemPedidoProdutoPauseMotivo.fimExpediente => 'Fim de Expediente',
+        OrdemPedidoProdutoPauseMotivo.outro => 'Outro',
+      };
 }
 
 Future<String?> showOrdemPedidoProdutoPauseMotivoBottom() async =>
@@ -93,18 +92,18 @@ class _OrdemPedidoProdutoPauseMotivoBottomState
                               ),
                               child:
                                   RadioListTile<OrdemPedidoProdutoPauseMotivo>(
-                                    title: Text(
-                                      motivo.name,
-                                      style: AppCss.mediumRegular,
-                                    ),
-                                    value: motivo,
-                                    groupValue: currentMotivo,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        currentMotivo = value!;
-                                      });
-                                    },
-                                  ),
+                                title: Text(
+                                  motivo.name,
+                                  style: AppCss.mediumRegular,
+                                ),
+                                value: motivo,
+                                groupValue: currentMotivo,
+                                onChanged: (value) {
+                                  setState(() {
+                                    currentMotivo = value!;
+                                  });
+                                },
+                              ),
                             ),
                         ],
                       ),

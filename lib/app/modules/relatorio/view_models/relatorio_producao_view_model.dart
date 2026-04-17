@@ -11,21 +11,21 @@ enum RelatorioProducaoPdfExportarTipo { completo, resumido }
 extension RelatorioProducaoPdfExportarTipoExtension
     on RelatorioProducaoPdfExportarTipo {
   String get label => switch (this) {
-    RelatorioProducaoPdfExportarTipo.completo => 'Completo',
-    RelatorioProducaoPdfExportarTipo.resumido => 'Resumido',
-  };
+        RelatorioProducaoPdfExportarTipo.completo => 'Completo',
+        RelatorioProducaoPdfExportarTipo.resumido => 'Resumido',
+      };
 
   String get descricao => switch (this) {
-    RelatorioProducaoPdfExportarTipo.completo =>
-      'Relatório completo com todas as bitolas',
-    RelatorioProducaoPdfExportarTipo.resumido =>
-      'Relatório resumido sem as bitolas',
-  };
+        RelatorioProducaoPdfExportarTipo.completo =>
+          'Relatório completo com todas as bitolas',
+        RelatorioProducaoPdfExportarTipo.resumido =>
+          'Relatório resumido sem as bitolas',
+      };
 
   IconData get icon => switch (this) {
-    RelatorioProducaoPdfExportarTipo.completo => Icons.description,
-    RelatorioProducaoPdfExportarTipo.resumido => Icons.description_outlined,
-  };
+        RelatorioProducaoPdfExportarTipo.completo => Icons.description,
+        RelatorioProducaoPdfExportarTipo.resumido => Icons.description_outlined,
+      };
 }
 
 enum RelatorioProducaoStatus { AGUARDANDO_PRODUCAO, EM_PRODUCAO, PRODUZIDAS }

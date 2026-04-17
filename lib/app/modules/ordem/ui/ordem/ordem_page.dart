@@ -218,7 +218,8 @@ class _OrdemPageState extends State<OrdemPage> {
               color: Colors.orange,
               fullWidth: true,
               trailing: ordem.materiaPrima != null
-                  ? const Icon(Icons.chevron_right, size: 16, color: Colors.orange)
+                  ? const Icon(Icons.chevron_right,
+                      size: 16, color: Colors.orange)
                   : null,
             ),
           ),
@@ -254,12 +255,18 @@ class _OrdemPageState extends State<OrdemPage> {
               children: [
                 Text(
                   label.toUpperCase(),
-                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: color.withValues(alpha: 0.7), letterSpacing: 1),
+                  style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: color.withValues(alpha: 0.7),
+                      letterSpacing: 1),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: AppCss.minimumBold.setSize(12).setColor(Colors.grey[800]!),
+                  style: AppCss.minimumBold
+                      .setSize(12)
+                      .setColor(Colors.grey[800]!),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],

@@ -9,31 +9,31 @@ void main() {
     print('Testing $numStr');
     String clean = numStr.replaceAll('.', '');
     for (int i = 1; i < clean.length - 1; i++) {
-        for (int j = i + 1; j < clean.length; j++) {
-            String qStr = clean.substring(0, i);
-            String uStr = clean.substring(i, j);
-            String tStr = clean.substring(j);
+      for (int j = i + 1; j < clean.length; j++) {
+        String qStr = clean.substring(0, i);
+        String uStr = clean.substring(i, j);
+        String tStr = clean.substring(j);
 
-            int tCommaPos = tStr.indexOf(',');
-            if (tCommaPos == -1 || tStr.length - tCommaPos - 1 != 2) continue;
+        int tCommaPos = tStr.indexOf(',');
+        if (tCommaPos == -1 || tStr.length - tCommaPos - 1 != 2) continue;
 
-            if (uStr.isEmpty || uStr == ',') continue;
-            int uCommaPos = uStr.indexOf(',');
-            if (uCommaPos != -1 && uCommaPos != uStr.lastIndexOf(',')) continue;
+        if (uStr.isEmpty || uStr == ',') continue;
+        int uCommaPos = uStr.indexOf(',');
+        if (uCommaPos != -1 && uCommaPos != uStr.lastIndexOf(',')) continue;
 
-            if (qStr.isEmpty || qStr == ',') continue;
-            int qCommaPos = qStr.indexOf(',');
-            if (qCommaPos != -1 && qCommaPos != qStr.lastIndexOf(',')) continue;
+        if (qStr.isEmpty || qStr == ',') continue;
+        int qCommaPos = qStr.indexOf(',');
+        if (qCommaPos != -1 && qCommaPos != qStr.lastIndexOf(',')) continue;
 
-            double qVal = double.parse(qStr.replaceAll(',', '.'));
-            double uVal = double.parse(uStr.replaceAll(',', '.'));
-            double tVal = double.parse(tStr.replaceAll(',', '.'));
+        double qVal = double.parse(qStr.replaceAll(',', '.'));
+        double uVal = double.parse(uStr.replaceAll(',', '.'));
+        double tVal = double.parse(tStr.replaceAll(',', '.'));
 
-            if ((qVal * uVal - tVal).abs() <= 0.05) {
-                print('  Match: Q=$qVal, U=$uVal, T=$tVal');
-                return; // Stop at first match
-            }
+        if ((qVal * uVal - tVal).abs() <= 0.05) {
+          print('  Match: Q=$qVal, U=$uVal, T=$tVal');
+          return; // Stop at first match
         }
+      }
     }
     print('  No match found.');
   }

@@ -20,7 +20,10 @@ class PedidoProdutoCreateModel {
 
   late bool isEdit;
 
-  PedidoProdutoCreateModel({this.isEnabled = true, this.qtdeDisponivel, this.isSelected = true}) : id = HashService.get, isEdit = false {
+  PedidoProdutoCreateModel(
+      {this.isEnabled = true, this.qtdeDisponivel, this.isSelected = true})
+      : id = HashService.get,
+        isEdit = false {
     statusess = [
       PedidoProdutoStatusModel(
         id: HashService.get,
@@ -30,9 +33,10 @@ class PedidoProdutoCreateModel {
     ];
   }
 
-  PedidoProdutoCreateModel.edit(PedidoProdutoModel produto, {this.isEnabled = true, this.qtdeDisponivel, this.isSelected = true})
-    : id = produto.id,
-      isEdit = true {
+  PedidoProdutoCreateModel.edit(PedidoProdutoModel produto,
+      {this.isEnabled = true, this.qtdeDisponivel, this.isSelected = true})
+      : id = produto.id,
+        isEdit = true {
     produtoModel = produto.produto;
     qtde.text = produto.qtde.toString();
     statusess = produto.statusess.toList();
@@ -42,13 +46,14 @@ class PedidoProdutoCreateModel {
     String pedidoId,
     ClienteModel cliente,
     ObraModel obra,
-  ) => PedidoProdutoModel(
-    id: id,
-    pedidoId: pedidoId,
-    produto: produtoModel!,
-    qtde: qtde.doubleValue,
-    statusess: statusess.map((e) => e.copyWith()).toList(),
-    clienteId: cliente.id,
-    obraId: obra.id,
-  );
+  ) =>
+      PedidoProdutoModel(
+        id: id,
+        pedidoId: pedidoId,
+        produto: produtoModel!,
+        qtde: qtde.doubleValue,
+        statusess: statusess.map((e) => e.copyWith()).toList(),
+        clienteId: cliente.id,
+        obraId: obra.id,
+      );
 }

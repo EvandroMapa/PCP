@@ -30,7 +30,6 @@ class PedidoCollection {
       AppStream<List<PedidoModel>>();
   List<PedidoModel> get pedidosArchiveds => pedidosArchivedsStream.value;
 
-
   CollectionReference<Map<String, dynamic>> get collection =>
       FirebaseFirestore.instance.collection(name);
 
@@ -39,9 +38,8 @@ class PedidoCollection {
         .collection(name)
         .where('isArchived', isEqualTo: true)
         .get();
-    final pedidos = data.docs
-        .map((e) => PedidoModel.fromMap(e.data()))
-        .toList();
+    final pedidos =
+        data.docs.map((e) => PedidoModel.fromMap(e.data())).toList();
     pedidosArchivedsStream.add(pedidos);
   }
 
@@ -59,9 +57,8 @@ class PedidoCollection {
         .collection(name)
         .where('isArchived', isEqualTo: false)
         .get();
-    final pedidos = data.docs
-        .map((e) => PedidoModel.fromMap(e.data()))
-        .toList();
+    final pedidos =
+        data.docs.map((e) => PedidoModel.fromMap(e.data())).toList();
     dataStream.add(pedidos);
     pedidosUnarchivedsStream.add(pedidos.where((e) => !e.isArchived).toList());
 
@@ -111,23 +108,21 @@ class PedidoCollection {
         .where('isArchived', isEqualTo: false)
         .snapshots()
         .listen((e) {
-          final data = e.docs
-              .map((e) => PedidoModel.fromMap(e.data()))
-              .toList();
-          dataStream.add(data);
-          pedidosUnarchivedsStream.add(
-            data.where((e) => !e.isArchived).toList(),
-          );
+      final data = e.docs.map((e) => PedidoModel.fromMap(e.data())).toList();
+      dataStream.add(data);
+      pedidosUnarchivedsStream.add(
+        data.where((e) => !e.isArchived).toList(),
+      );
 
-          if (pedidoCtrl.pedidoStream.controller.hasValue) {
-            final pedido = data.firstWhereOrNull(
-              (e) => e.id == pedidoCtrl.pedidoStream.value.id,
-            );
-            if (pedido != null) {
-              pedidoCtrl.pedidoStream.add(pedido);
-            }
-          }
-        });
+      if (pedidoCtrl.pedidoStream.controller.hasValue) {
+        final pedido = data.firstWhereOrNull(
+          (e) => e.id == pedidoCtrl.pedidoStream.value.id,
+        );
+        if (pedido != null) {
+          pedidoCtrl.pedidoStream.add(pedido);
+        }
+      }
+    });
   }
 
   PedidoModel getById(String id) =>

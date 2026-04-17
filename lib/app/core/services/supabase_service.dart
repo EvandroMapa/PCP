@@ -5,7 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart' as sf;
 class SupabaseService implements Service {
   // Chaves hardcoded como fallback para modo debug
   static const String _defaultUrl = 'https://aumfedyfrxuwgkdhwrel.supabase.co';
-  static const String _defaultAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1bWZlZHlmcnh1d2drZGh3cmVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MzI1NjUsImV4cCI6MjA4OTUwODU2NX0.egxt22BJdXhZndMKsAjNMIvZNBY807JGr5hqn9Gk3A8';
+  static const String _defaultAnonKey =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1bWZlZHlmcnh1d2drZGh3cmVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM5MzI1NjUsImV4cCI6MjA4OTUwODU2NX0.egxt22BJdXhZndMKsAjNMIvZNBY807JGr5hqn9Gk3A8';
 
   @override
   Future<void> initialize() async {
@@ -13,7 +14,7 @@ class SupabaseService implements Service {
     // Em debug, usamos o fallback diretamente.
     const envUrl = String.fromEnvironment('SUPABASE_URL');
     const envKey = String.fromEnvironment('SUPABASE_ANON_KEY');
-    
+
     final url = envUrl.isNotEmpty ? envUrl : _defaultUrl;
     final anonKey = envKey.isNotEmpty ? envKey : _defaultAnonKey;
 

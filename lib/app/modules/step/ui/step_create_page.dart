@@ -160,9 +160,9 @@ class _StepCreatePageState extends State<StepCreatePage> {
       height: double.infinity,
       decoration: BoxDecoration(
         color: const Color(0xFFF1F5F9),
-      border: Border(
-        right: BorderSide(color: Color(0xFFE2E8F0)),
-      ),
+        border: Border(
+          right: BorderSide(color: Color(0xFFE2E8F0)),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -251,15 +251,14 @@ class _StepCreatePageState extends State<StepCreatePage> {
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             border: isSelected
-                ? Border.all(color: AppColors.primaryMain.withValues(alpha: 0.20))
+                ? Border.all(
+                    color: AppColors.primaryMain.withValues(alpha: 0.20))
                 : null,
           ),
           child: Icon(
             section.icon,
             size: 18,
-            color: isSelected
-                ? AppColors.primaryMain
-                : Colors.grey[400],
+            color: isSelected ? AppColors.primaryMain : Colors.grey[400],
           ),
         ),
       ),
@@ -333,8 +332,8 @@ class _StepCreatePageState extends State<StepCreatePage> {
                           .setColor(AppColors.neutralMedium)),
                   const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color: form.color,
                       borderRadius: BorderRadius.circular(20),
@@ -409,7 +408,8 @@ class _StepCreatePageState extends State<StepCreatePage> {
           const SizedBox(height: 12),
           _infoBox(
             icon: Icons.info_outline,
-            text: 'Sem restrição — todos os usuários podem mover pedidos nesta etapa.',
+            text:
+                'Sem restrição — todos os usuários podem mover pedidos nesta etapa.',
           ),
         ],
       ];
@@ -474,7 +474,8 @@ class _StepCreatePageState extends State<StepCreatePage> {
           _switchOption(
             icon: Icons.bar_chart_outlined,
             label: 'Consumo no Relatório',
-            description: 'Considera esta etapa no relatório de consumo de pedidos.',
+            description:
+                'Considera esta etapa no relatório de consumo de pedidos.',
             value: form.considerarConsumoRelatorioPedidos,
             onChanged: (_) {
               form.considerarConsumoRelatorioPedidos =
@@ -497,10 +498,24 @@ class _StepCreatePageState extends State<StepCreatePage> {
           _switchOption(
             icon: Icons.donut_large_outlined,
             label: 'Gráfico CDA no Kanban',
-            description: 'Mostra o gráfico CDA nos cartões do Kanban desta etapa.',
+            description:
+                'Mostra o gráfico CDA nos cartões do Kanban desta etapa.',
             value: form.isExibirGraficoCDA,
             onChanged: (_) {
               form.isExibirGraficoCDA = !form.isExibirGraficoCDA;
+              stepCtrl.formStream.update();
+            },
+          ),
+          const Divider(height: 28),
+          _switchOption(
+            icon: Icons.block_outlined,
+            label: 'Bloquear saída sem elementos',
+            description:
+                'Cartões não podem sair desta etapa se NÃO tiverem elementos cadastrados.',
+            value: form.isBlockMoveWithoutElements,
+            onChanged: (_) {
+              form.isBlockMoveWithoutElements =
+                  !form.isBlockMoveWithoutElements;
               stepCtrl.formStream.update();
             },
           ),
@@ -524,8 +539,7 @@ class _StepCreatePageState extends State<StepCreatePage> {
           child: Icon(icon, size: 18, color: AppColors.primaryMain),
         ),
         const SizedBox(width: 12),
-        Text(title,
-            style: AppCss.largeBold.setColor(AppColors.primaryMain)),
+        Text(title, style: AppCss.largeBold.setColor(AppColors.primaryMain)),
       ],
     );
   }
@@ -589,8 +603,8 @@ class _StepCreatePageState extends State<StepCreatePage> {
                       value ? AppColors.black : AppColors.neutralDark)),
               const SizedBox(height: 2),
               Text(description,
-                  style: AppCss.minimumRegular
-                      .setColor(AppColors.neutralMedium)),
+                  style:
+                      AppCss.minimumRegular.setColor(AppColors.neutralMedium)),
             ],
           ),
         ),
@@ -618,8 +632,7 @@ class _StepCreatePageState extends State<StepCreatePage> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(text,
-                style: AppCss.minimumRegular
-                    .setColor(AppColors.secondaryDark)),
+                style: AppCss.minimumRegular.setColor(AppColors.secondaryDark)),
           ),
         ],
       ),

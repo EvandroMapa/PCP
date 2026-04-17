@@ -106,8 +106,7 @@ class NotificacaoSupabaseCollection extends NotificacaoCollection {
     _isListen = true;
     SupabaseService.client
         .from(tableName)
-        .stream(primaryKey: ['id'])
-        .listen((List<Map<String, dynamic>> data) {
+        .stream(primaryKey: ['id']).listen((List<Map<String, dynamic>> data) {
       final notificacoes =
           data.map((e) => NotificacaoModel.fromSupabaseMap(e)).toList();
       notificacoes.sort((a, b) => a.createdAt.compareTo(b.createdAt));

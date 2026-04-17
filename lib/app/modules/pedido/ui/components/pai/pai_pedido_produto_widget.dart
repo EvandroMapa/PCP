@@ -62,10 +62,10 @@ class _PaiPedidoProdutoWidgetState extends State<PaiPedidoProdutoWidget> {
         ),
         if (isExpanded)
           for (final filho in widget.pedido.getPedidosFilhos().where(
-            (e) => e.produtos.any(
-              (p) => p.produto.id == widget.produto.produto.id,
-            ),
-          ))
+                (e) => e.produtos.any(
+                  (p) => p.produto.id == widget.produto.produto.id,
+                ),
+              ))
             _filhoWidget(filho, widget.produto),
         Builder(
           builder: (context) {
@@ -121,7 +121,9 @@ class _PaiPedidoProdutoWidgetState extends State<PaiPedidoProdutoWidget> {
 
   Widget _restanteWidget(bool isExpanded, Color color, int qtde) {
     return Container(
-      padding: isExpanded ? const EdgeInsets.symmetric(horizontal: 16, vertical: 8) : EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: isExpanded
+          ? const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
+          : EdgeInsets.fromLTRB(16, 8, 16, 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(4),
         color: color,

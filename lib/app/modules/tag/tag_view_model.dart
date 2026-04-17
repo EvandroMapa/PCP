@@ -19,9 +19,13 @@ class TagCreateModel {
 
   late bool isEdit;
 
-  TagCreateModel() : id = HashService.get, isEdit = false;
+  TagCreateModel()
+      : id = HashService.get,
+        isEdit = false;
 
-  TagCreateModel.edit(TagModel tag) : id = tag.id, isEdit = true {
+  TagCreateModel.edit(TagModel tag)
+      : id = tag.id,
+        isEdit = true {
     nome.text = tag.nome;
     descricao.text = tag.descricao;
     color = tag.color;
@@ -31,12 +35,12 @@ class TagCreateModel {
   }
 
   TagModel toTagModel() => TagModel(
-    id: id,
-    nome: nome.text,
-    descricao: descricao.text,
-    color: color,
-    createdAt: createdAt,
-    isDefaultCD: isDefaultCD,
-    isDefaultCDA: isDefaultCDA,
-  );
+        id: id,
+        nome: nome.text,
+        descricao: descricao.text,
+        color: color,
+        createdAt: createdAt,
+        isDefaultCD: isDefaultCD,
+        isDefaultCDA: isDefaultCDA,
+      );
 }

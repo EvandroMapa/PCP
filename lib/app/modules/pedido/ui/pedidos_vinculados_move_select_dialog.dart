@@ -112,150 +112,153 @@ class _PedidosVinculadosMoveSelectDialogState
                 padding: EdgeInsets.all(16),
                 child: Column(
                   children: [
-                // Step info
-                            Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: widget.step.color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: widget.step.color.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  children: [
+                    // Step info
                     Container(
-                      width: 12,
-                      height: 12,
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: widget.step.color,
-                        borderRadius: BorderRadius.circular(6),
+                        color: widget.step.color.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: widget.step.color.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              color: widget.step.color,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          const W(8),
+                          Text(
+                            'Mover para: ${widget.step.name}',
+                            style: AppCss.mediumBold
+                                .copyWith(color: widget.step.color),
+                          ),
+                        ],
                       ),
                     ),
-                    const W(8),
-                    Text(
-                      'Mover para: ${widget.step.name}',
-                      style: AppCss.mediumBold.copyWith(color: widget.step.color),
-                    ),
-                  ],
-                ),
-                            ),
-                            const H(16),
+                    const H(16),
 
-                            // Lista de pedidos
-                            Expanded(
-                child: pedidosVinculados.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.link_off,
-                              size: 48,
-                              color: AppColors.neutralMedium,
-                            ),
-                            const H(16),
-                            Text(
-                              'Nenhum pedido vinculado',
-                              style: AppCss.mediumRegular.copyWith(
-                                color: AppColors.neutralDark,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.separated(
-                        itemCount: pedidosVinculados.length,
-                        separatorBuilder: (context, index) => const H(8),
-                        itemBuilder: (context, index) {
-                          final pedido = pedidosVinculados[index];
-                          final isSelected = selecionados.contains(pedido.id);
-
-                          return Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: isSelected
-                                    ? AppColors.primaryMain
-                                    : AppColors.neutralLight,
-                                width: isSelected ? 2 : 1,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                              color: isSelected
-                                  ? AppColors.primaryMain.withValues(alpha: 0.05)
-                                  : Colors.white,
-                            ),
-                            child: InkWell(
-                              onTap: () {
-                                setState(() {
-                                  if (isSelected) {
-                                    selecionados.remove(pedido.id);
-                                  } else {
-                                    selecionados.add(pedido.id);
-                                  }
-                                });
-                              },
-                              child: Row(
+                    // Lista de pedidos
+                    Expanded(
+                      child: pedidosVinculados.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  // Checkbox
-                                  Padding(
-                                    padding: const EdgeInsets.all(12),
-                                    child: Container(
-                                      width: 20,
-                                      height: 20,
-                                      decoration: BoxDecoration(
-                                        color: isSelected
-                                            ? AppColors.primaryMain
-                                            : Colors.white,
-                                        border: Border.all(
-                                          color: isSelected
-                                              ? AppColors.primaryMain
-                                              : AppColors.neutralMedium,
-                                          width: 2,
-                                        ),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: isSelected
-                                          ? const Icon(
-                                              Icons.check,
-                                              size: 14,
-                                              color: Colors.white,
-                                            )
-                                          : null,
-                                    ),
+                                  Icon(
+                                    Icons.link_off,
+                                    size: 48,
+                                    color: AppColors.neutralMedium,
                                   ),
-
-                                  // Pedido item
-                                  Expanded(
-                                    child: PedidoItemWidget(
-                                      pedido: pedido,
-                                      info: PedidoItemInfo.minified,
-                                      onTap: (_) {
-                                        setState(() {
-                                          if (isSelected) {
-                                            selecionados.remove(pedido.id);
-                                          } else {
-                                            selecionados.add(pedido.id);
-                                          }
-                                        });
-                                      },
+                                  const H(16),
+                                  Text(
+                                    'Nenhum pedido vinculado',
+                                    style: AppCss.mediumRegular.copyWith(
+                                      color: AppColors.neutralDark,
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                          );
-                        },
-                      ),
-                            ),
+                            )
+                          : ListView.separated(
+                              itemCount: pedidosVinculados.length,
+                              separatorBuilder: (context, index) => const H(8),
+                              itemBuilder: (context, index) {
+                                final pedido = pedidosVinculados[index];
+                                final isSelected =
+                                    selecionados.contains(pedido.id);
 
-                            const H(16),
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? AppColors.primaryMain
+                                          : AppColors.neutralLight,
+                                      width: isSelected ? 2 : 1,
+                                    ),
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: isSelected
+                                        ? AppColors.primaryMain
+                                            .withValues(alpha: 0.05)
+                                        : Colors.white,
+                                  ),
+                                  child: InkWell(
+                                    onTap: () {
+                                      setState(() {
+                                        if (isSelected) {
+                                          selecionados.remove(pedido.id);
+                                        } else {
+                                          selecionados.add(pedido.id);
+                                        }
+                                      });
+                                    },
+                                    child: Row(
+                                      children: [
+                                        // Checkbox
+                                        Padding(
+                                          padding: const EdgeInsets.all(12),
+                                          child: Container(
+                                            width: 20,
+                                            height: 20,
+                                            decoration: BoxDecoration(
+                                              color: isSelected
+                                                  ? AppColors.primaryMain
+                                                  : Colors.white,
+                                              border: Border.all(
+                                                color: isSelected
+                                                    ? AppColors.primaryMain
+                                                    : AppColors.neutralMedium,
+                                                width: 2,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                            ),
+                                            child: isSelected
+                                                ? const Icon(
+                                                    Icons.check,
+                                                    size: 14,
+                                                    color: Colors.white,
+                                                  )
+                                                : null,
+                                          ),
+                                        ),
+
+                                        // Pedido item
+                                        Expanded(
+                                          child: PedidoItemWidget(
+                                            pedido: pedido,
+                                            info: PedidoItemInfo.minified,
+                                            onTap: (_) {
+                                              setState(() {
+                                                if (isSelected) {
+                                                  selecionados
+                                                      .remove(pedido.id);
+                                                } else {
+                                                  selecionados.add(pedido.id);
+                                                }
+                                              });
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+
+                    const H(16),
                   ],
                 ),
               ),
             ),
-
-
 
             // Footer com botões
             Container(

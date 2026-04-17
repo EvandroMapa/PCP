@@ -65,50 +65,51 @@ class PedidoModel {
   final Map<String, dynamic> armacaoResumo;
 
   factory PedidoModel.empty() => PedidoModel(
-    id: HashService.get,
-    localizador: 'NOTFOUND${HashService.get}',
-    descricao: '',
-    createdAt: DateTime.now(),
-    deliveryAt: null,
-    cliente: ClienteModel.empty(),
-    obra: ObraModel.empty(),
-    produtos: [],
-    tipo: PedidoTipo.cda,
-    statusess: [],
-    steps: [],
-    tags: [],
-    checks: [],
-    comments: [],
-    users: [],
-    index: 10000000,
-    histories: [],
-    isArchived: false,
-    elementos: [],
-    archives: [],
-    checklistId: '',
-    planilhamento: '',
-    pedidoFinanceiro: '',
-    instrucoesEntrega: '',
-    instrucoesFinanceiras: '',
-
-    pedidosVinculados: [],
-    pedidosFilhos: [],
-    pai: null,
-    isFilho: false,
-    romaneio: null,
-    valorSubtotal: 0.0,
-    valorTaxas: 0.0,
-    valorDesconto: 0.0,
-    valorTotal: 0.0,
-    armacaoResumo: {},
-  );
+        id: HashService.get,
+        localizador: 'NOTFOUND${HashService.get}',
+        descricao: '',
+        createdAt: DateTime.now(),
+        deliveryAt: null,
+        cliente: ClienteModel.empty(),
+        obra: ObraModel.empty(),
+        produtos: [],
+        tipo: PedidoTipo.cda,
+        statusess: [],
+        steps: [],
+        tags: [],
+        checks: [],
+        comments: [],
+        users: [],
+        index: 10000000,
+        histories: [],
+        isArchived: false,
+        elementos: [],
+        archives: [],
+        checklistId: '',
+        planilhamento: '',
+        pedidoFinanceiro: '',
+        instrucoesEntrega: '',
+        instrucoesFinanceiras: '',
+        pedidosVinculados: [],
+        pedidosFilhos: [],
+        pai: null,
+        isFilho: false,
+        romaneio: null,
+        valorSubtotal: 0.0,
+        valorTaxas: 0.0,
+        valorDesconto: 0.0,
+        valorTotal: 0.0,
+        armacaoResumo: {},
+      );
 
   String get filtro => localizador + pedidoFinanceiro;
 
   double get pesoTotal => getQtdeTotal();
 
   StepModel get step => steps.isNotEmpty ? steps.last.step : StepModel.notFound;
-  PedidoStatus get status => statusess.isNotEmpty ? statusess.last.status : PedidoStatus.aguardandoProducaoCD;
+  PedidoStatus get status => statusess.isNotEmpty
+      ? statusess.last.status
+      : PedidoStatus.aguardandoProducaoCD;
 
   bool get isChangeStatusAvailable =>
       !isAguardandoEntradaProducao() &&
@@ -122,7 +123,8 @@ class PedidoModel {
   void addStep(step) => steps.add(PedidoStepModel.create(step));
 
   bool isAguardandoEntradaProducao() {
-    if (step.index >= (automatizacaoConfig.produtoPedidoSeparado.step?.index ?? 0)) {
+    if (step.index >=
+        (automatizacaoConfig.produtoPedidoSeparado.step?.index ?? 0)) {
       return false;
     }
     return true;
@@ -184,7 +186,6 @@ class PedidoModel {
     required this.pedidoFinanceiro,
     required this.instrucoesEntrega,
     required this.instrucoesFinanceiras,
-
     required this.pedidosVinculados,
     required this.pedidosFilhos,
     required this.pai,
@@ -197,7 +198,6 @@ class PedidoModel {
     this.valorTotal = 0.0,
     Map<String, dynamic>? armacaoResumo,
   }) : armacaoResumo = armacaoResumo ?? {};
-
 
   double getQtdeDirecionada(PedidoProdutoModel produto) {
     double qtde = 0.0;
@@ -332,7 +332,6 @@ class PedidoModel {
       'pedidoFinanceiro': pedidoFinanceiro,
       'instrucoesEntrega': instrucoesEntrega,
       'instrucoesFinanceiras': instrucoesFinanceiras,
-
       'pedidosVinculados': pedidosVinculados,
       'pedidosFilhos': pedidosFilhos,
       'pai': pai,
@@ -382,7 +381,8 @@ class PedidoModel {
           : [
               PedidoStepModel(
                 id: HashService.get,
-                step: FirestoreClient.steps.data.firstOrNull ?? StepModel.notFound,
+                step: FirestoreClient.steps.data.firstOrNull ??
+                    StepModel.notFound,
                 createdAt: DateTime.now(),
               ),
             ],
@@ -403,7 +403,6 @@ class PedidoModel {
       pedidoFinanceiro: map['pedidoFinanceiro'] ?? '',
       instrucoesEntrega: map['instrucoesEntrega'] ?? '',
       instrucoesFinanceiras: map['instrucoesFinanceiras'] ?? '',
-
       pedidosVinculados: map['pedidosVinculados'] != null
           ? List<String>.from(map['pedidosVinculados'])
           : [],
@@ -496,77 +495,78 @@ class PedidoModel {
         : <ElementoModel>[];
 
     final pedido = PedidoModel(
-        id: (map['id'] ?? '').toString(),
-        localizador: (map['localizador'] ?? '').toString(),
-        descricao: (map['descricao'] ?? '').toString(),
-        createdAt: _parseDate(map['created_at']),
-        deliveryAt: map['delivery_at'] != null ? _parseDate(map['delivery_at']) : null,
-        cliente: cliente,
-        obra: obra,
-        produtos: produtos,
-        tipo: PedidoTipo.values.firstWhere(
-            (e) => e.name == (map['tipo'] ?? 'cd'),
-            orElse: () => PedidoTipo.cd),
-        statusess: statusRaw != null
-            ? statusRaw.map((s) => PedidoStatusModel.fromSupabaseMap(s)).toList()
-            : [
-                PedidoStatusModel.create(PedidoStatus.aguardandoProducaoCD),
-              ],
-        steps: stepsRaw != null
-            ? stepsRaw.map((e) => PedidoStepModel.fromSupabaseMap(e)).toList()
-            : [
-                PedidoStepModel(
-                    id: (map['id'] ?? '').toString(), step: step, createdAt: DateTime.now())
-              ],
-        tags: tagsIds != null
-            ? tagsIds.map((tid) => FirestoreClient.tags.getById(tid)).toList()
-            : [],
-        checks: map['checks'] != null
-            ? (map['checks'] as List<dynamic>)
-                .map((c) => CheckItemModel.fromMap(Map<String, dynamic>.from(c)))
-                .toList()
-            : [],
-        comments: map['comments'] != null
-            ? (map['comments'] as List<dynamic>)
-                .map((c) => CommentModel.fromMap(Map<String, dynamic>.from(c)))
-                .toList()
-            : [],
-        users: map['user_ids'] != null
-            ? (map['user_ids'] as List<dynamic>)
-                .map((id) => BackendClient.usuarios.getById(id.toString()))
-                .whereType<UsuarioModel>()
-                .toList()
-            : [],
-        index: int.tryParse((map['index'] ?? '0').toString()) ?? 0,
-        histories: [],
-        isArchived: map['is_archived'] == true,
-        archives: map['archives'] != null
-            ? (map['archives'] as List<dynamic>)
-                .map((a) => ArchiveModel.fromSupabaseMap(
-                    Map<String, dynamic>.from(a)))
-                .toList()
-            : (archivesRaw != null
-                ? archivesRaw.map((a) => ArchiveModel.fromSupabaseMap(a)).toList()
-                : []),
-        checklistId: map['checklist_id']?.toString(),
-        planilhamento: map['planilhamento']?.toString() ?? '',
-        pedidoFinanceiro: map['pedido_financeiro']?.toString() ?? '',
-        instrucoesEntrega: map['instrucoes_entrega']?.toString() ?? '',
-        instrucoesFinanceiras: map['instrucoes_financeiras']?.toString() ?? '',
-
-        pedidosVinculados: [],
-        pedidosFilhos: [],
-        pai: null,
-        isFilho: false,
-        romaneio: null,
-        valorSubtotal: _parseNum(map['valor_subtotal']),
-        valorTaxas: _parseNum(map['valor_taxas']),
-        valorDesconto: _parseNum(map['valor_desconto']),
-        valorTotal: _parseNum(map['valor_total']),
-        armacaoResumo: map['armacao_resumo'] ?? {},
-        elementos: elementos,
+      id: (map['id'] ?? '').toString(),
+      localizador: (map['localizador'] ?? '').toString(),
+      descricao: (map['descricao'] ?? '').toString(),
+      createdAt: _parseDate(map['created_at']),
+      deliveryAt:
+          map['delivery_at'] != null ? _parseDate(map['delivery_at']) : null,
+      cliente: cliente,
+      obra: obra,
+      produtos: produtos,
+      tipo: PedidoTipo.values.firstWhere((e) => e.name == (map['tipo'] ?? 'cd'),
+          orElse: () => PedidoTipo.cd),
+      statusess: statusRaw != null
+          ? statusRaw.map((s) => PedidoStatusModel.fromSupabaseMap(s)).toList()
+          : [
+              PedidoStatusModel.create(PedidoStatus.aguardandoProducaoCD),
+            ],
+      steps: stepsRaw != null
+          ? stepsRaw.map((e) => PedidoStepModel.fromSupabaseMap(e)).toList()
+          : [
+              PedidoStepModel(
+                  id: (map['id'] ?? '').toString(),
+                  step: step,
+                  createdAt: DateTime.now())
+            ],
+      tags: tagsIds != null
+          ? tagsIds.map((tid) => FirestoreClient.tags.getById(tid)).toList()
+          : [],
+      checks: map['checks'] != null
+          ? (map['checks'] as List<dynamic>)
+              .map((c) => CheckItemModel.fromMap(Map<String, dynamic>.from(c)))
+              .toList()
+          : [],
+      comments: map['comments'] != null
+          ? (map['comments'] as List<dynamic>)
+              .map((c) => CommentModel.fromMap(Map<String, dynamic>.from(c)))
+              .toList()
+          : [],
+      users: map['user_ids'] != null
+          ? (map['user_ids'] as List<dynamic>)
+              .map((id) => BackendClient.usuarios.getById(id.toString()))
+              .whereType<UsuarioModel>()
+              .toList()
+          : [],
+      index: int.tryParse((map['index'] ?? '0').toString()) ?? 0,
+      histories: [],
+      isArchived: map['is_archived'] == true,
+      archives: map['archives'] != null
+          ? (map['archives'] as List<dynamic>)
+              .map((a) =>
+                  ArchiveModel.fromSupabaseMap(Map<String, dynamic>.from(a)))
+              .toList()
+          : (archivesRaw != null
+              ? archivesRaw.map((a) => ArchiveModel.fromSupabaseMap(a)).toList()
+              : []),
+      checklistId: map['checklist_id']?.toString(),
+      planilhamento: map['planilhamento']?.toString() ?? '',
+      pedidoFinanceiro: map['pedido_financeiro']?.toString() ?? '',
+      instrucoesEntrega: map['instrucoes_entrega']?.toString() ?? '',
+      instrucoesFinanceiras: map['instrucoes_financeiras']?.toString() ?? '',
+      pedidosVinculados: [],
+      pedidosFilhos: [],
+      pai: null,
+      isFilho: false,
+      romaneio: null,
+      valorSubtotal: _parseNum(map['valor_subtotal']),
+      valorTaxas: _parseNum(map['valor_taxas']),
+      valorDesconto: _parseNum(map['valor_desconto']),
+      valorTotal: _parseNum(map['valor_total']),
+      armacaoResumo: map['armacao_resumo'] ?? {},
+      elementos: elementos,
     );
-    
+
     return pedido;
   }
 
@@ -583,33 +583,33 @@ class PedidoModel {
   }
 
   Map<String, dynamic> toSupabaseMap() => {
-    'id': id,
-    'localizador': localizador,
-    'descricao': descricao,
-    'tipo': tipo.name,
-    'cliente_id': cliente.id,
-    'obra_id': obra.id,
-    'step_id': steps.isNotEmpty ? steps.last.step.id : null,
-    'status': statusess.isNotEmpty ? statusess.last.status.name : null,
-    'is_archived': isArchived,
-    'checklist_id': checklistId,
-    'planilhamento': planilhamento,
-    'pedido_financeiro': pedidoFinanceiro,
-    'instrucoes_entrega': instrucoesEntrega,
-    'instrucoes_financeiras': instrucoesFinanceiras,
-    'delivery_at': deliveryAt?.toIso8601String(),
-    'created_at': createdAt.toIso8601String(),
-    'index': index,
-    'valor_subtotal': valorSubtotal,
-    'valor_taxas': valorTaxas,
-    'valor_desconto': valorDesconto,
-    'valor_total': valorTotal,
-    'checks': checks.map((c) => c.toMap()).toList(),
-    'archives': archives.map((a) => a.toSupabaseMap()).toList(),
-    'comments': comments.map((c) => c.toMap()).toList(),
-    'user_ids': users.map((u) => u.id).toList(),
-    'armacao_resumo': armacaoResumo,
-  };
+        'id': id,
+        'localizador': localizador,
+        'descricao': descricao,
+        'tipo': tipo.name,
+        'cliente_id': cliente.id,
+        'obra_id': obra.id,
+        'step_id': steps.isNotEmpty ? steps.last.step.id : null,
+        'status': statusess.isNotEmpty ? statusess.last.status.name : null,
+        'is_archived': isArchived,
+        'checklist_id': checklistId,
+        'planilhamento': planilhamento,
+        'pedido_financeiro': pedidoFinanceiro,
+        'instrucoes_entrega': instrucoesEntrega,
+        'instrucoes_financeiras': instrucoesFinanceiras,
+        'delivery_at': deliveryAt?.toIso8601String(),
+        'created_at': createdAt.toIso8601String(),
+        'index': index,
+        'valor_subtotal': valorSubtotal,
+        'valor_taxas': valorTaxas,
+        'valor_desconto': valorDesconto,
+        'valor_total': valorTotal,
+        'checks': checks.map((c) => c.toMap()).toList(),
+        'archives': archives.map((a) => a.toSupabaseMap()).toList(),
+        'comments': comments.map((c) => c.toMap()).toList(),
+        'user_ids': users.map((u) => u.id).toList(),
+        'armacao_resumo': armacaoResumo,
+      };
 
   PedidoModel copyWith({
     String? id,
@@ -636,7 +636,6 @@ class PedidoModel {
     String? pedidoFinanceiro,
     String? instrucoesEntrega,
     String? instrucoesFinanceiras,
-
     List<String>? pedidosVinculados,
     List<String>? pedidosFilhos,
     String? pai,
@@ -676,8 +675,8 @@ class PedidoModel {
       instrucoesEntrega: instrucoesEntrega ?? this.instrucoesEntrega,
       instrucoesFinanceiras:
           instrucoesFinanceiras ?? this.instrucoesFinanceiras,
-      armacaoResumo: Map<String, dynamic>.from(armacaoResumo ?? this.armacaoResumo),
-
+      armacaoResumo:
+          Map<String, dynamic>.from(armacaoResumo ?? this.armacaoResumo),
       pedidosVinculados: pedidosVinculados ?? this.pedidosVinculados,
       pedidosFilhos: pedidosFilhos ?? this.pedidosFilhos,
       pai: pai ?? this.pai,

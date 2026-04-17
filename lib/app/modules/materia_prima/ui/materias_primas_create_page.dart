@@ -122,44 +122,44 @@ class _MateriaPrimaCreatePageState extends State<MateriaPrimaCreatePage> {
           },
         ),
         const H(16),
-          Row(
-            children: [
-              Expanded(
-                child: AppField(
-                  label: 'Corrida/Lote',
-                  controller: form.corridaLote,
-                  onChanged: (_) => materiaPrimaCtrl.formStream.update(),
-                ),
+        Row(
+          children: [
+            Expanded(
+              child: AppField(
+                label: 'Corrida/Lote',
+                controller: form.corridaLote,
+                onChanged: (_) => materiaPrimaCtrl.formStream.update(),
               ),
-              const W(16),
-              Container(
-                margin: const EdgeInsets.only(top: 20),
-                child: IconButton(
-                  onPressed: () async {
-                    final result = await push(AppBarcodeScannerPage());
-                    if (result != null) {
-                      form.corridaLote.text = result;
-                      materiaPrimaCtrl.formStream.update();
-                    }
-                  },
-                  icon: const Icon(Icons.qr_code_scanner),
-                ),
+            ),
+            const W(16),
+            Container(
+              margin: const EdgeInsets.only(top: 20),
+              child: IconButton(
+                onPressed: () async {
+                  final result = await push(AppBarcodeScannerPage());
+                  if (result != null) {
+                    form.corridaLote.text = result;
+                    materiaPrimaCtrl.formStream.update();
+                  }
+                },
+                icon: const Icon(Icons.qr_code_scanner),
               ),
-            ],
-          ),
-          const H(16),
-          AppDropDown<MateriaPrimaStatus?>(
-            disable: usuario.isOperador,
-            label: 'Status',
-            item: form.status,
-            itens: MateriaPrimaStatus.values,
-            itemLabel: (item) => item!.label,
-            onSelect: (item) {
-              form.status = item!;
-              materiaPrimaCtrl.formStream.update();
-            },
-          ),
-          const H(16),
+            ),
+          ],
+        ),
+        const H(16),
+        AppDropDown<MateriaPrimaStatus?>(
+          disable: usuario.isOperador,
+          label: 'Status',
+          item: form.status,
+          itens: MateriaPrimaStatus.values,
+          itemLabel: (item) => item!.label,
+          onSelect: (item) {
+            form.status = item!;
+            materiaPrimaCtrl.formStream.update();
+          },
+        ),
+        const H(16),
         usuario.isOperador
             ? ArchiveSimpleWidget(
                 label: 'Fotografar Etiqueta',

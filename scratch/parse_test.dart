@@ -35,48 +35,50 @@ CA60
 84,480
 3
 """;
-  
+
   List<String> lines = pdfLines.split('\n').map((e) => e.trim()).toList();
-  
-  for (int i=0; i<lines.length; i++) {
-     print('[$i]: ${lines[i]}');
+
+  for (int i = 0; i < lines.length; i++) {
+    print('[$i]: ${lines[i]}');
   }
 
   print('--- PARSING ---');
 
-  for (int i=0; i<lines.length; i++) {
-        final line = lines[i];
-        if (line.isEmpty) continue;
-        final lineLower = line.toLowerCase();
+  for (int i = 0; i < lines.length; i++) {
+    final line = lines[i];
+    if (line.isEmpty) continue;
+    final lineLower = line.toLowerCase();
 
-        // 1. Detectar Início de Elemento (Vertical)
-        if (i + 2 < lines.length && 
-            lines[i+1].toLowerCase() == 'elemento' && 
-            lines[i+2].toLowerCase() == 'ok') {
-          
-          print('ELEMENT FOUND: \$line');
-          i += 2; // Pula "Elemento" e "Ok"
-          continue;
-        }
+    // 1. Detectar Início de Elemento (Vertical)
+    if (i + 2 < lines.length &&
+        lines[i + 1].toLowerCase() == 'elemento' &&
+        lines[i + 2].toLowerCase() == 'ok') {
+      print('ELEMENT FOUND: \$line');
+      i += 2; // Pula "Elemento" e "Ok"
+      continue;
+    }
 
-        // Tentar block de 7 linhas (NOVO LAYOUT)
-        if (i + 6 < lines.length) {
-          final valQtde = lines[i].replaceAll(',', '.');
-          final valPos = lines[i+2];
-          final valBitolaStr = lines[i+3].replaceAll(',', '.');
-          final valAco = lines[i+4].toUpperCase();
-          final valPesoStr = lines[i+5].replaceAll(',', '.');
-          final valOs = lines[i+6];
+    // Tentar block de 7 linhas (NOVO LAYOUT)
+    if (i + 6 < lines.length) {
+      final valQtde = lines[i].replaceAll(',', '.');
+      final valPos = lines[i + 2];
+      final valBitolaStr = lines[i + 3].replaceAll(',', '.');
+      final valAco = lines[i + 4].toUpperCase();
+      final valPesoStr = lines[i + 5].replaceAll(',', '.');
+      final valOs = lines[i + 6];
 
-          final qtdePos = double.tryParse(valQtde);
-          final bitola = double.tryParse(valBitolaStr);
-          final peso = double.tryParse(valPesoStr);
-          
-          if (qtdePos != null && bitola != null && (valAco.contains('CA50') || valAco.contains('CA60'))) {
-             print('  POS_FOUND: Qtde=\$qtdePos, Pos=\$valPos, Bitola=\$bitola, Aco=\$valAco, Peso=\$peso, OS=\$valOs');
-             i += 6; // pula o bloco
-             continue;
-          }
-        }
+      final qtdePos = double.tryParse(valQtde);
+      final bitola = double.tryParse(valBitolaStr);
+      final peso = double.tryParse(valPesoStr);
+
+      if (qtdePos != null &&
+          bitola != null &&
+          (valAco.contains('CA50') || valAco.contains('CA60'))) {
+        print(
+            '  POS_FOUND: Qtde=\$qtdePos, Pos=\$valPos, Bitola=\$bitola, Aco=\$valAco, Peso=\$peso, OS=\$valOs');
+        i += 6; // pula o bloco
+        continue;
+      }
+    }
   }
 }

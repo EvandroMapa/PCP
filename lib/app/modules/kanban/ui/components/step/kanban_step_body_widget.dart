@@ -51,7 +51,8 @@ class KanbanStepBodyWidget extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: KanbanCardDraggableWidget(pedidos[i]),
                 ),
-                _dragTargetWidget(step, pedidos, i + 1, isLast: i == pedidos.length - 1),
+                _dragTargetWidget(step, pedidos, i + 1,
+                    isLast: i == pedidos.length - 1),
               ],
             if (pedidos.isEmpty)
               _dragTargetWidget(step, pedidos, pedidos.length, isLast: true),
@@ -67,27 +68,29 @@ class KanbanStepBodyWidget extends StatelessWidget {
     List<PedidoModel> pedidos,
     int index, {
     bool isLast = false,
-  }) => DragTarget<PedidoModel>(
-    onAcceptWithDetails: (details) =>
-        kanbanCtrl.onAccept(step, details.data, index),
-    builder: (context, candidateData, rejectedData) {
-      bool isHover = candidateData.isNotEmpty;
-      bool isEnable = step.isEnable;
-      return AnimatedOpacity(
-        opacity: isEnable && isHover ? 1 : 0,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
-          width: double.maxFinite,
-          margin: isHover
-              ? EdgeInsets.symmetric(vertical: 8, horizontal: isLast ? 8 : 0)
-              : null,
-          height: isHover || isLast ? 70 : 16,
-          decoration: BoxDecoration(
-            color: Colors.grey[300],
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
+  }) =>
+      DragTarget<PedidoModel>(
+        onAcceptWithDetails: (details) =>
+            kanbanCtrl.onAccept(step, details.data, index),
+        builder: (context, candidateData, rejectedData) {
+          bool isHover = candidateData.isNotEmpty;
+          bool isEnable = step.isEnable;
+          return AnimatedOpacity(
+            opacity: isEnable && isHover ? 1 : 0,
+            duration: const Duration(milliseconds: 100),
+            child: Container(
+              width: double.maxFinite,
+              margin: isHover
+                  ? EdgeInsets.symmetric(
+                      vertical: 8, horizontal: isLast ? 8 : 0)
+                  : null,
+              height: isHover || isLast ? 70 : 16,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          );
+        },
       );
-    },
-  );
 }

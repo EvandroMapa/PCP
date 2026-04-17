@@ -18,20 +18,20 @@ class RelatorioOrdemPdfStatusPage {
   RelatorioOrdemPdfStatusPage(this.model, this.tipo);
 
   pw.Page build(Uint8List bytes) => pw.MultiPage(
-    crossAxisAlignment: pw.CrossAxisAlignment.center,
-    pageFormat: PdfPageFormat.a4,
-    build: (pw.Context context) => [
-      pw.Image(pw.MemoryImage(bytes), width: 60, height: 60),
-      pw.SizedBox(height: 24),
-      pw.Text(
-        'RELATÓRIO DE BITOLA POR STATUS${model.dates != null ? ' E PERÍODO' : empty}',
-      ),
-      pw.SizedBox(height: 16),
-      _itemHeader(model),
-      pw.SizedBox(height: 24),
-      for (final pedido in model.ordens) _itemRelatorio(pedido),
-    ],
-  );
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) => [
+          pw.Image(pw.MemoryImage(bytes), width: 60, height: 60),
+          pw.SizedBox(height: 24),
+          pw.Text(
+            'RELATÓRIO DE BITOLA POR STATUS${model.dates != null ? ' E PERÍODO' : empty}',
+          ),
+          pw.SizedBox(height: 16),
+          _itemHeader(model),
+          pw.SizedBox(height: 24),
+          for (final pedido in model.ordens) _itemRelatorio(pedido),
+        ],
+      );
 
   pw.Widget _itemRelatorio(OrdemModel ordem) {
     return pw.Container(
@@ -72,15 +72,16 @@ class RelatorioOrdemPdfStatusPage {
             ],
           ),
           _itemInfo('Bitola', '${ordem.produto.descricaoReplaced}mm'),
-                 if (ordem.materiaPrima != null ||
+          if (ordem.materiaPrima != null ||
               tipo == RelatorioOrdensPdfExportarTipo.completo)
-          PdfDivisor.build(),
+            PdfDivisor.build(),
           if (ordem.materiaPrima != null) ...[
             _itemInfo(
               'Materia Prima',
               '${ordem.materiaPrima!.fabricanteModel.nome} - ${ordem.materiaPrima!.corridaLote}',
             ),
-            if (tipo == RelatorioOrdensPdfExportarTipo.completo) PdfDivisor.build(),
+            if (tipo == RelatorioOrdensPdfExportarTipo.completo)
+              PdfDivisor.build(),
           ],
           if (tipo == RelatorioOrdensPdfExportarTipo.completo) ...[
             for (final produto in ordem.produtos)

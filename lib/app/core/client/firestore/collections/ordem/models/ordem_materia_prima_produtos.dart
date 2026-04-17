@@ -14,7 +14,9 @@ class OrdemMateriaPrimaProdutos {
     return OrdemMateriaPrimaProdutos(
       materiaPrima: MateriaPrimaModel.fromMap(json['materiaPrima']),
       produtos: List<PedidoProdutoModel>.from(
-        (json['produtos'] ?? []).map((e) => PedidoProdutoModel.fromMap(e)).toList(),
+        (json['produtos'] ?? [])
+            .map((e) => PedidoProdutoModel.fromMap(e))
+            .toList(),
       ),
     );
   }

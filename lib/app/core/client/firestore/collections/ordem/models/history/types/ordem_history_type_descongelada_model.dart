@@ -5,9 +5,11 @@ class OrdemHistoryTypeDescongeladaModel extends OrdemHistoryDataModel {
   final UsuarioModel user;
   final DateTime createdAt;
 
-  OrdemHistoryTypeDescongeladaModel({required this.user, required this.createdAt});
+  OrdemHistoryTypeDescongeladaModel(
+      {required this.user, required this.createdAt});
 
-  factory OrdemHistoryTypeDescongeladaModel.fromJson(Map<String, dynamic> json) {
+  factory OrdemHistoryTypeDescongeladaModel.fromJson(
+      Map<String, dynamic> json) {
     return OrdemHistoryTypeDescongeladaModel(
       user: UsuarioModel.fromJson(json['user']),
       createdAt: DateTime.parse(json['createdAt']),

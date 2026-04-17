@@ -9,21 +9,21 @@ enum RelatorioOrdensPdfExportarTipo { completo, resumido }
 extension RelatorioOrdensPdfExportarTipoExtension
     on RelatorioOrdensPdfExportarTipo {
   String get label => switch (this) {
-    RelatorioOrdensPdfExportarTipo.completo => 'Completo',
-    RelatorioOrdensPdfExportarTipo.resumido => 'Resumido',
-  };
+        RelatorioOrdensPdfExportarTipo.completo => 'Completo',
+        RelatorioOrdensPdfExportarTipo.resumido => 'Resumido',
+      };
 
   String get descricao => switch (this) {
-    RelatorioOrdensPdfExportarTipo.completo =>
-      'Relatório completo com todas as bitolas',
-    RelatorioOrdensPdfExportarTipo.resumido =>
-      'Relatório resumido sem as bitolas',
-  };
+        RelatorioOrdensPdfExportarTipo.completo =>
+          'Relatório completo com todas as bitolas',
+        RelatorioOrdensPdfExportarTipo.resumido =>
+          'Relatório resumido sem as bitolas',
+      };
 
   IconData get icon => switch (this) {
-    RelatorioOrdensPdfExportarTipo.completo => Icons.description,
-    RelatorioOrdensPdfExportarTipo.resumido => Icons.description_outlined,
-  };
+        RelatorioOrdensPdfExportarTipo.completo => Icons.description,
+        RelatorioOrdensPdfExportarTipo.resumido => Icons.description_outlined,
+      };
 }
 
 enum RelatorioOrdemType { STATUS, ORDEM }

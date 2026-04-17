@@ -5,7 +5,8 @@ import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PedidoProdutoSupabaseCollection extends PedidoProdutoCollection {
-  static final PedidoProdutoSupabaseCollection _instance = PedidoProdutoSupabaseCollection._();
+  static final PedidoProdutoSupabaseCollection _instance =
+      PedidoProdutoSupabaseCollection._();
   PedidoProdutoSupabaseCollection._() : super.base() {
     dataStream = AppStream.seed([]);
   }
@@ -34,7 +35,9 @@ class PedidoProdutoSupabaseCollection extends PedidoProdutoCollection {
   @override
   Future<PedidoProdutoModel?> add(PedidoProdutoModel model) async {
     try {
-      await SupabaseService.client.from(tableName).insert(model.toSupabaseMap(model.pedidoId));
+      await SupabaseService.client
+          .from(tableName)
+          .insert(model.toSupabaseMap(model.pedidoId));
       return model;
     } catch (e) {
       print('Supabase Error (PedidoProduto.add): $e');
@@ -46,15 +49,18 @@ class PedidoProdutoSupabaseCollection extends PedidoProdutoCollection {
   Future<void> listen() async {
     SupabaseService.client
         .from(tableName)
-        .stream(primaryKey: ['id'])
-        .listen((List<Map<String, dynamic>> data) {
-          final produtos = data.map((e) => PedidoProdutoModel.fromSupabaseMap(e)).toList();
-          dataStream.add(produtos);
-        });
+        .stream(primaryKey: ['id']).listen((List<Map<String, dynamic>> data) {
+      final produtos =
+          data.map((e) => PedidoProdutoModel.fromSupabaseMap(e)).toList();
+      dataStream.add(produtos);
+    });
   }
 
   Future<List<PedidoProdutoModel>> getByPedidoId(String pedidoId) async {
-    final response = await SupabaseService.client.from(tableName).select().eq('pedido_id', pedidoId);
+    final response = await SupabaseService.client
+        .from(tableName)
+        .select()
+        .eq('pedido_id', pedidoId);
     return response.map((e) => PedidoProdutoModel.fromSupabaseMap(e)).toList();
   }
 }

@@ -47,7 +47,8 @@ class KanbanCardCDWidget extends StatelessWidget {
                   if (pProduzindo > 0)
                     Flexible(
                       flex: (pProduzindo * 1000).toInt().clamp(1, 1000),
-                      child: Container(color: PedidoProdutoStatus.produzindo.color),
+                      child: Container(
+                          color: PedidoProdutoStatus.produzindo.color),
                     ),
                   if (pAguardando > 0)
                     Flexible(
@@ -65,7 +66,11 @@ class KanbanCardCDWidget extends StatelessWidget {
           // ── Percentuais: Ag. | Produzindo | Pronto ──
           Row(
             children: [
-              _pctLabel(pctAg, PedidoProdutoStatus.aguardandoProducao.color.withValues(alpha: 0.8), 'Ag.'),
+              _pctLabel(
+                  pctAg,
+                  PedidoProdutoStatus.aguardandoProducao.color
+                      .withValues(alpha: 0.8),
+                  'Ag.'),
               const Spacer(),
               _pctLabel(pctProd, PedidoProdutoStatus.produzindo.color, 'Prod.'),
               const Spacer(),

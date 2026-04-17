@@ -30,9 +30,8 @@ class MateriaPrimaCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     final data = await FirebaseFirestore.instance.collection(name).get();
-    final countries = data.docs
-        .map((e) => MateriaPrimaModel.fromMap(e.data()))
-        .toList();
+    final countries =
+        data.docs.map((e) => MateriaPrimaModel.fromMap(e.data())).toList();
     countries.sort((a, b) => a.produto.number.compareTo(b.produto.number));
     dataStream.add(countries);
   }
@@ -72,14 +71,13 @@ class MateriaPrimaCollection {
             : collection)
         .snapshots()
         .listen((e) {
-          final countries = e.docs
-              .map((e) => MateriaPrimaModel.fromMap(e.data()))
-              .toList();
-          countries.sort(
-            (a, b) => a.produto.number.compareTo(b.produto.number),
-          );
-          dataStream.add(countries);
-        });
+      final countries =
+          e.docs.map((e) => MateriaPrimaModel.fromMap(e.data())).toList();
+      countries.sort(
+        (a, b) => a.produto.number.compareTo(b.produto.number),
+      );
+      dataStream.add(countries);
+    });
   }
 
   MateriaPrimaModel getById(String id) =>

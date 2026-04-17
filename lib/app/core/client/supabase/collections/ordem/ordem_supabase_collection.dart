@@ -45,11 +45,11 @@ class OrdemSupabaseCollection extends OrdemCollection {
           .from(name)
           .select()
           .eq('is_archived', false);
-      
+
       final ordens = List<Map<String, dynamic>>.from(response)
           .map((e) => OrdemModel.fromSupabaseMap(e))
           .toList();
-      
+
       _updateStreams(ordens);
     } catch (e) {
       log('Supabase Error (Ordem.start): $e');
@@ -63,11 +63,11 @@ class OrdemSupabaseCollection extends OrdemCollection {
           .from(name)
           .select()
           .eq('is_archived', true);
-      
+
       final ordens = List<Map<String, dynamic>>.from(response)
           .map((e) => OrdemModel.fromSupabaseMap(e))
           .toList();
-      
+
       ordensArquivadasStream.add(ordens);
     } catch (e) {
       log('Supabase Error (Ordem.startOnlyArquivadas): $e');
@@ -105,7 +105,7 @@ class OrdemSupabaseCollection extends OrdemCollection {
   }) async {
     if (_isListen) return;
     _isListen = true;
-    
+
     SupabaseService.client
         .from(name)
         .stream(primaryKey: ['id'])
@@ -141,8 +141,7 @@ class OrdemSupabaseCollection extends OrdemCollection {
   Future<void> updateBeltIndex(OrdemModel model) async {
     await SupabaseService.client
         .from(name)
-        .update({'belt_index': model.beltIndex})
-        .eq('id', model.id);
+        .update({'belt_index': model.beltIndex}).eq('id', model.id);
   }
 
   @override

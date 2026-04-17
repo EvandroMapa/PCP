@@ -54,11 +54,11 @@ class ArmacaoController {
     AppSupabaseClient.elementos.dataStream.listen.listen((allElementos) {
       if (_currentPedidoId != null) {
         log('ArmacaoController: Recebendo atualização de elementos para Pedido $_currentPedidoId');
-        final filtered = allElementos
-            .where((e) => e.pedidoId == _currentPedidoId)
-            .toList();
+        final filtered =
+            allElementos.where((e) => e.pedidoId == _currentPedidoId).toList();
         // Ordenar alfabeticamente A-Z
-        filtered.sort((a, b) => a.nome.toLowerCase().trim().compareTo(b.nome.toLowerCase().trim()));
+        filtered.sort((a, b) =>
+            a.nome.toLowerCase().trim().compareTo(b.nome.toLowerCase().trim()));
         elementosStream.add(filtered);
       }
     });
@@ -70,8 +70,9 @@ class ArmacaoController {
     loadingStream.add(true);
     final filtered = all.where((p) {
       final isVisible = p.step.isExibirArmacao;
-      final matchesSearch = p.localizador.toLowerCase().contains(search.text.toLowerCase()) ||
-          p.cliente.nome.toLowerCase().contains(search.text.toLowerCase());
+      final matchesSearch =
+          p.localizador.toLowerCase().contains(search.text.toLowerCase()) ||
+              p.cliente.nome.toLowerCase().contains(search.text.toLowerCase());
       return isVisible && matchesSearch;
     }).toList();
 
@@ -83,7 +84,8 @@ class ArmacaoController {
     }
 
     // Ordenar por data de entrega ou criação
-    filtered.sort((a, b) => (a.deliveryAt ?? a.createdAt).compareTo(b.deliveryAt ?? b.createdAt));
+    filtered.sort((a, b) =>
+        (a.deliveryAt ?? a.createdAt).compareTo(b.deliveryAt ?? b.createdAt));
 
     pedidosStream.add(filtered);
     loadingStream.add(false);
@@ -131,7 +133,8 @@ class ArmacaoController {
     }
   }
 
-  ArmacaoSummary getSummary(String pedidoId) => _summaries[pedidoId] ?? ArmacaoSummary.empty();
+  ArmacaoSummary getSummary(String pedidoId) =>
+      _summaries[pedidoId] ?? ArmacaoSummary.empty();
 
   Future<void> onFetchElementos(PedidoModel pedido) async {
     try {
@@ -143,7 +146,8 @@ class ArmacaoController {
           .toList();
 
       // Ordenar alfabeticamente pelo nome A-Z
-      filtered.sort((a, b) => a.nome.toLowerCase().trim().compareTo(b.nome.toLowerCase().trim()));
+      filtered.sort((a, b) =>
+          a.nome.toLowerCase().trim().compareTo(b.nome.toLowerCase().trim()));
 
       pedido.elementos.clear();
       pedido.elementos.addAll(filtered);
@@ -160,8 +164,8 @@ class ArmacaoController {
     _syncSummariesAndFilter(AppSupabaseClient.pedidos.data);
   }
 
-  Future<void> updateElementoStatus(
-      PedidoModel pedido, ElementoModel elemento, ElementoStatus newStatus) async {
+  Future<void> updateElementoStatus(PedidoModel pedido, ElementoModel elemento,
+      ElementoStatus newStatus) async {
     try {
       int novoQtdePronto = elemento.qtdePronto;
       ElementoStatus statusFinal = newStatus;
@@ -175,7 +179,9 @@ class ArmacaoController {
         if (quantidadeEscolhida == null) return; // Cancelou
 
         novoQtdePronto = quantidadeEscolhida;
-        statusFinal = (novoQtdePronto >= elemento.qtde) ? ElementoStatus.pronto : ElementoStatus.armando;
+        statusFinal = (novoQtdePronto >= elemento.qtde)
+            ? ElementoStatus.pronto
+            : ElementoStatus.armando;
       } else if (newStatus == ElementoStatus.pronto && elemento.qtde == 1) {
         novoQtdePronto = 1;
         statusFinal = ElementoStatus.pronto;
@@ -195,7 +201,8 @@ class ArmacaoController {
   }
 
   /// Método direto de atualização de progresso para elementos com qtde > 1
-  Future<void> openProgressoParcialDirect(PedidoModel pedido, ElementoModel elemento) async {
+  Future<void> openProgressoParcialDirect(
+      PedidoModel pedido, ElementoModel elemento) async {
     try {
       final int? quantidadeEscolhida = await _showQtdeProntoDialog(
         context: contextGlobal,
@@ -213,7 +220,8 @@ class ArmacaoController {
         statusFinal = ElementoStatus.armando;
       }
 
-      await _applyStatusUpdate(pedido, elemento, statusFinal, quantidadeEscolhida);
+      await _applyStatusUpdate(
+          pedido, elemento, statusFinal, quantidadeEscolhida);
     } catch (e) {
       log('Erro no fluxo direto de progresso: $e');
       showInfoDialog('Erro: Não foi possível atualizar o progresso.');
@@ -221,9 +229,8 @@ class ArmacaoController {
   }
 
   /// Centraliza a verificação de limite dinâmico e persistência no banco e local
-  Future<void> _applyStatusUpdate(
-      PedidoModel pedido, ElementoModel elemento, ElementoStatus statusFinal, int novoQtdePronto) async {
-
+  Future<void> _applyStatusUpdate(PedidoModel pedido, ElementoModel elemento,
+      ElementoStatus statusFinal, int novoQtdePronto) async {
     // 1. Buscar limite dinamicamente (Reatividade Administrativa)
     try {
       final configRaw = await SupabaseService.client
@@ -242,14 +249,17 @@ class ArmacaoController {
     }
 
     // 2. Verificação de Limite de Produção Simultânea
-    if (statusFinal == ElementoStatus.armando && elemento.status != ElementoStatus.armando) {
-      final countArmando = elementosStream.value.where((e) => e.status == ElementoStatus.armando).length;
+    if (statusFinal == ElementoStatus.armando &&
+        elemento.status != ElementoStatus.armando) {
+      final countArmando = elementosStream.value
+          .where((e) => e.status == ElementoStatus.armando)
+          .length;
       final limit = PreferencesService.maxElementosProducao.value;
 
       if (countArmando >= limit) {
         showInfoDialog('LIMITE ATINGIDO!\n\n'
-          'O limite atual para este pedido é de $limit elementos simultâneos em produção.\n\n'
-          'Conclua algum item ou peça ao administrador para aumentar o limite nas configurações.');
+            'O limite atual para este pedido é de $limit elementos simultâneos em produção.\n\n'
+            'Conclua algum item ou peça ao administrador para aumentar o limite nas configurações.');
         return;
       }
     }
@@ -275,19 +285,18 @@ class ArmacaoController {
     await updatePedidoSummary(pedido);
 
     // 5. Persistência no Supabase (o realtime vai trazer o mesmo dado que já está na tela)
-    await SupabaseService.client
-        .from('elementos')
-        .update({
-          'status': statusFinal.name,
-          'qtde_pronto': novoQtdePronto,
-        }).eq('id', elemento.id);
+    await SupabaseService.client.from('elementos').update({
+      'status': statusFinal.name,
+      'qtde_pronto': novoQtdePronto,
+    }).eq('id', elemento.id);
 
     // 5. Finalização de Pedido inteiro
     final todosProntos = pedido.elementos.every(
       (e) => e.status == ElementoStatus.pronto && e.qtdePronto >= e.qtde,
     );
     if (todosProntos) {
-      final targetStep = automatizacaoCtrl.checkFinalizacaoArmacaoTargetStep(pedido);
+      final targetStep =
+          automatizacaoCtrl.checkFinalizacaoArmacaoTargetStep(pedido);
       if (targetStep != null) {
         final confirm = await showConfirmDialog(
           'Finalização de Armação',
@@ -325,67 +334,83 @@ class ArmacaoController {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   IconButton(
-                    onPressed: selecionado > 0 ? () => setState(() => selecionado--) : null,
+                    onPressed: selecionado > 0
+                        ? () => setState(() => selecionado--)
+                        : null,
                     icon: const Icon(Icons.remove_circle_outline),
                     iconSize: 32,
                     color: Colors.red,
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.green, width: 2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       '$selecionado / ${elemento.qtde}',
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                          fontSize: 24, fontWeight: FontWeight.bold),
                     ),
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    onPressed: selecionado < elemento.qtde ? () => setState(() => selecionado++) : null,
+                    onPressed: selecionado < elemento.qtde
+                        ? () => setState(() => selecionado++)
+                        : null,
                     icon: const Icon(Icons.add_circle_outline),
                     iconSize: 32,
                     color: Colors.green,
                   ),
                 ],
               ),
-                if (selecionado == 0)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Text(
-                      'O elemento voltará para AGUARDANDO.',
-                      style: const TextStyle(fontSize: 12, color: Colors.blueGrey, fontStyle: FontStyle.italic),
-                      textAlign: TextAlign.center,
-                    ),
-                  )
-                else if (selecionado < elemento.qtde)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Text(
-                      'As ${elemento.qtde - selecionado} peças restantes ficarão em ARMANDO.',
-                      style: const TextStyle(fontSize: 12, color: Colors.orange, fontStyle: FontStyle.italic),
-                      textAlign: TextAlign.center,
-                    ),
+              if (selecionado == 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(
+                    'O elemento voltará para AGUARDANDO.',
+                    style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.blueGrey,
+                        fontStyle: FontStyle.italic),
+                    textAlign: TextAlign.center,
                   ),
+                )
+              else if (selecionado < elemento.qtde)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Text(
+                    'As ${elemento.qtde - selecionado} peças restantes ficarão em ARMANDO.',
+                    style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.orange,
+                        fontStyle: FontStyle.italic),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('CANCELAR', style: TextStyle(color: Colors.grey)),
+              child:
+                  const Text('CANCELAR', style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: selecionado == 0 ? Colors.blueGrey : Colors.green,
+                backgroundColor:
+                    selecionado == 0 ? Colors.blueGrey : Colors.green,
                 foregroundColor: Colors.white,
               ),
               onPressed: () => Navigator.pop(ctx, selecionado),
               child: Text(
                 selecionado == 0
-                  ? 'P/ AGUARDANDO'
-                  : (selecionado == elemento.qtde ? 'CONFIRMAR PRONTO' : 'SALVAR PROGRESSO'),
+                    ? 'P/ AGUARDANDO'
+                    : (selecionado == elemento.qtde
+                        ? 'CONFIRMAR PRONTO'
+                        : 'SALVAR PROGRESSO'),
               ),
             ),
           ],
@@ -435,12 +460,14 @@ class ArmacaoController {
           qtdPorStatus[ElementoStatus.pronto] =
               (qtdPorStatus[ElementoStatus.pronto] ?? 0) + qtdeProntoFrac;
           pesoPorStatus[ElementoStatus.pronto] =
-              (pesoPorStatus[ElementoStatus.pronto] ?? 0) + (qtdeProntoFrac * pesoPorUnidade);
+              (pesoPorStatus[ElementoStatus.pronto] ?? 0) +
+                  (qtdeProntoFrac * pesoPorUnidade);
 
           qtdPorStatus[ElementoStatus.armando] =
               (qtdPorStatus[ElementoStatus.armando] ?? 0) + qtdeArmandoFrac;
           pesoPorStatus[ElementoStatus.armando] =
-              (pesoPorStatus[ElementoStatus.armando] ?? 0) + (qtdeArmandoFrac * pesoPorUnidade);
+              (pesoPorStatus[ElementoStatus.armando] ?? 0) +
+                  (qtdeArmandoFrac * pesoPorUnidade);
         }
       }
 
@@ -451,20 +478,32 @@ class ArmacaoController {
           'aguardando': {
             'qtd': qtdPorStatus[ElementoStatus.aguardando],
             'peso': pesoPorStatus[ElementoStatus.aguardando],
-            'prcnt_qtd': totalQtd > 0 ? qtdPorStatus[ElementoStatus.aguardando]! / totalQtd : 0,
-            'prcnt_peso': totalPeso > 0 ? pesoPorStatus[ElementoStatus.aguardando]! / totalPeso : 0,
+            'prcnt_qtd': totalQtd > 0
+                ? qtdPorStatus[ElementoStatus.aguardando]! / totalQtd
+                : 0,
+            'prcnt_peso': totalPeso > 0
+                ? pesoPorStatus[ElementoStatus.aguardando]! / totalPeso
+                : 0,
           },
           'armando': {
             'qtd': qtdPorStatus[ElementoStatus.armando],
             'peso': pesoPorStatus[ElementoStatus.armando],
-            'prcnt_qtd': totalQtd > 0 ? qtdPorStatus[ElementoStatus.armando]! / totalQtd : 0,
-            'prcnt_peso': totalPeso > 0 ? pesoPorStatus[ElementoStatus.armando]! / totalPeso : 0,
+            'prcnt_qtd': totalQtd > 0
+                ? qtdPorStatus[ElementoStatus.armando]! / totalQtd
+                : 0,
+            'prcnt_peso': totalPeso > 0
+                ? pesoPorStatus[ElementoStatus.armando]! / totalPeso
+                : 0,
           },
           'pronto': {
             'qtd': qtdPorStatus[ElementoStatus.pronto],
             'peso': pesoPorStatus[ElementoStatus.pronto],
-            'prcnt_qtd': totalQtd > 0 ? qtdPorStatus[ElementoStatus.pronto]! / totalQtd : 0,
-            'prcnt_peso': totalPeso > 0 ? pesoPorStatus[ElementoStatus.pronto]! / totalPeso : 0,
+            'prcnt_qtd': totalQtd > 0
+                ? qtdPorStatus[ElementoStatus.pronto]! / totalQtd
+                : 0,
+            'prcnt_peso': totalPeso > 0
+                ? pesoPorStatus[ElementoStatus.pronto]! / totalPeso
+                : 0,
           },
         }
       };
@@ -476,8 +515,7 @@ class ArmacaoController {
       // Só agora persiste no banco (realtime trará o mesmo dado que já está na tela)
       await SupabaseService.client
           .from('pedidos')
-          .update({'armacao_resumo': resume})
-          .eq('id', pedido.id);
+          .update({'armacao_resumo': resume}).eq('id', pedido.id);
     } catch (e) {
       log('Erro ao atualizar resumo do pedido: $e');
     }

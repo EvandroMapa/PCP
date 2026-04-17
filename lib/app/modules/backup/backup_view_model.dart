@@ -17,9 +17,8 @@ class BackupModel {
     DateTime createdAt;
     try {
       // Nome: backup_dd_MM_yyyy_HH_mm_ss.json
-      final datePart = file.name
-          .replaceAll('.json', '')
-          .replaceFirst('backup_', '');
+      final datePart =
+          file.name.replaceAll('.json', '').replaceFirst('backup_', '');
       createdAt = DateFormat('dd_MM_yyyy_HH_mm_ss').parse(datePart);
     } catch (_) {
       createdAt = file.createdAt != null

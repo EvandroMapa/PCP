@@ -64,7 +64,8 @@ class RelatorioOrdemPdfOrdemPage {
         children: [
           pw.Row(
             children: [
-              _infoCell('BITOLA', '${ordem.produto.descricaoReplaced} mm', flex: 2),
+              _infoCell('BITOLA', '${ordem.produto.descricaoReplaced} mm',
+                  flex: 2),
               _infoCell(
                 'MATÉRIA PRIMA',
                 ordem.materiaPrima != null
@@ -102,12 +103,14 @@ class RelatorioOrdemPdfOrdemPage {
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
-          pw.Text(label, style: pw.TextStyle(fontSize: 7, color: PdfColors.grey700)),
+          pw.Text(label,
+              style: pw.TextStyle(fontSize: 7, color: PdfColors.grey700)),
           pw.Text(
             value,
             style: pw.TextStyle(
               fontSize: 10,
-              fontWeight: isBoldValue ? pw.FontWeight.bold : pw.FontWeight.normal,
+              fontWeight:
+                  isBoldValue ? pw.FontWeight.bold : pw.FontWeight.normal,
             ),
           ),
         ],
@@ -176,7 +179,8 @@ class RelatorioOrdemPdfOrdemPage {
                   ),
                 ),
                 pw.SizedBox(height: 5),
-                pw.Text('Assinatura do Responsável', style: const pw.TextStyle(fontSize: 8)),
+                pw.Text('Assinatura do Responsável',
+                    style: const pw.TextStyle(fontSize: 8)),
               ],
             ),
           ],

@@ -16,12 +16,13 @@ import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 Future<double?> showPedidoOrderEditBottom(
   PedidoProdutoCreateModel produto,
   double? qtdeDisponivel,
-) async => showModalBottomSheet(
-  backgroundColor: AppColors.white,
-  context: contextGlobal,
-  isScrollControlled: true,
-  builder: (_) => PedidoOrderEditBottom(produto, qtdeDisponivel),
-);
+) async =>
+    showModalBottomSheet(
+      backgroundColor: AppColors.white,
+      context: contextGlobal,
+      isScrollControlled: true,
+      builder: (_) => PedidoOrderEditBottom(produto, qtdeDisponivel),
+    );
 
 class PedidoOrderEditBottom extends StatefulWidget {
   final PedidoProdutoCreateModel produto;
@@ -131,14 +132,16 @@ class _PedidoOrderEditBottomState extends State<PedidoOrderEditBottom> {
                       ),
                     const H(16),
                     AppTextButton(
-                      isEnable:
-                          widget.produto.qtde.doubleValue > 0,
+                      isEnable: widget.produto.qtde.doubleValue > 0,
                       label: 'Confirmar',
                       onPressed: () {
-                        if (widget.qtdeDisponivel == null || qtdeEC.doubleValue <= widget.qtdeDisponivel!) {
+                        if (widget.qtdeDisponivel == null ||
+                            qtdeEC.doubleValue <= widget.qtdeDisponivel!) {
                           Navigator.pop(context, qtdeEC.doubleValue);
                         } else {
-                          NotificationService.showNegative('Quantidade indisponível', 'A quantidade disponível é de ${widget.qtdeDisponivel}Kg');
+                          NotificationService.showNegative(
+                              'Quantidade indisponível',
+                              'A quantidade disponível é de ${widget.qtdeDisponivel}Kg');
                         }
                       },
                     ),

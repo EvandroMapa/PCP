@@ -10,7 +10,8 @@ import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 
-Future<MateriaPrimaModel?> showMateriaPrimaBottom(MateriaPrimaModel materiaPrima) async =>
+Future<MateriaPrimaModel?> showMateriaPrimaBottom(
+        MateriaPrimaModel materiaPrima) async =>
     showModalBottomSheet(
       backgroundColor: AppColors.white,
       context: contextGlobal,

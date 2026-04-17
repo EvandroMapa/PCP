@@ -62,14 +62,14 @@ class _RelatoriosProducaoPageState extends State<RelatoriosProducaoPage> {
   Widget build(BuildContext context) {
     return StreamOut(
       stream: relatorioCtrl.producaoViewModelStream.listen,
-        builder: (_, model) => ListView(
-          children: [
-            _filterWidget(model),
-            Divisor(color: Colors.grey[700]!, height: 1.5),
-            _itemTotalWidget(model),
-          ],
-        ),
-      );
+      builder: (_, model) => ListView(
+        children: [
+          _filterWidget(model),
+          Divisor(color: Colors.grey[700]!, height: 1.5),
+          _itemTotalWidget(model),
+        ],
+      ),
+    );
   }
 
   Padding _filterWidget(RelatorioProducaoViewModel model) {
@@ -112,8 +112,8 @@ class _RelatoriosProducaoPageState extends State<RelatoriosProducaoPage> {
                     controller: TextController(
                       text: model.dates != null
                           ? ([model.dates!.start, model.dates!.end]
-                                .map((e) => DateFormat('dd/MM/yyy').format(e))
-                                .join(' até '))
+                              .map((e) => DateFormat('dd/MM/yyy').format(e))
+                              .join(' até '))
                           : 'Selecione',
                     ),
                   ),
@@ -240,11 +240,9 @@ class _RelatoriosProducaoPageState extends State<RelatoriosProducaoPage> {
     return RelatorioExpandableWidget(
       color: Colors.grey[400]!,
       title: 'Turno ${index + 1}',
-      value: relatorioCtrl
-          .getTempoProducao(
-            [turno],
-          )
-          .text(),
+      value: relatorioCtrl.getTempoProducao(
+        [turno],
+      ).text(),
       children: [_itemPedidoProdutoTurnoHistoryWidget(turno)],
     );
   }
@@ -280,8 +278,7 @@ class _RelatoriosProducaoPageState extends State<RelatoriosProducaoPage> {
             Expanded(
               child: Text(
                 label,
-                style:
-                    labelStyle ??
+                style: labelStyle ??
                     AppCss.minimumRegular.copyWith(fontWeight: FontWeight.w500),
               ),
             ),
@@ -295,7 +292,7 @@ class _RelatoriosProducaoPageState extends State<RelatoriosProducaoPage> {
             ),
           ],
         ),
-        ),
-      );
+      ),
+    );
   }
 }

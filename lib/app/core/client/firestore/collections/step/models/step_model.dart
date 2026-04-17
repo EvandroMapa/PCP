@@ -22,6 +22,7 @@ class StepModel {
   bool considerarConsumoRelatorioPedidos = true;
   bool isExibirArmacao = false;
   bool isExibirGraficoCDA = false;
+  bool isBlockMoveWithoutElements = false;
 
   static StepModel notFound = StepModel(
     createdAt: DateTime.now(),
@@ -39,6 +40,7 @@ class StepModel {
     considerarConsumoRelatorioPedidos: false,
     isExibirArmacao: false,
     isExibirGraficoCDA: false,
+    isBlockMoveWithoutElements: false,
   );
 
   List<StepModel> get fromSteps => fromStepsIds
@@ -67,6 +69,7 @@ class StepModel {
     required this.considerarConsumoRelatorioPedidos,
     required this.isExibirArmacao,
     required this.isExibirGraficoCDA,
+    required this.isBlockMoveWithoutElements,
   });
 
   StepModel copyWith({
@@ -86,6 +89,7 @@ class StepModel {
     bool? considerarConsumoRelatorioPedidos,
     bool? isExibirArmacao,
     bool? isExibirGraficoCDA,
+    bool? isBlockMoveWithoutElements,
   }) {
     return StepModel(
       id: id ?? this.id,
@@ -100,11 +104,12 @@ class StepModel {
       shipping: shipping ?? this.shipping,
       isArchivedAvailable: isArchivedAvailable ?? this.isArchivedAvailable,
       isPermiteProducao: isPermiteProducao ?? this.isPermiteProducao,
-      considerarConsumoRelatorioPedidos:
-          considerarConsumoRelatorioPedidos ??
+      considerarConsumoRelatorioPedidos: considerarConsumoRelatorioPedidos ??
           this.considerarConsumoRelatorioPedidos,
       isExibirArmacao: isExibirArmacao ?? this.isExibirArmacao,
       isExibirGraficoCDA: isExibirGraficoCDA ?? this.isExibirGraficoCDA,
+      isBlockMoveWithoutElements:
+          isBlockMoveWithoutElements ?? this.isBlockMoveWithoutElements,
     );
   }
 
@@ -125,6 +130,7 @@ class StepModel {
       'considerarConsumoRelatorioPedidos': considerarConsumoRelatorioPedidos,
       'isExibirArmacao': isExibirArmacao,
       'isExibirGraficoCDA': isExibirGraficoCDA,
+      'isBlockMoveWithoutElements': isBlockMoveWithoutElements,
     };
   }
 
@@ -161,6 +167,7 @@ class StepModel {
         considerarConsumoRelatorioPedidos: false,
         isExibirArmacao: map['isExibirArmacao'] ?? false,
         isExibirGraficoCDA: map['isExibirGraficoCDA'] ?? false,
+        isBlockMoveWithoutElements: map['isBlockMoveWithoutElements'] ?? false,
       );
     }
     return StepModel(
@@ -173,10 +180,10 @@ class StepModel {
           : <String>[],
       moveRoles: map['perfis_movimentacao'] != null
           ? ((map['perfis_movimentacao'] is String
-                      ? json.decode(map['perfis_movimentacao'])
-                      : map['perfis_movimentacao']) as List)
-                  .map((x) => x.toString())
-                  .toList()
+                  ? json.decode(map['perfis_movimentacao'])
+                  : map['perfis_movimentacao']) as List)
+              .map((x) => x.toString())
+              .toList()
           : [],
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
       isDefault: map['isDefault'] ?? false,
@@ -190,6 +197,7 @@ class StepModel {
           map['considerarConsumoRelatorioPedidos'] ?? true,
       isExibirArmacao: map['isExibirArmacao'] ?? false,
       isExibirGraficoCDA: map['isExibirGraficoCDA'] ?? false,
+      isBlockMoveWithoutElements: map['isBlockMoveWithoutElements'] ?? false,
     );
   }
 
@@ -213,6 +221,7 @@ class StepModel {
           map['considerar_consumo_relatorio_pedidos'] ?? true,
       isExibirArmacao: map['exibir_armacao'] ?? false,
       isExibirGraficoCDA: map['exibir_grafico_cda'] ?? false,
+      isBlockMoveWithoutElements: map['bloqueia_mover_sem_elementos'] ?? false,
     );
   }
 
@@ -262,6 +271,7 @@ class StepModel {
       'considerar_consumo_relatorio_pedidos': considerarConsumoRelatorioPedidos,
       'exibir_armacao': isExibirArmacao,
       'exibir_grafico_cda': isExibirGraficoCDA,
+      'bloqueia_mover_sem_elementos': isBlockMoveWithoutElements,
     };
   }
 

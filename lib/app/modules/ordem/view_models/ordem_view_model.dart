@@ -75,18 +75,23 @@ class OrdemCreateModel {
   late bool isEdit;
 
   OrdemCreateModel()
-    : id =
-          '${[...FirestoreClient.ordens.ordensNaoArquivadas, ...FirestoreClient.ordens.ordensArquivadas].length + 1}_${HashService.get}',
-      isEdit = false,
-      isCreate = true;
+      : id = '${[
+              ...FirestoreClient.ordens.ordensNaoArquivadas,
+              ...FirestoreClient.ordens.ordensArquivadas
+            ].length + 1}_${HashService.get}',
+        isEdit = false,
+        isCreate = true;
 
-  OrdemCreateModel.edit(OrdemModel ordem) : id = ordem.id, isEdit = true {
+  OrdemCreateModel.edit(OrdemModel ordem)
+      : id = ordem.id,
+        isEdit = true {
     isCreate = false;
     createdAt = ordem.createdAt;
     produto = FirestoreClient.produtos.data.firstWhereOrNull(
-      (e) => e.id == ordem.produto.id,
-    ) ?? ProdutoModel.empty();
-    
+          (e) => e.id == ordem.produto.id,
+        ) ??
+        ProdutoModel.empty();
+
     produtos = ordem.produtos
         .map(
           (e) =>
@@ -122,7 +127,9 @@ class OrdemCreateModel {
             ),
           )
           .toList(),
-      idPedidosProdutosRefs: produtos.map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id}).toList(),
+      idPedidosProdutosRefs: produtos
+          .map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id})
+          .toList(),
       freezed: OrdemFreezedModel.static(),
       beltIndex: FirestoreClient.ordens.ordensNaoCongeladas.length,
       materiaPrima: materiaPrima,
@@ -162,7 +169,9 @@ class OrdemCreateModel {
             ),
           )
           .toList(),
-      idPedidosProdutosRefs: produtos.map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id}).toList(),
+      idPedidosProdutosRefs: produtos
+          .map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id})
+          .toList(),
       freezed: freezed.toOrdemFreeze(),
       beltIndex: beltIndex,
       materiaPrima: materiaPrima,

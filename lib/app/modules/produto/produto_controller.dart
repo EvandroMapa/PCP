@@ -94,15 +94,16 @@ class ProdutoController {
 
   Future<bool> _isDeleteUnavailable(
     ProdutoModel produto,
-  ) async => !await onDeleteProcess(
-    deleteTitle: 'Deseja excluir o produto?',
-    deleteMessage: 'Todos seus dados serão apagados do sistema',
-    infoMessage:
-        'Não é possível excluir o produto, pois ele está vinculado a outras partes do sistema.',
-    conditional: FirestoreClient.pedidos.data.any(
-      (e) => e.produtos.any((p) => p.produto.id == produto.id),
-    ),
-  );
+  ) async =>
+      !await onDeleteProcess(
+        deleteTitle: 'Deseja excluir o produto?',
+        deleteMessage: 'Todos seus dados serão apagados do sistema',
+        infoMessage:
+            'Não é possível excluir o produto, pois ele está vinculado a outras partes do sistema.',
+        conditional: FirestoreClient.pedidos.data.any(
+          (e) => e.produtos.any((p) => p.produto.id == produto.id),
+        ),
+      );
 
   void onValid(ProdutoModel? produto) {
     String nomeForm = form.nome.text.trim();
@@ -116,7 +117,8 @@ class ProdutoController {
         throw Exception('Já existe um produto com esse nome');
       }
     } else {
-      if (FirestoreClient.produtos.data.any((e) => e.nome.trim().toLowerCase() == nomeForm.toLowerCase())) {
+      if (FirestoreClient.produtos.data
+          .any((e) => e.nome.trim().toLowerCase() == nomeForm.toLowerCase())) {
         throw Exception('Já existe um produto com esse nome');
       }
     }

@@ -7,7 +7,7 @@ void main() async {
   final document = PdfDocument(inputBytes: bytes);
   final text = PdfTextExtractor(document).extractText();
   document.dispose();
-  
+
   await File('pdf_output.txt').writeAsString(text);
   print('Extraction done!');
 }

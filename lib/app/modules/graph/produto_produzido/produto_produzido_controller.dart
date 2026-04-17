@@ -19,7 +19,8 @@ class ProdutoProduzidoController {
   factory ProdutoProduzidoController() => _instance;
 
   List<BarSeries<ProdutoProduzidoModel, DateTime>> getSource() =>
-      getDates(ProdutoProduzido.day).reversed
+      getDates(ProdutoProduzido.day)
+          .reversed
           .toList()
           .map(
             (e) => BarSeries<ProdutoProduzidoModel, DateTime>(
@@ -57,9 +58,8 @@ class ProdutoProduzidoController {
 
   List<ProdutoProduzidoModel> getKilosProduzidos(DateTime date) {
     List<ProdutoProduzidoModel> produzidos = [];
-    final ordens = FirestoreClient.ordens.data
-        .map((e) => e.copyWith())
-        .toList();
+    final ordens =
+        FirestoreClient.ordens.data.map((e) => e.copyWith()).toList();
     for (OrdemModel ordem in ordens) {
       for (PedidoProdutoModel produto in ordem.produtos) {
         if (produto.status.status == PedidoProdutoStatus.pronto &&

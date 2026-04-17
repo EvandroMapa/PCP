@@ -23,14 +23,14 @@ class ClienteModel {
   });
 
   factory ClienteModel.empty() => ClienteModel(
-    id: HashService.get,
-    codigo: 0,
-    nome: 'name',
-    telefone: 'fone',
-    cpf: 'cpf',
-    endereco: EnderecoModel.empty(),
-    obras: [],
-  );
+        id: HashService.get,
+        codigo: 0,
+        nome: 'name',
+        telefone: 'fone',
+        cpf: 'cpf',
+        endereco: EnderecoModel.empty(),
+        obras: [],
+      );
 
   Map<String, dynamic> toMap() {
     return {
@@ -74,12 +74,12 @@ class ClienteModel {
   }
 
   Map<String, dynamic> toSupabaseMap() => {
-    'id': id,
-    'codigo': codigo,
-    'nome': nome,
-    'telefone': telefone,
-    'cnpj': cpf,
-  };
+        'id': id,
+        'codigo': codigo,
+        'nome': nome,
+        'telefone': telefone,
+        'cnpj': cpf,
+      };
 
   String toJson() => json.encode(toMap());
 
@@ -120,12 +120,12 @@ class ObraModel {
   final ObraStatus status;
 
   factory ObraModel.empty() => ObraModel(
-    id: HashService.get,
-    descricao: 'name',
-    telefoneFixo: 'fone',
-    endereco: null,
-    status: ObraStatus.emAndamento,
-  );
+        id: HashService.get,
+        descricao: 'name',
+        telefoneFixo: 'fone',
+        endereco: null,
+        status: ObraStatus.emAndamento,
+      );
 
   ObraModel({
     required this.id,
@@ -196,13 +196,13 @@ ObraModel obraDeleteObj = ObraModel(
 
 class ClienteAdd extends ClienteModel {
   ClienteAdd()
-    : super(
-        id: 'add',
-        codigo: 0,
-        nome: 'ADICIONAR CLIENTE',
-        telefone: '',
-        cpf: '',
-        endereco: EnderecoModel.empty(),
-        obras: [],
-      );
+      : super(
+          id: 'add',
+          codigo: 0,
+          nome: 'ADICIONAR CLIENTE',
+          telefone: '',
+          cpf: '',
+          endereco: EnderecoModel.empty(),
+          obras: [],
+        );
 }

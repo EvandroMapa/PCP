@@ -1,3 +1,4 @@
+import 'package:aco_plus/app/core/client/firestore/collections/checklist/models/checklist_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
@@ -56,22 +57,38 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
   final TextEditingController descricaoCtrl = TextEditingController();
   final TextEditingController planilhamentoCtrl = TextEditingController();
   final TextEditingController romaneioCtrl = TextEditingController();
-  final TextEditingController subtotalCtrl = TextEditingController(text: '0,00');
+  final TextEditingController subtotalCtrl =
+      TextEditingController(text: '0,00');
   final TextEditingController taxasCtrl = TextEditingController(text: '0,00');
-  final TextEditingController descontoCtrl = TextEditingController(text: '0,00');
-  final TextEditingController totalFinalCtrl = TextEditingController(text: '0,00');
-  
+  final TextEditingController descontoCtrl =
+      TextEditingController(text: '0,00');
+  final TextEditingController totalFinalCtrl =
+      TextEditingController(text: '0,00');
+
   DateTime deliveryDate = DateTime.now().add(const Duration(days: 7));
   ClienteModel? selectedCliente;
   ObraModel? selectedObra;
   PedidoTipo selectedTipo = PedidoTipo.cda;
   StepModel? selectedStep;
+  ChecklistModel? selectedChecklist;
   List<Map<String, dynamic>> extractedProducts = [];
 
   @override
   void initState() {
     super.initState();
-    selectedStep = widget.initialStep ?? FirestoreClient.steps.data.firstOrNull;
+      selectedStep = widget.initialStep ??
+        (FirestoreClient.steps.data.firstWhereOrNull((e) => e.isDefault) ??
+            FirestoreClient.steps.data.firstWhereOrNull(
+              (e) =>
+                  e.id ==
+                  FirestoreClient.automatizacao.data.criacaoPedido.step?.id,
+            ) ??
+            FirestoreClient.steps.data.firstOrNull);
+            
+    selectedChecklist = FirestoreClient.checklists.data.firstWhereOrNull(
+          (e) => e.isPadrao,
+        ) ??
+        FirestoreClient.checklists.data.firstOrNull;
   }
 
   void _calculateTotal() {
@@ -100,7 +117,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
 
   Future<void> _processFile() async {
     if (selectedFile == null || selectedFile!.bytes == null) return;
-    
+
     setState(() => isUploading = true);
 
     try {
@@ -115,11 +132,16 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         financeiroCtrl.text = parsedData['pedidoFinanceiro'];
         planilhamentoCtrl.text = parsedData['planilhamento'] ?? '';
         romaneioCtrl.text = parsedData['romaneio'] ?? '';
-        extractedProducts = List<Map<String, dynamic>>.from(parsedData['produtos']);
-        subtotalCtrl.text = parsedData['subtotal'].toStringAsFixed(2).replaceAll('.', ',');
-        taxasCtrl.text = parsedData['taxas'].toStringAsFixed(2).replaceAll('.', ',');
-        descontoCtrl.text = parsedData['desconto'].toStringAsFixed(2).replaceAll('.', ',');
-        totalFinalCtrl.text = parsedData['total'].toStringAsFixed(2).replaceAll('.', ',');
+        extractedProducts =
+            List<Map<String, dynamic>>.from(parsedData['produtos']);
+        subtotalCtrl.text =
+            parsedData['subtotal'].toStringAsFixed(2).replaceAll('.', ',');
+        taxasCtrl.text =
+            parsedData['taxas'].toStringAsFixed(2).replaceAll('.', ',');
+        descontoCtrl.text =
+            parsedData['desconto'].toStringAsFixed(2).replaceAll('.', ',');
+        totalFinalCtrl.text =
+            parsedData['total'].toStringAsFixed(2).replaceAll('.', ',');
         _calculateTotal();
         currentStep = 1;
       });
@@ -135,10 +157,16 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Confirmar Reimportação'),
-        content: const Text('Deseja importar um novo PDF? Os dados preenchidos até agora nesta janela serão perdidos.'),
+        content: const Text(
+            'Deseja importar um novo PDF? Os dados preenchidos até agora nesta janela serão perdidos.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sim, trocar PDF', style: TextStyle(color: Colors.red))),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Sim, trocar PDF',
+                  style: TextStyle(color: Colors.red))),
         ],
       ),
     );
@@ -150,23 +178,25 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
 
   Future<void> _generateCard() async {
     if (localizadorCtrl.text.trim().isEmpty) {
-      NotificationService.showNegative('Atenção', 'O campo Localizador é obrigatório.');
+      NotificationService.showNegative(
+          'Atenção', 'O campo Localizador é obrigatório.');
       return;
     }
-    
+
     if (selectedStep == null) {
-      NotificationService.showNegative('Erro', 'Selecione uma etapa para o pedido.');
+      NotificationService.showNegative(
+          'Erro', 'Selecione uma etapa para o pedido.');
       return;
     }
 
     setState(() => isUploading = true);
 
     try {
-    final ClienteModel finalCliente = selectedCliente ?? ClienteModel.empty();
+      final ClienteModel finalCliente = selectedCliente ?? ClienteModel.empty();
 
       final List<String> missingProducts = [];
       final List<PedidoProdutoModel> produtosMapped = [];
-      
+
       for (final p in extractedProducts) {
         final produtoBase = FirestoreClient.produtos.data.firstWhereOrNull(
           (e) => e.codigoFinanceiro == p['codigo'],
@@ -177,8 +207,8 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         } else {
           produtosMapped.add(PedidoProdutoModel(
             id: HashService.get,
-            pedidoId: '', 
-            clienteId: finalCliente.id, 
+            pedidoId: '',
+            clienteId: finalCliente.id,
             obraId: selectedObra?.id ?? '',
             produto: produtoBase,
             statusess: [PedidoProdutoStatusModel.empty()],
@@ -198,14 +228,21 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Os itens destacados em vermelho não existem na base de dados.'),
+                const Text(
+                    'Os itens destacados em vermelho não existem na base de dados.'),
                 const H(12),
-                Text('Deseja criar o pedido desconsiderando estes itens?', style: AppCss.minimumBold),
+                Text('Deseja criar o pedido desconsiderando estes itens?',
+                    style: AppCss.minimumBold),
                 const H(16),
-                Text('Itens que serão ignorados:', style: AppCss.minimumRegular.setSize(11)),
+                Text('Itens que serão ignorados:',
+                    style: AppCss.minimumRegular.setSize(11)),
                 const H(4),
-                ...missingProducts.take(5).map((e) => Text('• $e', style: AppCss.minimumBold.setSize(11).setColor(Colors.red))),
-                if (missingProducts.length > 5) Text('... e mais ${missingProducts.length - 5} itens.', style: AppCss.minimumRegular.setSize(11)),
+                ...missingProducts.take(5).map((e) => Text('• $e',
+                    style:
+                        AppCss.minimumBold.setSize(11).setColor(Colors.red))),
+                if (missingProducts.length > 5)
+                  Text('... e mais ${missingProducts.length - 5} itens.',
+                      style: AppCss.minimumRegular.setSize(11)),
               ],
             ),
             actions: [
@@ -218,7 +255,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                 child: const Text('CANCELAR'),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(context, true), 
+                onPressed: () => Navigator.pop(context, true),
                 child: const Text('SIM, CRIAR SEM ESTES ITENS'),
               ),
             ],
@@ -231,7 +268,8 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         }
 
         if (produtosMapped.isEmpty) {
-          NotificationService.showNegative('Erro', 'Não é possível criar um pedido sem nenhum item válido.');
+          NotificationService.showNegative(
+              'Erro', 'Não é possível criar um pedido sem nenhum item válido.');
           setState(() => isUploading = false);
           return;
         }
@@ -243,8 +281,10 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         vSubtotal += pm.valorTotal;
       }
 
-      final double vTaxas = double.tryParse(taxasCtrl.text.replaceAll(',', '.')) ?? 0;
-      final double vDesconto = double.tryParse(descontoCtrl.text.replaceAll(',', '.')) ?? 0;
+      final double vTaxas =
+          double.tryParse(taxasCtrl.text.replaceAll(',', '.')) ?? 0;
+      final double vDesconto =
+          double.tryParse(descontoCtrl.text.replaceAll(',', '.')) ?? 0;
       final double vTotal = vSubtotal + vTaxas - vDesconto;
 
       final pedido = PedidoModel.empty().copyWith(
@@ -258,24 +298,35 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         cliente: finalCliente,
         obra: selectedObra ?? ObraModel.empty(),
         tipo: selectedTipo,
-        statusess: [PedidoStatusModel.create(PedidoStatus.aguardandoProducaoCDA)],
+        statusess: [
+          PedidoStatusModel.create(PedidoStatus.aguardandoProducaoCDA)
+        ],
         steps: [PedidoStepModel.create(selectedStep!)],
+        checks:
+            selectedChecklist?.checklist.map((e) => e.copyWith()).toList() ?? [],
+        checklistId: selectedChecklist?.id,
         valorSubtotal: vSubtotal,
         valorTaxas: vTaxas,
         valorDesconto: vDesconto,
         valorTotal: vTotal,
-        produtos: produtosMapped.map((p) => p.copyWith(
-          pedidoId: '', // Será preenchido pelo syncRelationships se necessário, mas passar model.id lá é o padrão
-        )).toList(),
+        produtos: produtosMapped
+            .map((p) => p.copyWith(
+                  pedidoId:
+                      '',
+                ))
+            .toList(),
       );
 
       final finalPedido = pedido.copyWith();
-      final defaultCDTags = FirestoreClient.tags.data.where((e) => e.isDefaultCD).toList();
-      final defaultCDATags = FirestoreClient.tags.data.where((e) => e.isDefaultCDA).toList();
+      final defaultCDTags =
+          FirestoreClient.tags.data.where((e) => e.isDefaultCD).toList();
+      final defaultCDATags =
+          FirestoreClient.tags.data.where((e) => e.isDefaultCDA).toList();
 
       if (finalPedido.tipo == PedidoTipo.cd && defaultCDTags.isNotEmpty) {
         finalPedido.tags.addAll(defaultCDTags);
-      } else if (finalPedido.tipo == PedidoTipo.cda && defaultCDATags.isNotEmpty) {
+      } else if (finalPedido.tipo == PedidoTipo.cda &&
+          defaultCDATags.isNotEmpty) {
         finalPedido.tags.addAll(defaultCDATags);
       }
 
@@ -283,7 +334,8 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
 
       if (mounted) {
         Navigator.pop(context);
-        NotificationService.showPositive('Sucesso', 'Pedido gerado com sucesso!');
+        NotificationService.showPositive(
+            'Sucesso', 'Pedido gerado com sucesso!');
       }
     } catch (e) {
       NotificationService.showNegative('Erro', 'Falha ao salvar: $e');
@@ -298,12 +350,17 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       shape: RoundedRectangleBorder(borderRadius: AppCss.radius12),
       child: Container(
         width: 780,
-        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
-        decoration: BoxDecoration(color: const Color(0xFFF8F9FB), borderRadius: AppCss.radius12),
+        constraints:
+            BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
+        decoration: BoxDecoration(
+            color: const Color(0xFFF8F9FB), borderRadius: AppCss.radius12),
         child: Column(
           children: [
             _buildHeader(),
-            Expanded(child: currentStep == 0 ? _buildUploadStep() : _buildConferenceStep()),
+            Expanded(
+                child: currentStep == 0
+                    ? _buildUploadStep()
+                    : _buildConferenceStep()),
             _buildFooter(),
           ],
         ),
@@ -316,7 +373,8 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.primaryMain,
-        borderRadius: const BorderRadius.only(topLeft: Radius.circular(12), topRight: Radius.circular(12)),
+        borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(12), topRight: Radius.circular(12)),
       ),
       child: Row(
         children: [
@@ -343,15 +401,18 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                             child: SingleChildScrollView(
                               child: SelectableText(
                                 extractedTextDebug,
-                                style: const TextStyle(fontSize: 10, fontFamily: 'monospace'),
+                                style: const TextStyle(
+                                    fontSize: 10, fontFamily: 'monospace'),
                               ),
                             ),
                           ),
                           const Divider(),
                           TextButton.icon(
                             onPressed: () {
-                              Clipboard.setData(ClipboardData(text: extractedTextDebug));
-                              NotificationService.showPositive('Copiado', 'Conteúdo copiado!');
+                              Clipboard.setData(
+                                  ClipboardData(text: extractedTextDebug));
+                              NotificationService.showPositive(
+                                  'Copiado', 'Conteúdo copiado!');
                             },
                             icon: const Icon(Icons.copy),
                             label: const Text('COPIAR TUDO'),
@@ -360,7 +421,9 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                       ),
                     ),
                     actions: [
-                      TextButton(onPressed: () => Navigator.pop(context), child: const Text('FECHAR')),
+                      TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('FECHAR')),
                     ],
                   ),
                 );
@@ -368,14 +431,18 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.5)),
                   borderRadius: AppCss.radius4,
                 ),
                 child: Row(
                   children: [
                     const Icon(Icons.history, color: Colors.white, size: 14),
                     const W(4),
-                    Text('MEMÓRIA DE IMPORTAÇÃO', style: AppCss.minimumBold.setSize(10).setColor(Colors.white)),
+                    Text('MEMÓRIA DE IMPORTAÇÃO',
+                        style: AppCss.minimumBold
+                            .setSize(10)
+                            .setColor(Colors.white)),
                   ],
                 ),
               ),
@@ -386,14 +453,18 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.5)),
                   borderRadius: AppCss.radius4,
                 ),
                 child: Row(
                   children: [
                     const Icon(Icons.refresh, color: Colors.white, size: 14),
                     const W(4),
-                    Text('NOVO PDF', style: AppCss.minimumBold.setSize(10).setColor(Colors.white)),
+                    Text('NOVO PDF',
+                        style: AppCss.minimumBold
+                            .setSize(10)
+                            .setColor(Colors.white)),
                   ],
                 ),
               ),
@@ -423,14 +494,18 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
               decoration: BoxDecoration(
                 color: AppColors.primaryMain.withValues(alpha: 0.05),
                 borderRadius: AppCss.radius12,
-                border: Border.all(color: AppColors.primaryMain.withValues(alpha: 0.3), width: 2),
+                border: Border.all(
+                    color: AppColors.primaryMain.withValues(alpha: 0.3),
+                    width: 2),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.cloud_upload_outlined, size: 48, color: AppColors.primaryMain),
+                  Icon(Icons.cloud_upload_outlined,
+                      size: 48, color: AppColors.primaryMain),
                   const H(12),
-                  Text('Selecione o PDF do pedido', style: AppCss.smallBold.setSize(13)),
+                  Text('Selecione o PDF do pedido',
+                      style: AppCss.smallBold.setSize(13)),
                 ],
               ),
             ),
@@ -454,7 +529,9 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
             children: [
               Expanded(child: _buildStepSelector()),
               const W(12),
-              Expanded(child: _buildField('Localizador (*)', localizadorCtrl, color: Colors.blue.shade900)),
+              Expanded(
+                  child: _buildField('Localizador (*)', localizadorCtrl,
+                      color: Colors.blue.shade900)),
             ],
           ),
           const H(12),
@@ -462,7 +539,9 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
             children: [
               Expanded(child: _buildField('Pedido Financeiro', financeiroCtrl)),
               const W(12),
-              Expanded(child: _buildField('Tipo', null, dropdown: _buildTipoDropdown())),
+              Expanded(
+                  child: _buildField('Tipo', null,
+                      dropdown: _buildTipoDropdown())),
             ],
           ),
           const H(12),
@@ -474,13 +553,16 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
             ],
           ),
           const H(12),
-           Row(
+          Row(
             children: [
-               Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Data de Entrega', style: AppCss.minimumBold.setSize(11).setColor(Colors.grey.shade700)),
+                    Text('Data de Entrega',
+                        style: AppCss.minimumBold
+                            .setSize(11)
+                            .setColor(Colors.grey.shade700)),
                     const H(4),
                     InkWell(
                       onTap: () async {
@@ -488,12 +570,14 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                           context: context,
                           initialDate: deliveryDate,
                           firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                          lastDate:
+                              DateTime.now().add(const Duration(days: 365)),
                         );
                         if (date != null) setState(() => deliveryDate = date);
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           border: Border.all(color: Colors.grey.shade300),
@@ -501,9 +585,12 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.calendar_today, size: 14, color: Colors.grey.shade600),
+                            Icon(Icons.calendar_today,
+                                size: 14, color: Colors.grey.shade600),
                             const W(8),
-                            Text(DateFormat('dd/MM/yyyy').format(deliveryDate), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+                            Text(DateFormat('dd/MM/yyyy').format(deliveryDate),
+                                style: const TextStyle(
+                                    fontSize: 12, fontWeight: FontWeight.w500)),
                           ],
                         ),
                       ),
@@ -512,7 +599,26 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                 ),
               ),
               const W(12),
-              const Spacer(),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Modelo de checklist',
+                        style: AppCss.minimumBold
+                            .setSize(11)
+                            .setColor(Colors.grey.shade700)),
+                    const H(4),
+                    AppDropDown<ChecklistModel?>(
+                      label: null,
+                      hasFilter: true,
+                      item: selectedChecklist,
+                      itens: FirestoreClient.checklists.data,
+                      itemLabel: (e) => e!.nome,
+                      onSelect: (e) => setState(() => selectedChecklist = e),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
           const H(12),
@@ -520,7 +626,10 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Cliente', style: AppCss.minimumBold.setSize(11).setColor(Colors.grey.shade700)),
+              Text('Cliente',
+                  style: AppCss.minimumBold
+                      .setSize(11)
+                      .setColor(Colors.grey.shade700)),
               const H(4),
               AppDropDown<ClienteModel?>(
                 hasFilter: true,
@@ -528,17 +637,20 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                 item: selectedCliente,
                 itens: FirestoreClient.clientes.data,
                 onCreated: () async {
-                  ClienteModel? created = await showClienteCreateSimplifyBottom();
+                  ClienteModel? created =
+                      await showClienteCreateSimplifyBottom();
                   if (created == null) return null;
-                  final cliente = FirestoreClient.clientes.data
-                      .firstWhere((e) => e.id == created.id, orElse: () => created);
+                  final cliente = FirestoreClient.clientes.data.firstWhere(
+                      (e) => e.id == created.id,
+                      orElse: () => created);
                   setState(() {
                     selectedCliente = cliente;
                     selectedObra = cliente.obras.firstOrNull;
                   });
                   return cliente;
                 },
-                itemLabel: (e) => e != null ? '${e.codigo} - ${e.nome}' : 'Selecione',
+                itemLabel: (e) =>
+                    e != null ? '${e.codigo} - ${e.nome}' : 'Selecione',
                 onSelect: (e) {
                   setState(() {
                     if (selectedCliente?.id != e?.id) {
@@ -557,7 +669,10 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Obra', style: AppCss.minimumBold.setSize(11).setColor(Colors.grey.shade700)),
+                    Text('Obra',
+                        style: AppCss.minimumBold
+                            .setSize(11)
+                            .setColor(Colors.grey.shade700)),
                     const H(4),
                     AppDropDown<ObraModel?>(
                       label: null,
@@ -581,18 +696,26 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.neutralLight.withValues(alpha: 0.2), 
+              color: AppColors.neutralLight.withValues(alpha: 0.2),
               borderRadius: AppCss.radius12,
             ),
             child: Row(
               children: [
-                Expanded(child: _buildField('Subtotal', subtotalCtrl, onChanged: (_) => _calculateTotal())),
+                Expanded(
+                    child: _buildField('Subtotal', subtotalCtrl,
+                        onChanged: (_) => _calculateTotal())),
                 const W(12),
-                Expanded(child: _buildField('Taxas', taxasCtrl, onChanged: (_) => _calculateTotal())),
+                Expanded(
+                    child: _buildField('Taxas', taxasCtrl,
+                        onChanged: (_) => _calculateTotal())),
                 const W(12),
-                Expanded(child: _buildField('Desconto', descontoCtrl, onChanged: (_) => _calculateTotal())),
+                Expanded(
+                    child: _buildField('Desconto', descontoCtrl,
+                        onChanged: (_) => _calculateTotal())),
                 const W(12),
-                Expanded(child: _buildField('TOTAL', totalFinalCtrl, color: Colors.green.shade900, readOnly: true)),
+                Expanded(
+                    child: _buildField('TOTAL', totalFinalCtrl,
+                        color: Colors.green.shade900, readOnly: true)),
               ],
             ),
           ),
@@ -600,9 +723,11 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('ITENS (${extractedProducts.length})', style: AppCss.smallBold.setSize(13)),
+              Text('ITENS (${extractedProducts.length})',
+                  style: AppCss.smallBold.setSize(13)),
               if (extractedProducts.isEmpty)
-                Text('Nenhum produto detectado!', style: AppCss.minimumBold.setColor(Colors.red)),
+                Text('Nenhum produto detectado!',
+                    style: AppCss.minimumBold.setColor(Colors.red)),
             ],
           ),
           const H(8),
@@ -629,8 +754,8 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                         onPressed: () {
                           Clipboard.setData(
                               ClipboardData(text: extractedTextDebug));
-                          NotificationService.showPositive(
-                              'Copiado', 'Texto copiado para a área de transferência');
+                          NotificationService.showPositive('Copiado',
+                              'Texto copiado para a área de transferência');
                         },
                         icon: const Icon(Icons.copy, size: 18),
                       ),
@@ -647,56 +772,70 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
             )
           else
             Container(
-              decoration: BoxDecoration(border: Border.all(color: AppColors.neutralLight), borderRadius: AppCss.radius8),
+              decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.neutralLight),
+                  borderRadius: AppCss.radius8),
               child: ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: extractedProducts.length,
-              separatorBuilder: (context, index) => Divider(height: 1, color: AppColors.neutralLight),
-              itemBuilder: (context, index) {
-                final p = extractedProducts[index];
-                final produtoBase = FirestoreClient.produtos.data.firstWhereOrNull(
-                  (e) => e.codigoFinanceiro.trim().toLowerCase() == p['codigo'].toString().trim().toLowerCase(),
-                );
-                final bool exists = produtoBase != null;
-                
-                final String pdfName = p['descricao'] ?? '';
-                final double vUnit = p['unitario'] ?? 0;
-                final double vTotal = p['total'] ?? 0;
-                final String fUnit = NumberFormat.simpleCurrency(locale: 'pt_BR').format(vUnit);
-                final String fTotal = NumberFormat.simpleCurrency(locale: 'pt_BR').format(vTotal);
-                
-                return ListTile(
-                  dense: true,
-                  visualDensity: VisualDensity.compact,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                  leading: Icon(Icons.shopping_basket_outlined, color: exists ? Colors.green : Colors.red, size: 18),
-                  title: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        exists ? '${p['codigo']} - ${produtoBase.nome}' : '${p['codigo']} - ITEM NÃO CADASTRADO',
-                        style: TextStyle(
-                          color: exists ? Colors.black87 : Colors.red, 
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
-                        )
-                      ),
-                      if (pdfName.isNotEmpty)
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: extractedProducts.length,
+                separatorBuilder: (context, index) =>
+                    Divider(height: 1, color: AppColors.neutralLight),
+                itemBuilder: (context, index) {
+                  final p = extractedProducts[index];
+                  final produtoBase =
+                      FirestoreClient.produtos.data.firstWhereOrNull(
+                    (e) =>
+                        e.codigoFinanceiro.trim().toLowerCase() ==
+                        p['codigo'].toString().trim().toLowerCase(),
+                  );
+                  final bool exists = produtoBase != null;
+
+                  final String pdfName = p['descricao'] ?? '';
+                  final double vUnit = p['unitario'] ?? 0;
+                  final double vTotal = p['total'] ?? 0;
+                  final String fUnit =
+                      NumberFormat.simpleCurrency(locale: 'pt_BR')
+                          .format(vUnit);
+                  final String fTotal =
+                      NumberFormat.simpleCurrency(locale: 'pt_BR')
+                          .format(vTotal);
+
+                  return ListTile(
+                    dense: true,
+                    visualDensity: VisualDensity.compact,
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                    leading: Icon(Icons.shopping_basket_outlined,
+                        color: exists ? Colors.green : Colors.red, size: 18),
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          pdfName,
-                          style: const TextStyle(fontSize: 10, color: Colors.black54),
-                        ),
-                    ],
-                  ),
-                  subtitle: Text(
-                    'Qtde: ${p['qtde']} | V.Unit: $fUnit | Total: $fTotal',
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                );
-              },
+                            exists
+                                ? '${p['codigo']} - ${produtoBase.nome}'
+                                : '${p['codigo']} - ITEM NÃO CADASTRADO',
+                            style: TextStyle(
+                              color: exists ? Colors.black87 : Colors.red,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            )),
+                        if (pdfName.isNotEmpty)
+                          Text(
+                            pdfName,
+                            style: const TextStyle(
+                                fontSize: 10, color: Colors.black54),
+                          ),
+                      ],
+                    ),
+                    subtitle: Text(
+                      'Qtde: ${p['qtde']} | V.Unit: $fUnit | Total: $fTotal',
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -706,7 +845,9 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Etapa Destino', style: AppCss.minimumBold.setSize(11).setColor(Colors.grey.shade700)),
+        Text('Etapa Destino',
+            style:
+                AppCss.minimumBold.setSize(11).setColor(Colors.grey.shade700)),
         const H(4),
         DropdownButtonFormField<StepModel>(
           initialValue: selectedStep,
@@ -716,15 +857,23 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
             isDense: true,
             filled: true,
             fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            border: OutlineInputBorder(borderRadius: AppCss.radius8, borderSide: BorderSide(color: Colors.grey.shade300)),
-            enabledBorder: OutlineInputBorder(borderRadius: AppCss.radius8, borderSide: BorderSide(color: Colors.grey.shade300)),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            border: OutlineInputBorder(
+                borderRadius: AppCss.radius8,
+                borderSide: BorderSide(color: Colors.grey.shade300)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: AppCss.radius8,
+                borderSide: BorderSide(color: Colors.grey.shade300)),
           ),
           onChanged: (e) => setState(() => selectedStep = e),
-          items: FirestoreClient.steps.data.map((e) => DropdownMenuItem(
-            value: e, 
-            child: Text(e.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))
-          )).toList(),
+          items: FirestoreClient.steps.data
+              .map((e) => DropdownMenuItem(
+                  value: e,
+                  child: Text(e.name,
+                      style: const TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.w600))))
+              .toList(),
         ),
       ],
     );
@@ -738,18 +887,37 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         isDense: true,
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        border: OutlineInputBorder(borderRadius: AppCss.radius8, borderSide: BorderSide(color: Colors.grey.shade300)),
-        enabledBorder: OutlineInputBorder(borderRadius: AppCss.radius8, borderSide: BorderSide(color: Colors.grey.shade300)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        border: OutlineInputBorder(
+            borderRadius: AppCss.radius8,
+            borderSide: BorderSide(color: Colors.grey.shade300)),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: AppCss.radius8,
+            borderSide: BorderSide(color: Colors.grey.shade300)),
       ),
       onChanged: (e) => setState(() => selectedTipo = e!),
-      items: PedidoTipo.values.map((e) => DropdownMenuItem(value: e, child: Text(e.name.toUpperCase(), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)))).toList(),
+      items: PedidoTipo.values
+          .map((e) => DropdownMenuItem(
+              value: e,
+              child: Text(e.name.toUpperCase(),
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w600))))
+          .toList(),
     );
   }
 
-  Widget _buildField(String label, TextEditingController? ctrl, {Color? color, bool readOnly = false, Function(String)? onChanged, Widget? dropdown}) {
+  Widget _buildField(String label, TextEditingController? ctrl,
+      {Color? color,
+      bool readOnly = false,
+      Function(String)? onChanged,
+      Widget? dropdown}) {
     String? val;
-    if (ctrl != null && (label.toLowerCase().contains('total') || label.toLowerCase().contains('subtotal') || label.toLowerCase().contains('taxas') || label.toLowerCase().contains('desconto'))) {
+    if (ctrl != null &&
+        (label.toLowerCase().contains('total') ||
+            label.toLowerCase().contains('subtotal') ||
+            label.toLowerCase().contains('taxas') ||
+            label.toLowerCase().contains('desconto'))) {
       final double num = double.tryParse(ctrl.text.replaceAll(',', '.')) ?? 0;
       val = NumberFormat.simpleCurrency(locale: 'pt_BR').format(num);
     }
@@ -757,27 +925,38 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppCss.minimumBold.setSize(11).setColor(Colors.grey.shade700)),
+        Text(label,
+            style:
+                AppCss.minimumBold.setSize(11).setColor(Colors.grey.shade700)),
         const H(4),
-        dropdown ?? TextField(
-          controller: val != null ? TextEditingController(text: val) : ctrl,
-          readOnly: readOnly || val != null,
-          onChanged: onChanged,
-          style: TextStyle(
-            fontSize: 12,
-            color: color ?? Colors.black87,
-            fontWeight: color != null ? FontWeight.bold : FontWeight.w500,
-          ),
-          decoration: InputDecoration(
-            isDense: true,
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            border: OutlineInputBorder(borderRadius: AppCss.radius8, borderSide: BorderSide(color: Colors.grey.shade300)),
-            enabledBorder: OutlineInputBorder(borderRadius: AppCss.radius8, borderSide: BorderSide(color: Colors.grey.shade300)),
-            focusedBorder: OutlineInputBorder(borderRadius: AppCss.radius8, borderSide: BorderSide(color: AppColors.secondary, width: 1.5)),
-          ),
-        ),
+        dropdown ??
+            TextField(
+              controller: val != null ? TextEditingController(text: val) : ctrl,
+              readOnly: readOnly || val != null,
+              onChanged: onChanged,
+              style: TextStyle(
+                fontSize: 12,
+                color: color ?? Colors.black87,
+                fontWeight: color != null ? FontWeight.bold : FontWeight.w500,
+              ),
+              decoration: InputDecoration(
+                isDense: true,
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                border: OutlineInputBorder(
+                    borderRadius: AppCss.radius8,
+                    borderSide: BorderSide(color: Colors.grey.shade300)),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: AppCss.radius8,
+                    borderSide: BorderSide(color: Colors.grey.shade300)),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: AppCss.radius8,
+                    borderSide:
+                        BorderSide(color: AppColors.secondary, width: 1.5)),
+              ),
+            ),
       ],
     );
   }
@@ -787,10 +966,18 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          Expanded(child: AppTextButton.outlined(label: 'Cancelar', onPressed: () => Navigator.pop(context), isEnable: !isUploading)),
+          Expanded(
+              child: AppTextButton.outlined(
+                  label: 'Cancelar',
+                  onPressed: () => Navigator.pop(context),
+                  isEnable: !isUploading)),
           const W(12),
           if (currentStep == 1)
-            Expanded(child: AppTextButton(label: 'Gerar Cartão', onPressed: _generateCard, isEnable: !isUploading)),
+            Expanded(
+                child: AppTextButton(
+                    label: 'Gerar Cartão',
+                    onPressed: _generateCard,
+                    isEnable: !isUploading)),
         ],
       ),
     );

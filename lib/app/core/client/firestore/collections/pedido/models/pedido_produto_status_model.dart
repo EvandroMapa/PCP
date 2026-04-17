@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 
 enum PedidoProdutoStatus { separado, aguardandoProducao, produzindo, pronto }
 
-List<PedidoProdutoStatus> pedidoProdutoStatusValues = PedidoProdutoStatus.values
-    .sublist(1);
+List<PedidoProdutoStatus> pedidoProdutoStatusValues =
+    PedidoProdutoStatus.values.sublist(1);
 
 extension PedidoProdutoStatusExt on PedidoProdutoStatus {
   String get label {
@@ -35,7 +35,7 @@ extension PedidoProdutoStatusExt on PedidoProdutoStatus {
     }
   }
 
-  Color getColorPedidoProdutoPai(bool isExpanded) { 
+  Color getColorPedidoProdutoPai(bool isExpanded) {
     switch (this) {
       case PedidoProdutoStatus.separado:
         return isExpanded ? Colors.grey : Colors.white;
@@ -55,10 +55,10 @@ class PedidoProdutoStatusModel {
   final DateTime createdAt;
 
   factory PedidoProdutoStatusModel.empty() => PedidoProdutoStatusModel(
-    createdAt: DateTime.now(),
-    id: HashService.get,
-    status: PedidoProdutoStatus.separado,
-  );
+        createdAt: DateTime.now(),
+        id: HashService.get,
+        status: PedidoProdutoStatus.separado,
+      );
 
   PedidoProdutoStatus getStatusMinified() {
     return status;

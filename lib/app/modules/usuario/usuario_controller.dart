@@ -21,7 +21,7 @@ class UsuarioController {
   UsuarioController._();
 
   factory UsuarioController() => _instance;
-  
+
   void setup() {
     BackendClient.usuarios.dataStream.listen.listen((list) {
       if (usuario != null) {
@@ -57,13 +57,18 @@ class UsuarioController {
     String search,
     List<UsuarioModel> usuarios,
   ) {
-    if (search.length < 3) return usuarios;
     List<UsuarioModel> filtered = [];
-    for (final usuario in usuarios) {
-      if (usuario.toString().toCompare.contains(search.toCompare)) {
-        filtered.add(usuario);
+    if (search.length < 3) {
+      filtered = List.from(usuarios);
+    } else {
+      for (final usuario in usuarios) {
+        if (usuario.toString().toCompare.contains(search.toCompare)) {
+          filtered.add(usuario);
+        }
       }
     }
+    
+    filtered.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
     return filtered;
   }
 
@@ -122,8 +127,8 @@ class UsuarioController {
         throw Exception('Já existe um usuário com esse login');
       }
     } else {
-      if (BackendClient.usuarios.data.any(
-          (e) => e.email.toLowerCase().trim() == emailForm)) {
+      if (BackendClient.usuarios.data
+          .any((e) => e.email.toLowerCase().trim() == emailForm)) {
         throw Exception('Já existe um usuário com esse login');
       }
     }
@@ -134,7 +139,8 @@ class UsuarioController {
       UsuarioModel? user = await AppRepository.get();
       if (user != null) {
         final usuariosData = BackendClient.usuarios.data;
-        if (usuariosData.isNotEmpty && usuariosData.any((e) => e.id == user!.id)) {
+        if (usuariosData.isNotEmpty &&
+            usuariosData.any((e) => e.id == user!.id)) {
           user = BackendClient.usuarios.getById(user.id);
           AppRepository.add(user);
         } else {

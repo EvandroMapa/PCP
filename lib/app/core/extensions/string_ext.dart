@@ -4,9 +4,9 @@ import 'package:flutter_masked_text2/flutter_masked_text2.dart';
 
 extension StringExt on String {
   String get toCompare => replaceAll(
-    ' ',
-    '',
-  ).toLowerCase().removeSpecialCharacters().toNonDiacritics();
+        ' ',
+        '',
+      ).toLowerCase().removeSpecialCharacters().toNonDiacritics();
 
   String getInitials() {
     if (isEmpty) return '';
@@ -20,9 +20,9 @@ extension StringExt on String {
   }
 
   String get phone => replaceAll(
-    ' ',
-    '',
-  ).replaceAll('-', '').replaceAll('(', '').replaceAll(')', '');
+        ' ',
+        '',
+      ).replaceAll('-', '').replaceAll('(', '').replaceAll(')', '');
 
   String toFileName({String id = '', String type = ''}) =>
       (id.isNotEmpty ? '${id}_' : '') +
@@ -43,8 +43,8 @@ extension StringExt on String {
   }
 
   String removeSpecialCharacters({String excludes = ''}) {
-    final specials = """`~!@#\\ \$%^&*()_-+={[}}|:;"'<,>.?/""".characters
-        .toList();
+    final specials =
+        """`~!@#\\ \$%^&*()_-+={[}}|:;"'<,>.?/""".characters.toList();
     for (var e in excludes.characters.toList()) {
       specials.remove(e);
     }

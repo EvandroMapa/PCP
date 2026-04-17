@@ -19,11 +19,13 @@ class ClienteCreateModel {
   List<ObraModel> obras = [];
   late bool isEdit;
 
-  ClienteCreateModel() : id = HashService.get, isEdit = false;
+  ClienteCreateModel()
+      : id = HashService.get,
+        isEdit = false;
 
   ClienteCreateModel.edit(ClienteModel cliente)
-    : id = cliente.id,
-      isEdit = true {
+      : id = cliente.id,
+        isEdit = true {
     codigo = cliente.codigo;
     nome.text = cliente.nome;
     telefone.text = cliente.telefone;
@@ -39,12 +41,12 @@ class ClienteCreateModel {
   }
 
   ClienteModel toClienteModel() => ClienteModel(
-    id: id,
-    codigo: codigo,
-    nome: nome.text,
-    telefone: telefone.text,
-    cpf: cpf.text,
-    endereco: endereco ?? EnderecoModel.empty(),
-    obras: obras,
-  );
+        id: id,
+        codigo: codigo,
+        nome: nome.text,
+        telefone: telefone.text,
+        cpf: cpf.text,
+        endereco: endereco ?? EnderecoModel.empty(),
+        obras: obras,
+      );
 }

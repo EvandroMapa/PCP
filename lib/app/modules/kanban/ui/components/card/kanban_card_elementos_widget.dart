@@ -64,11 +64,14 @@ class KanbanCardElementosWidget extends StatelessWidget {
           // ── Contagem de elementos: Ag. | Armando | Pronto ──
           Row(
             children: [
-              _countLabel(aguardando.toInt(), pAguardando, Colors.grey[500]!, 'Ag.'),
+              _countLabel(
+                  aguardando.toInt(), pAguardando, Colors.grey[500]!, 'Ag.'),
               const Spacer(),
-              _countLabel(armando.toInt(), pArmando, Colors.amber[700]!, 'Armando'),
+              _countLabel(
+                  armando.toInt(), pArmando, Colors.amber[700]!, 'Armando'),
               const Spacer(),
-              _countLabel(pronto.toInt(), pPronto, Colors.green[600]!, 'Pronto'),
+              _countLabel(
+                  pronto.toInt(), pPronto, Colors.green[600]!, 'Pronto'),
             ],
           ),
         ],

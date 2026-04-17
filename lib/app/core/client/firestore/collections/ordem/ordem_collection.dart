@@ -14,8 +14,7 @@ class OrdemCollection {
   factory OrdemCollection() => _instance;
   String name = 'ordens';
 
-  AppStream<List<OrdemModel>> dataStream =
-      AppStream<List<OrdemModel>>.seed([]);
+  AppStream<List<OrdemModel>> dataStream = AppStream<List<OrdemModel>>.seed([]);
   List<OrdemModel> get data => dataStream.value;
 
   AppStream<List<OrdemModel>> ordensNaoArquivadasStream =
@@ -123,56 +122,51 @@ class OrdemCollection {
         .where('isArchived', isEqualTo: false)
         .snapshots()
         .listen((e) async {
-          final ordens = e.docs
-              .map((e) => OrdemModel.fromMap(e.data()))
-              .toList();
-          final ordensNaoArquivadas = ordens
-              .where((e) => !e.isArchived)
-              .toList();
+      final ordens = e.docs.map((e) => OrdemModel.fromMap(e.data())).toList();
+      final ordensNaoArquivadas = ordens.where((e) => !e.isArchived).toList();
 
-          ordensNaoArquivadas.sort((a, b) {
-            if (a.freezed.isFreezed && !b.freezed.isFreezed) {
-              return 1;
-            } else if (!a.freezed.isFreezed && b.freezed.isFreezed) {
-              return -1;
-            }
+      ordensNaoArquivadas.sort((a, b) {
+        if (a.freezed.isFreezed && !b.freezed.isFreezed) {
+          return 1;
+        } else if (!a.freezed.isFreezed && b.freezed.isFreezed) {
+          return -1;
+        }
 
-            if (a.beltIndex == null || b.beltIndex == null) {
-              return 0;
-            }
-            return a.beltIndex!.compareTo(b.beltIndex!);
-          });
+        if (a.beltIndex == null || b.beltIndex == null) {
+          return 0;
+        }
+        return a.beltIndex!.compareTo(b.beltIndex!);
+      });
 
-          ordensNaoArquivadasStream.add(ordensNaoArquivadas);
+      ordensNaoArquivadasStream.add(ordensNaoArquivadas);
 
-          dataStream.add(ordensNaoArquivadas);
+      dataStream.add(ordensNaoArquivadas);
 
-          if (ordemCtrl.ordemStream.controller.hasValue) {
-            final ordem = ordensNaoArquivadas.firstWhereOrNull(
-              (e) => e.id == ordemCtrl.ordemStream.value.id,
-            );
-            if (ordem != null) {
-              for (var produto in ordem.produtos) {
-                final pedidoData =
-                    (await FirebaseFirestore.instance
-                            .collection('pedidos')
-                            .doc(produto.pedidoId)
-                            .get())
-                        .data();
+      if (ordemCtrl.ordemStream.controller.hasValue) {
+        final ordem = ordensNaoArquivadas.firstWhereOrNull(
+          (e) => e.id == ordemCtrl.ordemStream.value.id,
+        );
+        if (ordem != null) {
+          for (var produto in ordem.produtos) {
+            final pedidoData = (await FirebaseFirestore.instance
+                    .collection('pedidos')
+                    .doc(produto.pedidoId)
+                    .get())
+                .data();
 
-                if (pedidoData != null) {
-                  final pedido = PedidoModel.fromMap(pedidoData);
+            if (pedidoData != null) {
+              final pedido = PedidoModel.fromMap(pedidoData);
 
-                  final newMateriaPrima = pedido.produtos
-                      .firstWhereOrNull((e) => e.id == produto.id)
-                      ?.materiaPrima;
-                  produto.materiaPrima = newMateriaPrima;
-                }
-              }
-              ordemCtrl.ordemStream.add(ordem);
+              final newMateriaPrima = pedido.produtos
+                  .firstWhereOrNull((e) => e.id == produto.id)
+                  ?.materiaPrima;
+              produto.materiaPrima = newMateriaPrima;
             }
           }
-        });
+          ordemCtrl.ordemStream.add(ordem);
+        }
+      }
+    });
   }
 
   Stream<OrdemModel> listenById(String id) {

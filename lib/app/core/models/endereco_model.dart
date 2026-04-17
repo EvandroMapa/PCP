@@ -116,14 +116,14 @@ class EnderecoCreateModel {
   }
 
   EnderecoModel toEndereco() => EnderecoModel(
-    cep: cep.text,
-    logradouro: logradouro.text,
-    bairro: bairro.text,
-    localidade: localidade.text,
-    estado: estado.text,
-    numero: numero.text,
-    complemento: complemento.text,
-    lat: lat.doubleValue,
-    lon: lon.doubleValue,
-  );
+        cep: cep.text,
+        logradouro: logradouro.text,
+        bairro: bairro.text,
+        localidade: localidade.text,
+        estado: estado.text,
+        numero: numero.text,
+        complemento: complemento.text,
+        lat: lat.doubleValue,
+        lon: lon.doubleValue,
+      );
 }

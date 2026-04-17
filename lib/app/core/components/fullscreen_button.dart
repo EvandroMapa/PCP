@@ -13,7 +13,7 @@ class _FullscreenButtonState extends State<FullscreenButton> {
   @override
   Widget build(BuildContext context) {
     final isFullscreen = FullscreenService.isFullscreen;
-    
+
     return IconButton(
       tooltip: isFullscreen ? 'Sair da Tela Cheia' : 'Tela Cheia',
       icon: Icon(

@@ -97,7 +97,8 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
             ),
             Text(
               widget.pedido.cliente.nome,
-              style: AppCss.minimumRegular.setColor(AppColors.white.withValues(alpha: 0.8)),
+              style: AppCss.minimumRegular
+                  .setColor(AppColors.white.withValues(alpha: 0.8)),
             ),
           ],
         ),
@@ -115,7 +116,8 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                 children: [
                   const CircularProgressIndicator(),
                   const SizedBox(height: 16),
-                  Text('Aguarde, carregando elementos...', style: AppCss.mediumRegular),
+                  Text('Aguarde, carregando elementos...',
+                      style: AppCss.mediumRegular),
                 ],
               ),
             )
@@ -133,7 +135,9 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                     _ResumoProducaoBar(
                       pedido: currentPedido,
                       statusVisivel: _statusVisivel,
-                      onToggle: (status) => setState(() => _statusVisivel[status] = !(_statusVisivel[status] ?? true)),
+                      onToggle: (status) => setState(() =>
+                          _statusVisivel[status] =
+                              !(_statusVisivel[status] ?? true)),
                     ),
                     Expanded(
                       child: StreamOut<List<ElementoModel>>(
@@ -141,45 +145,53 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                         builder: (_, elementos) {
                           final filtrados = elementos.where((e) {
                             if (e.isProntoParcial) {
-                              return (_statusVisivel[ElementoStatus.armando] ?? true) ||
-                                     (_statusVisivel[ElementoStatus.pronto] ?? true);
+                              return (_statusVisivel[ElementoStatus.armando] ??
+                                      true) ||
+                                  (_statusVisivel[ElementoStatus.pronto] ??
+                                      true);
                             }
                             return _statusVisivel[e.status] ?? true;
                           }).toList();
                           if (filtrados.isEmpty) {
-                            return const EmptyData(message: 'Nenhum elemento visível com os filtros ativos.');
+                            return const EmptyData(
+                                message:
+                                    'Nenhum elemento visível com os filtros ativos.');
                           }
                           return Scrollbar(
-                                controller: _scrollController,
-                                thumbVisibility: true,
-                                trackVisibility: true,
-                                child: GridView.builder(
-                                  controller: _scrollController,
-                                  padding: const EdgeInsets.all(24),
-                                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                                    maxCrossAxisExtent: 350,
-                                    mainAxisExtent: 160,
-                                    crossAxisSpacing: 20,
-                                    mainAxisSpacing: 20,
-                                  ),
-                                  itemCount: filtrados.length,
-                                  itemBuilder: (context, index) {
-                                    final elemento = filtrados[index];
-                                    return _ElementoArmacaoCard(
-                                      key: ValueKey(elemento.id),
-                                      elemento: elemento,
-                                      onStatusPressed: () async {
-                                        if (elemento.qtde > 1) {
-                                          await armacaoCtrl.openProgressoParcialDirect(currentPedido, elemento);
-                                        } else {
-                                          await _showStatusPicker(elemento);
-                                        }
-                                      },
-                                      onImagePressed: () => _showImageDialog(elemento),
-                                    );
+                            controller: _scrollController,
+                            thumbVisibility: true,
+                            trackVisibility: true,
+                            child: GridView.builder(
+                              controller: _scrollController,
+                              padding: const EdgeInsets.all(24),
+                              gridDelegate:
+                                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: 350,
+                                mainAxisExtent: 160,
+                                crossAxisSpacing: 20,
+                                mainAxisSpacing: 20,
+                              ),
+                              itemCount: filtrados.length,
+                              itemBuilder: (context, index) {
+                                final elemento = filtrados[index];
+                                return _ElementoArmacaoCard(
+                                  key: ValueKey(elemento.id),
+                                  elemento: elemento,
+                                  onStatusPressed: () async {
+                                    if (elemento.qtde > 1) {
+                                      await armacaoCtrl
+                                          .openProgressoParcialDirect(
+                                              currentPedido, elemento);
+                                    } else {
+                                      await _showStatusPicker(elemento);
+                                    }
                                   },
-                                ),
-                              );
+                                  onImagePressed: () =>
+                                      _showImageDialog(elemento),
+                                );
+                              },
+                            ),
+                          );
                         },
                       ),
                     ),
@@ -193,9 +205,14 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
   Future<void> _showStatusPicker(ElementoModel elemento) async {
     final allowedStatuses = <ElementoStatus>[];
     if (elemento.status == ElementoStatus.aguardando) {
-      allowedStatuses.addAll([ElementoStatus.aguardando, ElementoStatus.armando]);
+      allowedStatuses
+          .addAll([ElementoStatus.aguardando, ElementoStatus.armando]);
     } else if (elemento.status == ElementoStatus.armando) {
-      allowedStatuses.addAll([ElementoStatus.aguardando, ElementoStatus.armando, ElementoStatus.pronto]);
+      allowedStatuses.addAll([
+        ElementoStatus.aguardando,
+        ElementoStatus.armando,
+        ElementoStatus.pronto
+      ]);
     } else if (elemento.status == ElementoStatus.pronto) {
       allowedStatuses.addAll([ElementoStatus.armando, ElementoStatus.pronto]);
     }
@@ -212,7 +229,9 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
             children: [
               Text(
                 'ALTERAR STATUS: ${elemento.nome}',
-                style: AppCss.mediumBold.setSize(18).setColor(AppColors.primaryMain),
+                style: AppCss.mediumBold
+                    .setSize(18)
+                    .setColor(AppColors.primaryMain),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
@@ -223,33 +242,42 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
               ),
               const SizedBox(height: 24),
               ...allowedStatuses.map((status) => Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(
-                      color: elemento.status == status ? status.color : Colors.grey[200]!,
-                      width: 1.5,
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: ListTile(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          color: elemento.status == status
+                              ? status.color
+                              : Colors.grey[200]!,
+                          width: 1.5,
+                        ),
+                      ),
+                      tileColor: elemento.status == status
+                          ? status.backgroundColor
+                          : Colors.transparent,
+                      leading: CircleAvatar(
+                        backgroundColor: status.color,
+                        radius: 12,
+                        child: elemento.status == status
+                            ? const Icon(Icons.check,
+                                size: 14, color: Colors.white)
+                            : null,
+                      ),
+                      title: Text(status.label, style: AppCss.mediumBold),
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await armacaoCtrl.updateElementoStatus(
+                            widget.pedido, elemento, status);
+                        setState(() {});
+                      },
                     ),
-                  ),
-                  tileColor: elemento.status == status ? status.backgroundColor : Colors.transparent,
-                  leading: CircleAvatar(
-                    backgroundColor: status.color,
-                    radius: 12,
-                    child: elemento.status == status ? const Icon(Icons.check, size: 14, color: Colors.white) : null,
-                  ),
-                  title: Text(status.label, style: AppCss.mediumBold),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await armacaoCtrl.updateElementoStatus(widget.pedido, elemento, status);
-                    setState(() {});
-                  },
-                ),
-              )),
+                  )),
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('CANCELAR', style: AppCss.mediumBold.setColor(Colors.grey)),
+                child: Text('CANCELAR',
+                    style: AppCss.mediumBold.setColor(Colors.grey)),
               ),
             ],
           ),
@@ -263,7 +291,10 @@ class _ResumoProducaoBar extends StatelessWidget {
   final PedidoModel pedido;
   final Map<ElementoStatus, bool> statusVisivel;
   final ValueChanged<ElementoStatus> onToggle;
-  const _ResumoProducaoBar({required this.pedido, required this.statusVisivel, required this.onToggle});
+  const _ResumoProducaoBar(
+      {required this.pedido,
+      required this.statusVisivel,
+      required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
@@ -271,11 +302,26 @@ class _ResumoProducaoBar extends StatelessWidget {
     final Map<String, dynamic> details = resumo.containsKey('details')
         ? resumo['details'] as Map<String, dynamic>
         : {
-            'aguardando': {'qtd': 0, 'peso': 0.0, 'prcnt_qtd': 0.0, 'prcnt_peso': 0.0},
-            'armando': {'qtd': 0, 'peso': 0.0, 'prcnt_qtd': 0.0, 'prcnt_peso': 0.0},
-            'pronto': {'qtd': 0, 'peso': 0.0, 'prcnt_qtd': 0.0, 'prcnt_peso': 0.0},
+            'aguardando': {
+              'qtd': 0,
+              'peso': 0.0,
+              'prcnt_qtd': 0.0,
+              'prcnt_peso': 0.0
+            },
+            'armando': {
+              'qtd': 0,
+              'peso': 0.0,
+              'prcnt_qtd': 0.0,
+              'prcnt_peso': 0.0
+            },
+            'pronto': {
+              'qtd': 0,
+              'peso': 0.0,
+              'prcnt_qtd': 0.0,
+              'prcnt_peso': 0.0
+            },
           };
-    
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -291,9 +337,11 @@ class _ResumoProducaoBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
       child: Row(
         children: [
-          _buildResumoItem('AGUARDANDO', ElementoStatus.aguardando, details['aguardando']),
+          _buildResumoItem(
+              'AGUARDANDO', ElementoStatus.aguardando, details['aguardando']),
           const SizedBox(width: 16),
-          _buildResumoItem('ARMANDO', ElementoStatus.armando, details['armando']),
+          _buildResumoItem(
+              'ARMANDO', ElementoStatus.armando, details['armando']),
           const SizedBox(width: 16),
           _buildResumoItem('PRONTO', ElementoStatus.pronto, details['pronto']),
         ],
@@ -301,7 +349,8 @@ class _ResumoProducaoBar extends StatelessWidget {
     );
   }
 
-  Widget _buildResumoItem(String label, ElementoStatus status, Map<String, dynamic> data) {
+  Widget _buildResumoItem(
+      String label, ElementoStatus status, Map<String, dynamic> data) {
     final double prcntQtd = (data['prcnt_qtd'] ?? 0.0) * 100;
     final double prcntPeso = (data['prcnt_peso'] ?? 0.0) * 100;
     final bool isVisible = statusVisivel[status] ?? true;
@@ -312,7 +361,8 @@ class _ResumoProducaoBar extends StatelessWidget {
         decoration: BoxDecoration(
           color: isVisible ? status.backgroundColor : Colors.grey[100],
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isVisible ? Colors.black : Colors.grey[300]!, width: 1.5),
+          border: Border.all(
+              color: isVisible ? Colors.black : Colors.grey[300]!, width: 1.5),
         ),
         child: Column(
           children: [
@@ -326,13 +376,16 @@ class _ResumoProducaoBar extends StatelessWidget {
                     child: Text(
                       label,
                       textAlign: TextAlign.center,
-                      style: AppCss.largeBold.setSize(15).setColor(Colors.white),
+                      style:
+                          AppCss.largeBold.setSize(15).setColor(Colors.white),
                     ),
                   ),
                   GestureDetector(
                     onTap: () => onToggle(status),
                     child: Icon(
-                      isVisible ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                      isVisible
+                          ? Icons.visibility_rounded
+                          : Icons.visibility_off_rounded,
                       size: 16,
                       color: Colors.white.withValues(alpha: 0.8),
                     ),
@@ -348,20 +401,26 @@ class _ResumoProducaoBar extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('ELEMENTOS', style: AppCss.largeBold.setSize(12).setColor(isVisible ? Colors.black : Colors.grey[400]!)),
+                      Text('ELEMENTOS',
+                          style: AppCss.largeBold.setSize(12).setColor(
+                              isVisible ? Colors.black : Colors.grey[400]!)),
                       Text(
                         '${data['qtd']} (${prcntQtd.toStringAsFixed(0)}%)',
-                        style: AppCss.largeBold.setSize(18).setColor(isVisible ? Colors.black : Colors.grey[400]!),
+                        style: AppCss.largeBold.setSize(18).setColor(
+                            isVisible ? Colors.black : Colors.grey[400]!),
                       ),
                     ],
                   ),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text('PESO (KG)', style: AppCss.largeBold.setSize(12).setColor(isVisible ? Colors.black : Colors.grey[400]!)),
+                      Text('PESO (KG)',
+                          style: AppCss.largeBold.setSize(12).setColor(
+                              isVisible ? Colors.black : Colors.grey[400]!)),
                       Text(
                         '${data['peso'].toStringAsFixed(1)} (${prcntPeso.toStringAsFixed(0)}%)',
-                        style: AppCss.largeBold.setSize(18).setColor(isVisible ? Colors.black : Colors.grey[400]!),
+                        style: AppCss.largeBold.setSize(18).setColor(
+                            isVisible ? Colors.black : Colors.grey[400]!),
                       ),
                     ],
                   ),
@@ -426,7 +485,10 @@ class _ElementoArmacaoCard extends StatelessWidget {
               child: Center(
                 child: Text(
                   elemento.status.label.toUpperCase(),
-                  style: AppCss.largeBold.setSize(22).setColor(Colors.black).copyWith(letterSpacing: 1.5),
+                  style: AppCss.largeBold
+                      .setSize(22)
+                      .setColor(Colors.black)
+                      .copyWith(letterSpacing: 1.5),
                 ),
               ),
             ),
@@ -453,8 +515,9 @@ class _ElementoArmacaoCard extends StatelessWidget {
                     Text(
                       '${elemento.qtdePronto} / ${elemento.qtde} PÇ PRONTAS',
                       style: AppCss.mediumBold.setSize(11).setColor(
-                        elemento.progressoPronto > 0.5 ? Colors.white : Colors.green[900]!
-                      ),
+                          elemento.progressoPronto > 0.5
+                              ? Colors.white
+                              : Colors.green[900]!),
                     ),
                   ],
                 ),
@@ -466,7 +529,8 @@ class _ElementoArmacaoCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _buildInfo('QTDE', '${elemento.qtde} pç'),
-                  _buildInfo('PESO', '${elemento.pesoTotal.toStringAsFixed(1)} kg'),
+                  _buildInfo(
+                      'PESO', '${elemento.pesoTotal.toStringAsFixed(1)} kg'),
                   _buildInfo('OS', '${elemento.posicoes.length} os'),
                 ],
               ),
@@ -506,10 +570,12 @@ class _ElementoArmacaoCard extends StatelessWidget {
                   children: [
                     Text(
                       '${elemento.arquivos.length}',
-                      style: AppCss.mediumBold.setSize(14).setColor(Colors.white),
+                      style:
+                          AppCss.mediumBold.setSize(14).setColor(Colors.white),
                     ),
                     const SizedBox(width: 4),
-                    const Icon(Icons.image_outlined, color: Colors.white, size: 20),
+                    const Icon(Icons.image_outlined,
+                        color: Colors.white, size: 20),
                   ],
                 ),
               ),
@@ -525,7 +591,9 @@ class _ElementoArmacaoCard extends StatelessWidget {
       children: [
         Text(
           label,
-          style: AppCss.largeBold.setSize(15).setColor(Colors.black.withValues(alpha: 0.7)),
+          style: AppCss.largeBold
+              .setSize(15)
+              .setColor(Colors.black.withValues(alpha: 0.7)),
         ),
         Text(
           value,
@@ -535,7 +603,6 @@ class _ElementoArmacaoCard extends StatelessWidget {
     );
   }
 }
-
 
 class _MediaViewerDialog extends StatefulWidget {
   final ElementoModel elemento;
@@ -552,7 +619,10 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
 
   void _openPdfViewer(BuildContext context, String title, String url) {
     final PdfControllerPinch controller = PdfControllerPinch(
-      document: PdfDocument.openData(Dio().get<List<int>>(url, options: Options(responseType: ResponseType.bytes)).then((r) => Uint8List.fromList(r.data!))),
+      document: PdfDocument.openData(Dio()
+          .get<List<int>>(url,
+              options: Options(responseType: ResponseType.bytes))
+          .then((r) => Uint8List.fromList(r.data!))),
     );
 
     showDialog(
@@ -569,9 +639,14 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
                 options: const DefaultBuilderOptions(
                   loaderSwitchDuration: Duration(milliseconds: 100),
                 ),
-                documentLoaderBuilder: (_) => const Center(child: CircularProgressIndicator(color: Colors.white)),
-                pageLoaderBuilder: (_) => const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
-                errorBuilder: (_, error) => Center(child: Text('Erro: $error', style: const TextStyle(color: Colors.white))),
+                documentLoaderBuilder: (_) => const Center(
+                    child: CircularProgressIndicator(color: Colors.white)),
+                pageLoaderBuilder: (_) => const Center(
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2)),
+                errorBuilder: (_, error) => Center(
+                    child: Text('Erro: $error',
+                        style: const TextStyle(color: Colors.white))),
               ),
             ),
             Positioned(
@@ -586,18 +661,25 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
                   },
                   borderRadius: BorderRadius.circular(30),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.7),
                       borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.2)),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+                        Icon(Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white, size: 18),
                         SizedBox(width: 12),
-                        Text('VOLTAR', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                        Text('VOLTAR',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.2)),
                       ],
                     ),
                   ),
@@ -609,7 +691,6 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
       ),
     );
   }
-
 
   void _showImageFull(BuildContext context, String url) {
     showDialog(
@@ -628,7 +709,9 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
             child: Image.network(
               url,
               fit: BoxFit.contain,
-              loadingBuilder: (_, child, prog) => prog == null ? child : const CircularProgressIndicator(color: Colors.white),
+              loadingBuilder: (_, child, prog) => prog == null
+                  ? child
+                  : const CircularProgressIndicator(color: Colors.white),
             ),
           ),
         ),
@@ -648,20 +731,23 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
           Positioned.fill(
             child: Opacity(
               opacity: 0.05,
-              child: Icon(Icons.architecture_rounded, size: 400, color: Colors.white.withValues(alpha: 0.2)),
+              child: Icon(Icons.architecture_rounded,
+                  size: 400, color: Colors.white.withValues(alpha: 0.2)),
             ),
           ),
 
           // ─── GRID CENTRAL DE ARQUIVOS ────────────────────────────────
           Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 100),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 32, vertical: 100),
               child: Wrap(
                 spacing: 32,
                 runSpacing: 32,
                 alignment: WrapAlignment.center,
                 children: widget.elemento.arquivos.map((arq) {
-                  final isPdf = arq.extensao.toLowerCase() == 'pdf' || arq.tipo.contains('pdf');
+                  final isPdf = arq.extensao.toLowerCase() == 'pdf' ||
+                      arq.tipo.contains('pdf');
 
                   return GestureDetector(
                     onTap: () {
@@ -678,7 +764,9 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
                         color: const Color(0xFF23233D),
                         borderRadius: BorderRadius.circular(28),
                         border: Border.all(
-                          color: isPdf ? Colors.redAccent.withValues(alpha: 0.3) : Colors.blueAccent.withValues(alpha: 0.3),
+                          color: isPdf
+                              ? Colors.redAccent.withValues(alpha: 0.3)
+                              : Colors.blueAccent.withValues(alpha: 0.3),
                           width: 2,
                         ),
                         boxShadow: [
@@ -711,13 +799,18 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
                                 : Image.network(
                                     arq.url,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.white24, size: 40),
+                                    errorBuilder: (_, __, ___) => const Icon(
+                                        Icons.broken_image,
+                                        color: Colors.white24,
+                                        size: 40),
                                   ),
                           ),
                           const SizedBox(height: 20),
                           Text(
                             arq.nome.toUpperCase(),
-                            style: AppCss.mediumBold.setSize(14).setColor(Colors.white),
+                            style: AppCss.mediumBold
+                                .setSize(14)
+                                .setColor(Colors.white),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
@@ -727,14 +820,21 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
-                                isPdf ? Icons.open_in_new_rounded : Icons.fullscreen_rounded,
+                                isPdf
+                                    ? Icons.open_in_new_rounded
+                                    : Icons.fullscreen_rounded,
                                 size: 16,
-                                color: isPdf ? Colors.redAccent : Colors.blueAccent,
+                                color: isPdf
+                                    ? Colors.redAccent
+                                    : Colors.blueAccent,
                               ),
                               const SizedBox(width: 8),
                               Text(
                                 isPdf ? 'ABRIR PDF' : 'VER IMAGEM',
-                                style: AppCss.minimumBold.setSize(12).setColor(isPdf ? Colors.redAccent : Colors.blueAccent),
+                                style: AppCss.minimumBold.setSize(12).setColor(
+                                    isPdf
+                                        ? Colors.redAccent
+                                        : Colors.blueAccent),
                               ),
                             ],
                           ),
@@ -778,12 +878,17 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
                       children: [
                         Text(
                           widget.elemento.nome.toUpperCase(),
-                          style: AppCss.largeBold.setSize(24).setColor(Colors.white),
+                          style: AppCss.largeBold
+                              .setSize(24)
+                              .setColor(Colors.white),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'DESENHOS TÉCNICOS DISPONÍVEIS',
-                          style: AppCss.minimumRegular.setSize(12).setColor(Colors.white.withValues(alpha: 0.5)).copyWith(letterSpacing: 2),
+                          style: AppCss.minimumRegular
+                              .setSize(12)
+                              .setColor(Colors.white.withValues(alpha: 0.5))
+                              .copyWith(letterSpacing: 2),
                         ),
                       ],
                     ),
@@ -795,9 +900,11 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                        border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1)),
                       ),
-                      child: const Icon(Icons.close, color: Colors.white, size: 28),
+                      child: const Icon(Icons.close,
+                          color: Colors.white, size: 28),
                     ),
                   ),
                 ],
@@ -809,5 +916,3 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
     );
   }
 }
-
-

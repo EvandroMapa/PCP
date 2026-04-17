@@ -26,7 +26,6 @@ class _BasePageState extends State<BasePage> {
     super.initState();
   }
 
-
   @override
   Widget build(BuildContext context) {
     return StreamOut<AppModule>(
@@ -34,9 +33,7 @@ class _BasePageState extends State<BasePage> {
       builder: (context, module) => Scaffold(
         key: _scaffoldKey,
         drawer: const AppDrawer(),
-        bottomNavigationBar: usuario.isOperador
-            ? const AppBottomNav()
-            : null,
+        bottomNavigationBar: usuario.isOperador ? const AppBottomNav() : null,
         appBar: module.appBar(context) ??
             AppBar(
               iconTheme: const IconThemeData(color: Colors.white, size: 20),

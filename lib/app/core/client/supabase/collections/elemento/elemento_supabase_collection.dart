@@ -5,7 +5,8 @@ import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 
 class ElementoSupabaseCollection {
-  static final ElementoSupabaseCollection _instance = ElementoSupabaseCollection._();
+  static final ElementoSupabaseCollection _instance =
+      ElementoSupabaseCollection._();
   ElementoSupabaseCollection._() {
     dataStream = AppStream.seed(<ElementoModel>[]);
   }
@@ -28,17 +29,16 @@ class ElementoSupabaseCollection {
     _isStarted = true;
     try {
       // 1. Buscar tabela principal
-      final elementosRaw = await SupabaseService.client
-          .from(name)
-          .select()
-          .order('nome');
+      final elementosRaw =
+          await SupabaseService.client.from(name).select().order('nome');
 
       if (elementosRaw.isEmpty) {
         dataStream.add(<ElementoModel>[]);
         return;
       }
 
-      final List<String> eIds = elementosRaw.map((e) => e['id'].toString()).toList();
+      final List<String> eIds =
+          elementosRaw.map((e) => e['id'].toString()).toList();
 
       // 2. Buscar tabelas auxiliares em paralelo para todos os elementos
       Future<List<Map<String, dynamic>>> safeFetch(String table) async {
@@ -66,8 +66,12 @@ class ElementoSupabaseCollection {
         final eId = eMap['id'].toString();
         return ElementoModel.fromSupabaseMap(
           eMap,
-          posicoesRaw: allPosicoes.where((p) => p['elemento_id'].toString() == eId).toList(),
-          arquivosRaw: allArquivos.where((a) => a['elemento_id'].toString() == eId).toList(),
+          posicoesRaw: allPosicoes
+              .where((p) => p['elemento_id'].toString() == eId)
+              .toList(),
+          arquivosRaw: allArquivos
+              .where((a) => a['elemento_id'].toString() == eId)
+              .toList(),
         );
       }).toList();
 
@@ -80,7 +84,7 @@ class ElementoSupabaseCollection {
   /// Atualiza os dados locais de forma reativa a partir de mudanças em outros módulos (Ex: PC -> Tablet)
   void updateLocalData(List<ElementoModel> newData) {
     if (newData.isEmpty) return;
-    
+
     final currentData = data.toList();
     for (final newItem in newData) {
       final idx = currentData.indexWhere((e) => e.id == newItem.id);
@@ -90,7 +94,7 @@ class ElementoSupabaseCollection {
         currentData.add(newItem);
       }
     }
-    
+
     data.clear();
     data.addAll(currentData);
     dataStream.add(data);
@@ -100,24 +104,21 @@ class ElementoSupabaseCollection {
   void listen() {
     if (_isListen) return;
     _isListen = true;
-    
+
     // Listener simplificado: qualquer mudança na tabela elementos dispara um re-fetch
     SupabaseService.client
         .from(name)
-        .stream(primaryKey: ['id'])
-        .listen((_) => _updateStreams());
+        .stream(primaryKey: ['id']).listen((_) => _updateStreams());
 
     // NOVO: Escuta mudanças na tabela de posições para atualizar pesos/OS
     SupabaseService.client
         .from('elemento_posicoes')
-        .stream(primaryKey: ['id'])
-        .listen((_) => _updateStreams());
+        .stream(primaryKey: ['id']).listen((_) => _updateStreams());
 
     // NOVO: Escuta mudanças na tabela de arquivos para atualizar os desenhos em tempo real
     SupabaseService.client
         .from('elemento_arquivos')
-        .stream(primaryKey: ['id'])
-        .listen((_) => _updateStreams());
+        .stream(primaryKey: ['id']).listen((_) => _updateStreams());
   }
 
   Timer? _streamDebounce;

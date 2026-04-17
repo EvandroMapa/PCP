@@ -46,135 +46,150 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: InkWell(
-        onTap: isModoPorOS
-            ? () => _openElementosDialog(context)
-            : null,
+        onTap: isModoPorOS ? () => _openElementosDialog(context) : null,
         borderRadius: BorderRadius.circular(14),
         child: Container(
-        decoration: BoxDecoration(
-          color: produto.isPaused
-              ? Colors.orange.withValues(alpha: 0.04)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: statusColor.withValues(alpha: 0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: IntrinsicHeight(
-          child: Row(
-            children: [
-              // Borda lateral colorida pelo status
-              Container(width: 4, color: statusColor),
-              // Conteúdo
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header: localizador + tags
-                      Row(
-                        children: [
-                          if (produto.isPaused) _pauseTagWidget(),
-                          if (produto.pedido.tags.isNotEmpty)
-                            _tagWidget(produto.pedido.tags.first),
-                          Text(
-                            produto.pedido.localizador,
-                            style: AppCss.mediumBold.setSize(15),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      // Peso + cliente/obra
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryMain.withValues(alpha: 0.07),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              produto.qtde.toKg(),
-                              style: AppCss.minimumBold.setSize(12).setColor(AppColors.primaryMain),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '${produto.cliente.nome} · ${produto.obra.descricao}',
-                              style: AppCss.minimumRegular.setSize(12).setColor(Colors.grey[600]!),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (produto.pedido.deliveryAt != null) ...[
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Icon(Icons.event_outlined, size: 12, color: Colors.grey[400]),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Entrega: ${produto.pedido.deliveryAt?.text()}',
-                              style: AppCss.minimumRegular.setSize(11).setColor(Colors.grey[500]!),
-                            ),
-                          ],
-                        ),
-                      ],
-                      if (materiaPrima != null) ...[
-                        const SizedBox(height: 4),
-                        InkWell(
-                          onTap: () async {
-                            final result = await showMateriaPrimaBottom(materiaPrima!);
-                            if (result != null) {
-                              push(context, MateriaPrimaCreatePage(materiaPrima: materiaPrima));
-                            }
-                          },
-                          borderRadius: BorderRadius.circular(6),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.inventory_2_outlined, size: 12, color: Colors.orange[400]),
-                              const SizedBox(width: 4),
-                              Text(
-                                materiaPrima!.label,
-                                style: AppCss.minimumRegular
-                                    .setSize(11)
-                                    .setColor(Colors.orange[700]!)
-                                    .copyWith(decoration: TextDecoration.underline),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              // Botões de status + pause
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _statusWidget(readOnly: isModoPorOS),
-                    if (!isModoPorOS && produto.statusView.status == PedidoProdutoStatus.produzindo)
-                      OrdemPedidoProdutoPauseWidget(ordem: ordem, produto: produto),
-                    if (isModoPorOS)
-                      _buildMiniProgressOS(),
-                  ],
-                ),
+          decoration: BoxDecoration(
+            color: produto.isPaused
+                ? Colors.orange.withValues(alpha: 0.04)
+                : Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: statusColor.withValues(alpha: 0.2)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
-        ),
+          clipBehavior: Clip.antiAlias,
+          child: IntrinsicHeight(
+            child: Row(
+              children: [
+                // Borda lateral colorida pelo status
+                Container(width: 4, color: statusColor),
+                // Conteúdo
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header: localizador + tags
+                        Row(
+                          children: [
+                            if (produto.isPaused) _pauseTagWidget(),
+                            if (produto.pedido.tags.isNotEmpty)
+                              _tagWidget(produto.pedido.tags.first),
+                            Text(
+                              produto.pedido.localizador,
+                              style: AppCss.mediumBold.setSize(15),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        // Peso + cliente/obra
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryMain
+                                    .withValues(alpha: 0.07),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                produto.qtde.toKg(),
+                                style: AppCss.minimumBold
+                                    .setSize(12)
+                                    .setColor(AppColors.primaryMain),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '${produto.cliente.nome} · ${produto.obra.descricao}',
+                                style: AppCss.minimumRegular
+                                    .setSize(12)
+                                    .setColor(Colors.grey[600]!),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (produto.pedido.deliveryAt != null) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(Icons.event_outlined,
+                                  size: 12, color: Colors.grey[400]),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Entrega: ${produto.pedido.deliveryAt?.text()}',
+                                style: AppCss.minimumRegular
+                                    .setSize(11)
+                                    .setColor(Colors.grey[500]!),
+                              ),
+                            ],
+                          ),
+                        ],
+                        if (materiaPrima != null) ...[
+                          const SizedBox(height: 4),
+                          InkWell(
+                            onTap: () async {
+                              final result =
+                                  await showMateriaPrimaBottom(materiaPrima!);
+                              if (result != null) {
+                                push(
+                                    context,
+                                    MateriaPrimaCreatePage(
+                                        materiaPrima: materiaPrima));
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(6),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.inventory_2_outlined,
+                                    size: 12, color: Colors.orange[400]),
+                                const SizedBox(width: 4),
+                                Text(
+                                  materiaPrima!.label,
+                                  style: AppCss.minimumRegular
+                                      .setSize(11)
+                                      .setColor(Colors.orange[700]!)
+                                      .copyWith(
+                                          decoration: TextDecoration.underline),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                // Botões de status + pause
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _statusWidget(readOnly: isModoPorOS),
+                      if (!isModoPorOS &&
+                          produto.statusView.status ==
+                              PedidoProdutoStatus.produzindo)
+                        OrdemPedidoProdutoPauseWidget(
+                            ordem: ordem, produto: produto),
+                      if (isModoPorOS) _buildMiniProgressOS(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -198,8 +213,10 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
       ),
     );
   }
+
   Widget _buildMiniProgressOS() {
-    final result = calcularProgressoPosicoes(produto.pedidoId, ordem.produto.id);
+    final result =
+        calcularProgressoPosicoes(produto.pedidoId, ordem.produto.id);
     if (!result.hasData) {
       return Padding(
         padding: const EdgeInsets.only(top: 6),
@@ -222,11 +239,14 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _miniCircle('Ag.', result.prcntAguardando, PosicaoStatus.aguardando.color),
+              _miniCircle('Ag.', result.prcntAguardando,
+                  PosicaoStatus.aguardando.color),
               const SizedBox(width: 8),
-              _miniCircle('Prod.', result.prcntProduzindo, PosicaoStatus.produzindo.color),
+              _miniCircle('Prod.', result.prcntProduzindo,
+                  PosicaoStatus.produzindo.color),
               const SizedBox(width: 8),
-              _miniCircle('Pronto', result.prcntPronto, PosicaoStatus.pronto.color),
+              _miniCircle(
+                  'Pronto', result.prcntPronto, PosicaoStatus.pronto.color),
             ],
           ),
           const SizedBox(height: 4),
@@ -263,23 +283,21 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
               Text(
                 '${(prcnt * 100).toStringAsFixed(0)}',
                 style: TextStyle(
-                    fontSize: 8,
-                    fontWeight: FontWeight.w700,
-                    color: color),
+                    fontSize: 8, fontWeight: FontWeight.w700, color: color),
               ),
             ],
           ),
         ),
         const SizedBox(height: 2),
-        Text(label,
-            style: TextStyle(fontSize: 8, color: Colors.grey[500])),
+        Text(label, style: TextStyle(fontSize: 8, color: Colors.grey[500])),
       ],
     );
   }
 
   Widget _statusWidget({bool readOnly = false}) {
     return usuario.isOperador
-        ? OrdemPedidoStatusOperatorWidget(produto: produto, ordem: ordem, readOnly: readOnly)
+        ? OrdemPedidoStatusOperatorWidget(
+            produto: produto, ordem: ordem, readOnly: readOnly)
         : OrdemPedidoStatusNormalWidget(produto: produto, ordem: ordem);
   }
 
@@ -294,7 +312,8 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
       child: Text(
         tag.nome,
         style: TextStyle(
-          color: tag.color.computeLuminance() > 0.5 ? Colors.black : Colors.white,
+          color:
+              tag.color.computeLuminance() > 0.5 ? Colors.black : Colors.white,
           fontSize: 9,
           fontWeight: FontWeight.w700,
         ),
@@ -312,7 +331,8 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
       ),
       child: const Text(
         'PAUSADO',
-        style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
+        style: TextStyle(
+            color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
       ),
     );
   }

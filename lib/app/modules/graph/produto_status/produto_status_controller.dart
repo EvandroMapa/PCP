@@ -16,10 +16,10 @@ class ProdutoStatusController {
 
   List<ColumnSeries<ProdutoStatusGraphModel, String>> getSource() {
     return [
-          PedidoProdutoStatus.aguardandoProducao,
-          PedidoProdutoStatus.produzindo,
-          PedidoProdutoStatus.pronto,
-        ]
+      PedidoProdutoStatus.aguardandoProducao,
+      PedidoProdutoStatus.produzindo,
+      PedidoProdutoStatus.pronto,
+    ]
         .map(
           (status) => ColumnSeries<ProdutoStatusGraphModel, String>(
             dataSource: getSourceByStatus(status),
@@ -41,7 +41,7 @@ class ProdutoStatusController {
 
   List<ProdutoStatusGraphModel> getSourceByStatus(PedidoProdutoStatus status) {
     final pedidos = FirestoreClient.pedidos.data
-        .where((p) => !p.isArchived) // Omitir arquivados 
+        .where((p) => !p.isArchived) // Omitir arquivados
         .map((e) => e.copyWith())
         .toList();
 

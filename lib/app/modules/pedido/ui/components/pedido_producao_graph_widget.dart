@@ -47,9 +47,7 @@ class PedidoProducaoGraphWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: data
-            .map((d) => _DonutItem(data: d))
-            .toList(),
+        children: data.map((d) => _DonutItem(data: d)).toList(),
       ),
     );
   }

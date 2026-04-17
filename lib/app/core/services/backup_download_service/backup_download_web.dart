@@ -13,9 +13,9 @@ Future<bool> backupDownload(String name, String path, Uint8List bytes) async {
     bucket: 'backups',
   );
   html.AnchorElement(
-      href:
-          "data:application/octet-stream;charset=utf-16le;base64,${base64.encode(bytes)}",
-    )
+    href:
+        "data:application/octet-stream;charset=utf-16le;base64,${base64.encode(bytes)}",
+  )
     ..setAttribute("download", name)
     ..click();
   return true;

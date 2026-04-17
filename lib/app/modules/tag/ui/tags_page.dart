@@ -48,10 +48,10 @@ class _TagsPageState extends State<TagsPage> {
         builder: (_, __) => StreamOut<TagUtils>(
           stream: tagCtrl.utilsStream.listen,
           builder: (_, utils) {
-            final tags = tagCtrl
-                .getTagsFiltered(utils.search.text, __)
-                .toList();
-            tags.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
+            final tags =
+                tagCtrl.getTagsFiltered(utils.search.text, __).toList();
+            tags.sort(
+                (a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
             return Column(
               children: [
                 Padding(
@@ -124,7 +124,8 @@ class _TagsPageState extends State<TagsPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: Icon(Icons.edit_outlined, color: Colors.blue[600], size: 16),
+              icon:
+                  Icon(Icons.edit_outlined, color: Colors.blue[600], size: 16),
               iconSize: 16,
               constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
               padding: EdgeInsets.zero,
@@ -132,7 +133,8 @@ class _TagsPageState extends State<TagsPage> {
             ),
             const SizedBox(width: 6),
             IconButton(
-              icon: Icon(Icons.delete_outline, color: Colors.red[600], size: 16),
+              icon:
+                  Icon(Icons.delete_outline, color: Colors.red[600], size: 16),
               iconSize: 16,
               constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
               padding: EdgeInsets.zero,

@@ -10,7 +10,7 @@ class BackupScheduleConfig {
   static const _key = 'backup_schedule_config';
 
   bool enabled;
-  List<int> dias;   // 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb, 7=Dom
+  List<int> dias; // 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb, 7=Dom
   int hora;
   int minuto;
   DateTime? ultimoBackup;

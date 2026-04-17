@@ -36,19 +36,23 @@ class _ChecklistCreatePageState extends State<ChecklistCreatePage> {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () async {
-            if (await showConfirmDialog(
-              'Deseja realmente sair?',
-              widget.checklist != null
-                  ? 'A edição que realizou será perdida'
-                  : 'Os dados do Checklist serão perdidos.',
-            )) {
+            if (checklistCtrl.form.isDirty) {
+              if (await showConfirmDialog(
+                'Deseja realmente sair?',
+                widget.checklist != null
+                    ? 'A edição que realizou será perdida'
+                    : 'Os dados do Checklist serão perdidos.',
+              )) {
+                pop(context);
+              }
+            } else {
               pop(context);
             }
           },
           icon: Icon(Icons.arrow_back, color: AppColors.white),
         ),
         title: Text(
-          '${checklistCtrl.form.isEdit ? 'Editar' : 'Adicionar'} Etiqueta',
+          '${checklistCtrl.form.isEdit ? 'Editar' : 'Adicionar'} Modelo de Checklist',
           style: AppCss.largeBold.setColor(AppColors.white),
         ),
         actions: [
@@ -85,6 +89,21 @@ class _ChecklistCreatePageState extends State<ChecklistCreatePage> {
           },
           onRemove: (item) {
             form.checklist.remove(item);
+            checklistCtrl.formStream.update();
+          },
+        ),
+        const H(16),
+        CheckboxListTile(
+          contentPadding: EdgeInsets.zero,
+          controlAffinity: ListTileControlAffinity.leading,
+          title: const Text('Definir como padrão para novos pedidos'),
+          subtitle: const Text(
+            'Este modelo será sugerido automaticamente na criação de um pedido.',
+            style: TextStyle(fontSize: 12),
+          ),
+          value: form.isPadrao,
+          onChanged: (val) {
+            form.isPadrao = val ?? false;
             checklistCtrl.formStream.update();
           },
         ),

@@ -63,13 +63,14 @@ class NotificacaoController {
 
   Future<bool> _isDeleteUnavailable(
     NotificacaoModel notificacao,
-  ) async => !await onDeleteProcess(
-    deleteTitle: 'Deseja excluir o notificacao?',
-    deleteMessage: 'Todos seus dados serão apagados do sistema',
-    infoMessage:
-        'Não é possível excluir o notificacao, pois ele está vinculado a outras partes do sistema.',
-    conditional: true,
-  );
+  ) async =>
+      !await onDeleteProcess(
+        deleteTitle: 'Deseja excluir o notificacao?',
+        deleteMessage: 'Todos seus dados serão apagados do sistema',
+        infoMessage:
+            'Não é possível excluir o notificacao, pois ele está vinculado a outras partes do sistema.',
+        conditional: true,
+      );
 
   Future<void> setViewed() async {
     for (final notificacao in FirestoreClient.notificacoes.data) {

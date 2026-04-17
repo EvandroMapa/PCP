@@ -30,9 +30,8 @@ class ChecklistCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     final data = await FirebaseFirestore.instance.collection(name).get();
-    final countries = data.docs
-        .map((e) => ChecklistModel.fromMap(e.data()))
-        .toList();
+    final countries =
+        data.docs.map((e) => ChecklistModel.fromMap(e.data())).toList();
     countries.sort((a, b) {
       try {
         return (a.createdAt).compareTo(b.createdAt);
@@ -78,12 +77,11 @@ class ChecklistCollection {
             : collection)
         .snapshots()
         .listen((e) {
-          final countries = e.docs
-              .map((e) => ChecklistModel.fromMap(e.data()))
-              .toList();
-          countries.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-          dataStream.add(countries);
-        });
+      final countries =
+          e.docs.map((e) => ChecklistModel.fromMap(e.data())).toList();
+      countries.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      dataStream.add(countries);
+    });
   }
 
   ChecklistModel getById(String id) =>

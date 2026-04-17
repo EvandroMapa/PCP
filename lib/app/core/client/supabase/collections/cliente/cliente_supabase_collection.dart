@@ -8,7 +8,8 @@ import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_collection.dart';
 
 class ClienteSupabaseCollection extends ClienteCollection {
-  static final ClienteSupabaseCollection _instance = ClienteSupabaseCollection._();
+  static final ClienteSupabaseCollection _instance =
+      ClienteSupabaseCollection._();
   ClienteSupabaseCollection._() : super.base() {
     dataStream = AppStream.seed([]);
   }
@@ -36,7 +37,8 @@ class ClienteSupabaseCollection extends ClienteCollection {
     _isStarted = true;
     try {
       final clientesRaw = await SupabaseService.client.from(name).select();
-      final obrasRaw = await SupabaseService.client.from(obraTableName).select();
+      final obrasRaw =
+          await SupabaseService.client.from(obraTableName).select();
 
       final obrasByClienteId = <String, List<Map<String, dynamic>>>{};
       for (final obra in List<Map<String, dynamic>>.from(obrasRaw)) {
@@ -78,8 +80,7 @@ class ClienteSupabaseCollection extends ClienteCollection {
     // Basic implementation for now, listening to main table
     SupabaseService.client
         .from(name)
-        .stream(primaryKey: ['id'])
-        .listen((_) => start(lock: false));
+        .stream(primaryKey: ['id']).listen((_) => start(lock: false));
   }
 
   @override
@@ -95,8 +96,9 @@ class ClienteSupabaseCollection extends ClienteCollection {
       }
       await SupabaseService.client.from(name).insert(map);
       if (model.obras.isNotEmpty) {
-        await SupabaseService.client.from(obraTableName).upsert(
-            model.obras.map((e) => e.toSupabaseMap(model.id)).toList());
+        await SupabaseService.client
+            .from(obraTableName)
+            .upsert(model.obras.map((e) => e.toSupabaseMap(model.id)).toList());
       }
       await fetch();
       return model;
@@ -113,14 +115,18 @@ class ClienteSupabaseCollection extends ClienteCollection {
           .from(name)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
-      
+
       // Sync obras: Delete old and insert/update new ones
-      await SupabaseService.client.from(obraTableName).delete().eq('cliente_id', model.id);
+      await SupabaseService.client
+          .from(obraTableName)
+          .delete()
+          .eq('cliente_id', model.id);
       if (model.obras.isNotEmpty) {
-        await SupabaseService.client.from(obraTableName).upsert(
-            model.obras.map((e) => e.toSupabaseMap(model.id)).toList());
+        await SupabaseService.client
+            .from(obraTableName)
+            .upsert(model.obras.map((e) => e.toSupabaseMap(model.id)).toList());
       }
-      
+
       await fetch();
       return model;
     } catch (e) {

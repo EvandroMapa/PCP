@@ -16,7 +16,9 @@ class PedidoStatusWidget extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
-          Expanded(child: Text('Status de Produção', style: AppCss.smallBold.setSize(13))),
+          Expanded(
+              child: Text('Status de Produção',
+                  style: AppCss.smallBold.setSize(13))),
           InkWell(
             onTap: pedido.isChangeStatusAvailable
                 ? () => pedidoCtrl.onChangePedidoStatus(pedido)
@@ -24,11 +26,10 @@ class PedidoStatusWidget extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color:
-                    (pedido.isAguardandoEntradaProducao()
-                            ? Colors.grey
-                            : pedido.status.color)
-                        .withValues(alpha: 0.4),
+                color: (pedido.isAguardandoEntradaProducao()
+                        ? Colors.grey
+                        : pedido.status.color)
+                    .withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: IntrinsicWidth(

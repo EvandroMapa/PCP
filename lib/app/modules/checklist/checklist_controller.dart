@@ -60,6 +60,18 @@ class ChecklistController {
   Future<void> onConfirm(value, ChecklistModel? checklist) async {
     try {
       onValid(checklist);
+
+      // Garante que se este for padrão, remove a flag dos demais.
+      if (form.isPadrao) {
+        final currentChecklists = FirestoreClient.checklists.data;
+        for (var existing in currentChecklists) {
+          if (existing.isPadrao && existing.id != form.id) {
+            existing.isPadrao = false;
+            await FirestoreClient.checklists.update(existing);
+          }
+        }
+      }
+
       if (form.isEdit) {
         final edit = form.toChecklistModel();
         await FirestoreClient.checklists.update(edit);

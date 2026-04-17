@@ -91,18 +91,21 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
           icon: Icon(Icons.arrow_back, color: AppColors.white),
         ),
         title: Text(
-          pedidoCtrl.formStream.hasValue 
-            ? _getTitle(pedidoCtrl.form) 
-            : 'Adicionar Pedido',
+          pedidoCtrl.formStream.hasValue
+              ? _getTitle(pedidoCtrl.form)
+              : 'Adicionar Pedido',
           style: AppCss.largeBold.setColor(AppColors.white),
         ),
         actions: [
           if ((widget.pedido != null &&
-                  usuario.permission.pedido.contains(UserPermissionType.update)) ||
+                  usuario.permission.pedido
+                      .contains(UserPermissionType.update)) ||
               (widget.pedido == null &&
-                  usuario.permission.pedido.contains(UserPermissionType.create)))
+                  usuario.permission.pedido
+                      .contains(UserPermissionType.create)))
             IconLoadingButton(
-              () async => await pedidoCtrl.onConfirm(context, widget.pedido, false),
+              () async =>
+                  await pedidoCtrl.onConfirm(context, widget.pedido, false),
             ),
         ],
         backgroundColor: AppColors.primaryMain,
@@ -139,7 +142,9 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
           const SizedBox(height: 16),
           // Preview Pedido
           Tooltip(
-            message: form.localizador.text.isEmpty ? 'Novo Pedido' : form.localizador.text,
+            message: form.localizador.text.isEmpty
+                ? 'Novo Pedido'
+                : form.localizador.text,
             child: Container(
               width: 36,
               height: 36,
@@ -156,8 +161,11 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
               ),
               child: Center(
                 child: Text(
-                  form.localizador.text.isNotEmpty ? form.localizador.text.substring(0, 1).toUpperCase() : 'P',
-                  style: AppCss.minimumBold.setColor(AppColors.white).setSize(14),
+                  form.localizador.text.isNotEmpty
+                      ? form.localizador.text.substring(0, 1).toUpperCase()
+                      : 'P',
+                  style:
+                      AppCss.minimumBold.setColor(AppColors.white).setSize(14),
                 ),
               ),
             ),
@@ -167,7 +175,8 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
           if (form.tipo != PedidoTipo.outros)
             _sidebarItem(1, Icons.inventory_2_outlined, 'Produtos'),
           const Spacer(),
-          if (widget.pedido != null && usuario.permission.pedido.contains(UserPermissionType.delete))
+          if (widget.pedido != null &&
+              usuario.permission.pedido.contains(UserPermissionType.delete))
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: Tooltip(
@@ -182,7 +191,8 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
                       color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+                    child: Icon(Icons.delete_outline,
+                        size: 18, color: AppColors.error),
                   ),
                 ),
               ),
@@ -215,9 +225,14 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: isSelected ? AppColors.primaryMain.withValues(alpha: 0.1) : Colors.transparent,
+              color: isSelected
+                  ? AppColors.primaryMain.withValues(alpha: 0.1)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
-              border: isSelected ? Border.all(color: AppColors.primaryMain.withValues(alpha: 0.2)) : null,
+              border: isSelected
+                  ? Border.all(
+                      color: AppColors.primaryMain.withValues(alpha: 0.2))
+                  : null,
             ),
             child: Icon(
               icon,
@@ -338,7 +353,9 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
               onCreated: () async {
                 ClienteModel? created = await showClienteCreateSimplifyBottom();
                 if (created == null) return null;
-                final cliente = FirestoreClient.clientes.data.firstWhere((e) => e.id == created.id, orElse: () => created);
+                final cliente = FirestoreClient.clientes.data.firstWhere(
+                    (e) => e.id == created.id,
+                    orElse: () => created);
                 form.cliente = cliente;
                 form.obra = cliente.obras.firstOrNull;
                 pedidoCtrl.formStream.update();
@@ -358,8 +375,13 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
               label: 'Obra',
               item: form.obra,
               disable: form.cliente == null,
-              itens: form.cliente?.obras.where((e) => e.status == ObraStatus.emAndamento).toList() ?? [],
-              itemLabel: (e) => e != null ? '${e.descricao} - ${e.endereco?.localidade ?? ''}' : 'Selecione',
+              itens: form.cliente?.obras
+                      .where((e) => e.status == ObraStatus.emAndamento)
+                      .toList() ??
+                  [],
+              itemLabel: (e) => e != null
+                  ? '${e.descricao} - ${e.endereco?.localidade ?? ''}'
+                  : 'Selecione',
               onSelect: (e) {
                 form.obra = e;
                 pedidoCtrl.formStream.update();
@@ -459,7 +481,12 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey[300]!, width: 1),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -468,7 +495,8 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
             children: [
               Icon(Icons.add_circle_outline, color: AppColors.primaryMain),
               const SizedBox(width: 12),
-              Text('ADICIONAR PRODUTO / BITOLA', style: AppCss.mediumBold.setSize(14)),
+              Text('ADICIONAR PRODUTO / BITOLA',
+                  style: AppCss.mediumBold.setSize(14)),
             ],
           ),
           const SizedBox(height: 16),
@@ -482,7 +510,11 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
                   controller: form.produto.produtoEC,
                   nextFocus: form.produto.qtde.focus,
                   item: form.produto.produtoModel,
-                  itens: FirestoreClient.produtos.data.where((e) => !form.produtos.map((e) => e.produtoModel?.id).contains(e.id)).toList(),
+                  itens: FirestoreClient.produtos.data
+                      .where((e) => !form.produtos
+                          .map((e) => e.produtoModel?.id)
+                          .contains(e.id))
+                      .toList(),
                   itemLabel: (e) => e?.descricao ?? 'Selecione',
                   onSelect: (e) {
                     form.produto.produtoModel = e;
@@ -512,15 +544,20 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
               ),
               const W(16),
               IconButton(
-                onPressed: !form.produto.isEnable ? null : () {
-                  form.produtos.add(form.produto);
-                  form.produto = PedidoProdutoCreateModel();
-                  pedidoCtrl.formStream.update();
-                },
+                onPressed: !form.produto.isEnable
+                    ? null
+                    : () {
+                        form.produtos.add(form.produto);
+                        form.produto = PedidoProdutoCreateModel();
+                        pedidoCtrl.formStream.update();
+                      },
                 style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.all(form.produto.isEnable ? AppColors.primaryMain : Colors.grey[300]),
+                  backgroundColor: WidgetStateProperty.all(form.produto.isEnable
+                      ? AppColors.primaryMain
+                      : Colors.grey[300]),
                   padding: WidgetStateProperty.all(const EdgeInsets.all(16)),
-                  shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  shape: WidgetStateProperty.all(RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12))),
                 ),
                 icon: Icon(Icons.add, color: AppColors.white),
               ),
@@ -531,32 +568,46 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
     );
   }
 
-  Widget _produtoItemCard(PedidoCreateModel form, PedidoProdutoCreateModel produto, int index) {
-    bool isDisabled = !produto.isEnabled || (form.isEdit && FirestoreClient.ordens.data.expand((e) => e.produtos.map((e) => e.id)).any((e) => e == produto.id));
+  Widget _produtoItemCard(
+      PedidoCreateModel form, PedidoProdutoCreateModel produto, int index) {
+    bool isDisabled = !produto.isEnabled ||
+        (form.isEdit &&
+            FirestoreClient.ordens.data
+                .expand((e) => e.produtos.map((e) => e.id))
+                .any((e) => e == produto.id));
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: isDisabled ? Colors.grey[50] : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isDisabled ? Colors.grey[200]! : Colors.grey[300]!),
+        border: Border.all(
+            color: isDisabled ? Colors.grey[200]! : Colors.grey[300]!),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
           width: 32,
           height: 32,
-          decoration: BoxDecoration(color: AppColors.primaryMain.withValues(alpha: 0.1), shape: BoxShape.circle),
-          child: Center(child: Text('${index + 1}', style: AppCss.minimumBold.setColor(AppColors.primaryMain))),
+          decoration: BoxDecoration(
+              color: AppColors.primaryMain.withValues(alpha: 0.1),
+              shape: BoxShape.circle),
+          child: Center(
+              child: Text('${index + 1}',
+                  style: AppCss.minimumBold.setColor(AppColors.primaryMain))),
         ),
-        title: Text(produto.produtoModel?.descricao ?? '', style: AppCss.mediumBold),
+        title: Text(produto.produtoModel?.descricao ?? '',
+            style: AppCss.mediumBold),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Quantidade: ${produto.qtde.text} Kg', style: AppCss.minimumRegular),
+            Text('Quantidade: ${produto.qtde.text} Kg',
+                style: AppCss.minimumRegular),
             if (isDisabled)
               Text(
-                !produto.isEnabled ? 'Quantidade já direcionada' : 'Produto vinculado a Ordem',
+                !produto.isEnabled
+                    ? 'Quantidade já direcionada'
+                    : 'Produto vinculado a Ordem',
                 style: AppCss.minimumBold.setColor(AppColors.error).setSize(11),
               ),
           ],
@@ -567,23 +618,27 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
             if (!isDisabled) ...[
               IconButton(
                 onPressed: () async {
-                  final qtde = await showPedidoOrderEditBottom(produto, produto.qtdeDisponivel);
+                  final qtde = await showPedidoOrderEditBottom(
+                      produto, produto.qtdeDisponivel);
                   if (qtde != null) {
                     produto.qtde.text = qtde.toString();
                     pedidoCtrl.formStream.update();
                   }
                 },
-                icon: Icon(Icons.edit_outlined, color: Colors.blue[700], size: 20),
+                icon: Icon(Icons.edit_outlined,
+                    color: Colors.blue[700], size: 20),
               ),
               if (widget.pai == null)
                 IconButton(
                   onPressed: () async {
-                    if (await showConfirmDialog('Remover Produto', 'Deseja remover ${produto.produtoModel?.descricao}?')) {
+                    if (await showConfirmDialog('Remover Produto',
+                        'Deseja remover ${produto.produtoModel?.descricao}?')) {
                       form.produtos.remove(produto);
                       pedidoCtrl.formStream.update();
                     }
                   },
-                  icon: Icon(Icons.delete_outline, color: AppColors.error, size: 20),
+                  icon: Icon(Icons.delete_outline,
+                      color: AppColors.error, size: 20),
                 ),
               if (widget.pai != null)
                 AppCheckbox(
@@ -600,14 +655,22 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
     );
   }
 
-  Widget _sectionPanel({required IconData icon, required String title, required List<Widget> children}) {
+  Widget _sectionPanel(
+      {required IconData icon,
+      required String title,
+      required List<Widget> children}) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey[300]!, width: 1),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4))
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -616,7 +679,10 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
             children: [
               Icon(icon, color: AppColors.primaryMain, size: 20),
               const SizedBox(width: 12),
-              Text(title, style: AppCss.mediumBold.setSize(13).setColor(Colors.grey[700]!)),
+              Text(title,
+                  style: AppCss.mediumBold
+                      .setSize(13)
+                      .setColor(Colors.grey[700]!)),
             ],
           ),
           const SizedBox(height: 24),

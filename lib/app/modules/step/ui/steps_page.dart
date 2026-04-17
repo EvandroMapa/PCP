@@ -52,9 +52,8 @@ class _StepsPageState extends State<StepsPage> {
         builder: (_, __) => StreamOut<StepUtils>(
           stream: stepCtrl.utilsStream.listen,
           builder: (_, utils) {
-            final steps = stepCtrl
-                .getStepesFiltered(utils.search.text, __)
-                .toList();
+            final steps =
+                stepCtrl.getStepesFiltered(utils.search.text, __).toList();
             return Column(
               children: [
                 Padding(
@@ -119,7 +118,8 @@ class _StepsPageState extends State<StepsPage> {
                 width: 36,
                 height: 36,
                 alignment: Alignment.center,
-                child: Icon(Icons.drag_handle, color: Colors.grey[400], size: 24),
+                child:
+                    Icon(Icons.drag_handle, color: Colors.grey[400], size: 24),
               ),
             ),
             const W(8),
@@ -148,7 +148,8 @@ class _StepsPageState extends State<StepsPage> {
                 ),
                 child: Text(
                   'Padrão',
-                  style: AppCss.minimumBold.setColor(AppColors.white).setSize(11),
+                  style:
+                      AppCss.minimumBold.setColor(AppColors.white).setSize(11),
                 ),
               ),
           ],
@@ -158,11 +159,11 @@ class _StepsPageState extends State<StepsPage> {
           children: [
             Text(
               'Movido por: ${step.moveRoles.isEmpty ? 'Todos' : step.moveRoles.map((id) {
-                final tipo = AppSupabaseClient.usuarioTipos.data
-                    .where((t) => t.id == id)
-                    .firstOrNull;
-                return tipo?.nome ?? id;
-              }).join(', ')}',
+                  final tipo = AppSupabaseClient.usuarioTipos.data
+                      .where((t) => t.id == id)
+                      .firstOrNull;
+                  return tipo?.nome ?? id;
+                }).join(', ')}',
               style: AppCss.minimumRegular.setSize(12),
             ),
             const H(2),
@@ -176,7 +177,8 @@ class _StepsPageState extends State<StepsPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: Icon(Icons.edit_outlined, color: Colors.blue[600], size: 16),
+              icon:
+                  Icon(Icons.edit_outlined, color: Colors.blue[600], size: 16),
               iconSize: 16,
               constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
               padding: EdgeInsets.zero,
@@ -184,7 +186,8 @@ class _StepsPageState extends State<StepsPage> {
             ),
             const W(6),
             IconButton(
-              icon: Icon(Icons.delete_outline, color: Colors.red[600], size: 16),
+              icon:
+                  Icon(Icons.delete_outline, color: Colors.red[600], size: 16),
               iconSize: 16,
               constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
               padding: EdgeInsets.zero,

@@ -17,12 +17,11 @@ class PedidoTrackerTimelineWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     // 1. Obter os IDs das etapas configuradas
     final selectedStepIds = PreferencesService.stepsAcompanhamento.value;
-    
+
     // 2. Obter as Etapas reais do Firestore para ter os nomes e índices
     final allSteps = FirestoreClient.steps.data;
-    final timelineSteps = allSteps
-        .where((s) => selectedStepIds.contains(s.id))
-        .toList();
+    final timelineSteps =
+        allSteps.where((s) => selectedStepIds.contains(s.id)).toList();
     timelineSteps.sort((a, b) => a.index.compareTo(b.index));
 
     // 3. Cruzar com o histórico do pedido
@@ -50,13 +49,14 @@ class PedidoTrackerTimelineWidget extends StatelessWidget {
         return stepData.id == step.id;
       });
 
-      final bool isPastOrCurrent = pedido.step.id == step.id || 
-                                  historyMatch != null ||
-                                  _isStepPast(pedido.step, step, allSteps);
+      final bool isPastOrCurrent = pedido.step.id == step.id ||
+          historyMatch != null ||
+          _isStepPast(pedido.step, step, allSteps);
 
       nodes.add(_TimelineNode(
         title: step.name,
-        subtitle: historyMatch?.createdAt.textHour() ?? (isPastOrCurrent ? 'Concluído' : 'Aguardando'),
+        subtitle: historyMatch?.createdAt.textHour() ??
+            (isPastOrCurrent ? 'Concluído' : 'Aguardando'),
         isCompleted: isPastOrCurrent && pedido.step.id != step.id,
         isCurrent: pedido.step.id == step.id,
         icon: _getStepIcon(step.name),
@@ -81,25 +81,36 @@ class PedidoTrackerTimelineWidget extends StatelessWidget {
                       width: 28,
                       height: 28,
                       decoration: BoxDecoration(
-                        color: node.isCurrent 
-                            ? AppColors.primaryMain 
-                            : (node.isCompleted ? AppColors.primaryMain.withValues(alpha: 0.2) : Colors.grey[200]!),
+                        color: node.isCurrent
+                            ? AppColors.primaryMain
+                            : (node.isCompleted
+                                ? AppColors.primaryMain.withValues(alpha: 0.2)
+                                : Colors.grey[200]!),
                         shape: BoxShape.circle,
-                        border: node.isCurrent 
-                            ? Border.all(color: AppColors.primaryMain.withValues(alpha: 0.3), width: 4)
+                        border: node.isCurrent
+                            ? Border.all(
+                                color: AppColors.primaryMain
+                                    .withValues(alpha: 0.3),
+                                width: 4)
                             : null,
                       ),
                       child: Icon(
                         node.isCompleted ? Icons.check : node.icon,
                         size: 14,
-                        color: node.isCurrent ? Colors.white : (node.isCompleted ? AppColors.primaryMain : Colors.grey[400]!),
+                        color: node.isCurrent
+                            ? Colors.white
+                            : (node.isCompleted
+                                ? AppColors.primaryMain
+                                : Colors.grey[400]!),
                       ),
                     ),
                     if (!isLast)
                       Expanded(
                         child: Container(
                           width: 2,
-                          color: node.isCompleted ? AppColors.primaryMain : Colors.grey[200],
+                          color: node.isCompleted
+                              ? AppColors.primaryMain
+                              : Colors.grey[200],
                         ),
                       ),
                   ],
@@ -113,13 +124,18 @@ class PedidoTrackerTimelineWidget extends StatelessWidget {
                       Text(
                         node.title.toUpperCase(),
                         style: AppCss.smallBold.setSize(13).setColor(
-                          node.isCurrent ? AppColors.primaryMain : (node.isCompleted ? AppColors.black : Colors.grey[500]!)
-                        ),
+                            node.isCurrent
+                                ? AppColors.primaryMain
+                                : (node.isCompleted
+                                    ? AppColors.black
+                                    : Colors.grey[500]!)),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         node.subtitle,
-                        style: AppCss.minimumRegular.setSize(11).setColor(Colors.grey[600]!),
+                        style: AppCss.minimumRegular
+                            .setSize(11)
+                            .setColor(Colors.grey[600]!),
                       ),
                       if (!isLast) const SizedBox(height: 32),
                     ],
@@ -133,7 +149,8 @@ class PedidoTrackerTimelineWidget extends StatelessWidget {
     );
   }
 
-  bool _isStepPast(StepModel currentStep, StepModel targetStep, List<StepModel> allSteps) {
+  bool _isStepPast(
+      StepModel currentStep, StepModel targetStep, List<StepModel> allSteps) {
     return currentStep.index > targetStep.index;
   }
 
@@ -141,7 +158,8 @@ class PedidoTrackerTimelineWidget extends StatelessWidget {
     name = name.toLowerCase();
     if (name.contains('produ')) return Icons.precision_manufacturing_outlined;
     if (name.contains('cd')) return Icons.inventory_2_outlined;
-    if (name.contains('expe') || name.contains('entr')) return Icons.local_shipping_outlined;
+    if (name.contains('expe') || name.contains('entr'))
+      return Icons.local_shipping_outlined;
     return Icons.radio_button_checked;
   }
 }

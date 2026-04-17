@@ -65,20 +65,20 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
         leading: IconButton(
           onPressed: () async {
             final isDirty = _snapshot(clienteCtrl.form) != _initialSnapshot;
-              if (isDirty) {
-                final confirm = await showConfirmDialog(
-                  'Deseja realmente sair?',
-                  widget.cliente != null
-                      ? 'A edição que realizou será perdida.'
-                      : 'Os dados do cliente serão perdidos.',
-                );
-                if (confirm && context.mounted) {
-                  pop(context);
-                }
-              } else {
+            if (isDirty) {
+              final confirm = await showConfirmDialog(
+                'Deseja realmente sair?',
+                widget.cliente != null
+                    ? 'A edição que realizou será perdida.'
+                    : 'Os dados do cliente serão perdidos.',
+              );
+              if (confirm && context.mounted) {
                 pop(context);
               }
-            },
+            } else {
+              pop(context);
+            }
+          },
           icon: Icon(Icons.arrow_back, color: AppColors.white),
         ),
         title: Text(
@@ -90,17 +90,17 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
                   usuario.permission.cliente.contains(
                     UserPermissionType.update,
                   )) ||
-                (widget.cliente == null &&
-                    usuario.permission.cliente.contains(
-                      UserPermissionType.create,
-                    )))
-              IconLoadingButton(
-                () async => await clienteCtrl.onConfirm(
-                  context,
-                  widget.cliente,
-                  widget.isFromOrder,
-                ),
+              (widget.cliente == null &&
+                  usuario.permission.cliente.contains(
+                    UserPermissionType.create,
+                  )))
+            IconLoadingButton(
+              () async => await clienteCtrl.onConfirm(
+                context,
+                widget.cliente,
+                widget.isFromOrder,
               ),
+            ),
         ],
         backgroundColor: AppColors.primaryMain,
       ),
@@ -134,7 +134,8 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
           const SizedBox(height: 8),
           ..._ClienteSection.values.map((section) => _buildMenuItem(section)),
           const Spacer(),
-          if (form.isEdit && usuario.permission.cliente.contains(UserPermissionType.delete))
+          if (form.isEdit &&
+              usuario.permission.cliente.contains(UserPermissionType.delete))
             _buildSidebarDelete(form),
           const SizedBox(height: 8),
         ],
@@ -185,9 +186,14 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primaryMain.withValues(alpha: 0.10) : Colors.transparent,
+            color: isSelected
+                ? AppColors.primaryMain.withValues(alpha: 0.10)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
-            border: isSelected ? Border.all(color: AppColors.primaryMain.withValues(alpha: 0.20)) : null,
+            border: isSelected
+                ? Border.all(
+                    color: AppColors.primaryMain.withValues(alpha: 0.20))
+                : null,
           ),
           child: Icon(
             section.icon,
@@ -237,7 +243,8 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
           children: [
             Icon(_selected.icon, color: AppColors.primaryMain, size: 20),
             const SizedBox(width: 12),
-            Text(_selected.label.toUpperCase(), style: AppCss.mediumBold.setSize(16).setLetterSpacing(1)),
+            Text(_selected.label.toUpperCase(),
+                style: AppCss.mediumBold.setSize(16).setLetterSpacing(1)),
           ],
         ),
         const SizedBox(height: 24),
@@ -270,7 +277,8 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
           if (form.isEdit) ...[
             AppField(
               label: 'Código',
-              controllerObj: TextEditingController(text: form.codigo.toString()),
+              controllerObj:
+                  TextEditingController(text: form.codigo.toString()),
               isDisable: true,
             ),
             const SizedBox(height: 16),
@@ -295,7 +303,8 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
             onChanged: (value) {
               if (value.length == 11 && CPFValidator.isValid(form.cpf.text)) {
                 form.cpf.updateMask('000.000.000-00');
-              } else if (value.length == 14 && CNPJValidator.isValid(form.cpf.text)) {
+              } else if (value.length == 14 &&
+                  CNPJValidator.isValid(form.cpf.text)) {
                 form.cpf.updateMask('00.000.000/0000-00');
               } else {
                 form.cpf.updateMask('00000000000000000');
@@ -326,58 +335,59 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-              AppMultipleRegisters<ObraModel>(
-                icon: Icons.business_outlined,
-                title: 'Gerenciar Obras',
-                createPage: ObraCreatePage(endereco: form.endereco),
-                onEdit: (obraForm) async {
-                  ObraModel? obra = await push(
-                    context,
-                    ObraCreatePage(obra: obraForm),
-                  );
-                  if (obra != null) {
-                    final i = form.obras
-                        .map((e) => e.id)
-                        .toList()
-                        .indexOf(obraForm.id);
-                    if (obra.id != 'delete') {
-                      form.obras[i] = obra;
-                    } else {
-                      form.obras.removeAt(i);
-                    }
-                  }
-                  clienteCtrl.formStream.update();
-                },
-                onAdd: (e) {
-                  form.obras.add(e);
-                  clienteCtrl.formStream.update();
-                },
-                itens: form.obras,
-                titleBuilder: (e) => Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        e.descricao,
-                        style: AppCss.minimumBold.setSize(14),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: e.status.color.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: e.status.color.withValues(alpha: 0.2)),
-                      ),
-                      child: Text(
-                        e.status.label.toUpperCase(),
-                        style: AppCss.minimumBold.setSize(10).setColor(e.status.color),
-                      ),
-                    ),
-                  ],
+          AppMultipleRegisters<ObraModel>(
+            icon: Icons.business_outlined,
+            title: 'Gerenciar Obras',
+            createPage: ObraCreatePage(endereco: form.endereco),
+            onEdit: (obraForm) async {
+              ObraModel? obra = await push(
+                context,
+                ObraCreatePage(obra: obraForm),
+              );
+              if (obra != null) {
+                final i =
+                    form.obras.map((e) => e.id).toList().indexOf(obraForm.id);
+                if (obra.id != 'delete') {
+                  form.obras[i] = obra;
+                } else {
+                  form.obras.removeAt(i);
+                }
+              }
+              clienteCtrl.formStream.update();
+            },
+            onAdd: (e) {
+              form.obras.add(e);
+              clienteCtrl.formStream.update();
+            },
+            itens: form.obras,
+            titleBuilder: (e) => Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    e.descricao,
+                    style: AppCss.minimumBold.setSize(14),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: e.status.color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                        color: e.status.color.withValues(alpha: 0.2)),
+                  ),
+                  child: Text(
+                    e.status.label.toUpperCase(),
+                    style:
+                        AppCss.minimumBold.setSize(10).setColor(e.status.color),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

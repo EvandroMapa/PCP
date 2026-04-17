@@ -43,9 +43,11 @@ class _ElementosTabState extends State<ElementosTab> {
   Future<void> _init() async {
     setState(() => _isLoading = true);
     try {
-       await elementoCtrl.onInit(widget.pedido.id).timeout(const Duration(seconds: 15));
+      await elementoCtrl
+          .onInit(widget.pedido.id)
+          .timeout(const Duration(seconds: 15));
     } catch (_) {
-       // Se deu timeout ou erro, garante que o loader desaparece.
+      // Se deu timeout ou erro, garante que o loader desaparece.
     }
     if (mounted) {
       setState(() => _isLoading = false);
@@ -66,7 +68,7 @@ class _ElementosTabState extends State<ElementosTab> {
             StreamOut<String>(
               stream: elementoCtrl.loadingMessageStream.listen,
               builder: (_, msg) => Text(
-                msg, 
+                msg,
                 style: AppCss.mediumRegular,
                 textAlign: TextAlign.center,
               ),
@@ -97,7 +99,8 @@ class _ElementosTabState extends State<ElementosTab> {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      if (usuarioCtrl.usuario?.podeEditarElementos ?? false) ...[
+                      if (usuarioCtrl.usuario?.podeEditarElementos ??
+                          false) ...[
                         // ── Importar CSV ──
                         _ActionButton(
                           icon: Icons.table_chart_outlined,
@@ -109,14 +112,16 @@ class _ElementosTabState extends State<ElementosTab> {
                               type: FileType.custom,
                               allowedExtensions: ['csv'],
                             );
-                            if (result != null && result.files.single.bytes != null) {
+                            if (result != null &&
+                                result.files.single.bytes != null) {
                               if (!context.mounted) return;
 
                               // 1. Verificar se já existem elementos e perguntar o que fazer (Mover do controller para cá para não travar)
                               bool clearExisting = false;
                               if (elementoCtrl.elementos.isNotEmpty) {
                                 final canClearAll = elementoCtrl.elementos
-                                    .every((e) => e.status == ElementoStatus.aguardando);
+                                    .every((e) =>
+                                        e.status == ElementoStatus.aguardando);
 
                                 final String? choice = await showDialog<String>(
                                   context: context,
@@ -128,25 +133,33 @@ class _ElementosTabState extends State<ElementosTab> {
                                         : 'Já existem elementos cadastrados neste pedido. Como alguns já estão em produção, você apenas pode acrescentar os novos.'),
                                     actions: [
                                       TextButton(
-                                        onPressed: () => Navigator.pop(context, 'cancel'),
-                                        child: const Text('CANCELAR', style: TextStyle(color: Colors.grey)),
+                                        onPressed: () =>
+                                            Navigator.pop(context, 'cancel'),
+                                        child: const Text('CANCELAR',
+                                            style:
+                                                TextStyle(color: Colors.grey)),
                                       ),
                                       TextButton(
-                                        onPressed: () => Navigator.pop(context, 'append'),
+                                        onPressed: () =>
+                                            Navigator.pop(context, 'append'),
                                         child: const Text('ACRESCENTAR NOVOS'),
                                       ),
                                       if (canClearAll)
                                         ElevatedButton(
                                           style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.red, foregroundColor: Colors.white),
-                                          onPressed: () => Navigator.pop(context, 'clear'),
-                                          child: const Text('APAGAR TUDO E IMPORTAR'),
+                                              backgroundColor: Colors.red,
+                                              foregroundColor: Colors.white),
+                                          onPressed: () =>
+                                              Navigator.pop(context, 'clear'),
+                                          child: const Text(
+                                              'APAGAR TUDO E IMPORTAR'),
                                         ),
                                     ],
                                   ),
                                 );
 
-                                if (choice == null || choice == 'cancel') return;
+                                if (choice == null || choice == 'cancel')
+                                  return;
                                 clearExisting = (choice == 'clear');
                               }
 
@@ -155,122 +168,190 @@ class _ElementosTabState extends State<ElementosTab> {
                               elementoCtrl.importProgressStream.add(
                                 ImportProgress(status: 'Lendo dados do CSV...'),
                               );
-                              await Future.delayed(const Duration(milliseconds: 100));
+                              await Future.delayed(
+                                  const Duration(milliseconds: 100));
                               final res = await elementoCtrl.onImportCSV(
-                                  result.files.single.bytes!, widget.pedido, clearExisting);
+                                  result.files.single.bytes!,
+                                  widget.pedido,
+                                  clearExisting);
 
-                              if (context.mounted) Navigator.pop(context); // Fecha progresso
+                              if (context.mounted)
+                                Navigator.pop(context); // Fecha progresso
 
                               if (!res['success'] && context.mounted) {
                                 // Se for apenas cancelamento, não precisa mostrar erro
-                                if (res['error'] == 'Operação cancelada.') return;
+                                if (res['error'] == 'Operação cancelada.')
+                                  return;
 
                                 showDialog(
                                   context: context,
                                   builder: (_) => AlertDialog(
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                                      titlePadding: EdgeInsets.zero,
-                                      contentPadding: const EdgeInsets.all(24),
-                                      content: SizedBox(
-                                        width: 550,
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            // Header
-                                            Row(
-                                              children: [
-                                                Container(
-                                                  padding: const EdgeInsets.all(12),
-                                                  decoration: BoxDecoration(
-                                                    color: AppColors.secondary.withValues(alpha: 0.1),
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                  child: Icon(Icons.info_outline_rounded, color: AppColors.secondary, size: 28),
-                                                ),
-                                                const SizedBox(width: 16),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Text('Ajuste na Planilha', style: AppCss.largeBold),
-                                                      Text('O formato do CSV precisa de correção', style: AppCss.mediumRegular.copyWith(color: Colors.grey[600])),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 24),
-                                            // Mensagem de Erro Formatada
-                                            Container(
-                                              padding: const EdgeInsets.all(16),
-                                              decoration: BoxDecoration(
-                                                color: Colors.amber.shade50.withValues(alpha: 0.5),
-                                                borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(color: Colors.amber.shade200, width: 1),
-                                              ),
-                                              child: Text(
-                                                res['error'].replaceAll('Erro: ', ''),
-                                                style: AppCss.mediumRegular.copyWith(color: Colors.grey[800], height: 1.5),
-                                              ),
-                                            ),
-                                            // Texto Bruto Lido
-                                            if (res['rawText'] != null && res['rawText'].toString().trim().isNotEmpty) ...[
-                                              const SizedBox(height: 24),
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                children: [
-                                                  Text('O que o sistema leu do seu arquivo:', style: AppCss.mediumBold.copyWith(color: Colors.grey[800])),
-                                                  TextButton.icon(
-                                                    onPressed: () {
-                                                      Clipboard.setData(ClipboardData(text: res['rawText']));
-                                                      NotificationService.showPositive('Copiado', 'Texto copiado para a área de transferência');
-                                                    },
-                                                    icon: const Icon(Icons.copy, size: 16),
-                                                    label: const Text('Copiar Leitura'),
-                                                    style: TextButton.styleFrom(foregroundColor: AppColors.secondary),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 8),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(16)),
+                                    titlePadding: EdgeInsets.zero,
+                                    contentPadding: const EdgeInsets.all(24),
+                                    content: SizedBox(
+                                      width: 550,
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          // Header
+                                          Row(
+                                            children: [
                                               Container(
-                                                width: double.infinity,
-                                                constraints: const BoxConstraints(maxHeight: 150),
-                                                padding: const EdgeInsets.all(12),
+                                                padding:
+                                                    const EdgeInsets.all(12),
                                                 decoration: BoxDecoration(
-                                                  color: Colors.grey.shade100,
-                                                  borderRadius: BorderRadius.circular(8),
-                                                  border: Border.all(color: Colors.grey.shade300),
+                                                  color: AppColors.secondary
+                                                      .withValues(alpha: 0.1),
+                                                  shape: BoxShape.circle,
                                                 ),
-                                                child: SingleChildScrollView(
-                                                  child: Text(
-                                                    res['rawText'],
-                                                    style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: Colors.black87),
-                                                  ),
+                                                child: Icon(
+                                                    Icons.info_outline_rounded,
+                                                    color: AppColors.secondary,
+                                                    size: 28),
+                                              ),
+                                              const SizedBox(width: 16),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text('Ajuste na Planilha',
+                                                        style:
+                                                            AppCss.largeBold),
+                                                    Text(
+                                                        'O formato do CSV precisa de correção',
+                                                        style: AppCss
+                                                            .mediumRegular
+                                                            .copyWith(
+                                                                color:
+                                                                    Colors.grey[
+                                                                        600])),
+                                                  ],
                                                 ),
                                               ),
                                             ],
+                                          ),
+                                          const SizedBox(height: 24),
+                                          // Mensagem de Erro Formatada
+                                          Container(
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              color: Colors.amber.shade50
+                                                  .withValues(alpha: 0.5),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                  color: Colors.amber.shade200,
+                                                  width: 1),
+                                            ),
+                                            child: Text(
+                                              res['error']
+                                                  .replaceAll('Erro: ', ''),
+                                              style: AppCss.mediumRegular
+                                                  .copyWith(
+                                                      color: Colors.grey[800],
+                                                      height: 1.5),
+                                            ),
+                                          ),
+                                          // Texto Bruto Lido
+                                          if (res['rawText'] != null &&
+                                              res['rawText']
+                                                  .toString()
+                                                  .trim()
+                                                  .isNotEmpty) ...[
+                                            const SizedBox(height: 24),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                    'O que o sistema leu do seu arquivo:',
+                                                    style: AppCss.mediumBold
+                                                        .copyWith(
+                                                            color: Colors
+                                                                .grey[800])),
+                                                TextButton.icon(
+                                                  onPressed: () {
+                                                    Clipboard.setData(
+                                                        ClipboardData(
+                                                            text: res[
+                                                                'rawText']));
+                                                    NotificationService
+                                                        .showPositive('Copiado',
+                                                            'Texto copiado para a área de transferência');
+                                                  },
+                                                  icon: const Icon(Icons.copy,
+                                                      size: 16),
+                                                  label: const Text(
+                                                      'Copiar Leitura'),
+                                                  style: TextButton.styleFrom(
+                                                      foregroundColor:
+                                                          AppColors.secondary),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Container(
+                                              width: double.infinity,
+                                              constraints: const BoxConstraints(
+                                                  maxHeight: 150),
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                color: Colors.grey.shade100,
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                border: Border.all(
+                                                    color:
+                                                        Colors.grey.shade300),
+                                              ),
+                                              child: SingleChildScrollView(
+                                                child: Text(
+                                                  res['rawText'],
+                                                  style: const TextStyle(
+                                                      fontFamily: 'monospace',
+                                                      fontSize: 11,
+                                                      color: Colors.black87),
+                                                ),
+                                              ),
+                                            ),
                                           ],
+                                        ],
+                                      ),
+                                    ),
+                                    actionsPadding: const EdgeInsets.fromLTRB(
+                                        24, 0, 24, 24),
+                                    actions: [
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor:
+                                                AppColors.secondary,
+                                            foregroundColor: Colors.white,
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 16),
+                                            shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8)),
+                                            elevation: 0,
+                                          ),
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: const Text(
+                                              'ENTENDI, VOU ARRUMAR A PLANILHA',
+                                              style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  letterSpacing: 0.5)),
                                         ),
                                       ),
-                                      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                                      actions: [
-                                        SizedBox(
-                                          width: double.infinity,
-                                          child: ElevatedButton(
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: AppColors.secondary,
-                                              foregroundColor: Colors.white,
-                                              padding: const EdgeInsets.symmetric(vertical: 16),
-                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                              elevation: 0,
-                                            ),
-                                            onPressed: () => Navigator.pop(context),
-                                            child: const Text('ENTENDI, VOU ARRUMAR A PLANILHA', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                    ],
+                                  ),
                                 );
                               }
                             }
@@ -280,16 +361,19 @@ class _ElementosTabState extends State<ElementosTab> {
                         StreamOut<List<ElementoModel>>(
                           stream: elementoCtrl.elementosStream.listen,
                           builder: (_, elementos) {
-                            if (elementos.isEmpty) return const SizedBox.shrink();
+                            if (elementos.isEmpty)
+                              return const SizedBox.shrink();
                             return _ActionButton(
                               icon: Icons.delete_sweep_rounded,
                               label: 'Limpar',
                               color: AppColors.error,
                               variant: _ButtonVariant.outlined,
                               onTap: () async {
-                                final hasInProduction = elementos.any((e) => e.status != ElementoStatus.aguardando);
+                                final hasInProduction = elementos.any((e) =>
+                                    e.status != ElementoStatus.aguardando);
                                 if (hasInProduction) {
-                                  showInfoDialog('Não é possível limpar a lista porque existem elementos que já estão em produção ou concluídos. Exclua individualmente os itens aguardando.');
+                                  showInfoDialog(
+                                      'Não é possível limpar a lista porque existem elementos que já estão em produção ou concluídos. Exclua individualmente os itens aguardando.');
                                   return;
                                 }
 
@@ -297,7 +381,8 @@ class _ElementosTabState extends State<ElementosTab> {
                                   'Apagar TODOS os elementos?',
                                   'Esta ação não pode ser desfeita. Deseja continuar?',
                                 )) {
-                                  await elementoCtrl.onDeleteAllElementos(widget.pedido.id);
+                                  await elementoCtrl
+                                      .onDeleteAllElementos(widget.pedido.id);
                                 }
                               },
                             );
@@ -321,7 +406,9 @@ class _ElementosTabState extends State<ElementosTab> {
                             ? Icons.check_circle_rounded
                             : Icons.warning_rounded,
                         label: 'Comparativo',
-                        color: validacao.isOk ? AppColors.success : AppColors.error,
+                        color: validacao.isOk
+                            ? AppColors.success
+                            : AppColors.error,
                         variant: _ButtonVariant.outlined,
                         onTap: () => showElementoComparativoDialog(
                           context,
@@ -335,8 +422,7 @@ class _ElementosTabState extends State<ElementosTab> {
             ),
 
             // ── Barra de Resumo de Status ──────────────────────────────────
-            if (elementos.isNotEmpty)
-              _buildStatusSummaryBar(elementos),
+            if (elementos.isNotEmpty) _buildStatusSummaryBar(elementos),
             // ── Lista de elementos ────────────────────────────────────────
             if (elementos.isEmpty)
               Expanded(
@@ -365,15 +451,18 @@ class _ElementosTabState extends State<ElementosTab> {
                     final filtrados = elementos.where((e) {
                       // Elemento com progresso parcial tem peças em armando E pronto
                       if (e.isProntoParcial) {
-                        return (_statusVisivel[ElementoStatus.armando] ?? true) ||
-                               (_statusVisivel[ElementoStatus.pronto] ?? true);
+                        return (_statusVisivel[ElementoStatus.armando] ??
+                                true) ||
+                            (_statusVisivel[ElementoStatus.pronto] ?? true);
                       }
                       return _statusVisivel[e.status] ?? true;
                     }).toList();
                     if (filtrados.isEmpty) {
                       return Center(
-                        child: Text('Nenhum elemento visível com os filtros ativos',
-                            style: AppCss.mediumRegular.copyWith(color: Colors.grey[500])),
+                        child: Text(
+                            'Nenhum elemento visível com os filtros ativos',
+                            style: AppCss.mediumRegular
+                                .copyWith(color: Colors.grey[500])),
                       );
                     }
                     return ListView.builder(
@@ -417,22 +506,32 @@ class _ElementosTabState extends State<ElementosTab> {
       totalPeso += e.pesoTotal;
 
       if (e.status == ElementoStatus.aguardando) {
-        qtdPorStatus[ElementoStatus.aguardando] = (qtdPorStatus[ElementoStatus.aguardando] ?? 0) + e.qtde;
-        pesoPorStatus[ElementoStatus.aguardando] = (pesoPorStatus[ElementoStatus.aguardando] ?? 0) + e.pesoTotal;
+        qtdPorStatus[ElementoStatus.aguardando] =
+            (qtdPorStatus[ElementoStatus.aguardando] ?? 0) + e.qtde;
+        pesoPorStatus[ElementoStatus.aguardando] =
+            (pesoPorStatus[ElementoStatus.aguardando] ?? 0) + e.pesoTotal;
       } else if (e.status == ElementoStatus.pronto) {
-        qtdPorStatus[ElementoStatus.pronto] = (qtdPorStatus[ElementoStatus.pronto] ?? 0) + e.qtde;
-        pesoPorStatus[ElementoStatus.pronto] = (pesoPorStatus[ElementoStatus.pronto] ?? 0) + e.pesoTotal;
+        qtdPorStatus[ElementoStatus.pronto] =
+            (qtdPorStatus[ElementoStatus.pronto] ?? 0) + e.qtde;
+        pesoPorStatus[ElementoStatus.pronto] =
+            (pesoPorStatus[ElementoStatus.pronto] ?? 0) + e.pesoTotal;
       } else {
         // armando — cálculo proporcional baseado no qtdePronto
         final qtdeProntoFrac = e.qtdePronto.toDouble();
         final qtdeArmandoFrac = (e.qtde - e.qtdePronto).toDouble();
         final pesoPorUnidade = e.qtde > 0 ? e.pesoTotal / e.qtde : 0.0;
 
-        qtdPorStatus[ElementoStatus.pronto] = (qtdPorStatus[ElementoStatus.pronto] ?? 0) + qtdeProntoFrac;
-        pesoPorStatus[ElementoStatus.pronto] = (pesoPorStatus[ElementoStatus.pronto] ?? 0) + (qtdeProntoFrac * pesoPorUnidade);
+        qtdPorStatus[ElementoStatus.pronto] =
+            (qtdPorStatus[ElementoStatus.pronto] ?? 0) + qtdeProntoFrac;
+        pesoPorStatus[ElementoStatus.pronto] =
+            (pesoPorStatus[ElementoStatus.pronto] ?? 0) +
+                (qtdeProntoFrac * pesoPorUnidade);
 
-        qtdPorStatus[ElementoStatus.armando] = (qtdPorStatus[ElementoStatus.armando] ?? 0) + qtdeArmandoFrac;
-        pesoPorStatus[ElementoStatus.armando] = (pesoPorStatus[ElementoStatus.armando] ?? 0) + (qtdeArmandoFrac * pesoPorUnidade);
+        qtdPorStatus[ElementoStatus.armando] =
+            (qtdPorStatus[ElementoStatus.armando] ?? 0) + qtdeArmandoFrac;
+        pesoPorStatus[ElementoStatus.armando] =
+            (pesoPorStatus[ElementoStatus.armando] ?? 0) +
+                (qtdeArmandoFrac * pesoPorUnidade);
       }
     }
 
@@ -463,17 +562,24 @@ class _ElementosTabState extends State<ElementosTab> {
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
-                        color: (_statusVisivel[status] ?? true) ? status.color : Colors.grey[400],
+                        color: (_statusVisivel[status] ?? true)
+                            ? status.color
+                            : Colors.grey[400],
                         letterSpacing: 1,
                       ),
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => setState(() => _statusVisivel[status] = !(_statusVisivel[status] ?? true)),
+                    onTap: () => setState(() => _statusVisivel[status] =
+                        !(_statusVisivel[status] ?? true)),
                     child: Icon(
-                      (_statusVisivel[status] ?? true) ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                      (_statusVisivel[status] ?? true)
+                          ? Icons.visibility_rounded
+                          : Icons.visibility_off_rounded,
                       size: 14,
-                      color: (_statusVisivel[status] ?? true) ? status.color : Colors.grey[400],
+                      color: (_statusVisivel[status] ?? true)
+                          ? status.color
+                          : Colors.grey[400],
                     ),
                   ),
                 ],
@@ -485,9 +591,16 @@ class _ElementosTabState extends State<ElementosTab> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('ELEMENTOS', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w600, color: Colors.grey[500])),
+                        Text('ELEMENTOS',
+                            style: TextStyle(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[500])),
                         const SizedBox(height: 2),
-                        Text('${qtd % 1 == 0 ? qtd.toInt() : qtd.toStringAsFixed(1)} (${pctQtd.toStringAsFixed(0)}%)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        Text(
+                            '${qtd % 1 == 0 ? qtd.toInt() : qtd.toStringAsFixed(1)} (${pctQtd.toStringAsFixed(0)}%)',
+                            style: const TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.w700)),
                       ],
                     ),
                   ),
@@ -495,9 +608,15 @@ class _ElementosTabState extends State<ElementosTab> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text('PESO (KG)', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w600, color: Colors.grey[500])),
+                        Text('PESO (KG)',
+                            style: TextStyle(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[500])),
                         const SizedBox(height: 2),
-                        Text('${_fmt(peso)} (${pctPeso.toStringAsFixed(0)}%)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                        Text('${_fmt(peso)} (${pctPeso.toStringAsFixed(0)}%)',
+                            style: const TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.w700)),
                       ],
                     ),
                   ),
@@ -570,7 +689,7 @@ class _ElementosTabState extends State<ElementosTab> {
                   const SizedBox(height: 20),
                   Text(
                     p?.status ?? 'Iniciando importação...',
-                    style: isCancelling 
+                    style: isCancelling
                         ? AppCss.mediumBold.copyWith(color: Colors.red)
                         : AppCss.mediumBold,
                     textAlign: TextAlign.center,
@@ -582,7 +701,8 @@ class _ElementosTabState extends State<ElementosTab> {
                       child: LinearProgressIndicator(
                         value: p.percent,
                         minHeight: 8,
-                        backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
+                        backgroundColor:
+                            AppColors.secondary.withValues(alpha: 0.1),
                         valueColor:
                             AlwaysStoppedAnimation<Color>(AppColors.secondary),
                       ),
@@ -601,9 +721,11 @@ class _ElementosTabState extends State<ElementosTab> {
               SizedBox(
                 width: double.infinity,
                 child: TextButton(
-                  onPressed: isCancelling ? null : () {
-                    elementoCtrl.cancelImport();
-                  },
+                  onPressed: isCancelling
+                      ? null
+                      : () {
+                          elementoCtrl.cancelImport();
+                        },
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.red,
                     padding: const EdgeInsets.symmetric(vertical: 12),
@@ -669,7 +791,8 @@ class _ElementoTileState extends State<_ElementoTile> {
                   // Indicador lateral colorido pelo status
                   Container(
                     width: 4,
-                    color: el.status.color.withValues(alpha: _expanded ? 1.0 : 0.6),
+                    color: el.status.color
+                        .withValues(alpha: _expanded ? 1.0 : 0.6),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -680,13 +803,16 @@ class _ElementoTileState extends State<_ElementoTile> {
                         children: [
                           Row(
                             children: [
-                              Text(el.nome, style: AppCss.mediumBold.setSize(16)),
+                              Text(el.nome,
+                                  style: AppCss.mediumBold.setSize(16)),
                               if (el.qtde > 1)
                                 Container(
                                   margin: const EdgeInsets.only(left: 8),
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primaryMain.withValues(alpha: 0.1),
+                                    color: AppColors.primaryMain
+                                        .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(4),
                                   ),
                                   child: Text('x${el.qtde}',
@@ -697,11 +823,16 @@ class _ElementoTileState extends State<_ElementoTile> {
                               // Badge de status
                               Container(
                                 margin: const EdgeInsets.only(left: 8),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: el.status.color.withValues(alpha: 0.15),
+                                  color:
+                                      el.status.color.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: el.status.color.withValues(alpha: 0.4), width: 0.5),
+                                  border: Border.all(
+                                      color: el.status.color
+                                          .withValues(alpha: 0.4),
+                                      width: 0.5),
                                 ),
                                 child: Text(
                                   el.status.label,
@@ -751,27 +882,35 @@ class _ElementoTileState extends State<_ElementoTile> {
                       IconButton(
                         onPressed: () => _showArquivosDialog(context, el),
                         tooltip: 'Anexos (${el.arquivos.length})',
-                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                        constraints:
+                            const BoxConstraints(minWidth: 32, minHeight: 32),
                         padding: EdgeInsets.zero,
                         splashRadius: 18,
                         icon: Icon(
-                          el.arquivos.isEmpty ? Icons.attach_file_rounded : Icons.attachment_rounded,
-                          color: el.arquivos.isEmpty ? Colors.grey[400] : AppColors.secondary,
+                          el.arquivos.isEmpty
+                              ? Icons.attach_file_rounded
+                              : Icons.attachment_rounded,
+                          color: el.arquivos.isEmpty
+                              ? Colors.grey[400]
+                              : AppColors.secondary,
                           size: 18,
                         ),
                       ),
                       const SizedBox(width: 2),
                       // Ações
-                      if (usuarioCtrl.usuario?.podeEditarElementos ?? false) ...[
+                      if (usuarioCtrl.usuario?.podeEditarElementos ??
+                          false) ...[
                         // Botão Editar
                         IconButton(
                           onPressed: () => showElementoFormDialog(context,
                               pedido: widget.pedido, elemento: el),
                           tooltip: 'Editar',
-                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          constraints:
+                              const BoxConstraints(minWidth: 32, minHeight: 32),
                           padding: EdgeInsets.zero,
                           splashRadius: 18,
-                          icon: Icon(Icons.edit_rounded, color: Colors.grey[600], size: 18),
+                          icon: Icon(Icons.edit_rounded,
+                              color: Colors.grey[600], size: 18),
                         ),
                         const SizedBox(width: 2),
                         // Botão Excluir
@@ -779,16 +918,17 @@ class _ElementoTileState extends State<_ElementoTile> {
                           onPressed: el.status == ElementoStatus.aguardando
                               ? () => elementoCtrl.onDeleteElemento(el)
                               : null,
-                          tooltip: el.status == ElementoStatus.aguardando 
-                              ? 'Excluir' 
+                          tooltip: el.status == ElementoStatus.aguardando
+                              ? 'Excluir'
                               : 'Não é possível excluir elementos em produção',
-                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          constraints:
+                              const BoxConstraints(minWidth: 32, minHeight: 32),
                           padding: EdgeInsets.zero,
                           splashRadius: 18,
                           icon: Icon(
                             Icons.delete_outline_rounded,
-                            color: el.status == ElementoStatus.aguardando 
-                                ? Colors.red[400] 
+                            color: el.status == ElementoStatus.aguardando
+                                ? Colors.red[400]
                                 : Colors.grey[300],
                             size: 18,
                           ),
@@ -825,8 +965,9 @@ class _ElementoTileState extends State<_ElementoTile> {
                   Text(
                     '${el.qtdePronto} / ${el.qtde} PÇ PRONTAS',
                     style: AppCss.minimumBold.setSize(10).setColor(
-                      el.progressoPronto > 0.5 ? Colors.white : Colors.green[900]!
-                    ),
+                        el.progressoPronto > 0.5
+                            ? Colors.white
+                            : Colors.green[900]!),
                   ),
                 ],
               ),
@@ -858,12 +999,13 @@ class _ElementoTileState extends State<_ElementoTile> {
                           children: [
                             Expanded(
                                 flex: 2,
-                                child: Text(p.nome,
-                                    style: AppCss.minimumRegular)),
+                                child:
+                                    Text(p.nome, style: AppCss.minimumRegular)),
                             Expanded(
                                 flex: 2,
                                 child: Text(p.numeroOs,
-                                    style: AppCss.minimumRegular.copyWith(color: Colors.grey[600]))),
+                                    style: AppCss.minimumRegular
+                                        .copyWith(color: Colors.grey[600]))),
                             Expanded(
                               flex: 3,
                               child: Text(
@@ -911,17 +1053,18 @@ class _ElementoTileState extends State<_ElementoTile> {
                 ],
               ),
             ),
-          ],
-        ),
-      );
-    }
+        ],
+      ),
+    );
+  }
 
   Widget _colHead(String label, int flex, {bool isEnd = false}) {
     return Expanded(
       flex: flex,
       child: Text(
         label,
-        style: AppCss.minimumBold.copyWith(color: Colors.grey[400], fontSize: 11),
+        style:
+            AppCss.minimumBold.copyWith(color: Colors.grey[400], fontSize: 11),
         textAlign: isEnd ? TextAlign.end : TextAlign.start,
       ),
     );
@@ -930,7 +1073,8 @@ class _ElementoTileState extends State<_ElementoTile> {
   void _showArquivosDialog(BuildContext context, ElementoModel elemento) {
     showDialog(
       context: context,
-      builder: (_) => _ElementoArquivosDialog(elemento: elemento, pedido: widget.pedido),
+      builder: (_) =>
+          _ElementoArquivosDialog(elemento: elemento, pedido: widget.pedido),
     );
   }
 }
@@ -942,12 +1086,13 @@ class _ElementoArquivosDialog extends StatefulWidget {
   const _ElementoArquivosDialog({required this.elemento, required this.pedido});
 
   @override
-  State<_ElementoArquivosDialog> createState() => _ElementoArquivosDialogState();
+  State<_ElementoArquivosDialog> createState() =>
+      _ElementoArquivosDialogState();
 }
 
 class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
   void _onUpload() async {
-     final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
     );
@@ -956,7 +1101,8 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
       final name = result.files.single.name;
       final bytes = result.files.single.bytes!;
       final extension = name.split('.').last.toLowerCase();
-      final mimeType = extension == 'pdf' ? 'application/pdf' : 'image/$extension';
+      final mimeType =
+          extension == 'pdf' ? 'application/pdf' : 'image/$extension';
       final isPdf = mimeType == 'application/pdf';
 
       // Para PDF: abre dialog com mensagem reativa do stream
@@ -967,7 +1113,8 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
           builder: (_) => StreamOut<String>(
             stream: elementoCtrl.loadingMessageStream.listen,
             builder: (_, msg) => AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
               content: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Column(
@@ -979,7 +1126,8 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
                         color: AppColors.secondary.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.picture_as_pdf_outlined, color: AppColors.secondary, size: 32),
+                      child: Icon(Icons.picture_as_pdf_outlined,
+                          color: AppColors.secondary, size: 32),
                     ),
                     const SizedBox(height: 20),
                     Text(
@@ -1031,9 +1179,12 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
                 padding: const EdgeInsets.symmetric(vertical: 40),
                 child: Column(
                   children: [
-                    Icon(Icons.file_present_rounded, size: 48, color: Colors.grey[200]),
+                    Icon(Icons.file_present_rounded,
+                        size: 48, color: Colors.grey[200]),
                     const SizedBox(height: 12),
-                    Text('Nenhum anexo encontrado', style: AppCss.mediumRegular.copyWith(color: Colors.grey[400])),
+                    Text('Nenhum anexo encontrado',
+                        style: AppCss.mediumRegular
+                            .copyWith(color: Colors.grey[400])),
                   ],
                 ),
               )
@@ -1046,24 +1197,31 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
                     final arq = elementoSync.arquivos[i];
                     return ListTile(
                       leading: Icon(
-                        arq.tipo.contains('image') ? Icons.image_outlined : Icons.picture_as_pdf_outlined,
+                        arq.tipo.contains('image')
+                            ? Icons.image_outlined
+                            : Icons.picture_as_pdf_outlined,
                         color: AppColors.secondary,
                       ),
                       title: Text(arq.nome, style: AppCss.minimumBold),
-                      subtitle: Text('${(arq.tamanho / 1024).toStringAsFixed(1)} KB · ${DateFormat('dd/MM/yy').format(arq.criadoEm)}'),
+                      subtitle: Text(
+                          '${(arq.tamanho / 1024).toStringAsFixed(1)} KB · ${DateFormat('dd/MM/yy').format(arq.criadoEm)}'),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.open_in_new_rounded, size: 20),
+                            icon:
+                                const Icon(Icons.open_in_new_rounded, size: 20),
                             onPressed: () => openInNewTab(arq.url),
                             tooltip: 'Abrir',
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                            icon: const Icon(Icons.delete_outline_rounded,
+                                color: Colors.red, size: 20),
                             onPressed: () async {
-                              if (await showConfirmDialog('Apagar anexo?', 'Deseja remover este arquivo permanentemente?')) {
-                                await elementoCtrl.onDeleteArquivo(arq, widget.pedido.id);
+                              if (await showConfirmDialog('Apagar anexo?',
+                                  'Deseja remover este arquivo permanentemente?')) {
+                                await elementoCtrl.onDeleteArquivo(
+                                    arq, widget.pedido.id);
                                 setState(() {});
                               }
                             },
@@ -1087,7 +1245,8 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
                 icon: const Icon(Icons.upload_file_rounded),
-                label: const Text('Adicionar Foto ou PDF', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text('Adicionar Foto ou PDF',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -1096,14 +1255,18 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
       actions: [
         if (elementoSync.arquivos.isNotEmpty)
           TextButton.icon(
-            icon: const Icon(Icons.delete_sweep_rounded, color: Colors.red, size: 18),
-            label: const Text('Apagar Todos', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            icon: const Icon(Icons.delete_sweep_rounded,
+                color: Colors.red, size: 18),
+            label: const Text('Apagar Todos',
+                style:
+                    TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
             onPressed: () async {
               if (await showConfirmDialog(
                 'Apagar todos os anexos?',
                 'Deseja remover permanentemente todos os ${elementoSync.arquivos.length} arquivo(s) deste elemento?',
               )) {
-                await elementoCtrl.onDeleteAllArquivos(elementoSync, widget.pedido.id);
+                await elementoCtrl.onDeleteAllArquivos(
+                    elementoSync, widget.pedido.id);
                 setState(() {});
               }
             },

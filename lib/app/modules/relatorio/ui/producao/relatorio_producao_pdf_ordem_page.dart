@@ -16,17 +16,20 @@ class RelatorioOrdemPdfOrdemPage {
   RelatorioOrdemPdfOrdemPage(this.model, this.tipo);
 
   pw.Page build(Uint8List bytes) => pw.MultiPage(
-    pageFormat: PdfPageFormat.a4,
-    margin: const pw.EdgeInsets.all(9),
-    crossAxisAlignment: pw.CrossAxisAlignment.center,
-    build: (pw.Context context) => [
-      // pw.Image(pw.MemoryImage(bytes), width: 60, height: 60),
-      // pw.SizedBox(height: 24),
-      pw.Text('RELATÓRIO DE ORDEM DE PRODUÇÃO ${model.ordem.localizator}', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),),
-      pw.SizedBox(height: 16),
-      _itemRelatorio(model.ordem),
-    ],
-  );
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(9),
+        crossAxisAlignment: pw.CrossAxisAlignment.center,
+        build: (pw.Context context) => [
+          // pw.Image(pw.MemoryImage(bytes), width: 60, height: 60),
+          // pw.SizedBox(height: 24),
+          pw.Text(
+            'RELATÓRIO DE ORDEM DE PRODUÇÃO ${model.ordem.localizator}',
+            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 16),
+          _itemRelatorio(model.ordem),
+        ],
+      );
 
   pw.Widget _itemRelatorio(OrdemModel ordem) {
     return pw.Container(

@@ -22,14 +22,14 @@ class TagModel {
   });
 
   factory TagModel.empty() => TagModel(
-    id: '',
-    nome: '',
-    descricao: '',
-    color: Colors.transparent,
-    createdAt: DateTime.now(),
-    isDefaultCD: false,
-    isDefaultCDA: false,
-  );
+        id: '',
+        nome: '',
+        descricao: '',
+        color: Colors.transparent,
+        createdAt: DateTime.now(),
+        isDefaultCD: false,
+        isDefaultCDA: false,
+      );
 
   Map<String, dynamic> toSupabaseMap() {
     return {

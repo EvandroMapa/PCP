@@ -15,8 +15,7 @@ Future<void> showElementoFormDialog(
 }) {
   return showDialog(
     context: context,
-    builder: (_) =>
-        ElementoFormDialog(pedido: pedido, elemento: elemento),
+    builder: (_) => ElementoFormDialog(pedido: pedido, elemento: elemento),
   );
 }
 
@@ -24,8 +23,7 @@ class ElementoFormDialog extends StatefulWidget {
   final PedidoModel pedido;
   final ElementoModel? elemento;
 
-  const ElementoFormDialog(
-      {required this.pedido, this.elemento, super.key});
+  const ElementoFormDialog({required this.pedido, this.elemento, super.key});
 
   @override
   State<ElementoFormDialog> createState() => _ElementoFormDialogState();
@@ -36,10 +34,7 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
 
   // Produtos disponíveis no pedido = bitolas
   List<ProdutoModel> get _bitolas {
-    final ids = widget.pedido
-        .getProdutos()
-        .map((pp) => pp.produto.id)
-        .toSet();
+    final ids = widget.pedido.getProdutos().map((pp) => pp.produto.id).toSet();
     return FirestoreClient.produtos.data
         .where((p) => ids.contains(p.id))
         .toList();
@@ -65,21 +60,16 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
   void _addPosicao() =>
       setState(() => _form.posicoes.add(ElementoPosicaoCreateModel()));
 
-  void _removePosicao(int i) =>
-      setState(() => _form.posicoes.removeAt(i));
+  void _removePosicao(int i) => setState(() => _form.posicoes.removeAt(i));
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: Colors.white,
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      titlePadding:
-          const EdgeInsets.fromLTRB(24, 24, 24, 0),
-      contentPadding:
-          const EdgeInsets.fromLTRB(24, 16, 24, 0),
-      actionsPadding:
-          const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+      contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       title: Row(
         children: [
           Container(
@@ -87,7 +77,8 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
             decoration: BoxDecoration(
               color: AppColors.primaryMain.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primaryMain.withValues(alpha: 0.1)),
+              border: Border.all(
+                  color: AppColors.primaryMain.withValues(alpha: 0.1)),
             ),
             child: Icon(Icons.layers_rounded,
                 color: AppColors.primaryMain, size: 24),
@@ -165,7 +156,8 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
                         style: TextStyle(fontWeight: FontWeight.bold)),
                     style: TextButton.styleFrom(
                         foregroundColor: AppColors.secondary,
-                        backgroundColor: AppColors.secondary.withValues(alpha: 0.05),
+                        backgroundColor:
+                            AppColors.secondary.withValues(alpha: 0.05),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 8),
                         shape: RoundedRectangleBorder(
@@ -206,7 +198,6 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
                         flex: 3,
                         child: TextFormField(
                           controller: pos.nome.controller,
-
                           decoration: _inputDecor('Ex: Pilar P1'),
                           onChanged: (_) => setState(() {}),
                         ),
@@ -217,7 +208,6 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
                         flex: 2,
                         child: TextFormField(
                           controller: pos.numeroOs.controller,
-
                           decoration: _inputDecor('OS 1'),
                           onChanged: (_) => setState(() {}),
                         ),
@@ -236,13 +226,11 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
                               .map((p) => DropdownMenuItem(
                                     value: p,
                                     child: Text(p.labelMinified,
-                                        style: const TextStyle(
-                                            fontSize: 13),
+                                        style: const TextStyle(fontSize: 13),
                                         overflow: TextOverflow.ellipsis),
                                   ))
                               .toList(),
-                          onChanged: (p) =>
-                              setState(() => pos.produto = p),
+                          onChanged: (p) => setState(() => pos.produto = p),
                         ),
                       ),
                       const SizedBox(width: 6),
@@ -251,9 +239,9 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
                         flex: 2,
                         child: TextFormField(
                           controller: pos.pesoKg.controller,
-
                           decoration: _inputDecor('0.000'),
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
                           inputFormatters: [
                             FilteringTextInputFormatter.allow(
                                 RegExp(r'[\d,\.]'))
@@ -291,11 +279,11 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Total do Elemento:',
-                        style: AppCss.mediumBold.setColor(AppColors.primaryMain)),
+                        style:
+                            AppCss.mediumBold.setColor(AppColors.primaryMain)),
                     Text(
                       '${_form.pesoTotal.toStringAsFixed(3)} kg',
-                      style: AppCss.largeBold
-                          .setColor(AppColors.primaryMain),
+                      style: AppCss.largeBold.setColor(AppColors.primaryMain),
                     ),
                   ],
                 ),
@@ -310,8 +298,7 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
           onPressed: () => Navigator.pop(context),
           child: Text('Cancelar',
               style: TextStyle(
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w600)),
+                  color: Colors.grey[600], fontWeight: FontWeight.w600)),
         ),
         ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
@@ -321,16 +308,13 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
             disabledForegroundColor: Colors.grey[500],
             elevation: _form.isValid ? 2 : 0,
             shadowColor: AppColors.primaryMain.withValues(alpha: 0.3),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
           icon: const Icon(Icons.save_rounded, size: 18),
           label: Text(
-            widget.elemento == null
-                ? 'Criar Elemento'
-                : 'Salvar Alterações',
+            widget.elemento == null ? 'Criar Elemento' : 'Salvar Alterações',
             style: const TextStyle(
                 fontWeight: FontWeight.bold, color: Colors.white),
           ),
@@ -345,8 +329,8 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
       flex: flex,
       child: Text(
         label,
-        style: AppCss.smallRegular.copyWith(
-            color: Colors.grey[500], fontWeight: FontWeight.bold),
+        style: AppCss.smallRegular
+            .copyWith(color: Colors.grey[500], fontWeight: FontWeight.bold),
       ),
     );
   }

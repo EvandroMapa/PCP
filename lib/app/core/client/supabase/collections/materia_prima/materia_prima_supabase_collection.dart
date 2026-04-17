@@ -6,7 +6,8 @@ import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 
 class MateriaPrimaSupabaseCollection extends MateriaPrimaCollection {
-  static final MateriaPrimaSupabaseCollection _instance = MateriaPrimaSupabaseCollection._();
+  static final MateriaPrimaSupabaseCollection _instance =
+      MateriaPrimaSupabaseCollection._();
   MateriaPrimaSupabaseCollection._() : super.base() {
     dataStream = AppStream.seed([]);
   }
@@ -99,10 +100,10 @@ class MateriaPrimaSupabaseCollection extends MateriaPrimaCollection {
     _isListen = true;
     SupabaseService.client
         .from(name)
-        .stream(primaryKey: ['id'])
-        .listen((List<Map<String, dynamic>> data) {
-          final materiaPrimas = data.map((e) => MateriaPrimaModel.fromSupabaseMap(e)).toList();
-          dataStream.add(materiaPrimas);
-        });
+        .stream(primaryKey: ['id']).listen((List<Map<String, dynamic>> data) {
+      final materiaPrimas =
+          data.map((e) => MateriaPrimaModel.fromSupabaseMap(e)).toList();
+      dataStream.add(materiaPrimas);
+    });
   }
 }

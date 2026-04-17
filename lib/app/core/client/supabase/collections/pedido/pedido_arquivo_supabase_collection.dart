@@ -5,7 +5,8 @@ import 'package:aco_plus/app/core/services/supabase_service.dart';
 class PedidoArquivoSupabaseCollection {
   final String tableName = 'pedido_arquivos';
   final List<PedidoArquivoModel> data = [];
-  final AppStream<List<PedidoArquivoModel>> stream = AppStream<List<PedidoArquivoModel>>.seed([]);
+  final AppStream<List<PedidoArquivoModel>> stream =
+      AppStream<List<PedidoArquivoModel>>.seed([]);
 
   Future<void> start() async {
     await fetch();
@@ -17,7 +18,7 @@ class PedidoArquivoSupabaseCollection {
           .from(tableName)
           .select()
           .order('criado_em', ascending: false);
-      
+
       data.clear();
       data.addAll(response.map((e) => PedidoArquivoModel.fromMap(e)).toList());
       stream.add(data);
@@ -33,7 +34,7 @@ class PedidoArquivoSupabaseCollection {
           .insert(model.toSupabaseMap())
           .select()
           .single();
-      
+
       final newItem = PedidoArquivoModel.fromMap(response);
       data.add(newItem);
       stream.add(data);
@@ -55,13 +56,11 @@ class PedidoArquivoSupabaseCollection {
   }
 
   void listen() {
-    SupabaseService.client
-        .from(tableName)
-        .stream(primaryKey: ['id'])
-        .listen((List<Map<String, dynamic>> response) {
-          data.clear();
-          data.addAll(response.map((e) => PedidoArquivoModel.fromMap(e)).toList());
-          stream.add(data);
-        });
+    SupabaseService.client.from(tableName).stream(primaryKey: ['id']).listen(
+        (List<Map<String, dynamic>> response) {
+      data.clear();
+      data.addAll(response.map((e) => PedidoArquivoModel.fromMap(e)).toList());
+      stream.add(data);
+    });
   }
 }

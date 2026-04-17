@@ -24,7 +24,8 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
   int _selectedIndex = 0;
 
   static const _sections = [
-    _SidebarItem(icon: Icons.precision_manufacturing_outlined, label: 'Produção'),
+    _SidebarItem(
+        icon: Icons.precision_manufacturing_outlined, label: 'Produção'),
     _SidebarItem(icon: Icons.picture_as_pdf_outlined, label: 'Desenho Técnico'),
     _SidebarItem(icon: Icons.dashboard_customize_outlined, label: 'Interface'),
     _SidebarItem(icon: Icons.assignment_outlined, label: 'Apontamento CD'),
@@ -36,7 +37,8 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
   Widget build(BuildContext context) {
     return AppScaffold(
       appBar: AppBar(
-        title: const Text('Configurações Gerais', style: TextStyle(color: Colors.white)),
+        title: const Text('Configurações Gerais',
+            style: TextStyle(color: Colors.white)),
       ),
       body: Row(
         children: [
@@ -110,15 +112,14 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(10),
                 border: isSelected
-                    ? Border.all(color: AppColors.primaryMain.withValues(alpha: 0.20))
+                    ? Border.all(
+                        color: AppColors.primaryMain.withValues(alpha: 0.20))
                     : null,
               ),
               child: Icon(
                 section.icon,
                 size: 18,
-                color: isSelected
-                    ? AppColors.primaryMain
-                    : Colors.grey[400],
+                color: isSelected ? AppColors.primaryMain : Colors.grey[400],
               ),
             ),
           ),
@@ -194,7 +195,8 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                   _numericButton(
                     icon: Icons.remove,
                     onPressed: value > 1
-                        ? () => PreferencesService.maxElementosProducao.add(value - 1)
+                        ? () => PreferencesService.maxElementosProducao
+                            .add(value - 1)
                         : null,
                   ),
                   const SizedBox(width: 24),
@@ -205,18 +207,22 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                     decoration: BoxDecoration(
                       color: AppColors.secondary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.secondary.withValues(alpha: 0.3)),
+                      border: Border.all(
+                          color: AppColors.secondary.withValues(alpha: 0.3)),
                     ),
                     child: Text(
                       value.toString(),
-                      style: AppCss.largeBold.setSize(28).setColor(AppColors.secondary),
+                      style: AppCss.largeBold
+                          .setSize(28)
+                          .setColor(AppColors.secondary),
                     ),
                   ),
                   const SizedBox(width: 24),
                   _numericButton(
                     icon: Icons.add,
                     onPressed: value < 30
-                        ? () => PreferencesService.maxElementosProducao.add(value + 1)
+                        ? () => PreferencesService.maxElementosProducao
+                            .add(value + 1)
                         : null,
                   ),
                 ],
@@ -238,7 +244,8 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
         children: [
           Row(
             children: [
-              const Icon(Icons.picture_as_pdf_outlined, color: Colors.deepOrange),
+              const Icon(Icons.picture_as_pdf_outlined,
+                  color: Colors.deepOrange),
               const SizedBox(width: 12),
               const Text(
                 'Nível de Otimização de PDF',
@@ -262,7 +269,11 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                 children: [
                   Row(
                     children: [
-                      Text('0', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green[700])),
+                      Text('0',
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green[700])),
                       const SizedBox(width: 4),
                       const Text('HD', style: TextStyle(fontSize: 10)),
                       Expanded(
@@ -272,13 +283,21 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                           max: 10,
                           divisions: 10,
                           label: level.toString(),
-                          activeColor: level <= 3 ? Colors.green : (level <= 7 ? Colors.orange : Colors.red),
-                          onChanged: (value) => PreferencesService.pdfOptimizationLevel.add(value.round()),
+                          activeColor: level <= 3
+                              ? Colors.green
+                              : (level <= 7 ? Colors.orange : Colors.red),
+                          onChanged: (value) => PreferencesService
+                              .pdfOptimizationLevel
+                              .add(value.round()),
                         ),
                       ),
                       const Text('Leve', style: TextStyle(fontSize: 10)),
                       const SizedBox(width: 4),
-                      Text('10', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.red[700])),
+                      Text('10',
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red[700])),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -286,14 +305,16 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.deepOrange.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           'NÍVEL: $level  ·  ESCALA: ${scale.toStringAsFixed(1)}x  ·  JPEG: $quality%',
-                          style: AppCss.smallBold.setColor(Colors.deepOrange[800]!),
+                          style: AppCss.smallBold
+                              .setColor(Colors.deepOrange[800]!),
                         ),
                       ),
                     ],
@@ -317,7 +338,8 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
         children: [
           Row(
             children: [
-              const Icon(Icons.dashboard_customize_outlined, color: Colors.blue),
+              const Icon(Icons.dashboard_customize_outlined,
+                  color: Colors.blue),
               const SizedBox(width: 12),
               const Text(
                 'Largura das Colunas do Kanban',
@@ -346,14 +368,16 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                           max: 600,
                           divisions: 40,
                           label: '${width.round()} px',
-                          onChanged: (value) => PreferencesService.kanbanColumnWidth.add(value),
+                          onChanged: (value) =>
+                              PreferencesService.kanbanColumnWidth.add(value),
                         ),
                       ),
                       const Text('600px', style: TextStyle(fontSize: 12)),
                     ],
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.blue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -397,7 +421,8 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                 children: [
                   _apontamentoOption(
                     title: 'Por Pedido',
-                    subtitle: 'Operador muda status diretamente no card do pedido (atual)',
+                    subtitle:
+                        'Operador muda status diretamente no card do pedido (atual)',
                     icon: Icons.receipt_long_outlined,
                     value: 'por_pedido',
                     currentValue: currentValue,
@@ -405,7 +430,8 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                   const SizedBox(height: 12),
                   _apontamentoOption(
                     title: 'Por OS (Elemento)',
-                    subtitle: 'Operador controla produção no nível da OS/Elemento',
+                    subtitle:
+                        'Operador controla produção no nível da OS/Elemento',
                     icon: Icons.view_list_outlined,
                     value: 'por_os',
                     currentValue: currentValue,
@@ -498,7 +524,8 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    onChanged: (val) => PreferencesService.whatsappSuporte.add(val.replaceAll(RegExp(r'[^0-9]'), '')),
+                    onChanged: (val) => PreferencesService.whatsappSuporte
+                        .add(val.replaceAll(RegExp(r'[^0-9]'), '')),
                   );
                 },
               ),
@@ -586,15 +613,19 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                         ? const SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
                           )
                         : const Icon(Icons.upload_file_outlined, size: 18),
-                    label: Text(_uploading ? 'Enviando...' : 'Selecionar Imagem'),
+                    label:
+                        Text(_uploading ? 'Enviando...' : 'Selecionar Imagem'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryMain,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 14),
                     ),
                   ),
                   if (hasCustom) ...[
@@ -606,8 +637,10 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red[600],
                         side: BorderSide(color: Colors.red[300]!),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 14),
                       ),
                     ),
                   ],
@@ -626,7 +659,8 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.lightbulb_outline, color: Colors.blue[700], size: 18),
+                    Icon(Icons.lightbulb_outline,
+                        color: Colors.blue[700], size: 18),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
@@ -634,7 +668,8 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                         '• Use imagens PNG com fundo transparente\n'
                         '• Resolução mínima de 200×200 pixels\n'
                         '• Formato quadrado para melhor adaptação',
-                        style: TextStyle(fontSize: 12, color: Colors.blue[800], height: 1.5),
+                        style: TextStyle(
+                            fontSize: 12, color: Colors.blue[800], height: 1.5),
                       ),
                     ),
                   ],
@@ -718,14 +753,19 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
   Widget _numericButton({required IconData icon, VoidCallback? onPressed}) {
     return Container(
       decoration: BoxDecoration(
-        color: onPressed != null ? AppColors.secondary.withValues(alpha: 0.1) : Colors.grey[100],
+        color: onPressed != null
+            ? AppColors.secondary.withValues(alpha: 0.1)
+            : Colors.grey[100],
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: onPressed != null ? AppColors.secondary.withValues(alpha: 0.3) : Colors.grey[300]!,
+          color: onPressed != null
+              ? AppColors.secondary.withValues(alpha: 0.3)
+              : Colors.grey[300]!,
         ),
       ),
       child: IconButton(
-        icon: Icon(icon, color: onPressed != null ? AppColors.secondary : Colors.grey[400]),
+        icon: Icon(icon,
+            color: onPressed != null ? AppColors.secondary : Colors.grey[400]),
         onPressed: onPressed,
         iconSize: 28,
         padding: const EdgeInsets.all(12),
@@ -749,7 +789,8 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? color.withValues(alpha: 0.08) : Colors.transparent,
+          color:
+              isSelected ? color.withValues(alpha: 0.08) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? color : Colors.grey[300]!,
@@ -768,7 +809,8 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                     title,
                     style: TextStyle(
                       fontSize: 15,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
                       color: isSelected ? color : Colors.grey[700],
                     ),
                   ),
@@ -780,8 +822,7 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                 ],
               ),
             ),
-            if (isSelected)
-              Icon(Icons.check_circle, color: color, size: 24),
+            if (isSelected) Icon(Icons.check_circle, color: color, size: 24),
           ],
         ),
       ),

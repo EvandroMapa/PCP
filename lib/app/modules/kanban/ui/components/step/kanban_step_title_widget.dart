@@ -8,7 +8,7 @@ import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_view_model.dart';
-import 'package:aco_plus/app/modules/pedido/ui/pedido_import_pdf_dialog.dart';
+import 'package:aco_plus/app/modules/kanban/kanban_view_model.dart';
 import 'package:flutter/material.dart';
 
 class KanbanStepTitleWidget extends StatelessWidget {
@@ -78,41 +78,6 @@ class KanbanStepTitleWidget extends StatelessWidget {
                       .setColor(AppColors.neutralDark),
                 ),
                 const Spacer(),
-                // Botão adicionar
-                PopupMenuButton<int>(
-                  tooltip: 'Criar Cartão',
-                  style: ButtonStyle(
-                    padding: WidgetStateProperty.all(EdgeInsets.zero),
-                    fixedSize: WidgetStateProperty.all(const Size(22, 22)),
-                    minimumSize: WidgetStateProperty.all(const Size(22, 22)),
-                  ),
-                  icon: Icon(Icons.add, color: AppColors.secondary, size: 18),
-                  padding: EdgeInsets.zero,
-                  offset: const Offset(0, 36),
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 1,
-                      height: 32,
-                      child: Row(
-                        children: [
-                          Icon(Icons.picture_as_pdf,
-                              size: 16, color: AppColors.secondary),
-                          const W(8),
-                          Text(
-                            'Criar cartão baseado em pedido',
-                            style: AppCss.minimumRegular.setSize(12),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  onSelected: (value) async {
-                    if (value == 1) {
-                      await showPedidoImportPdfDialog(initialStep: step);
-                    }
-                  },
-                ),
-                const W(6),
                 // Botão ordenação
                 PopupMenuButton<SortStepType?>(
                   style: ButtonStyle(

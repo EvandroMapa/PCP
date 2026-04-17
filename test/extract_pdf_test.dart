@@ -9,7 +9,7 @@ void main() {
     final document = PdfDocument(inputBytes: bytes);
     final text = PdfTextExtractor(document).extractText();
     document.dispose();
-    
+
     await File('pdf_output2.txt').writeAsString(text);
     print('Extraction 2 done!');
   });

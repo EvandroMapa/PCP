@@ -57,9 +57,8 @@ class PedidoController {
         .toList();
 
     for (PedidoModel pedido in pedidos) {
-      List<PedidoProdutoModel> produtos = pedido.produtos
-          .map((e) => e.copyWith())
-          .toList();
+      List<PedidoProdutoModel> produtos =
+          pedido.produtos.map((e) => e.copyWith()).toList();
       pedido.produtos.clear();
 
       for (PedidoProdutoModel produto in produtos) {
@@ -80,9 +79,8 @@ class PedidoController {
     //remove produtos dos pedidos que nao estao na lista de produtos do filtro(view model)
     if (pedidoViewModel.produtos.isNotEmpty) {
       for (PedidoModel pedido in pedidos) {
-        List<PedidoProdutoModel> produtos = pedido.produtos
-            .map((e) => e.copyWith())
-            .toList();
+        List<PedidoProdutoModel> produtos =
+            pedido.produtos.map((e) => e.copyWith()).toList();
         pedido.produtos.clear();
 
         for (PedidoProdutoModel produto in produtos) {
@@ -186,8 +184,7 @@ class PedidoController {
       ).build(imageBytes),
     );
 
-    final String namePart =
-        name?.toFileName() ??
+    final String namePart = name?.toFileName() ??
         '${(pedidoViewModel.cliente?.nome ?? 'todos').toLowerCase().replaceAll(' ', '_')}_status_${(pedidoViewModel.status.map((e) => e.name).join('_')).toLowerCase()}';
 
     await downloadPDF(
@@ -222,10 +219,9 @@ class PedidoController {
   double getPedidosTotalPorBitola(ProdutoModel produto) {
     double qtde = 0;
     for (var pedido in pedidoViewModel.relatorio!.pedidos) {
-      for (var produto
-          in pedido.produtos
-              .where((e) => e.produto.id == produto.id)
-              .toList()) {
+      for (var produto in pedido.produtos
+          .where((e) => e.produto.id == produto.id)
+          .toList()) {
         qtde = qtde + produto.qtde;
       }
     }
@@ -238,10 +234,9 @@ class PedidoController {
   ) {
     double qtde = 0;
     for (var pedido in pedidoViewModel.relatorio!.pedidos) {
-      for (var produto
-          in pedido.produtos
-              .where((e) => e.produto.id == produto.id)
-              .toList()) {
+      for (var produto in pedido.produtos
+          .where((e) => e.produto.id == produto.id)
+          .toList()) {
         if (produto.statusess.last.status == status) {
           qtde = qtde + produto.qtde;
         }

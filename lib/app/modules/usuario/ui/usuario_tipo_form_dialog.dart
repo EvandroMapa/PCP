@@ -5,7 +5,8 @@ import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_tipo_controller.dart';
 import 'package:flutter/material.dart';
 
-Future<void> showUsuarioTipoFormDialog(BuildContext context, {UsuarioTipoModel? tipo}) async {
+Future<void> showUsuarioTipoFormDialog(BuildContext context,
+    {UsuarioTipoModel? tipo}) async {
   usuarioTipoCtrl.init(tipo);
   await showDialog(
     context: context,
@@ -44,14 +45,16 @@ class _UsuarioTipoFormDialogState extends State<UsuarioTipoFormDialog> {
               CheckboxListTile(
                 title: const Text('Tem acesso à aba Elementos'),
                 value: form.isPermitirElementos,
-                onChanged: (v) => setState(() => form.isPermitirElementos = v ?? false),
+                onChanged: (v) =>
+                    setState(() => form.isPermitirElementos = v ?? false),
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
               ),
               CheckboxListTile(
                 title: const Text('Permite editar elementos'),
                 value: form.isPermitirEditarElementos,
-                onChanged: (v) => setState(() => form.isPermitirEditarElementos = v ?? false),
+                onChanged: (v) =>
+                    setState(() => form.isPermitirEditarElementos = v ?? false),
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
               ),

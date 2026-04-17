@@ -28,8 +28,10 @@ class PedidoProgressoWidget extends StatelessWidget {
     final double cdPercent = cdTotal > 0 ? (cdPronto / cdTotal) : 0.0;
 
     // --- CÁLCULO ARMAÇÃO (CDA) ---
-    final double cdaTotal = pedido.elementos.fold(0.0, (sum, e) => sum + e.pesoTotal);
-    final double cdaPronto = pedido.elementos.fold(0.0, (sum, e) => sum + e.pesoPronto);
+    final double cdaTotal =
+        pedido.elementos.fold(0.0, (sum, e) => sum + e.pesoTotal);
+    final double cdaPronto =
+        pedido.elementos.fold(0.0, (sum, e) => sum + e.pesoPronto);
     final double cdaPercent = cdaTotal > 0 ? (cdaPronto / cdaTotal) : 0.0;
 
     final bool isCDA = pedido.tipo == PedidoTipo.cda;
@@ -56,7 +58,7 @@ class PedidoProgressoWidget extends StatelessWidget {
             style: AppCss.mediumBold.setSize(14).setColor(AppColors.secondary),
           ),
           const SizedBox(height: 20),
-          
+
           // Barra de Corte e Dobra
           _buildProgressBar(
             label: 'CORTE E DOBRA',
@@ -107,7 +109,8 @@ class PedidoProgressoWidget extends StatelessWidget {
                     style: AppCss.smallBold.setColor(color),
                   ),
                   TextSpan(
-                    text: ' (${pronto.toStringAsFixed(1)} / ${total.toStringAsFixed(1)} Kg)',
+                    text:
+                        ' (${pronto.toStringAsFixed(1)} / ${total.toStringAsFixed(1)} Kg)',
                     style: AppCss.minimumRegular.setColor(Colors.grey[500]!),
                   ),
                 ],
@@ -130,7 +133,9 @@ class PedidoProgressoWidget extends StatelessWidget {
               duration: const Duration(milliseconds: 800),
               curve: Curves.easeOutCubic,
               height: 12,
-              width: (percent * 1000).clamp(0.0, 1000.0) / 1000 * 1, // Placeholder for actual width calculation
+              width: (percent * 1000).clamp(0.0, 1000.0) /
+                  1000 *
+                  1, // Placeholder for actual width calculation
               // Note: Using LayoutBuilder for precise width or just FractionallySizedBox
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,

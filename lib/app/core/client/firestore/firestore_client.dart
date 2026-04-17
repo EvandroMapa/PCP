@@ -1,4 +1,3 @@
-
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/checklist/checklist_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_collection.dart';
@@ -26,13 +25,14 @@ class FirestoreClient {
   static ProdutoCollection get produtos => BackendClient.produtos;
   static PedidoCollection get pedidos => BackendClient.pedidos;
   static OrdemCollection get ordens => BackendClient.ordens;
-  static AutomatizacaoCollection get automatizacao => BackendClient.automatizacao;
+  static AutomatizacaoCollection get automatizacao =>
+      BackendClient.automatizacao;
 
   static NotificacaoCollection get notificacoes => BackendClient.notificacoes;
 
   static init() async {
     if (BackendClient.type == BackendType.supabase) return;
-    
+
     await VersionCollection().start();
     await UsuarioCollection().start();
     await StepCollection().start();

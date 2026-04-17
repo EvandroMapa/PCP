@@ -45,9 +45,8 @@ class _ClientesPageState extends State<ClientesPage> {
       builder: (_, __) => StreamOut<ClienteUtils>(
         stream: clienteCtrl.utilsStream.listen,
         builder: (_, utils) {
-          final clientes = clienteCtrl
-              .getClienteesFiltered(utils.search.text, __)
-              .toList();
+          final clientes =
+              clienteCtrl.getClienteesFiltered(utils.search.text, __).toList();
           return Column(
             children: [
               Padding(
@@ -63,8 +62,7 @@ class _ClientesPageState extends State<ClientesPage> {
                 child: clientes.isEmpty
                     ? const EmptyData()
                     : RefreshIndicator(
-                        onRefresh: () async =>
-                            FirestoreClient.clientes.fetch(),
+                        onRefresh: () async => FirestoreClient.clientes.fetch(),
                         child: ListView.separated(
                           itemCount: clientes.length,
                           separatorBuilder: (_, i) => const Divisor(),
@@ -84,8 +82,10 @@ class _ClientesPageState extends State<ClientesPage> {
     return ListTile(
       onTap: () => push(context, ClienteCreatePage(cliente: cliente)),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      title: Text('${cliente.codigo} - ${cliente.nome}', style: AppCss.mediumBold),
-      subtitle: Text('Tel: ${cliente.telefone} - Qtd. Obras: ${cliente.obras.length}'),
+      title:
+          Text('${cliente.codigo} - ${cliente.nome}', style: AppCss.mediumBold),
+      subtitle: Text(
+          'Tel: ${cliente.telefone} - Qtd. Obras: ${cliente.obras.length}'),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

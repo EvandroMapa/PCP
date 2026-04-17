@@ -40,23 +40,23 @@ class KanbanCardProductsWidget extends StatelessWidget {
             )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-            'Ordens',
-            style: AppCss.mediumRegular.copyWith(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[700],
-            ),
-          ),
-          const H(2),
-              Column(
+              children: [
+                Text(
+                  'Ordens',
+                  style: AppCss.mediumRegular.copyWith(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const H(2),
+                Column(
                   children: produtosSorted
                       .map((produto) => _produtoWidget(produto))
                       .toList(),
                 ),
-            ],
-          ),
+              ],
+            ),
     );
   }
 

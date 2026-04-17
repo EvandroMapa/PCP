@@ -9,12 +9,13 @@ import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 
 Future<PedidoProdutoStatus?> showOrdemProdutoStatusBottom(
   PedidoProdutoStatus status,
-) async => showModalBottomSheet(
-  backgroundColor: AppColors.white,
-  context: contextGlobal,
-  isScrollControlled: true,
-  builder: (_) => OrdemProdutoStatusBottom(status),
-);
+) async =>
+    showModalBottomSheet(
+      backgroundColor: AppColors.white,
+      context: contextGlobal,
+      isScrollControlled: true,
+      builder: (_) => OrdemProdutoStatusBottom(status),
+    );
 
 class OrdemProdutoStatusBottom extends StatefulWidget {
   final PedidoProdutoStatus status;
@@ -102,8 +103,7 @@ class _OrdemProdutoStatusBottomState extends State<OrdemProdutoStatusBottom> {
                                   style: AppCss.mediumRegular,
                                 ),
                                 value: status,
-                                groupValue:
-                                    currentStatus ==
+                                groupValue: currentStatus ==
                                         PedidoProdutoStatus.separado
                                     ? PedidoProdutoStatus.aguardandoProducao
                                     : currentStatus,
