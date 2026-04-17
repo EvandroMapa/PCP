@@ -1,4 +1,5 @@
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_status.dart';
+import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
@@ -7,6 +8,7 @@ import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_page.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class PaiPedidoProdutoWidget extends StatefulWidget {
@@ -51,7 +53,7 @@ class _PaiPedidoProdutoWidgetState extends State<PaiPedidoProdutoWidget> {
                 Builder(
                   builder: (context) {
                     return Text(
-                      '${widget.produto.qtde}Kg',
+                      '${widget.produto.qtdeOriginal.toKg()}',
                       style: AppCss.mediumBold,
                     );
                   },
@@ -75,9 +77,7 @@ class _PaiPedidoProdutoWidgetState extends State<PaiPedidoProdutoWidget> {
             return _restanteWidget(
               isExpanded,
               backgroundColor,
-              (widget.produto.qtde -
-                      widget.pedido.getQtdeDirecionada(widget.produto))
-                  .toInt(),
+              widget.produto.qtde,
             );
           },
         ),
@@ -107,7 +107,7 @@ class _PaiPedidoProdutoWidgetState extends State<PaiPedidoProdutoWidget> {
               child: Text(filho.localizador, style: AppCss.minimumRegular),
             ),
             Text(
-              '-${filho.produtos.firstWhere((p) => p.produto.id == produto.produto.id).qtde}Kg',
+              '-${filho.produtos.firstWhere((p) => p.produto.id == produto.produto.id).qtde.toKg()}',
               style: AppCss.minimumRegular.copyWith(
                 color: Colors.red,
                 fontWeight: FontWeight.w600,
@@ -119,25 +119,89 @@ class _PaiPedidoProdutoWidgetState extends State<PaiPedidoProdutoWidget> {
     );
   }
 
-  Widget _restanteWidget(bool isExpanded, Color color, int qtde) {
+  Widget _restanteWidget(bool isExpanded, Color color, double qtde) {
+    final double original = widget.produto.qtdeOriginal;
+    final double saldo = qtde;
+    final double consumido = original - saldo;
+    final double percentualConsumido = original > 0 ? (consumido / original) : 0;
+
     return Container(
-      padding: isExpanded
-          ? const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
-          : EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(4),
-        color: color,
+        color: color.withValues(alpha: 0.15),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(8),
+          bottomRight: Radius.circular(8),
+        ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: Text('Saldo', style: AppCss.minimumRegular)),
-          Text(
-            '${qtde}Kg',
-            style: AppCss.minimumRegular.copyWith(
-              color: Colors.green,
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'CONSUMO DO LOTE',
+                      style: AppCss.minimumBold.copyWith(
+                        color: Colors.grey[600],
+                        fontSize: 10,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: percentualConsumido,
+                        minHeight: 8,
+                        backgroundColor: Colors.green.withValues(alpha: 0.2),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          percentualConsumido > 0.9
+                              ? Colors.red[700]!
+                              : Colors.amber[700]!,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 24),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'SALDO ATUAL',
+                    style: AppCss.minimumBold.copyWith(
+                      color: Colors.green[700],
+                      fontSize: 10,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                  Text(
+                    '${widget.produto.qtde.toKg()}',
+                    style: AppCss.mediumBold.copyWith(
+                      color: AppColors.primaryMain,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
+          if (consumido > 0) ...[
+            const SizedBox(height: 8),
+            Text(
+              '${(percentualConsumido * 100).toStringAsFixed(1)}% do total de ${original.toKg()} já distribuídos',
+              style: AppCss.minimumRegular.copyWith(
+                color: Colors.grey[600],
+                fontSize: 11,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -11,7 +11,6 @@ import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/pedido/view_models/pedido_produto_view_model.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_keyboard_visibility/flutter_keyboard_visibility.dart';
 
 Future<double?> showPedidoOrderEditBottom(
   PedidoProdutoCreateModel produto,
@@ -21,6 +20,7 @@ Future<double?> showPedidoOrderEditBottom(
       backgroundColor: AppColors.white,
       context: contextGlobal,
       isScrollControlled: true,
+      useSafeArea: true,
       builder: (_) => PedidoOrderEditBottom(produto, qtdeDisponivel),
     );
 
@@ -50,20 +50,25 @@ class _PedidoOrderEditBottomState extends State<PedidoOrderEditBottom> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final keyboardPadding = MediaQuery.viewInsetsOf(context).bottom;
     return BottomSheet(
       onClosing: () {},
-      builder: (context) => KeyboardVisibilityBuilder(
-        builder: (context, isVisible) => Container(
-          height: 390,
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(bottom: keyboardPadding),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: screenHeight * 0.45),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
+              ),
             ),
-          ),
-          child: ListView(
-            children: [
+            child: ListView(
+              shrinkWrap: true,
+              children: [
               const H(16),
               Align(
                 alignment: Alignment.centerLeft,
@@ -109,10 +114,16 @@ class _PedidoOrderEditBottomState extends State<PedidoOrderEditBottom> {
                       suffixText: 'Kg',
                       onChanged: (_) => setState(() {}),
                       onEditingComplete: () {
-                        if (qtdeEC.doubleValue > 0) {
-                          FocusScope.of(context).unfocus();
-                          Navigator.pop(context, qtdeEC.doubleValue);
+                        if (qtdeEC.doubleValue <= 0) return;
+                        if (widget.qtdeDisponivel != null &&
+                            qtdeEC.doubleValue > widget.qtdeDisponivel!) {
+                          NotificationService.showNegative(
+                              'Quantidade indisponível',
+                              'A quantidade disponível é de ${widget.qtdeDisponivel!.toStringAsFixed(3)}Kg');
+                          return;
                         }
+                        FocusScope.of(context).unfocus();
+                        Navigator.pop(context, qtdeEC.doubleValue);
                       },
                     ),
                     if (widget.qtdeDisponivel != null)
@@ -122,9 +133,15 @@ class _PedidoOrderEditBottomState extends State<PedidoOrderEditBottom> {
                           children: [
                             const Spacer(),
                             Text(
-                              'Quantidade disponível: ${widget.qtdeDisponivel}Kg',
+                              'Quantidade disponível: ${widget.qtdeDisponivel!.toStringAsFixed(3)}Kg',
                               style: AppCss.minimumRegular.copyWith(
-                                color: Colors.red,
+                                color: qtdeEC.doubleValue > widget.qtdeDisponivel!
+                                    ? Colors.red
+                                    : Colors.grey[600],
+                                fontWeight:
+                                    qtdeEC.doubleValue > widget.qtdeDisponivel!
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
                               ),
                             ),
                           ],
@@ -132,7 +149,7 @@ class _PedidoOrderEditBottomState extends State<PedidoOrderEditBottom> {
                       ),
                     const H(16),
                     AppTextButton(
-                      isEnable: widget.produto.qtde.doubleValue > 0,
+                      isEnable: qtdeEC.doubleValue > 0,
                       label: 'Confirmar',
                       onPressed: () {
                         if (widget.qtdeDisponivel == null ||
@@ -141,17 +158,19 @@ class _PedidoOrderEditBottomState extends State<PedidoOrderEditBottom> {
                         } else {
                           NotificationService.showNegative(
                               'Quantidade indisponível',
-                              'A quantidade disponível é de ${widget.qtdeDisponivel}Kg');
+                              'A quantidade disponível é de ${widget.qtdeDisponivel!.toStringAsFixed(3)}Kg');
                         }
                       },
                     ),
+                    const H(16),
                   ],
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
+            ),  // ListView
+          ),    // Container
+        ),      // ConstrainedBox
+      ),        // Padding
+    );          // BottomSheet
   }
 }

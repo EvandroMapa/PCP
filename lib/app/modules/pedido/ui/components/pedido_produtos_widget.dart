@@ -13,6 +13,7 @@ import 'package:aco_plus/app/modules/materia_prima/ui/materia_prima_bottom.dart'
 import 'package:aco_plus/app/modules/materia_prima/ui/materias_primas_create_page.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem/ordem_page.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
+import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:flutter/material.dart';
 
 class PedidoProdutosWidget extends StatelessWidget {
@@ -96,7 +97,7 @@ class PedidoProdutosWidget extends StatelessWidget {
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${produto.qtde}Kg', style: AppCss.minimumRegular),
+              Text(produto.qtde.toKg(), style: AppCss.minimumRegular),
               StreamOut(
                 stream: FirestoreClient.ordens.dataStream.listen,
                 builder: (_, __) {

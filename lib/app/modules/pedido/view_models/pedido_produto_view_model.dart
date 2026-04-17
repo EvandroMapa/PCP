@@ -14,6 +14,7 @@ class PedidoProdutoCreateModel {
   List<PedidoProdutoStatusModel> statusess = [];
   final bool isEnabled;
   final double? qtdeDisponivel;
+  double? _qtdeOriginal;
   bool isSelected = true;
 
   bool get isEnable => produtoModel != null && qtde.doubleValue > 0;
@@ -39,6 +40,7 @@ class PedidoProdutoCreateModel {
         isEdit = true {
     produtoModel = produto.produto;
     qtde.text = produto.qtde.toString();
+    _qtdeOriginal = produto.qtdeOriginal;
     statusess = produto.statusess.toList();
   }
 
@@ -52,6 +54,7 @@ class PedidoProdutoCreateModel {
         pedidoId: pedidoId,
         produto: produtoModel!,
         qtde: qtde.doubleValue,
+        qtdeOriginal: _qtdeOriginal ?? qtde.doubleValue,
         statusess: statusess.map((e) => e.copyWith()).toList(),
         clienteId: cliente.id,
         obraId: obra.id,

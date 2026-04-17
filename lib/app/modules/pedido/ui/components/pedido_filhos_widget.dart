@@ -67,7 +67,10 @@ class PedidoFilhosWidget extends StatelessWidget {
                                       pedido: vinculado,
                                     ),
                                   );
-                                  pedidoCtrl.pedidoStream.add(pedido);
+                                  // Busca o mestre FRESCO do data list (pode ter mudado após delete de parcial)
+                                  final mestreAtualizado =
+                                      FirestoreClient.pedidos.getById(pedido.id);
+                                  pedidoCtrl.pedidoStream.add(mestreAtualizado);
                                 },
                                 pedido: filho,
                               ),

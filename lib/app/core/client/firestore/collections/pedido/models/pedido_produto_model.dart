@@ -64,6 +64,7 @@ class PedidoProdutoModel {
   final ProdutoModel produto;
   final List<PedidoProdutoStatusModel> statusess;
   final double qtde;
+  final double qtdeOriginal;
   bool isSelected = true;
   bool isAvailable = true;
   bool isPaused = false;
@@ -214,6 +215,7 @@ class PedidoProdutoModel {
         produto: ProdutoModel.empty(),
         statusess: [PedidoProdutoStatusModel.empty()],
         qtde: 0,
+        qtdeOriginal: 0,
         isPaused: false,
         valorUnitario: 0.0,
         valorTotal: 0.0,
@@ -251,6 +253,7 @@ class PedidoProdutoModel {
     required this.produto,
     required this.statusess,
     required this.qtde,
+    required this.qtdeOriginal,
     this.isAvailable = true,
     this.isSelected = true,
     this.materiaPrima,
@@ -268,6 +271,7 @@ class PedidoProdutoModel {
       'produto': produto.toMap(),
       'statusess': statusess.map((x) => x.toMap()).toList(),
       'qtde': qtde,
+      'qtdeOriginal': qtdeOriginal,
       'materiaPrima': materiaPrima?.toMap(),
       'isPaused': isPaused,
       'valor_unitario': valorUnitario,
@@ -288,6 +292,7 @@ class PedidoProdutoModel {
             )
           : [PedidoProdutoStatusModel.empty()],
       qtde: map['qtde'] != null ? double.parse(map['qtde'].toString()) : 0.0,
+      qtdeOriginal: map['qtdeOriginal'] != null ? double.parse(map['qtdeOriginal'].toString()) : (map['qtde'] != null ? double.parse(map['qtde'].toString()) : 0.0),
       materiaPrima: map['materiaPrima'] != null
           ? MateriaPrimaModel.fromMap(map['materiaPrima'])
           : null,
@@ -311,6 +316,7 @@ class PedidoProdutoModel {
       'obra_id': obraId,
       'quantidade': qtde,
       'qtde': qtde,
+      'qtde_original': qtdeOriginal,
       'produto_id': produto.id,
       'unidade': '',
       'status': statusess.isNotEmpty ? statusess.last.status.name : 'separado',
@@ -376,6 +382,7 @@ class PedidoProdutoModel {
     return PedidoProdutoModel(
       id: (map['id'] ?? map['id_id'] ?? '').toString(),
       qtde: _parseNum(map['quantidade'] ?? map['qtde']),
+      qtdeOriginal: _parseNum(map['qtde_original'] ?? map['quantidade'] ?? map['qtde']),
       produto: produto,
       materiaPrima: materiaPrima,
       pedidoId: (map['pedido_id'] ?? '').toString(),
@@ -402,6 +409,7 @@ class PedidoProdutoModel {
     ProdutoModel? produto,
     List<PedidoProdutoStatusModel>? statusess,
     double? qtde,
+    double? qtdeOriginal,
     bool? isAvailable,
     bool? isSelected,
     MateriaPrimaModel? materiaPrima,
@@ -417,6 +425,7 @@ class PedidoProdutoModel {
       produto: produto ?? this.produto,
       statusess: statusess ?? this.statusess,
       qtde: qtde ?? this.qtde,
+      qtdeOriginal: qtdeOriginal ?? this.qtdeOriginal,
       isAvailable: isAvailable ?? this.isAvailable,
       isSelected: isSelected ?? this.isSelected,
       materiaPrima: materiaPrima ?? this.materiaPrima,

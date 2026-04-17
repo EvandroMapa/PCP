@@ -30,6 +30,7 @@ import 'package:aco_plus/app/modules/pedido/ui/pedido_order_edit_bottom.dart';
 import 'package:aco_plus/app/modules/pedido/view_models/pedido_produto_view_model.dart';
 import 'package:aco_plus/app/modules/pedido/view_models/pedido_view_model.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
+import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:flutter/material.dart';
 
 class PedidoCreatePage extends StatefulWidget {
@@ -348,6 +349,7 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
             AppDropDown<ClienteModel?>(
               hasFilter: true,
               label: 'Cliente',
+              disable: widget.pai != null || form.isPartial,
               item: form.cliente,
               itens: FirestoreClient.clientes.data,
               onCreated: () async {
@@ -374,7 +376,7 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
             AppDropDown<ObraModel?>(
               label: 'Obra',
               item: form.obra,
-              disable: form.cliente == null,
+              disable: form.cliente == null || widget.pai != null || form.isPartial,
               itens: form.cliente?.obras
                       .where((e) => e.status == ObraStatus.emAndamento)
                       .toList() ??
@@ -601,7 +603,7 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Quantidade: ${produto.qtde.text} Kg',
+            Text('Quantidade: ${double.tryParse(produto.qtde.text)?.toKg() ?? produto.qtde.text}',
                 style: AppCss.minimumRegular),
             if (isDisabled)
               Text(

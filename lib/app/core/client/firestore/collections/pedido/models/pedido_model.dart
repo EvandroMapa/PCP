@@ -57,6 +57,20 @@ class PedidoModel {
   String? romaneio;
   final List<ElementoModel> elementos;
 
+  /// true quando o pedido tem filhos — é só um container de informações da venda
+  bool get isMestre => pedidosFilhos.isNotEmpty;
+
+  /// true quando o pedido foi gerado como filho de outro
+  bool get isParcial => pai != null && pai!.isNotEmpty;
+
+  /// Impede criação de parcial se já tem elementos ou produtos em produção,
+  /// pois torná-lo mestre removeria ele da produção.
+  bool get podeGerarParcial =>
+      !isMestre &&
+      !isParcial &&
+      elementos.isEmpty &&
+      produtos.every((p) => p.status.status == PedidoProdutoStatus.separado);
+
   // New financial fields
   final double valorSubtotal;
   final double valorTaxas;
@@ -230,9 +244,6 @@ class PedidoModel {
   }
 
   List<PedidoProdutoModel> getProdutos() {
-    if (pedidosFilhos.isNotEmpty) {
-      return getPedidosFilhos().expand((e) => e.produtos).toList();
-    }
     return produtos;
   }
 
@@ -554,11 +565,15 @@ class PedidoModel {
       pedidoFinanceiro: map['pedido_financeiro']?.toString() ?? '',
       instrucoesEntrega: map['instrucoes_entrega']?.toString() ?? '',
       instrucoesFinanceiras: map['instrucoes_financeiras']?.toString() ?? '',
-      pedidosVinculados: [],
-      pedidosFilhos: [],
-      pai: null,
-      isFilho: false,
-      romaneio: null,
+      pedidosVinculados: map['pedidos_vinculados'] != null
+          ? List<String>.from(map['pedidos_vinculados'])
+          : [],
+      pedidosFilhos: map['pedidos_filhos'] != null
+          ? List<String>.from(map['pedidos_filhos'])
+          : [],
+      pai: map['pai_id'],
+      isFilho: map['is_filho'] ?? false,
+      romaneio: map['romaneio'],
       valorSubtotal: _parseNum(map['valor_subtotal']),
       valorTaxas: _parseNum(map['valor_taxas']),
       valorDesconto: _parseNum(map['valor_desconto']),
@@ -609,6 +624,11 @@ class PedidoModel {
         'comments': comments.map((c) => c.toMap()).toList(),
         'user_ids': users.map((u) => u.id).toList(),
         'armacao_resumo': armacaoResumo,
+        'pai_id': pai,
+        'is_filho': isFilho,
+        'pedidos_filhos': pedidosFilhos,
+        'pedidos_vinculados': pedidosVinculados,
+        'romaneio': romaneio,
       };
 
   PedidoModel copyWith({

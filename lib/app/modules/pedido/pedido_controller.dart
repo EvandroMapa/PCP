@@ -97,10 +97,21 @@ class PedidoController {
         final updated =
             await BackendClient.pedidos.getByIdSupabase(pedidoStream.value.id);
         if (updated != null) {
-          await BackendClient.ordens.fetch();
-          await BackendClient.ordens.startOnlyArquivadas();
-          pedidoStream.add(updated);
-          SchedulerBinding.instance.scheduleFrame();
+          // Otimização: Só atualiza se houver mudança real para evitar travamentos por rebuilds excessivos
+          final current = pedidoStream.value;
+          final hasChanged = updated.localizador != current.localizador ||
+              updated.statusess.length != current.statusess.length ||
+              updated.steps.length != current.steps.length ||
+              updated.comments.length != current.comments.length ||
+              updated.histories.length != current.histories.length ||
+              updated.isArchived != current.isArchived;
+
+          if (hasChanged) {
+            await BackendClient.ordens.fetch();
+            await BackendClient.ordens.startOnlyArquivadas();
+            pedidoStream.add(updated);
+            SchedulerBinding.instance.scheduleFrame();
+          }
         }
       }
     });
@@ -169,9 +180,8 @@ class PedidoController {
     form.planilhamento.text = pai.planilhamento;
     form.tipo = pai.tipo;
     form.descricao.text = pai.descricao;
-    form.cliente = BackendClient.clientes.getById(pai.cliente.id);
-    form.obra =
-        BackendClient.clientes.getById(pai.cliente.id).obras.firstOrNull;
+    form.cliente = pai.cliente;
+    form.obra = pai.obra;
     form.step = BackendClient.steps.getById(pai.step.id);
     if (pai.checklistId != null) {
       form.checklist = BackendClient.checklists.getById(pai.checklistId!);
@@ -183,8 +193,8 @@ class PedidoController {
 
     for (final produto in pai.produtos) {
       final produtoBase = BackendClient.produtos.getById(produto.produto.id);
-      // pega a quantidade de Kg disponível de acordo com o produto
-      final double qtdeTotal = produto.qtde;
+      // pega a quantidade de Kg disponível de acordo com o produto (com base na original)
+      final double qtdeTotal = produto.qtdeOriginal;
       final double qtdeDirecionada = pai.getQtdeDirecionada(produto);
       final double qtdeDisponivel = qtdeTotal - qtdeDirecionada;
       final create = PedidoProdutoCreateModel(
@@ -260,6 +270,23 @@ class PedidoController {
       } else {
         PedidoModel pedidoModel = form.toPedidoModel(pedido);
 
+        // Validar saldo disponível se for pedido parcial
+        if (form.pai != null) {
+          final pai = BackendClient.pedidos.getById(form.pai!);
+          for (final produtoFilho in pedidoModel.produtos) {
+            final produtoPai = pai.produtos.firstWhereOrNull(
+              (e) => e.produto.id == produtoFilho.produto.id,
+            );
+            if (produtoPai != null && (produtoFilho.qtde > produtoPai.qtde)) {
+              NotificationService.showNegative(
+                'Saldo Insuficiente',
+                'O produto ${produtoPai.produto.nome} possui apenas ${produtoPai.qtde}Kg disponíveis.',
+              );
+              return;
+            }
+          }
+        }
+
         final defaultCDTags =
             FirestoreClient.tags.data.where((e) => e.isDefaultCD).toList();
         final defaultCDATags =
@@ -276,6 +303,18 @@ class PedidoController {
         if (form.pai != null) {
           final pai = BackendClient.pedidos.getById(form.pai!);
           pai.pedidosFilhos.add(pedidoModel.id);
+          
+          // Deduct quantity physically from parent
+          for (final produtoFilho in pedidoModel.produtos) {
+            final produtoPaiIndex = pai.produtos.indexWhere((e) => e.produto.id == produtoFilho.produto.id);
+            if (produtoPaiIndex != -1) {
+              final produtoPai = pai.produtos[produtoPaiIndex];
+              double newQtde = produtoPai.qtde - produtoFilho.qtde;
+              if (newQtde < 0) newQtde = 0;
+              pai.produtos[produtoPaiIndex] = produtoPai.copyWith(qtde: newQtde);
+            }
+          }
+
           await BackendClient.pedidos.update(pai);
         }
         await BackendClient.pedidos.fetch();
@@ -305,12 +344,25 @@ class PedidoController {
     bool isPedido = true,
   }) async {
     if (await _isDeleteUnavailable(pedido)) return false;
+
+    // Se é parcial, desvincular do mestre antes de deletar (evita violação de FK)
+    if (pedido.isParcial) {
+      try {
+        final mestre = FirestoreClient.pedidos.getById(pedido.pai!);
+        mestre.pedidosFilhos.remove(pedido.id);
+        pedido.pai = null;
+        // Salva o pai sem o filho na lista, e zera o pai do filho
+        await BackendClient.pedidos.update(mestre);
+        await BackendClient.pedidos.update(pedido);
+      } catch (_) {}
+    }
+
     await BackendClient.pedidos.delete(pedido);
     if (isPedido) {
       pop(value);
     }
     NotificationService.showPositive(
-      'Pedido Excluida',
+      'Pedido Excluída',
       'Operação realizada com sucesso',
       position: NotificationPosition.bottom,
     );
@@ -319,16 +371,28 @@ class PedidoController {
 
   Future<bool> _isDeleteUnavailable(
     PedidoModel pedido,
-  ) async =>
-      !await onDeleteProcess(
-        deleteTitle: 'Deseja excluir o pedido?',
-        deleteMessage: 'Todos seus dados do pedido apagados do sistema',
-        infoMessage:
-            'Não é possível exlcuir o pedido, pois ele está vinculado a uma ordem de produção.',
-        conditional: FirestoreClient.ordens.data
-            .expand((e) => e.produtos.map((e) => e.pedidoId))
-            .any((e) => e == pedido.id),
+  ) async {
+    // Regra 1: Pedido Mestre não pode ser excluído se tiver parciais
+    if (pedido.isMestre) {
+      NotificationService.showNegative(
+        'Exclusão bloqueada',
+        'O Pedido Mestre possui ${pedido.pedidosFilhos.length} parcial(is) vinculado(s). '
+        'Exclua os parciais antes de excluir o Mestre.',
       );
+      return true;
+    }
+
+    // Regra 2: Pedido em produção não pode ser excluído
+    return !await onDeleteProcess(
+      deleteTitle: 'Deseja excluir o pedido?',
+      deleteMessage: 'Todos seus dados do pedido apagados do sistema',
+      infoMessage:
+          'Não é possível excluir o pedido, pois ele está vinculado a uma ordem de produção.',
+      conditional: FirestoreClient.ordens.data
+          .expand((e) => e.produtos.map((e) => e.pedidoId))
+          .any((e) => e == pedido.id),
+    );
+  }
 
   void onValid() {
     if (form.localizador.text.isEmpty) {
@@ -469,17 +533,44 @@ class PedidoController {
     PedidoModel pedido, {
     bool isPedido = true,
   }) async {
-    if (pedido.produtos.any(
-      (e) => e.status.status != PedidoProdutoStatus.pronto,
-    )) {
+    // Regra 1: Mestre só pode ser arquivado se saldo zero (toda qtde distribuída)
+    if (pedido.isMestre) {
+      final temSaldoPendente = pedido.produtos.any((p) {
+        final totalFilhos = pedido.getPedidosFilhos().fold<double>(
+          0,
+          (acc, filho) {
+            final fp = filho.produtos.where(
+              (fp) => fp.produto.id == p.produto.id,
+            );
+            return acc + fp.fold<double>(0, (a, fp) => a + fp.qtdeOriginal);
+          },
+        );
+        return (p.qtdeOriginal - totalFilhos) > 0.001;
+      });
+      if (temSaldoPendente) {
+        NotificationService.showNegative(
+          'Arquivamento bloqueado',
+          'O Pedido Mestre ainda possui saldo não distribuído. '
+          'Distribua toda a quantidade nos parciais antes de arquivar.',
+        );
+        return false;
+      }
+    }
+
+    // Regra 2: Pedido Normal/Parcial — todos os produtos precisam estar prontos
+    if (!pedido.isMestre &&
+        pedido.produtos.any(
+          (e) => e.status.status != PedidoProdutoStatus.pronto,
+        )) {
       NotificationService.showNegative(
         'Pedido não pode ser arquivado',
         'O pedido possui ordens não concluídas',
       );
       return false;
     }
+
     if (!await showConfirmDialog(
-      'Deseja arquivar esse pedidos?',
+      'Deseja arquivar esse pedido?',
       'O pedido ficará disponível na lista de arquivados',
     )) {
       return false;

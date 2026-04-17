@@ -70,7 +70,7 @@ class PedidoItemWidget extends StatelessWidget {
                         pedido.produtos
                             .map(
                               (e) =>
-                                  '${'${e.produto.descricao} - ${e.qtde}'}Kg',
+                                  '${e.produto.descricao} - ${e.qtde.toKg()}',
                             )
                             .join(', '),
                         style: AppCss.minimumRegular

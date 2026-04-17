@@ -22,6 +22,7 @@ import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/cliente/ui/cliente_create_simplify_bottom.dart';
 import 'package:aco_plus/app/modules/pedido/services/pedido_pdf_parser.dart';
+import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -213,6 +214,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
             produto: produtoBase,
             statusess: [PedidoProdutoStatusModel.empty()],
             qtde: p['qtde'],
+            qtdeOriginal: p['qtde'],
             valorUnitario: p['unitario'],
             valorTotal: p['total'],
           ));
@@ -829,7 +831,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                       ],
                     ),
                     subtitle: Text(
-                      'Qtde: ${p['qtde']} | V.Unit: $fUnit | Total: $fTotal',
+                      'Qtde: ${(p['qtde'] as num).toDouble().toKg()} | V.Unit: $fUnit | Total: $fTotal',
                       style: const TextStyle(fontSize: 11),
                     ),
                   );

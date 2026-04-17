@@ -30,7 +30,7 @@ class DashboardPage extends StatefulWidget {
 class DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
-    setWebTitle('AçoPlus - Gestão a Vista');
+    setWebTitle('AçoPlus - Planejamento e controle de Produção');
     super.initState();
   }
 

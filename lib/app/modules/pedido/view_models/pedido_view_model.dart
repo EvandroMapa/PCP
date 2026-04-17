@@ -63,6 +63,7 @@ class PedidoCreateModel {
   List<TagModel> tags = [];
   String? pai;
   bool isFilho = false;
+  bool get isPartial => pai != null;
   late bool isEdit;
 
   PedidoCreateModel(PedidoModel? pai)

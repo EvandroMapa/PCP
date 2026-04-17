@@ -8,7 +8,6 @@ import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_view_model.dart';
-import 'package:aco_plus/app/modules/kanban/kanban_view_model.dart';
 import 'package:flutter/material.dart';
 
 class KanbanStepTitleWidget extends StatelessWidget {

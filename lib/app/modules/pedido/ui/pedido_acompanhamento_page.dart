@@ -2,7 +2,6 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
-import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/services/preferences_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
@@ -11,7 +10,7 @@ import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_tracker_timeline_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_progresso_widget.dart';
-import 'package:aco_plus/app/core/services/supabase_service.dart';
+import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher_string.dart';
@@ -310,7 +309,7 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(p.produto.descricao, style: AppCss.smallBold),
-                          Text('${p.qtde.toStringAsFixed(2)} Kg',
+                          Text(p.qtde.toKg(),
                               style: AppCss.minimumRegular
                                   .setColor(Colors.grey[600]!)),
                         ],
@@ -324,7 +323,7 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('PESO TOTAL:', style: AppCss.smallBold),
-              Text('${pedido.pesoTotal.toStringAsFixed(2)} Kg',
+              Text(pedido.pesoTotal.toKg(),
                   style: AppCss.mediumBold.setColor(AppColors.primaryMain)),
             ],
           )
@@ -333,71 +332,6 @@ class _PedidoAcompanhamentoPageState extends State<PedidoAcompanhamentoPage>
     );
   }
 
-  Widget _buildAdminActions(PedidoModel pedido) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.primaryMain.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primaryMain.withValues(alpha: 0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.admin_panel_settings_outlined,
-                  size: 20, color: AppColors.primaryMain),
-              const SizedBox(width: 12),
-              Text(
-                'OPÇÕES DO ADMINISTRADOR',
-                style: AppCss.minimumBold.setColor(AppColors.primaryMain),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _actionButton(
-                  onTap: () {
-                    final url =
-                        '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
-                    final text = Uri.encodeComponent(
-                        'Olá! Acompanhe o seu pedido ${pedido.localizador}: $url');
-                    launchUrlString('https://wa.me/?text=$text');
-                  },
-                  icon: Icons.share,
-                  label: 'WhatsApp',
-                  color: const Color(0xFF25D366),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _actionButton(
-                  onTap: () async {
-                    final url =
-                        '${Uri.base.origin}/acompanhamento/pedidos/${pedido.id}';
-                    await Clipboard.setData(ClipboardData(text: url));
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Link de acompanhamento copiado!')),
-                      );
-                    }
-                  },
-                  icon: Icons.copy,
-                  label: 'Copiar Link',
-                  color: AppColors.primaryMain,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _actionButton({
     required VoidCallback onTap,

@@ -46,22 +46,56 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
             ),
             const W(16),
             Expanded(
-              child: Text(
-                pedido.isArchived
-                    ? '${pedido.localizador} - Arquivado'
-                    : pedido.localizador,
-                style: AppCss.largeBold.setColor(AppColors.white).setSize(20),
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      pedido.isArchived
+                          ? '${pedido.localizador} - Arquivado'
+                          : pedido.localizador,
+                      style: AppCss.largeBold.setColor(AppColors.white).setSize(20),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (pedido.isMestre) ...[
+                    const W(8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text('MESTRE',
+                          style: AppCss.minimumBold.copyWith(
+                              fontSize: 9, color: const Color(0xFF92400E))),
+                    ),
+                  ],
+                  if (pedido.isParcial) ...[
+                    const W(8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDBEAFE),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text('PARCIAL',
+                          style: AppCss.minimumBold.copyWith(
+                              fontSize: 9, color: const Color(0xFF1E40AF))),
+                    ),
+                  ],
+                ],
               ),
             ),
             const Spacer(),
             const W(12),
-            Tooltip(
-              message: 'Cria Pedido Parcial',
-              child: InkWell(
-                onTap: () async => push(context, PedidoCreatePage(pai: pedido)),
-                child: Icon(Icons.add, color: AppColors.white),
+            if (pedido.podeGerarParcial)
+              Tooltip(
+                message: 'Criar Pedido Parcial',
+                child: InkWell(
+                  onTap: () async => push(context, PedidoCreatePage(pai: pedido)),
+                  child: Icon(Icons.add, color: AppColors.white),
+                ),
               ),
-            ),
             Tooltip(
               message: 'Acompanhar pedido',
               child: InkWell(
@@ -145,22 +179,57 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
       );
 
   Widget _pedidoWidget(BuildContext context) => AppBar(
-        title: Text(
-          pedido.isArchived
-              ? '${pedido.localizador} - Arquivado'
-              : pedido.localizador,
-          style: AppCss.largeBold.setColor(AppColors.white).setSize(20),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                pedido.isArchived
+                    ? '${pedido.localizador} - Arquivado'
+                    : pedido.localizador,
+                style: AppCss.largeBold.setColor(AppColors.white).setSize(20),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (pedido.isMestre) ...[
+              const W(8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text('MESTRE',
+                    style: AppCss.minimumBold.copyWith(
+                        fontSize: 9, color: const Color(0xFF92400E))),
+              ),
+            ],
+            if (pedido.isParcial) ...[
+              const W(8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDBEAFE),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text('PARCIAL',
+                    style: AppCss.minimumBold.copyWith(
+                        fontSize: 9, color: const Color(0xFF1E40AF))),
+              ),
+            ],
+          ],
         ),
         backgroundColor: AppColors.primaryMain,
         actions: [
           const W(12),
-          Tooltip(
-            message: 'Cria Pedido Parcial',
-            child: IconButton(
-              onPressed: () => push(context, PedidoCreatePage(pai: pedido)),
-              icon: Icon(Icons.add, color: AppColors.white),
+          if (pedido.podeGerarParcial)
+            Tooltip(
+              message: 'Criar Pedido Parcial',
+              child: IconButton(
+                onPressed: () => push(context, PedidoCreatePage(pai: pedido)),
+                icon: Icon(Icons.add, color: AppColors.white),
+              ),
             ),
-          ),
           Tooltip(
             message: 'Acompanhar pedido',
             child: IconButton(

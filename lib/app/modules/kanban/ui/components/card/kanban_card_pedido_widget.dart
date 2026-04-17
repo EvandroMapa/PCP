@@ -42,12 +42,18 @@ class KanbanCardPedidoWidget extends StatelessWidget {
             usuarioCtrl.usuario!,
             pedido,
           );
+          final stripeColor = _getStripeColor(pedido);
           return Container(
             width: double.maxFinite,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: _getColor(pedido),
               borderRadius: const BorderRadius.all(Radius.circular(6)),
+              border: stripeColor != null
+                  ? Border(
+                      left: BorderSide(color: stripeColor, width: 4),
+                    )
+                  : null,
               boxShadow: [
                 BoxShadow(
                   color: const Color(0xFF000000).withValues(alpha: 0.1),
@@ -91,9 +97,53 @@ class KanbanCardPedidoWidget extends StatelessWidget {
                   ],
                 ),
                 const H(8),
-                Text(
-                  pedido.localizador,
-                  style: AppCss.mediumBold.setSize(13.5),
+                // ── Localizador + badge ──
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        pedido.localizador,
+                        style: AppCss.mediumBold.setSize(13.5),
+                      ),
+                    ),
+                    if (pedido.isMestre) ...[
+                      const W(6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                              color: const Color(0xFFF59E0B), width: 0.5),
+                        ),
+                        child: Text(
+                          'MESTRE',
+                          style: AppCss.minimumBold.copyWith(
+                              fontSize: 8, color: const Color(0xFF92400E)),
+                        ),
+                      ),
+                    ],
+                    if (pedido.isParcial) ...[
+                      const W(6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDBEAFE),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                              color: const Color(0xFF3B82F6), width: 0.5),
+                        ),
+                        child: Text(
+                          'PARCIAL',
+                          style: AppCss.minimumBold.copyWith(
+                              fontSize: 8, color: const Color(0xFF1E40AF)),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const H(8),
                 Row(
@@ -102,9 +152,9 @@ class KanbanCardPedidoWidget extends StatelessWidget {
                     KanbanCardUsersWidget(pedido, viewMode: viewMode),
                   ],
                 ),
-                // ── Barra de Produção CD (todos os pedidos em produção) ──
+                // ── Barra de Produção CD ──
                 KanbanCardCDWidget(pedido: pedido),
-                // ── Barra de Armação CDA (somente CDA quando etapa configurada) ──
+                // ── Barra de Armação CDA ──
                 KanbanCardElementosWidget(pedido: pedido),
                 if (viewMode == WidgetViewMode.expanded) ...[
                   KanbanCardProductsWidget(pedido: pedido),
@@ -131,5 +181,12 @@ class KanbanCardPedidoWidget extends StatelessWidget {
       return const Color.fromARGB(255, 255, 227, 177);
     }
     return const Color(0xFFFFFFFF);
+  }
+
+  /// Cor da borda lateral (stripe): âmbar p/ mestre, azul p/ parcial, nulo p/ normal
+  Color? _getStripeColor(PedidoModel pedido) {
+    if (pedido.isMestre) return const Color(0xFFF59E0B);
+    if (pedido.isParcial) return const Color(0xFF3B82F6);
+    return null;
   }
 }
