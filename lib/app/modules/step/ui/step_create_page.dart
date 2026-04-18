@@ -508,14 +508,13 @@ class _StepCreatePageState extends State<StepCreatePage> {
           ),
           const Divider(height: 28),
           _switchOption(
-            icon: Icons.block_outlined,
-            label: 'Bloquear saída sem elementos',
+            icon: Icons.playlist_add_check_outlined,
+            label: 'Aceitar pedidos sem elementos cadastrados',
             description:
-                'Cartões não podem sair desta etapa se NÃO tiverem elementos cadastrados.',
-            value: form.isBlockMoveWithoutElements,
+                'Pedidos CD e CDA sem elementos só podem ENTRAR nesta etapa se esta opção estiver ativa.',
+            value: form.isAcceptWithoutElements,
             onChanged: (_) {
-              form.isBlockMoveWithoutElements =
-                  !form.isBlockMoveWithoutElements;
+              form.isAcceptWithoutElements = !form.isAcceptWithoutElements;
               stepCtrl.formStream.update();
             },
           ),

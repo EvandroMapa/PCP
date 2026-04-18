@@ -22,7 +22,7 @@ class StepModel {
   bool considerarConsumoRelatorioPedidos = true;
   bool isExibirArmacao = false;
   bool isExibirGraficoCDA = false;
-  bool isBlockMoveWithoutElements = false;
+  bool isAcceptWithoutElements = true;
 
   static StepModel notFound = StepModel(
     createdAt: DateTime.now(),
@@ -40,7 +40,7 @@ class StepModel {
     considerarConsumoRelatorioPedidos: false,
     isExibirArmacao: false,
     isExibirGraficoCDA: false,
-    isBlockMoveWithoutElements: false,
+    isAcceptWithoutElements: true,
   );
 
   List<StepModel> get fromSteps => fromStepsIds
@@ -69,7 +69,7 @@ class StepModel {
     required this.considerarConsumoRelatorioPedidos,
     required this.isExibirArmacao,
     required this.isExibirGraficoCDA,
-    required this.isBlockMoveWithoutElements,
+    required this.isAcceptWithoutElements,
   });
 
   StepModel copyWith({
@@ -89,7 +89,7 @@ class StepModel {
     bool? considerarConsumoRelatorioPedidos,
     bool? isExibirArmacao,
     bool? isExibirGraficoCDA,
-    bool? isBlockMoveWithoutElements,
+    bool? isAcceptWithoutElements,
   }) {
     return StepModel(
       id: id ?? this.id,
@@ -108,8 +108,8 @@ class StepModel {
           this.considerarConsumoRelatorioPedidos,
       isExibirArmacao: isExibirArmacao ?? this.isExibirArmacao,
       isExibirGraficoCDA: isExibirGraficoCDA ?? this.isExibirGraficoCDA,
-      isBlockMoveWithoutElements:
-          isBlockMoveWithoutElements ?? this.isBlockMoveWithoutElements,
+      isAcceptWithoutElements:
+          isAcceptWithoutElements ?? this.isAcceptWithoutElements,
     );
   }
 
@@ -130,7 +130,7 @@ class StepModel {
       'considerarConsumoRelatorioPedidos': considerarConsumoRelatorioPedidos,
       'isExibirArmacao': isExibirArmacao,
       'isExibirGraficoCDA': isExibirGraficoCDA,
-      'isBlockMoveWithoutElements': isBlockMoveWithoutElements,
+      'isAcceptWithoutElements': isAcceptWithoutElements,
     };
   }
 
@@ -167,7 +167,7 @@ class StepModel {
         considerarConsumoRelatorioPedidos: false,
         isExibirArmacao: map['isExibirArmacao'] ?? false,
         isExibirGraficoCDA: map['isExibirGraficoCDA'] ?? false,
-        isBlockMoveWithoutElements: map['isBlockMoveWithoutElements'] ?? false,
+        isAcceptWithoutElements: map['isAcceptWithoutElements'] ?? true,
       );
     }
     return StepModel(
@@ -180,11 +180,11 @@ class StepModel {
           : <String>[],
       moveRoles: map['perfis_movimentacao'] != null
           ? ((map['perfis_movimentacao'] is String
-                  ? json.decode(map['perfis_movimentacao'])
-                  : map['perfis_movimentacao']) as List)
-              .map((x) => x.toString())
-              .toList()
-          : [],
+                   ? json.decode(map['perfis_movimentacao'])
+                   : map['perfis_movimentacao']) as List)
+               .map((x) => x.toString())
+               .toList()
+           : [],
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt']),
       isDefault: map['isDefault'] ?? false,
       isShipping: map['isShipping'] ?? false,
@@ -197,7 +197,8 @@ class StepModel {
           map['considerarConsumoRelatorioPedidos'] ?? true,
       isExibirArmacao: map['isExibirArmacao'] ?? false,
       isExibirGraficoCDA: map['isExibirGraficoCDA'] ?? false,
-      isBlockMoveWithoutElements: map['isBlockMoveWithoutElements'] ?? false,
+      isAcceptWithoutElements: map['isAcceptWithoutElements'] ?? 
+          !(map['isBlockMoveWithoutElements'] ?? false),
     );
   }
 
@@ -221,7 +222,8 @@ class StepModel {
           map['considerar_consumo_relatorio_pedidos'] ?? true,
       isExibirArmacao: map['exibir_armacao'] ?? false,
       isExibirGraficoCDA: map['exibir_grafico_cda'] ?? false,
-      isBlockMoveWithoutElements: map['bloqueia_mover_sem_elementos'] ?? false,
+      isAcceptWithoutElements: map['aceita_sem_elementos'] ??
+          !(map['bloqueia_mover_sem_elementos'] ?? false),
     );
   }
 
@@ -271,7 +273,7 @@ class StepModel {
       'considerar_consumo_relatorio_pedidos': considerarConsumoRelatorioPedidos,
       'exibir_armacao': isExibirArmacao,
       'exibir_grafico_cda': isExibirGraficoCDA,
-      'bloqueia_mover_sem_elementos': isBlockMoveWithoutElements,
+      'aceita_sem_elementos': isAcceptWithoutElements,
     };
   }
 

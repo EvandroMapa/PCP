@@ -225,10 +225,14 @@ class StepController {
 
   bool onWillAccept(PedidoModel pedido, StepModel step, {bool auto = false}) {
     if (pedido.step.id != step.id) {
-      if (pedido.step.isBlockMoveWithoutElements && pedido.elementos.isEmpty) {
+      // Regra de Aceite sem Elementos (válida para CD e CDA)
+      final isCDorCDA =
+          pedido.tipo == PedidoTipo.cd || pedido.tipo == PedidoTipo.cda;
+
+      if (isCDorCDA && !step.isAcceptWithoutElements && pedido.elementos.isEmpty) {
         NotificationService.showNegative(
           'Operação não permitida',
-          'Não é possível retirar desta etapa um pedido que não possua elementos cadastrados.',
+          'Esta etapa não aceita pedidos CD/CDA sem elementos cadastrados.',
         );
         return false;
       }
