@@ -5,7 +5,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_m
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/enums/sort_type.dart';
 
-enum RelatorioPedidoTipo { totaisPedidos, totais, pedidos, mestre }
+enum RelatorioPedidoTipo { totaisPedidos, totais, pedidos, mestre, geral, parciais }
 
 extension RelatorioTipoStatusExtension on RelatorioPedidoTipo {
   String get label {
@@ -18,6 +18,10 @@ extension RelatorioTipoStatusExtension on RelatorioPedidoTipo {
         return 'Totais e Pedidos';
       case RelatorioPedidoTipo.mestre:
         return 'Relatório de Pedidos Parciais';
+      case RelatorioPedidoTipo.geral:
+        return 'Informações do Pedido';
+      case RelatorioPedidoTipo.parciais:
+        return 'Saldo e Pedidos Parciais';
     }
   }
 }

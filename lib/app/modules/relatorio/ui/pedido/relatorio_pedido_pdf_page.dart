@@ -29,22 +29,31 @@ class RelatorioPedidoPdfPage {
         ),
         header: (context) => _buildHeader(bytes),
         footer: (context) => _buildFooter(context),
-        build: (pw.Context context) => [
-          _buildFiltersInfo(),
-          pw.SizedBox(height: 20),
-          if ([RelatorioPedidoTipo.totais, RelatorioPedidoTipo.totaisPedidos]
-              .contains(model.tipo)) ...[
-            _buildTotalsSection(),
+        build: (pw.Context context) {
+          final List<pw.Widget> children = [
+            _buildFiltersInfo(),
             pw.SizedBox(height: 20),
-          ],
-          if ([RelatorioPedidoTipo.pedidos, RelatorioPedidoTipo.totaisPedidos]
-              .contains(model.tipo)) ...[
-            _buildPedidosList(),
-          ],
-          if (model.tipo == RelatorioPedidoTipo.mestre) ...[
-            _buildMestreSection(),
-          ],
-        ],
+          ];
+
+          if ([RelatorioPedidoTipo.totais, RelatorioPedidoTipo.totaisPedidos].contains(model.tipo)) {
+            children.add(_buildTotalsSection());
+            children.add(pw.SizedBox(height: 20));
+          }
+
+          if ([RelatorioPedidoTipo.pedidos, RelatorioPedidoTipo.totaisPedidos].contains(model.tipo)) {
+            children.add(_buildPedidosList());
+          }
+
+          if (model.tipo == RelatorioPedidoTipo.geral) {
+            children.add(_buildGeralSection());
+          }
+
+          if ([RelatorioPedidoTipo.mestre, RelatorioPedidoTipo.parciais].contains(model.tipo)) {
+            children.add(_buildMestreSection());
+          }
+
+          return children;
+        },
       );
 
   pw.Widget _buildHeader(Uint8List logoBytes) {
@@ -298,6 +307,58 @@ class RelatorioPedidoPdfPage {
           ),
         ],
       ),
+    );
+  }
+
+  pw.Widget _buildGeralSection() {
+    final pedido = model.pedidos.first;
+    final fmt = NumberFormat('#,##0.000', 'pt_BR');
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Text('ITENS DO PEDIDO (PRODUTOS)',
+            style: pw.TextStyle(
+                fontSize: 11,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.blueGrey800)),
+        pw.SizedBox(height: 10),
+        pw.TableHelper.fromTextArray(
+          headers: ['PRODUTO / BITOLA', 'STATUS ATUAL', 'QTD (KG)'],
+          data: pedido.produtos
+              .map((p) => [
+                    '${p.produto.descricaoReplaced}mm',
+                    p.status.status.label.toUpperCase(),
+                    p.qtde.toKg()
+                  ])
+              .toList(),
+          headerStyle: pw.TextStyle(
+              fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+          headerDecoration: pw.BoxDecoration(color: PdfColors.blueGrey700),
+          cellStyle: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+          cellAlignment: pw.Alignment.centerLeft,
+          oddRowDecoration: pw.BoxDecoration(color: PdfColors.grey50),
+          columnWidths: {
+            0: const pw.FlexColumnWidth(3),
+            1: const pw.FlexColumnWidth(2),
+            2: const pw.FlexColumnWidth(1),
+          },
+        ),
+        pw.SizedBox(height: 15),
+        pw.Container(
+          padding: const pw.EdgeInsets.all(8),
+          decoration: const pw.BoxDecoration(color: PdfColors.blueGrey100),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('PESO TOTAL BRUTO DO PEDIDO:',
+                  style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800)),
+              pw.Text('${fmt.format(pedido.getQtdeTotal())} kg',
+                  style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

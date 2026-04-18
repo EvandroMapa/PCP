@@ -268,11 +268,11 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
           StreamOut<int>(
             stream: pedidoCtrl.activeTabStream.listen,
             builder: (_, index) {
-              String message = 'Gerar Relatório do Pedido';
+              String message = 'Relatório Geral do Pedido';
               if (index == 2) {
-                message = 'Gerar Relatório de Elementos';
+                message = 'Relatório de Elementos';
               } else if (index == 1 && pedido.isMestre) {
-                message = 'Gerar Relatório de Parciais (Saldo)';
+                message = 'Relatório de Parciais (Saldo)';
               }
 
               return Tooltip(
@@ -283,10 +283,10 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
                       elementoCtrl.onGeneratePDF(pedido);
                     } else if (index == 1 && pedido.isMestre) {
                       pedidoCtrl.onGeneratePDF(pedido,
-                          type: RelatorioPedidoTipo.mestre);
+                          type: RelatorioPedidoTipo.parciais);
                     } else {
                       pedidoCtrl.onGeneratePDF(pedido,
-                          type: RelatorioPedidoTipo.pedidos);
+                          type: RelatorioPedidoTipo.geral);
                     }
                   },
                   icon: Icon(Icons.picture_as_pdf, color: AppColors.white),
