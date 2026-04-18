@@ -51,9 +51,8 @@ class RelatorioPedidoPdfPage {
     return pw.Container(
       margin: const pw.EdgeInsets.only(bottom: 20),
       padding: const pw.EdgeInsets.only(bottom: 10),
-      decoration: pw.BoxDecoration(
-        border: pw.Border(
-            bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(bottom: pw.BorderSide(color: PdfColors.blueGrey800, width: 1.5)),
       ),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -68,10 +67,10 @@ class RelatorioPedidoPdfPage {
                   pw.Text(
                       model.tipo == RelatorioPedidoTipo.mestre
                           ? 'RELATÓRIO DE PEDIDOS PARCIAIS'
-                          : 'RELATÓRIO DE CONSUMO',
+                          : 'RELATÓRIO GERAL DE CONSUMO',
                       style: pw.TextStyle(
-                          fontSize: 16, fontWeight: pw.FontWeight.bold)),
-                  pw.Text('Sistema de Controle de Produção - PCP',
+                          fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800)),
+                  pw.Text('Sistema PCP - Controle de Produção Profissional',
                       style:
                           pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
                 ],
@@ -83,9 +82,9 @@ class RelatorioPedidoPdfPage {
             children: [
               pw.Text(
                   'Data: ${DateFormat('dd/MM/yyyy HH:mm').format(model.createdAt)}',
-                  style: pw.TextStyle(fontSize: 9)),
-              pw.Text('PCP v1.0',
-                  style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500)),
+                  style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+              pw.Text('Relatório Administrativo',
+                  style: pw.TextStyle(fontSize: 8, color: PdfColors.grey500, fontStyle: pw.FontStyle.italic)),
             ],
           ),
         ],
@@ -97,17 +96,17 @@ class RelatorioPedidoPdfPage {
     return pw.Container(
       margin: const pw.EdgeInsets.only(top: 20),
       padding: const pw.EdgeInsets.only(top: 10),
-      decoration: pw.BoxDecoration(
+      decoration: const pw.BoxDecoration(
         border:
             pw.Border(top: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
       ),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text('Relatório Gerencial de Consumo',
-              style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+          pw.Text('Documento para conferência e análise de produção',
+              style: pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
           pw.Text('Página ${context.pageNumber} de ${context.pagesCount}',
-              style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+              style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600, fontWeight: pw.FontWeight.bold)),
         ],
       ),
     );
@@ -115,10 +114,11 @@ class RelatorioPedidoPdfPage {
 
   pw.Widget _buildFiltersInfo() {
     return pw.Container(
-      padding: const pw.EdgeInsets.all(10),
+      padding: const pw.EdgeInsets.all(12),
       decoration: pw.BoxDecoration(
-        color: PdfColors.grey100,
-        borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
+        color: PdfColors.blueGrey50,
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+        border: pw.Border.all(color: PdfColors.blueGrey100),
       ),
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -127,15 +127,15 @@ class RelatorioPedidoPdfPage {
             children: [
               _infoCell('CLIENTE:', model.cliente?.nome ?? 'TODOS OS CLIENTES',
                   flex: 2),
-              _infoCell('TIPO:', model.tipo.label, flex: 1),
+              _infoCell('TIPO DE RELATÓRIO:', model.tipo.label.toUpperCase(), flex: 1),
             ],
           ),
-          pw.SizedBox(height: 5),
+          pw.SizedBox(height: 8),
           pw.Row(
             children: [
-              _infoCell('STATUS:', model.status.map((e) => e.label).join(', '),
+              _infoCell('FILTRO STATUS:', model.status.isEmpty ? 'TODOS' : model.status.map((e) => e.label).join(', '),
                   flex: 2),
-              _infoCell('PEDIDOS:', model.pedidos.length.toString(), flex: 1),
+              _infoCell('TOTAL PEDIDOS:', model.pedidos.length.toString(), flex: 1),
             ],
           ),
         ],
@@ -146,16 +146,12 @@ class RelatorioPedidoPdfPage {
   pw.Widget _infoCell(String label, String value, {int flex = 1}) {
     return pw.Expanded(
       flex: flex,
-      child: pw.RichText(
-        text: pw.TextSpan(
-          children: [
-            pw.TextSpan(
-                text: '$label ',
-                style:
-                    pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
-            pw.TextSpan(text: value, style: pw.TextStyle(fontSize: 8)),
-          ],
-        ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(label, style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey600)),
+          pw.Text(value, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+        ],
       ),
     );
   }
@@ -169,11 +165,11 @@ class RelatorioPedidoPdfPage {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text('RESUMO GERAL',
-            style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
-        pw.SizedBox(height: 8),
-        pw.Table.fromTextArray(
-          headers: ['DESCRIÇÃO', 'PESO TOTAL (KG)'],
+        pw.Text('RESUMO CONSOLIDADO',
+            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800)),
+        pw.SizedBox(height: 10),
+        pw.TableHelper.fromTextArray(
+          headers: ['DESCRIÇÃO', 'PESO TOTAL'],
           data: [
             [
               'TOTAL GERAL DE PEDIDOS FILTRADOS',
@@ -186,7 +182,7 @@ class RelatorioPedidoPdfPage {
               color: PdfColors.white),
           headerDecoration:
               const pw.BoxDecoration(color: PdfColors.blueGrey800),
-          cellStyle: const pw.TextStyle(fontSize: 9),
+          cellStyle: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold),
           cellAlignment: pw.Alignment.centerLeft,
           columnWidths: {
             0: const pw.FlexColumnWidth(3),
@@ -195,15 +191,16 @@ class RelatorioPedidoPdfPage {
         ),
         if (statusTotals.isNotEmpty) ...[
           pw.SizedBox(height: 15),
-          pw.Text('POR STATUS',
-              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+          pw.Text('DETALHAMENTO POR STATUS',
+              style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey600)),
           pw.SizedBox(height: 5),
-          pw.Table.fromTextArray(
-            headers: ['STATUS', 'PESO'],
+          pw.TableHelper.fromTextArray(
+            headers: ['STATUS DE PRODUÇÃO', 'PESO'],
             data: statusTotals,
             headerStyle:
-                pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800),
             cellStyle: const pw.TextStyle(fontSize: 8),
+            headerDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
             rowDecoration: const pw.BoxDecoration(
               border: pw.Border(
                   bottom: pw.BorderSide(color: PdfColors.grey200, width: 0.5)),
@@ -219,9 +216,9 @@ class RelatorioPedidoPdfPage {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text('PEDIDOS DETALHADOS',
-            style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
-        pw.SizedBox(height: 10),
+        pw.Text('LISTAGEM DETALHADA DE PEDIDOS',
+            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800)),
+        pw.SizedBox(height: 12),
         for (final pedido in model.pedidos) ...[
           _buildPedidoItem(pedido),
           pw.SizedBox(height: 15),
@@ -234,38 +231,40 @@ class RelatorioPedidoPdfPage {
     return pw.Container(
       decoration: pw.BoxDecoration(
         border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
       ),
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Container(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            color: PdfColors.grey200,
+            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            color: PdfColors.blueGrey800,
             child: pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text('PEDIDO: ${pedido.localizador}',
                     style: pw.TextStyle(
-                        fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                        fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.white)),
                 pw.Text(
-                    'CRIADO EM: ${DateFormat('dd/MM/yyyy HH:mm').format(pedido.createdAt)}',
-                    style: pw.TextStyle(fontSize: 8)),
+                    'DATA: ${DateFormat('dd/MM/yyyy').format(pedido.createdAt)}',
+                    style: pw.TextStyle(fontSize: 8, color: PdfColors.white)),
               ],
             ),
           ),
           pw.Padding(
-            padding: const pw.EdgeInsets.all(8),
+            padding: const pw.EdgeInsets.all(10),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Row(children: [
                   _infoCell('CLIENTE:', pedido.cliente.nome, flex: 2),
+                  _infoCell('OBRA:', pedido.obra.descricao, flex: 2),
                   _infoCell('ENTREGA:', pedido.deliveryAt?.text() ?? 'N/D',
                       flex: 1),
                 ]),
-                pw.SizedBox(height: 8),
-                pw.Table.fromTextArray(
-                  headers: ['BITOLA', 'STATUS', 'QUANTIDADE'],
+                pw.SizedBox(height: 10),
+                pw.TableHelper.fromTextArray(
+                  headers: ['PRODUTO / BITOLA', 'STATUS ATUAL', 'PESO'],
                   data: pedido.produtos
                       .map((p) => [
                             '${p.produto.descricaoReplaced}mm',
@@ -274,7 +273,8 @@ class RelatorioPedidoPdfPage {
                           ])
                       .toList(),
                   headerStyle:
-                      pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
+                      pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800),
+                  headerDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
                   cellStyle: const pw.TextStyle(fontSize: 8),
                   cellAlignment: pw.Alignment.centerLeft,
                   columnWidths: {
@@ -285,11 +285,13 @@ class RelatorioPedidoPdfPage {
                 ),
                 pw.Container(
                   alignment: pw.Alignment.centerRight,
-                  padding: const pw.EdgeInsets.only(top: 8),
-                  child: pw.Text(
-                      'TOTAL DO PEDIDO: ${pedido.getQtdeTotal().toKg()}',
-                      style: pw.TextStyle(
-                          fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                  padding: const pw.EdgeInsets.only(top: 10),
+                  child: pw.RichText(
+                    text: pw.TextSpan(children: [
+                      pw.TextSpan(text: 'TOTAL DO PEDIDO: ', style: pw.TextStyle(fontSize: 9, color: PdfColors.blueGrey700)),
+                      pw.TextSpan(text: pedido.getQtdeTotal().toKg(), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900)),
+                    ])
+                  ),
                 ),
               ],
             ),
@@ -306,11 +308,11 @@ class RelatorioPedidoPdfPage {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        pw.Text('RESUMO DE SALDO (MESTRE)',
-            style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
-        pw.SizedBox(height: 8),
-        pw.Table.fromTextArray(
-          headers: ['PRODUTO', 'ORIGINAL', 'PARCIAIS', 'SALDO'],
+        pw.Text('RESUMO DE SALDO (PEDIDO MESTRE)',
+            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800)),
+        pw.SizedBox(height: 10),
+        pw.TableHelper.fromTextArray(
+          headers: ['PRODUTO', 'QTD ORIGINAL', 'PRODUZIDO', 'SALDO ATUAL'],
           data: mestre.produtos.map((p) {
             final double parciaisTotal = p.qtdeOriginal - p.qtde;
             return [
@@ -321,24 +323,25 @@ class RelatorioPedidoPdfPage {
             ];
           }).toList(),
           headerStyle:
-              pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold),
-          cellStyle: const pw.TextStyle(fontSize: 8),
+              pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+          headerDecoration: pw.BoxDecoration(color: PdfColors.blueGrey700),
+          cellStyle: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
           cellAlignment: pw.Alignment.centerLeft,
-          headerDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
+          oddRowDecoration: pw.BoxDecoration(color: PdfColors.grey50),
         ),
-        pw.SizedBox(height: 20),
+        pw.SizedBox(height: 25),
         pw.Text('DETALHAMENTO DE PEDIDOS PARCIAIS',
-            style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
-        pw.SizedBox(height: 10),
+            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800)),
+        pw.SizedBox(height: 12),
         if (parciais.isEmpty)
           pw.Padding(
             padding: const pw.EdgeInsets.only(top: 10),
             child: pw.Text('Nenhum pedido parcial gerado até o momento.',
-                style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic)),
+                style: pw.TextStyle(fontSize: 9, fontStyle: pw.FontStyle.italic, color: PdfColors.grey600)),
           ),
         for (final parcial in parciais) ...[
           _buildParcialItem(parcial),
-          pw.SizedBox(height: 12),
+          pw.SizedBox(height: 15),
         ],
       ],
     );
@@ -348,15 +351,15 @@ class RelatorioPedidoPdfPage {
     return pw.Container(
       decoration: pw.BoxDecoration(
         border: pw.Border.all(color: PdfColors.grey200, width: 0.5),
-        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
       ),
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Container(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: const pw.BoxDecoration(
-              color: PdfColors.grey50,
+              color: PdfColors.grey100,
               border: pw.Border(
                   bottom: pw.BorderSide(color: PdfColors.grey200, width: 0.5)),
             ),
@@ -365,29 +368,36 @@ class RelatorioPedidoPdfPage {
               children: [
                 pw.Text('PARCIAL: ${parcial.localizador}',
                     style: pw.TextStyle(
-                        fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                pw.Text(
+                        fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey900)),
+                pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: const pw.BoxDecoration(
+                    color: PdfColors.blue100,
+                    borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
+                  ),
+                  child: pw.Text(
                     'ETAPA: ${parcial.step.name.toUpperCase()}',
                     style: pw.TextStyle(
                         fontSize: 8,
                         fontWeight: pw.FontWeight.bold,
                         color: PdfColors.blue800)),
+                ),
               ],
             ),
           ),
           pw.Padding(
-            padding: const pw.EdgeInsets.all(6),
+            padding: const pw.EdgeInsets.all(10),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 if (parcial.descricao.isNotEmpty)
                   pw.Padding(
-                    padding: const pw.EdgeInsets.only(bottom: 4),
-                    child: pw.Text('DESCRIÇÃO: ${parcial.descricao}',
-                        style: pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
+                    padding: const pw.EdgeInsets.only(bottom: 8),
+                    child: pw.Text('OBSERVAÇÕES: ${parcial.descricao}',
+                        style: pw.TextStyle(fontSize: 8, color: PdfColors.grey700, fontStyle: pw.FontStyle.italic)),
                   ),
-                pw.Table.fromTextArray(
-                  headers: ['PRODUTO', 'STATUS', 'PESO'],
+                pw.TableHelper.fromTextArray(
+                  headers: ['DESCRIÇÃO DO PRODUTO', 'STATUS DE PRODUÇÃO', 'PESO'],
                   data: parcial.produtos
                       .map((p) => [
                             '${p.produto.descricaoReplaced}mm',
@@ -397,8 +407,9 @@ class RelatorioPedidoPdfPage {
                       .toList(),
                   headerStyle:
                       pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold),
+                  headerDecoration: const pw.BoxDecoration(color: PdfColors.grey50),
                   cellStyle: const pw.TextStyle(fontSize: 7),
-                  cellPadding: const pw.EdgeInsets.all(3),
+                  cellPadding: const pw.EdgeInsets.all(4),
                   columnWidths: {
                     0: const pw.FlexColumnWidth(2),
                     1: const pw.FlexColumnWidth(1.5),

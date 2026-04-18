@@ -57,13 +57,14 @@ class _StepCreatePageState extends State<StepCreatePage> {
   String _initialSnapshot = '';
 
   String _snapshot(StepCreateModel form) =>
-      '${form.name.text}|${form.color.value}'
+      '${form.name.text}|${form.color.toARGB32()}'
       '|${form.fromSteps.map((e) => e.id).join(',')}'
       '|${form.moveRoles.join(',')}'
       '|${form.isShipping}|${form.shipping?.description.text ?? ""}'
       '|${form.isArchivedAvailable}|${form.isPermiteProducao}'
       '|${form.considerarConsumoRelatorioPedidos}'
-      '|${form.isExibirArmacao}|${form.isExibirGraficoCDA}';
+      '|${form.isExibirArmacao}|${form.isExibirGraficoCDA}'
+      '|${form.isAcceptWithoutElements}';
 
   @override
   void initState() {
@@ -76,58 +77,72 @@ class _StepCreatePageState extends State<StepCreatePage> {
     super.initState();
   }
 
+  Future<bool> _onWillPop() async {
+    final isDirty = _snapshot(stepCtrl.form) != _initialSnapshot;
+    if (!isDirty) return true;
+
+    return await showConfirmDialog(
+      'Deseja realmente sair?',
+      widget.step != null
+          ? 'A edição que realizou será perdida'
+          : 'Os dados da Etapa serão perdidos.',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      resizeAvoid: true,
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () async {
-            final isDirty = _snapshot(stepCtrl.form) != _initialSnapshot;
-            if (!isDirty) {
-              pop(context);
-              return;
-            }
-            if (await showConfirmDialog(
-              'Deseja realmente sair?',
-              widget.step != null
-                  ? 'A edição que realizou será perdida'
-                  : 'Os dados da Etapa serão perdidos.',
-            )) {
-              if (context.mounted) pop(context);
-            }
-          },
-          icon: Icon(Icons.arrow_back, color: AppColors.white),
-        ),
-        title: StreamOut(
-          stream: stepCtrl.formStream.listen,
-          builder: (_, form) => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${form.isEdit ? 'Editar' : 'Nova'} Etapa',
-                style: AppCss.largeBold.setColor(AppColors.white),
+    return StreamOut(
+      stream: stepCtrl.formStream.listen,
+      builder: (_, form) => PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (didPop) return;
+          if (await _onWillPop()) {
+            if (context.mounted) pop(context);
+          }
+        },
+        child: AppScaffold(
+          resizeAvoid: true,
+          appBar: AppBar(
+            leading: IconButton(
+              onPressed: () async {
+                if (await _onWillPop()) {
+                  if (context.mounted) pop(context);
+                }
+              },
+              icon: Icon(Icons.arrow_back, color: AppColors.white),
+            ),
+            title: StreamOut(
+              stream: stepCtrl.formStream.listen,
+              builder: (_, form) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${form.isEdit ? 'Editar' : 'Nova'} Etapa',
+                    style: AppCss.largeBold.setColor(AppColors.white),
+                  ),
+                  if (form.name.text.isNotEmpty)
+                    Text(
+                      form.name.text,
+                      style: AppCss.minimumRegular
+                          .setColor(AppColors.white.withValues(alpha: 0.7)),
+                    ),
+                ],
               ),
-              if (form.name.text.isNotEmpty)
-                Text(
-                  form.name.text,
-                  style: AppCss.minimumRegular
-                      .setColor(AppColors.white.withValues(alpha: 0.7)),
-                ),
+            ),
+            actions: [
+              IconLoadingButton(
+                () async => await stepCtrl.onConfirm(context, widget.step),
+              ),
             ],
+            backgroundColor: AppColors.primaryMain,
+            elevation: 0,
+          ),
+          body: StreamOut(
+            stream: stepCtrl.formStream.listen,
+            builder: (_, form) => _buildLayout(form),
           ),
         ),
-        actions: [
-          IconLoadingButton(
-            () async => await stepCtrl.onConfirm(context, widget.step),
-          ),
-        ],
-        backgroundColor: AppColors.primaryMain,
-        elevation: 0,
-      ),
-      body: StreamOut(
-        stream: stepCtrl.formStream.listen,
-        builder: (_, form) => _buildLayout(form),
       ),
     );
   }

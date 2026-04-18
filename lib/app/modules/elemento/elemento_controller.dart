@@ -15,9 +15,7 @@ import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/services/supabase_storage_service.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:collection/collection.dart';
-import 'package:pdf/pdf.dart' hide PdfDocument;
 import 'package:pdf/widgets.dart' as pw;
-import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
@@ -25,6 +23,7 @@ import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/services/pdf_download_service/pdf_download_service_mobile.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
+import 'package:aco_plus/app/modules/relatorio/ui/pedido/relatorio_elemento_pdf_page.dart';
 
 final elementoCtrl = ElementoController();
 
@@ -583,41 +582,9 @@ class ElementoController {
     try {
       final pdf = pw.Document();
       final imageBytes = await LogoHelper.logoBytesForPdf();
-      final fmt = NumberFormat('#,##0.000', 'pt_BR');
 
-      // Agrupar totais por bitola para o resumo
-      final Map<String, double> resumoBitola = {};
-      for (final el in elementos) {
-        for (final pos in el.posicoes) {
-          final pesoTotal = pos.pesoKg * el.qtde;
-          final label = pos.produto?.labelMinified ?? pos.produtoId;
-          resumoBitola[label] = (resumoBitola[label] ?? 0) + pesoTotal;
-        }
-      }
-
-      pdf.addPage(
-        pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(32),
-          theme: pw.ThemeData.withFont(
-            base: pw.Font.helvetica(),
-            bold: pw.Font.helveticaBold(),
-          ),
-          header: (context) => _buildPDFHeader(imageBytes, pedido),
-          footer: (context) => _buildPDFFooter(context),
-          build: (context) => [
-            _buildPDFOrderInfo(pedido),
-            pw.SizedBox(height: 20),
-            pw.Text('ELEMENTOS DO PEDIDO',
-                style:
-                    pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 10),
-            ...elementos.map((el) => _buildPDFElementItem(el, fmt)),
-            pw.SizedBox(height: 20),
-            _buildPDFSummaryTable(resumoBitola, fmt),
-          ],
-        ),
-      );
+      final relatorio = RelatorioElementoPdfPage(pedido: pedido, elementos: elementos);
+      pdf.addPage(relatorio.build(imageBytes));
 
       final name =
           "elementos_${pedido.localizador.toLowerCase()}_${DateTime.now().toFileName()}.pdf";
@@ -628,199 +595,6 @@ class ElementoController {
       NotificationService.showNegative('Erro', 'Falha ao gerar o PDF: $e');
     }
     if (contextGlobal.mounted) Navigator.pop(contextGlobal);
-  }
-
-  pw.Widget _buildPDFHeader(Uint8List logo, PedidoModel pedido) {
-    return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 20),
-      padding: const pw.EdgeInsets.only(bottom: 10),
-      decoration: const pw.BoxDecoration(
-        border: pw.Border(
-            bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
-      ),
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        children: [
-          pw.Row(
-            children: [
-              pw.Image(pw.MemoryImage(logo), width: 40, height: 40),
-              pw.SizedBox(width: 15),
-              pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text('RELATÓRIO TÉCNICO DE ELEMENTOS',
-                      style: pw.TextStyle(
-                          fontSize: 14, fontWeight: pw.FontWeight.bold)),
-                  pw.Text('Sistema PCP - Controle de Produção',
-                      style:
-                          pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
-                ],
-              ),
-            ],
-          ),
-          pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.end,
-            children: [
-              pw.Text('Pedido: ${pedido.localizador}',
-                  style: pw.TextStyle(
-                      fontSize: 10, fontWeight: pw.FontWeight.bold)),
-              pw.Text(
-                  'Data: ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}',
-                  style: pw.TextStyle(fontSize: 8)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  pw.Widget _buildPDFFooter(pw.Context context) {
-    return pw.Container(
-      margin: const pw.EdgeInsets.only(top: 20),
-      padding: const pw.EdgeInsets.only(top: 10),
-      decoration: const pw.BoxDecoration(
-        border:
-            pw.Border(top: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
-      ),
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        children: [
-          pw.Text('Documento para conferência interna de produção',
-              style: pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
-          pw.Text('Página ${context.pageNumber} de ${context.pagesCount}',
-              style: pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
-        ],
-      ),
-    );
-  }
-
-  pw.Widget _buildPDFOrderInfo(PedidoModel pedido) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.all(10),
-      decoration: const pw.BoxDecoration(
-        color: PdfColors.grey100,
-        borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
-      ),
-      child: pw.Column(
-        children: [
-          pw.Row(children: [
-            _pdfInfoCell('CLIENTE:', pedido.cliente.nome, flex: 2),
-            _pdfInfoCell('OBRA:', pedido.obra.descricao, flex: 2),
-          ]),
-          pw.SizedBox(height: 5),
-          pw.Row(children: [
-            _pdfInfoCell(
-                'ENTREGA:',
-                pedido.deliveryAt != null
-                    ? DateFormat('dd/MM/yyyy').format(pedido.deliveryAt!)
-                    : 'N/D'),
-            _pdfInfoCell('TIPO:', pedido.tipo.name.toUpperCase()),
-          ]),
-        ],
-      ),
-    );
-  }
-
-  pw.Widget _pdfInfoCell(String label, String value, {int flex = 1}) {
-    return pw.Expanded(
-      flex: flex,
-      child: pw.RichText(
-        text: pw.TextSpan(
-          children: [
-            pw.TextSpan(
-                text: '$label ',
-                style:
-                    pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
-            pw.TextSpan(text: value, style: pw.TextStyle(fontSize: 8)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  pw.Widget _buildPDFElementItem(ElementoModel el, NumberFormat fmt) {
-    return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 15),
-      decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: PdfColors.grey200, width: 0.5),
-      ),
-      child: pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          pw.Container(
-            padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            color: PdfColors.grey200,
-            child: pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Text('ELEMENTO: ${el.nome} (x${el.qtde})',
-                    style: pw.TextStyle(
-                        fontSize: 9, fontWeight: pw.FontWeight.bold)),
-                pw.Text('PESO TOTAL EL: ${fmt.format(el.pesoTotal)} kg',
-                    style: pw.TextStyle(
-                        fontSize: 8, fontWeight: pw.FontWeight.bold)),
-              ],
-            ),
-          ),
-          pw.TableHelper.fromTextArray(
-            headers: ['POSIÇÃO', 'OS', 'BITOLA', 'PESO UNIT.', 'PESO TOTAL'],
-            data: el.posicoes
-                .map((p) => [
-                      p.nome,
-                      p.numeroOs,
-                      p.produto?.labelMinified ?? p.produtoId,
-                      '${fmt.format(p.pesoKg)} kg',
-                      '${fmt.format(p.pesoKg * el.qtde)} kg',
-                    ])
-                .toList(),
-            headerStyle:
-                pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold),
-            cellStyle: const pw.TextStyle(fontSize: 7),
-            cellAlignment: pw.Alignment.centerLeft,
-            headerDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
-            columnWidths: {
-              0: const pw.FlexColumnWidth(1.5),
-              1: const pw.FlexColumnWidth(1.5),
-              2: const pw.FlexColumnWidth(1.5),
-              3: const pw.FlexColumnWidth(1),
-              4: const pw.FlexColumnWidth(1),
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  pw.Widget _buildPDFSummaryTable(
-      Map<String, double> resumo, NumberFormat fmt) {
-    final double totalGeral = resumo.values.fold(0, (a, b) => a + b);
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text('RESUMO POR BITOLA',
-            style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
-        pw.SizedBox(height: 8),
-        pw.TableHelper.fromTextArray(
-          headers: ['BITOLA', 'PESO TOTAL (KG)'],
-          data: [
-            ...resumo.entries.map((e) => [e.key, '${fmt.format(e.value)} kg']),
-            ['TOTAL GERAL', '${fmt.format(totalGeral)} kg'],
-          ],
-          headerStyle: pw.TextStyle(
-              fontSize: 9,
-              fontWeight: pw.FontWeight.bold,
-              color: PdfColors.white),
-          headerDecoration:
-              const pw.BoxDecoration(color: PdfColors.blueGrey800),
-          cellStyle: const pw.TextStyle(fontSize: 9),
-          cellAlignment: pw.Alignment.centerLeft,
-          columnWidths: {
-            0: const pw.FlexColumnWidth(3),
-            1: const pw.FlexColumnWidth(1)
-          },
-        ),
-      ],
-    );
   }
 
   Future<Map<String, dynamic>> onImportCSV(

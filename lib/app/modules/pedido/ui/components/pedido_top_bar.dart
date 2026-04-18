@@ -9,6 +9,7 @@ import 'package:aco_plus/app/modules/elemento/elemento_controller.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_create_page.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_page.dart';
+import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_pedido_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -267,15 +268,27 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
           StreamOut<int>(
             stream: pedidoCtrl.activeTabStream.listen,
             builder: (_, index) {
-              final isElementos = index == 1;
+              String message = 'Gerar Relatório do Pedido';
+              if (index == 2) {
+                message = 'Gerar Relatório de Elementos';
+              } else if (index == 1 && pedido.isMestre) {
+                message = 'Gerar Relatório de Parciais (Saldo)';
+              }
+
               return Tooltip(
-                message: isElementos
-                    ? 'Gerar Relatório de Elementos'
-                    : 'Gerar Relatório do Pedido',
+                message: message,
                 child: IconButton(
-                  onPressed: () => isElementos
-                      ? elementoCtrl.onGeneratePDF(pedido)
-                      : pedidoCtrl.onGeneratePDF(pedido),
+                  onPressed: () {
+                    if (index == 2) {
+                      elementoCtrl.onGeneratePDF(pedido);
+                    } else if (index == 1 && pedido.isMestre) {
+                      pedidoCtrl.onGeneratePDF(pedido,
+                          type: RelatorioPedidoTipo.mestre);
+                    } else {
+                      pedidoCtrl.onGeneratePDF(pedido,
+                          type: RelatorioPedidoTipo.pedidos);
+                    }
+                  },
                   icon: Icon(Icons.picture_as_pdf, color: AppColors.white),
                 ),
               );

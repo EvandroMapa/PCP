@@ -651,7 +651,7 @@ class PedidoController {
     return step.index;
   }
 
-  Future<void> onGeneratePDF(PedidoModel pedido) async {
+  Future<void> onGeneratePDF(PedidoModel pedido, {RelatorioPedidoTipo? type}) async {
     showLoadingDialog();
     try {
       final RelatorioPedidoViewModel relatorio = RelatorioPedidoViewModel();
@@ -666,9 +666,9 @@ class PedidoController {
           .toSet()
           .toList();
 
-      relatorio.tipo = pedido.isMestre
+      relatorio.tipo = type ?? (pedido.isMestre
           ? RelatorioPedidoTipo.mestre
-          : RelatorioPedidoTipo.pedidos;
+          : RelatorioPedidoTipo.pedidos);
 
       final pedidosRelatorio =
           pedido.isMestre ? [pedido, ...pedido.getPedidosFilhos()] : [pedido];
