@@ -73,10 +73,7 @@ class RelatorioPedidoPdfPage {
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
-                  pw.Text(
-                      model.tipo == RelatorioPedidoTipo.mestre
-                          ? 'RELATÓRIO DE PEDIDOS PARCIAIS'
-                          : 'RELATÓRIO GERAL DE CONSUMO',
+                  pw.Text(_tituloRelatorio(),
                       style: pw.TextStyle(
                           fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800)),
                   pw.Text('Sistema PCP - Controle de Produção Profissional',
@@ -121,7 +118,24 @@ class RelatorioPedidoPdfPage {
     );
   }
 
+  String _tituloRelatorio() {
+    switch (model.tipo) {
+      case RelatorioPedidoTipo.geral:
+        return 'RELATÓRIO DE PEDIDO';
+      case RelatorioPedidoTipo.mestre:
+      case RelatorioPedidoTipo.parciais:
+        return 'RELATÓRIO DE PEDIDOS PARCIAIS';
+      default:
+        return 'RELATÓRIO GERAL DE CONSUMO';
+    }
+  }
+
   pw.Widget _buildFiltersInfo() {
+    // Para relatórios de pedido único (geral/parciais), mostra dados do pedido
+    if ([RelatorioPedidoTipo.geral, RelatorioPedidoTipo.parciais].contains(model.tipo)) {
+      return _buildPedidoIdentificacao();
+    }
+    // Para relatórios em lote, mostra os filtros aplicados
     return pw.Container(
       padding: const pw.EdgeInsets.all(12),
       decoration: pw.BoxDecoration(
@@ -145,6 +159,40 @@ class RelatorioPedidoPdfPage {
               _infoCell('FILTRO STATUS:', model.status.isEmpty ? 'TODOS' : model.status.map((e) => e.label).join(', '),
                   flex: 2),
               _infoCell('TOTAL PEDIDOS:', model.pedidos.length.toString(), flex: 1),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildPedidoIdentificacao() {
+    final pedido = model.pedidos.first;
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(12),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.blueGrey50,
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+        border: pw.Border.all(color: PdfColors.blueGrey100),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Row(
+            children: [
+              _infoCell('PEDIDO:', pedido.localizador, flex: 1),
+              _infoCell('CLIENTE:', pedido.cliente.nome, flex: 2),
+              _infoCell('TIPO:', pedido.tipo.name.toUpperCase(), flex: 1),
+            ],
+          ),
+          pw.SizedBox(height: 8),
+          pw.Row(
+            children: [
+              _infoCell('OBRA:', pedido.obra.descricao, flex: 2),
+              _infoCell('ENTREGA:', pedido.deliveryAt != null
+                  ? DateFormat('dd/MM/yyyy').format(pedido.deliveryAt!)
+                  : 'N/D', flex: 1),
+              _infoCell('ETAPA:', pedido.step.name.toUpperCase(), flex: 1),
             ],
           ),
         ],

@@ -355,6 +355,12 @@ class PedidoController {
   }) async {
     if (await _isDeleteUnavailable(pedido)) return false;
 
+    // Fecha a tela ANTES das operações no banco para evitar
+    // que o Realtime dispare rebuild antes do pop (flash do mestre)
+    if (isPedido) {
+      pop(value);
+    }
+
     // Se é parcial, desvincular do mestre e devolver quantidade antes de deletar
     if (pedido.isParcial) {
       try {
@@ -382,11 +388,8 @@ class PedidoController {
     }
 
     await BackendClient.pedidos.delete(pedido);
-    if (isPedido) {
-      pop(value);
-    }
     NotificationService.showPositive(
-      'Pedido Excluída',
+      'Pedido Excluído',
       'Operação realizada com sucesso',
       position: NotificationPosition.bottom,
     );
