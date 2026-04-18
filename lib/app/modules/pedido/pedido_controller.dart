@@ -49,6 +49,7 @@ class PedidoController {
 
   final AppStream<int> activeTabStream = AppStream<int>.seed(0);
 
+
   final AppStream<PedidoUtils> utilsStream = AppStream<PedidoUtils>.seed(
     PedidoUtils(),
   );
@@ -71,6 +72,7 @@ class PedidoController {
 
   Timer? _pagePollingTimer;
   void onInitPage(PedidoModel pedido) {
+    activeTabStream.add(0); // reseta a aba ativa ao abrir um novo pedido
     pedidoStream.add(pedido);
     // Forçar atualização das ordens para garantir que vínculos editados recentemente sejam refletidos
     FirestoreClient.ordens.fetch();

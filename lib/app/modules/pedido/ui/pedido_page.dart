@@ -67,6 +67,7 @@ class _PedidoPageState extends State<PedidoPage>
     _tabController =
         TabController(length: _lastShowElementos ? 3 : 2, vsync: this);
     _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
       pedidoCtrl.activeTabStream.add(_tabController.index);
     });
     if (widget.reason != PedidoInitReason.kanban) {
@@ -87,6 +88,7 @@ class _PedidoPageState extends State<PedidoPage>
           TabController(length: show ? 3 : 2, vsync: this);
       _tabController.index = currentIdx.clamp(0, _tabController.length - 1);
       _tabController.addListener(() {
+        if (_tabController.indexIsChanging) return;
         pedidoCtrl.activeTabStream.add(_tabController.index);
       });
     }
