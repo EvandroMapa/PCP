@@ -5,11 +5,9 @@ import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
-import 'package:aco_plus/app/modules/elemento/elemento_controller.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_create_page.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_page.dart';
-import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_pedido_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -118,27 +116,7 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
                 child: Icon(Icons.local_shipping, color: AppColors.white),
               ),
             ),
-            const W(12),
-            const W(12),
-            const W(12),
-            StreamOut<int>(
-              stream: pedidoCtrl.activeTabStream.listen,
-              builder: (_, index) {
-                final isElementos = index == 1;
-                return Tooltip(
-                  message: isElementos
-                      ? 'Gerar Relatório de Elementos'
-                      : 'Gerar Relatório do Pedido',
-                  child: IconButton(
-                    onPressed: () => isElementos
-                        ? elementoCtrl.onGeneratePDF(pedido)
-                        : pedidoCtrl.onGeneratePDF(pedido),
-                    icon: Icon(Icons.picture_as_pdf, color: AppColors.white),
-                  ),
-                );
-              },
-            ),
-            const W(12),
+
             if (pedido.step.isArchivedAvailable && !pedido.isArchived) ...[
               Tooltip(
                 message: 'Arquivar pedido',
@@ -265,43 +243,7 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
               icon: Icon(Icons.local_shipping, color: AppColors.white),
             ),
           ),
-          StreamOut<int>(
-            stream: pedidoCtrl.activeTabStream.listen,
-            builder: (_, index) {
-              // Aba 0 = Informações Gerais → Relatório de Pedido
-              // Aba 1 = Produtos → Mestre: Parciais / Outros: Relatório de Pedido
-              // Aba 2 = Elementos → Relatório de Elementos
-              String message;
-              if (index == 2) {
-                message = 'Relatório de Elementos';
-              } else if (index == 1 && pedido.isMestre) {
-                message = 'Relatório de Pedidos Parciais';
-              } else {
-                message = 'Relatório de Pedido';
-              }
 
-              return Tooltip(
-                message: message,
-                child: IconButton(
-                  onPressed: () {
-                    if (index == 2) {
-                      // Aba Elementos
-                      elementoCtrl.onGeneratePDF(pedido);
-                    } else if (index == 1 && pedido.isMestre) {
-                      // Aba Produtos em pedido Mestre → Parciais
-                      pedidoCtrl.onGeneratePDF(pedido,
-                          type: RelatorioPedidoTipo.parciais);
-                    } else {
-                      // Aba Info Gerais OU Produtos (não-mestre) → Pedido
-                      pedidoCtrl.onGeneratePDF(pedido,
-                          type: RelatorioPedidoTipo.geral);
-                    }
-                  },
-                  icon: Icon(Icons.picture_as_pdf, color: AppColors.white),
-                ),
-              );
-            },
-          ),
           if (pedido.step.isArchivedAvailable && !pedido.isArchived)
             Tooltip(
               message: 'Arquivar pedido',

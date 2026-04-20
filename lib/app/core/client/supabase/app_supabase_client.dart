@@ -46,6 +46,26 @@ class AppSupabaseClient {
 
   static Future<void> init() async {
     try {
+      // ── 1. Realtime primeiro ────────────────────────────────────────────
+      // Configura os canais de Realtime ANTES dos fetches pesados,
+      // para que qualquer mudança no banco seja recebida imediatamente
+      usuarioTipos.listen();
+      usuarios.listen();
+      clientes.listen();
+      steps.listen();
+      pedidos.listen();
+      ordens.listen();
+      materiaPrima.listen();
+      pedidoArquivos.listen();
+      pedidoProdutos.listen();
+      tags.listen();
+      checklists.listen();
+      automatizacao.listen();
+      notificacoes.listen();
+      elementoArquivos.listen();
+      elementos.listen();
+
+      // ── 2. Fetches sequenciais (dados iniciais) ─────────────────────────
       await usuarioTipos
           .start()
           .catchError((e) => log('Error starting usuarioTipos: $e'));
@@ -90,28 +110,11 @@ class AppSupabaseClient {
           .catchError((e) => log('Error starting elementos: $e'));
       await ordens.startOnlyArquivadas();
 
-      // Pedidos depends on clientes/steps for mapping, so start it after
+      // Pedidos depende de clientes/steps para mapeamento
       await pedidos
           .start()
           .catchError((e) => log('Error starting pedidos: $e'));
       await pedidos.startOnlyArquivadas();
-
-      // Start real-time listeners
-      usuarioTipos.listen();
-      usuarios.listen();
-      clientes.listen();
-      steps.listen();
-      pedidos.listen();
-      ordens.listen();
-      materiaPrima.listen();
-      pedidoArquivos.listen();
-      pedidoProdutos.listen();
-      tags.listen();
-      checklists.listen();
-      automatizacao.listen();
-      notificacoes.listen();
-      elementoArquivos.listen();
-      elementos.listen();
     } catch (e) {
       log('AppSupabaseClient: Critical error during init: $e');
     }

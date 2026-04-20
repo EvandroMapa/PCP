@@ -23,8 +23,8 @@ class SupabaseService implements Service {
         url: url,
         anonKey: anonKey,
       );
-      // Accessing our custom collection wrapper
-      await AppSupabaseClient.init();
+      // AppSupabaseClient.init() é chamado em background (initAplicationServices)
+      // para não bloquear o runApp com dezenas de queries sequenciais
       print('Supabase: Initialized successfully with URL: $url');
     } catch (e) {
       print('Supabase: Error during initialization: $e');

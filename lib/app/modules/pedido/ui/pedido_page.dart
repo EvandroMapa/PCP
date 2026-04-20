@@ -31,6 +31,7 @@ import 'package:aco_plus/app/modules/pedido/ui/components/pedido_timeline_widget
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_top_bar.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_users_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_vinculados_widget.dart';
+import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_pedido_view_model.dart';
 import 'package:flutter/material.dart';
 
 enum PedidoInitReason { page, kanban, archived }
@@ -203,7 +204,8 @@ class _PedidoPageState extends State<PedidoPage>
                 _produtosBody(pedido),
 
                 // Aba 3: Elementos
-                if (_lastShowElementos) ElementosTab(pedido: pedido),
+                if (_lastShowElementos)
+                  _elementosBody(pedido),
               ],
             ),
           ),
@@ -331,6 +333,37 @@ class _PedidoPageState extends State<PedidoPage>
     );
   }
 
+  /// Botão flutuante de relatório — aparece no canto superior direito de cada aba
+  Widget _botaoRelatorio(
+    PedidoModel pedido, {
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: label,
+      preferBelow: false,
+      waitDuration: const Duration(milliseconds: 300),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: AppColors.primaryMain.withValues(alpha: 0.08),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.primaryMain.withValues(alpha: 0.20),
+            ),
+          ),
+          child: Icon(Icons.picture_as_pdf_outlined,
+              size: 14, color: AppColors.primaryMain),
+        ),
+      ),
+    );
+  }
+
+
   Widget _dashboardContent(PedidoModel pedido) {
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -386,6 +419,13 @@ class _PedidoPageState extends State<PedidoPage>
             children: [
               Expanded(child: PedidoTagsWidget(pedido)),
               PedidoUsersWidget(pedido),
+              const SizedBox(width: 8),
+              _botaoRelatorio(
+                pedido,
+                label: 'Relatório de Pedido',
+                onTap: () => pedidoCtrl.onGeneratePDF(pedido,
+                    type: RelatorioPedidoTipo.geral),
+              ),
             ],
           ),
           const H(16),
@@ -497,30 +537,83 @@ class _PedidoPageState extends State<PedidoPage>
   Widget _produtosBody(PedidoModel pedido) {
     return Container(
       color: AppColors.neutralLightest,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Pedido Mestre: tabela de saldo + cards dos parciais ──
-          if (pedido.pedidosFilhos.isNotEmpty) ...[
-            PaiPedidoSaldoTableWidget(
-              mestre: pedido,
-              filhos: pedido.getPedidosFilhos(),
+          // Botão de relatório no topo direito
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                _botaoRelatorio(
+                  pedido,
+                  label: pedido.isMestre
+                      ? 'Relatório de Parciais'
+                      : 'Relatório de Pedido',
+                  onTap: () => pedido.isMestre
+                      ? pedidoCtrl.onGeneratePDF(pedido,
+                          type: RelatorioPedidoTipo.parciais)
+                      : pedidoCtrl.onGeneratePDF(pedido,
+                          type: RelatorioPedidoTipo.geral),
+                ),
+              ],
             ),
-            const H(16),
-            PedidoFilhosWidget(
-                pedido: pedido, filhos: pedido.getPedidosFilhos()),
-          ],
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // ── Pedido Mestre: tabela de saldo + cards dos parciais ──
+                if (pedido.pedidosFilhos.isNotEmpty) ...[
+                  PaiPedidoSaldoTableWidget(
+                    mestre: pedido,
+                    filhos: pedido.getPedidosFilhos(),
+                  ),
+                  const H(16),
+                  PedidoFilhosWidget(
+                      pedido: pedido, filhos: pedido.getPedidosFilhos()),
+                ],
 
-          // ── Produtos (Pedido Normal ou Parcial) ──
-          if (pedido.pedidosFilhos.isEmpty) ...[
-            PedidoProdutosWidget(pedido),
-            if (pedido.getPedidosVinculados().isNotEmpty) ...[
-              const H(16),
-              PedidoVinculadosWidget(
-                  pedido: pedido,
-                  vinculados: pedido.getPedidosVinculados()),
-            ],
-          ],
+                // ── Produtos (Pedido Normal ou Parcial) ──
+                if (pedido.pedidosFilhos.isEmpty) ...[
+                  PedidoProdutosWidget(pedido),
+                  if (pedido.getPedidosVinculados().isNotEmpty) ...[
+                    const H(16),
+                    PedidoVinculadosWidget(
+                        pedido: pedido,
+                        vinculados: pedido.getPedidosVinculados()),
+                  ],
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _elementosBody(PedidoModel pedido) {
+    return Container(
+      color: AppColors.neutralLightest,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Botão de relatório no topo direito
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                _botaoRelatorio(
+                  pedido,
+                  label: 'Relatório de Elementos',
+                  onTap: () => elementoCtrl.onGeneratePDF(pedido),
+                ),
+              ],
+            ),
+          ),
+          Expanded(child: ElementosTab(pedido: pedido)),
         ],
       ),
     );

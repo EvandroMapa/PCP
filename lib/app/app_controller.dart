@@ -25,7 +25,8 @@ class AppController {
       isInitialized = true;
       usuarioCtrl.setup();
       await usuarioCtrl.getCurrentUser();
-      await kanbanCtrl.onInit();
+      // Não aguarda o kanban — carrega em background para não travar o startup
+      kanbanCtrl.onInit();
       pedidoCtrl.onInit();
       _setupCascadeListeners();
       if (key.currentState?.context != null) {

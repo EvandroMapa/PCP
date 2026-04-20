@@ -13,13 +13,20 @@ void main() async {
     setWebTitle('AçoPlus - Planejamento e controle de Produção');
     RouteConfig.setConfig();
     await initializeDateFormatting('pt_BR');
-    await Service.initAplicationServices();
-    await appCtrl.onInit();
+
+    // Inicializa apenas o Supabase (obrigatório antes do runApp)
+    await Service.initCoreServices();
+
+    // Sobe o app imediatamente — sem esperar queries lentas
     runApp(const App());
+
+    // Carrega dados do banco em background e inicia o controller após
+    Service.initAplicationServices()
+        .then((_) => appCtrl.onInit())
+        .catchError((e) => debugPrint('Init background error: $e'));
   } catch (e, stack) {
     debugPrint('Critical Error during main: $e');
     log('Stack Trace', stackTrace: stack);
-    // Fallback para não deixar a tela branca e mostrar o erro
     runApp(MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(

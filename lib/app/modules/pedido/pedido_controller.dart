@@ -82,6 +82,11 @@ class PedidoController {
     // Primeira atualização rápida após 1 segundo da abertura
     Future.delayed(const Duration(seconds: 1), () async {
       if (pedidoStream.hasValue) {
+        // Não sobrescreve se houve gravação local recente (< 5s)
+        final gravacaoRecente = _ultimaGravacaoLocal != null &&
+            DateTime.now().difference(_ultimaGravacaoLocal!).inSeconds < 5;
+        if (gravacaoRecente) return;
+
         final updated =
             await BackendClient.pedidos.getByIdSupabase(pedidoStream.value.id);
         if (updated != null) {
@@ -97,6 +102,11 @@ class PedidoController {
     _pagePollingTimer =
         Timer.periodic(const Duration(seconds: 3), (timer) async {
       if (pedidoStream.hasValue) {
+        // Não sobrescreve se houve gravação local recente (< 5s)
+        final gravacaoRecente = _ultimaGravacaoLocal != null &&
+            DateTime.now().difference(_ultimaGravacaoLocal!).inSeconds < 5;
+        if (gravacaoRecente) return;
+
         final updated =
             await BackendClient.pedidos.getByIdSupabase(pedidoStream.value.id);
         if (updated != null) {
@@ -128,6 +138,12 @@ class PedidoController {
   void _listenGlobalPedidos() {
     BackendClient.pedidos.dataStream.listen.listen((pedidos) {
       if (pedidoStream.hasValue) {
+        // Não sobrescreve se houve gravação local recente (< 5s)
+        // evita que o Realtime apague tags/campos editados antes do banco confirmar
+        final gravacaoRecente = _ultimaGravacaoLocal != null &&
+            DateTime.now().difference(_ultimaGravacaoLocal!).inSeconds < 5;
+        if (gravacaoRecente) return;
+
         final currentId = pedidoStream.value.id;
         final updatedPedido =
             pedidos.firstWhereOrNull((e) => e.id == currentId);
@@ -526,7 +542,12 @@ class PedidoController {
     }
   }
 
+  // Controla a janela de proteção após uma gravação local,
+  // evitando que o polling sobrescreva o dado antes do banco confirmar
+  DateTime? _ultimaGravacaoLocal;
+
   void updatePedidoFirestore() {
+    _ultimaGravacaoLocal = DateTime.now();
     pedidoStream.update();
     BackendClient.pedidos.update(pedido);
   }
