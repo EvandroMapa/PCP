@@ -335,6 +335,8 @@ class PedidoSupabaseCollection extends PedidoCollection {
   }
 
   bool _isListen = false;
+  Timer? _realtimeDebounce;
+
   @override
   Future<void> listen({
     Object? field,
@@ -357,9 +359,22 @@ class PedidoSupabaseCollection extends PedidoCollection {
         .stream(primaryKey: ['id'])
         .eq('is_archived', false)
         .listen((List<Map<String, dynamic>> data) {
-          _updateStreams(data);
+          // Debounce: aguarda 800ms antes de fazer o fetch completo.
+          // Isso evita o flash de tags incorretas porque:
+          // 1) O Realtime dispara ao atualizar 'pedidos', mas 'pedido_tags'
+          //    só é atualizado depois em _syncRelationships().
+          // 2) O debounce garante que o fetch só roda após todas as
+          //    tabelas relacionadas estarem atualizadas.
+          _realtimeDebounce?.cancel();
+          _realtimeDebounce =
+              Timer(const Duration(milliseconds: 800), () async {
+            if (!kanbanCtrl.isDropLocked) {
+              await fetch(lock: false);
+            }
+          });
         });
   }
+
 
   @override
   Future<void> fetchByIds(List<String> ids) async {
