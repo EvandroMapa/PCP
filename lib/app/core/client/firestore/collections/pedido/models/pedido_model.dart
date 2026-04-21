@@ -552,7 +552,12 @@ class PedidoModel {
               .toList()
           : [],
       index: int.tryParse((map['index'] ?? '0').toString()) ?? 0,
-      histories: [],
+      histories: map['histories'] != null
+          ? (map['histories'] as List<dynamic>)
+              .map((h) => PedidoHistoryModel.fromMap(
+                  Map<String, dynamic>.from(h)))
+              .toList()
+          : [],
       isArchived: map['is_archived'] == true,
       archives: map['archives'] != null
           ? (map['archives'] as List<dynamic>)
@@ -606,7 +611,14 @@ class PedidoModel {
         'tipo': tipo.name,
         'cliente_id': cliente.id,
         'obra_id': obra.id,
-        'step_id': steps.isNotEmpty ? steps.last.step.id : null,
+        'step_id': steps.isNotEmpty
+            ? (steps.last.stepId.isNotEmpty &&
+                    steps.last.stepId != 'step-not-found'
+                ? steps.last.stepId
+                : steps.last.step.id != 'step-not-found'
+                    ? steps.last.step.id
+                    : null)
+            : null,
         'status': statusess.isNotEmpty ? statusess.last.status.name : null,
         'is_archived': isArchived,
         'checklist_id': checklistId,
@@ -624,6 +636,7 @@ class PedidoModel {
         'checks': checks.map((c) => c.toMap()).toList(),
         'archives': archives.map((a) => a.toSupabaseMap()).toList(),
         'comments': comments.map((c) => c.toMap()).toList(),
+        'histories': histories.map((h) => h.toMap()).toList(),
         'user_ids': users.map((u) => u.id).toList(),
         'armacao_resumo': armacaoResumo,
         'pai_id': pai,

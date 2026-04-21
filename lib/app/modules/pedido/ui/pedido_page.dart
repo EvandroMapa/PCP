@@ -1,6 +1,8 @@
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/h.dart';
@@ -92,6 +94,16 @@ class _PedidoPageState extends State<PedidoPage>
         if (_tabController.indexIsChanging) return;
         pedidoCtrl.activeTabStream.add(_tabController.index);
       });
+    }
+  }
+
+  @override
+  void didUpdateWidget(PedidoPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Quando o Kanban troca o pedido selecionado (ex: ir para o mestre),
+    // precisamos reiniciar o polling e o stream para o novo pedido
+    if (oldWidget.pedido.id != widget.pedido.id) {
+      pedidoCtrl.onInitPage(widget.pedido);
     }
   }
 
@@ -375,8 +387,16 @@ class _PedidoPageState extends State<PedidoPage>
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: InkWell(
-                onTap: () => pedidoCtrl
-                    .setPedido(FirestoreClient.pedidos.getById(pedido.pai!)),
+                onTap: () {
+                  final mestre = FirestoreClient.pedidos.getById(pedido.pai!);
+                  if (isKanban) {
+                    // No Kanban: troca o pedido selecionado → dispara didUpdateWidget
+                    kanbanCtrl.setPedido(mestre);
+                  } else {
+                    // Em outras telas: empurra nova página
+                    push(context, PedidoPage(pedido: mestre, reason: widget.reason));
+                  }
+                },
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
                   padding:
@@ -408,12 +428,10 @@ class _PedidoPageState extends State<PedidoPage>
                 ),
               ),
             ),
-          if (pedido.pedidosFilhos.isEmpty) ...[
-            PedidoStatusWidget(pedido),
-            const H(12),
-            PedidoStepsWidget(pedido),
-            const H(16),
-          ],
+          PedidoStatusWidget(pedido),
+          const H(12),
+          PedidoStepsWidget(pedido),
+          const H(16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

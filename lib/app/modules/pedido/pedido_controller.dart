@@ -117,6 +117,7 @@ class PedidoController {
               updated.steps.length != current.steps.length ||
               updated.comments.length != current.comments.length ||
               updated.histories.length != current.histories.length ||
+              updated.deliveryAt != current.deliveryAt ||
               updated.isArchived != current.isArchived;
 
           if (hasChanged) {

@@ -591,20 +591,15 @@ class PedidoSupabaseCollection extends PedidoCollection {
   Future<List<String>> _syncRelationships(PedidoModel model) async {
     final List<String> syncErrors = [];
     try {
-      // 1. Delete existing for update (Only non-primary key tables or controlled sync)
-      log('Supabase (Sync): Cleaning history tables...');
-      await Future.wait([
-        SupabaseService.client
-            .from('pedido_status_history')
-            .delete()
-            .eq('pedido_id', model.id),
-        SupabaseService.client
-            .from('pedido_steps_history')
-            .delete()
-            .eq('pedido_id', model.id),
-      ]);
+      // 1. Limpa apenas o status_history (sempre recriado)
+      // O steps_history SÓ é limpo se houver steps válidos em memória
+      log('Supabase (Sync): Cleaning status history...');
+      await SupabaseService.client
+          .from('pedido_status_history')
+          .delete()
+          .eq('pedido_id', model.id);
     } catch (e) {
-      syncErrors.add('Erro ao limpar histórico: $e');
+      syncErrors.add('Erro ao limpar status histórico: $e');
     }
 
     // 2. Sync Products (Atomic-ish)
@@ -657,11 +652,25 @@ class PedidoSupabaseCollection extends PedidoCollection {
     }
 
     try {
-      // Steps History
-      if (model.steps.isNotEmpty) {
+      // Steps History — só recria se TODOS os steps têm step_id válido
+      // Evita apagar o histórico existente quando o step não está carregado em memória
+      final stepsValidos = model.steps.where((st) {
+        final id = st.stepId.isNotEmpty && st.stepId != 'step-not-found'
+            ? st.stepId
+            : st.step.id;
+        return id.isNotEmpty && id != 'step-not-found';
+      }).toList();
+
+      if (stepsValidos.isNotEmpty) {
+        // Tem steps válidos: deleta e recria
+        await SupabaseService.client
+            .from('pedido_steps_history')
+            .delete()
+            .eq('pedido_id', model.id);
         await SupabaseService.client.from('pedido_steps_history').insert(
-            model.steps.map((st) => st.toSupabaseMap(model.id)).toList());
+            stepsValidos.map((st) => st.toSupabaseMap(model.id)).toList());
       }
+      // Se não há steps válidos: não toca no banco (preserva o que já existe)
     } catch (e) {
       syncErrors.add('Erro Etapas: $e');
     }
