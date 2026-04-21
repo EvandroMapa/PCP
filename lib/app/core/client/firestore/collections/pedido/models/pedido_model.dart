@@ -252,12 +252,14 @@ class PedidoModel {
   List<PedidoModel> getPedidosVinculados() {
     return pedidosVinculados
         .map<PedidoModel>((e) => FirestoreClient.pedidos.getById(e))
+        .where((e) => !e.localizador.startsWith('NOTFOUND'))
         .toList();
   }
 
   List<PedidoModel> getPedidosFilhos() {
     return pedidosFilhos
         .map<PedidoModel>((e) => FirestoreClient.pedidos.getById(e))
+        .where((e) => !e.localizador.startsWith('NOTFOUND'))
         .toList();
   }
 

@@ -19,7 +19,7 @@ class KanbanCardProductsWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final produtosSorted = pedido.produtos.toList()
-      ..sort((a, b) => a.status.status.index.compareTo(b.status.status.index));
+      ..sort((a, b) => a.produto.number.compareTo(b.produto.number));
     return Padding(
       padding: EdgeInsets.only(top: produtosSorted.isEmpty ? 8 : 4),
       child: produtosSorted.isEmpty
@@ -41,13 +41,26 @@ class KanbanCardProductsWidget extends StatelessWidget {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Ordens',
-                  style: AppCss.mediumRegular.copyWith(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey[700],
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      'Ordens',
+                      style: AppCss.mediumRegular.copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'Saldo Residual',
+                      style: AppCss.mediumRegular.copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                  ],
                 ),
                 const H(2),
                 Column(

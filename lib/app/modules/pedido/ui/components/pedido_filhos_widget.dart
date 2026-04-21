@@ -45,6 +45,33 @@ class PedidoFilhosWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
+            Tooltip(
+              message: 'Recalcular Saldo',
+              preferBelow: false,
+              waitDuration: const Duration(milliseconds: 300),
+              child: InkWell(
+                onTap: () async {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (_) => const Center(child: CircularProgressIndicator()),
+                  );
+                  await pedidoCtrl.recalcularSaldo(pedido);
+                  if (context.mounted) Navigator.of(context).pop();
+                },
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.calculate_outlined,
+                      color: Colors.orange, size: 20),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
             InkWell(
               onTap: () async => push(context, PedidoCreatePage(pai: pedido)),
               child: Container(

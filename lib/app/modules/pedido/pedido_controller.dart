@@ -224,7 +224,15 @@ class PedidoController {
     form.instrucoesFinanceiras.text = pai.instrucoesFinanceiras;
     form.instrucoesEntrega.text = pai.instrucoesEntrega;
 
-    for (final produto in pai.produtos) {
+    // Ordena produtos pela bitola (valor numérico da descrição)
+    final produtosOrdenados = List<PedidoProdutoModel>.from(pai.produtos)
+      ..sort((a, b) {
+        final prodA = BackendClient.produtos.getById(a.produto.id);
+        final prodB = BackendClient.produtos.getById(b.produto.id);
+        return prodA.number.compareTo(prodB.number);
+      });
+
+    for (final produto in produtosOrdenados) {
       final produtoBase = BackendClient.produtos.getById(produto.produto.id);
       // pega a quantidade de Kg disponível de acordo com o produto (com base na original)
       final double qtdeTotal = produto.qtdeOriginal;
@@ -416,7 +424,9 @@ class PedidoController {
         // Salva o mestre com quantidade restaurada e sem o filho na lista
         await BackendClient.pedidos.update(mestre);
         await BackendClient.pedidos.update(pedido);
-      } catch (_) {}
+      } catch (e) {
+        log('Erro ao desvincular parcial do mestre: $e');
+      }
     }
 
     await BackendClient.pedidos.delete(pedido);
@@ -564,6 +574,39 @@ class PedidoController {
     _ultimaGravacaoLocal = DateTime.now();
     pedidoStream.update();
     BackendClient.pedidos.update(pedido);
+  }
+
+  /// Recalcula o saldo (qtde) de cada produto do mestre com base na fórmula:
+  /// qtde = qtdeOriginal - soma(qtde dos filhos para o mesmo produto)
+  /// Corrige inconsistências causadas por exclusões falhas de parciais.
+  Future<void> recalcularSaldo(PedidoModel mestre) async {
+    final filhos = mestre.getPedidosFilhos();
+
+    for (int i = 0; i < mestre.produtos.length; i++) {
+      final produto = mestre.produtos[i];
+      double totalDirecionado = 0;
+
+      for (final filho in filhos) {
+        for (final prodFilho in filho.produtos) {
+          if (prodFilho.produto.id == produto.produto.id) {
+            totalDirecionado += prodFilho.qtde;
+          }
+        }
+      }
+
+      final novoSaldo = produto.qtdeOriginal - totalDirecionado;
+      mestre.produtos[i] = produto.copyWith(
+        qtde: novoSaldo < 0 ? 0 : novoSaldo,
+      );
+    }
+
+    _ultimaGravacaoLocal = DateTime.now();
+    pedidoStream.add(mestre);
+    await BackendClient.pedidos.update(mestre);
+    NotificationService.showPositive(
+      'Saldo Recalculado',
+      'O saldo de todos os produtos foi recalculado com base nos parciais.',
+    );
   }
 
   void onAddHistory({
