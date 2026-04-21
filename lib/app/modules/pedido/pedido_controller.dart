@@ -72,6 +72,9 @@ class PedidoController {
 
   Timer? _pagePollingTimer;
   void onInitPage(PedidoModel pedido) {
+    // Bloqueia o _listenGlobalPedidos por 5s para evitar race condition
+    // (evita que um fetch concorrente sobrescreva o pedido que estamos abrindo)
+    _ultimaGravacaoLocal = DateTime.now();
     activeTabStream.add(0); // reseta a aba ativa ao abrir um novo pedido
     pedidoStream.add(pedido);
     // Forçar atualização das ordens para garantir que vínculos editados recentemente sejam refletidos
@@ -82,13 +85,15 @@ class PedidoController {
     // Primeira atualização rápida após 1 segundo da abertura
     Future.delayed(const Duration(seconds: 1), () async {
       if (pedidoStream.hasValue) {
-        // Não sobrescreve se houve gravação local recente (< 5s)
-        final gravacaoRecente = _ultimaGravacaoLocal != null &&
-            DateTime.now().difference(_ultimaGravacaoLocal!).inSeconds < 5;
-        if (gravacaoRecente) return;
+        // Verifica ANTES do await
+        if (_estaProtegido()) return;
 
         final updated =
             await BackendClient.pedidos.getByIdSupabase(pedidoStream.value.id);
+
+        // Verifica DEPOIS do await também — o usuário pode ter editado durante a busca
+        if (_estaProtegido()) return;
+
         if (updated != null) {
           await BackendClient.ordens.fetch();
           await BackendClient.ordens.startOnlyArquivadas();
@@ -102,15 +107,17 @@ class PedidoController {
     _pagePollingTimer =
         Timer.periodic(const Duration(seconds: 3), (timer) async {
       if (pedidoStream.hasValue) {
-        // Não sobrescreve se houve gravação local recente (< 5s)
-        final gravacaoRecente = _ultimaGravacaoLocal != null &&
-            DateTime.now().difference(_ultimaGravacaoLocal!).inSeconds < 5;
-        if (gravacaoRecente) return;
+        // Verifica ANTES do await
+        if (_estaProtegido()) return;
 
         final updated =
             await BackendClient.pedidos.getByIdSupabase(pedidoStream.value.id);
+
+        // Verifica DEPOIS do await também — o usuário pode ter editado durante a busca
+        if (_estaProtegido()) return;
+
         if (updated != null) {
-          // Otimização: Só atualiza se houver mudança real para evitar travamentos por rebuilds excessivos
+          // Só atualiza se houver mudança real
           final current = pedidoStream.value;
           final hasChanged = updated.localizador != current.localizador ||
               updated.statusess.length != current.statusess.length ||
@@ -131,6 +138,14 @@ class PedidoController {
     });
   }
 
+  /// Retorna true se houve gravação local recente (< 5s).
+  /// Usado para bloquear atualizações vindas do servidor que poderiam
+  /// sobrescrever dados que o usuário acabou de editar.
+  bool _estaProtegido() {
+    if (_ultimaGravacaoLocal == null) return false;
+    return DateTime.now().difference(_ultimaGravacaoLocal!).inSeconds < 5;
+  }
+
   void onDisposePage() {
     _pagePollingTimer?.cancel();
     _pagePollingTimer = null;
@@ -141,9 +156,7 @@ class PedidoController {
       if (pedidoStream.hasValue) {
         // Não sobrescreve se houve gravação local recente (< 5s)
         // evita que o Realtime apague tags/campos editados antes do banco confirmar
-        final gravacaoRecente = _ultimaGravacaoLocal != null &&
-            DateTime.now().difference(_ultimaGravacaoLocal!).inSeconds < 5;
-        if (gravacaoRecente) return;
+        if (_estaProtegido()) return;
 
         final currentId = pedidoStream.value.id;
         final updatedPedido =

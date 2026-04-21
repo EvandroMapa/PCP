@@ -390,10 +390,11 @@ class _PedidoPageState extends State<PedidoPage>
                 onTap: () {
                   final mestre = FirestoreClient.pedidos.getById(pedido.pai!);
                   if (isKanban) {
-                    // No Kanban: troca o pedido selecionado → dispara didUpdateWidget
+                    // 1. Trava o stream PRIMEIRO (evita race condition com _listenGlobalPedidos)
+                    pedidoCtrl.onInitPage(mestre);
+                    // 2. Atualiza o Kanban (vai disparar didUpdateWidget → onInitPage novamente, é idempotente)
                     kanbanCtrl.setPedido(mestre);
                   } else {
-                    // Em outras telas: empurra nova página
                     push(context, PedidoPage(pedido: mestre, reason: widget.reason));
                   }
                 },
