@@ -732,14 +732,19 @@ class ElementoController {
 
         if (elNome.isEmpty || posNome.isEmpty) continue;
 
-        // Controle de agrupamento de Posições sob o mesmo "Elemento Pai"
-        if (currentElement == null || currentElement.nome.text != elNome) {
+        final elQtdeNormalizado = int.tryParse(elQtdeStr)?.toString() ?? '1';
+
+        // Agrupa por NOME + QTDE ELEM: mesmo nome com QTDE diferente = elemento distinto
+        // (ex: ESTRIBOS qtde=22 e ESTRIBOS qtde=50 são conjuntos separados)
+        if (currentElement == null ||
+            currentElement.nome.text != elNome ||
+            currentElement.qtde.text != elQtdeNormalizado) {
           if (currentElement != null && currentElement.posicoes.isNotEmpty) {
             novosElementos.add(currentElement);
           }
           currentElement = ElementoCreateModel();
           currentElement.nome.text = elNome;
-          currentElement.qtde.text = int.tryParse(elQtdeStr)?.toString() ?? '1';
+          currentElement.qtde.text = elQtdeNormalizado;
         }
 
         final bitola = double.tryParse(bitolaStr);
@@ -752,7 +757,9 @@ class ElementoController {
           pos.pesoKg.text = pesoLido.toStringAsFixed(3);
           pos.qtde.text = posQtdeStr;
 
-          pos.produto = pedido.getProdutos().map((e) => e.produto).where((p) {
+          // Busca no catálogo GLOBAL de produtos (não só nos do pedido),
+          // pois o comparativo é quem aponta diferenças depois
+          pos.produto = BackendClient.produtos.data.where((p) {
             final textToSearch =
                 '${p.nome} ${p.labelMinified}'.replaceAll(',', '.');
             final extractedNumbers =
