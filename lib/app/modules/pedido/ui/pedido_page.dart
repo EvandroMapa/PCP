@@ -1,6 +1,7 @@
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
@@ -387,7 +388,9 @@ class _PedidoPageState extends State<PedidoPage>
               padding: const EdgeInsets.only(bottom: 12),
               child: InkWell(
                 onTap: () {
-                  final mestre = FirestoreClient.pedidos.getById(pedido.pai!);
+                  // BackendClient.pedidos busca em ambas as listas: ativos e arquivados
+                  final mestre = BackendClient.pedidos.getById(pedido.pai!);
+                  if (mestre.localizador.startsWith('NOTFOUND')) return;
                   if (isKanban) {
                     // 1. Trava o stream PRIMEIRO (evita race condition com _listenGlobalPedidos)
                     pedidoCtrl.onInitPage(mestre);

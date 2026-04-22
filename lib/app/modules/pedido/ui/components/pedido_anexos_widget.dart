@@ -1,5 +1,5 @@
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/components/archive/ui/archives_grid_widget.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
@@ -20,7 +20,8 @@ class PedidoAnexosWidget extends StatelessWidget {
     }
 
     // Pedido Parcial: dois blocos empilhados
-    final mestre = FirestoreClient.pedidos.getById(pedido.pai!);
+    // BackendClient busca em ativos E arquivados — necessário quando o mestre foi arquivado
+    final mestre = BackendClient.pedidos.getById(pedido.pai!);
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(

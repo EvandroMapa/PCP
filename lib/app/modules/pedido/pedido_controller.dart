@@ -705,6 +705,9 @@ class PedidoController {
     pedido.isArchived = !pedido.isArchived;
     await BackendClient.pedidos.update(pedido);
     await BackendClient.pedidos.fetch();
+    // Carrega (ou recarrega) a lista de arquivados para que getById
+    // continue encontrando o mestre arquivado nos parciais filhos
+    await BackendClient.pedidos.startOnlyArquivadas();
     if (contextGlobal.mounted) Navigator.pop(contextGlobal);
     if (isPedido) Navigator.pop(value);
     NotificationService.showPositive(
