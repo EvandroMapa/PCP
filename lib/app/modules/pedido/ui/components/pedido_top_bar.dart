@@ -1,10 +1,8 @@
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
-import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_create_page.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_page.dart';
@@ -33,6 +31,140 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
         : _pedidoWidget(context);
   }
 
+  // ── Helper: botão de ação padronizado 36×36 ──────────────────────────────
+  Widget _botaoAcao({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onTap,
+    Color? corIcone,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      preferBelow: false,
+      waitDuration: const Duration(milliseconds: 300),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          child: Icon(icon, color: corIcone ?? AppColors.white, size: 20),
+        ),
+      ),
+    );
+  }
+
+  // ── Título com badges MESTRE / PARCIAL ───────────────────────────────────
+  Widget _titulo() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                pedido.isArchived
+                    ? '${pedido.localizador} - Arquivado'
+                    : pedido.localizador,
+                style: AppCss.largeBold.setColor(AppColors.white).setSize(20),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (pedido.isMestre) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text('MESTRE',
+                    style: AppCss.minimumBold.copyWith(
+                        fontSize: 9, color: const Color(0xFF92400E))),
+              ),
+            ],
+            if (pedido.isParcial) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDBEAFE),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text('PARCIAL',
+                    style: AppCss.minimumBold.copyWith(
+                        fontSize: 9, color: const Color(0xFF1E40AF))),
+              ),
+            ],
+          ],
+        ),
+        Text(
+          pedido.cliente.nome,
+          style: AppCss.minimumRegular
+              .setColor(Colors.white.withValues(alpha: 0.7))
+              .setSize(11),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
+  // ── Lista de botões de ação (mesma lógica nos dois modos) ────────────────
+  List<Widget> _acoes(BuildContext context, {required bool isKanban}) {
+    return [
+      if (pedido.podeGerarParcial)
+        _botaoAcao(
+          icon: Icons.add,
+          tooltip: 'Criar Pedido Parcial',
+          onTap: () => push(context, PedidoCreatePage(pai: pedido)),
+        ),
+      _botaoAcao(
+        icon: Icons.local_shipping,
+        tooltip: 'Acompanhar pedido',
+        onTap: () => context.push('/acompanhamento/pedidos/${pedido.id}'),
+      ),
+      if (pedido.step.isArchivedAvailable && !pedido.isArchived)
+        _botaoAcao(
+          icon: Icons.archive,
+          tooltip: 'Arquivar pedido',
+          onTap: () => isKanban
+              ? pedidoCtrl
+                  .onArchive(context, pedido, isPedido: false)
+                  .then((result) {
+                  if (result) kanbanCtrl.setPedido(null);
+                })
+              : pedidoCtrl.onArchive(context, pedido),
+        ),
+      if (pedido.isArchived)
+        _botaoAcao(
+          icon: Icons.unarchive,
+          tooltip: 'Desarquivar pedido',
+          onTap: () => pedidoCtrl.onUnArchivePedido(
+              context, pedido, isKanban ? 0 : 2),
+        ),
+      _botaoAcao(
+        icon: Icons.edit,
+        tooltip: 'Editar pedido',
+        onTap: () => push(context, PedidoCreatePage(pedido: pedido)),
+      ),
+      _botaoAcao(
+        icon: Icons.delete,
+        tooltip: 'Excluir pedido',
+        onTap: () => isKanban
+            ? pedidoCtrl
+                .onDelete(context, pedido, isPedido: false)
+                .then((e) {
+                if (e) kanbanCtrl.setPedido(null);
+              })
+            : pedidoCtrl.onDelete(context, pedido),
+      ),
+    ];
+  }
+
+  // ── Versão Kanban ─────────────────────────────────────────────────────────
   Widget _kanbanWidget(BuildContext context) => Container(
         width: double.maxFinite,
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -41,239 +173,42 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
           children: [
             InkWell(
               onTap: () => onDelete!(),
-              child: Icon(Icons.close, color: AppColors.white),
-            ),
-            const W(16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          pedido.isArchived
-                              ? '${pedido.localizador} - Arquivado'
-                              : pedido.localizador,
-                          style: AppCss.largeBold.setColor(AppColors.white).setSize(20),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (pedido.isMestre) ...[
-                        const W(8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFEF3C7),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text('MESTRE',
-                              style: AppCss.minimumBold.copyWith(
-                                  fontSize: 9, color: const Color(0xFF92400E))),
-                        ),
-                      ],
-                      if (pedido.isParcial) ...[
-                        const W(8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFDBEAFE),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text('PARCIAL',
-                              style: AppCss.minimumBold.copyWith(
-                                  fontSize: 9, color: const Color(0xFF1E40AF))),
-                        ),
-                      ],
-                    ],
-                  ),
-                  Text(
-                    pedido.cliente.nome,
-                    style: AppCss.minimumRegular
-                        .setColor(Colors.white.withValues(alpha: 0.7))
-                        .setSize(11),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                child: Icon(Icons.close, color: AppColors.white),
               ),
             ),
-            const Spacer(),
-            const W(12),
-            if (pedido.podeGerarParcial)
-              Tooltip(
-                message: 'Criar Pedido Parcial',
-                child: InkWell(
-                  onTap: () async => push(context, PedidoCreatePage(pai: pedido)),
-                  child: Icon(Icons.add, color: AppColors.white),
-                ),
-              ),
-            Tooltip(
-              message: 'Acompanhar pedido',
-              child: InkWell(
-                onTap: () async =>
-                    context.push('/acompanhamento/pedidos/${pedido.id}'),
-                child: Icon(Icons.local_shipping, color: AppColors.white),
-              ),
-            ),
-
-            if (pedido.step.isArchivedAvailable && !pedido.isArchived) ...[
-              Tooltip(
-                message: 'Arquivar pedido',
-                child: InkWell(
-                  onTap: () async => pedidoCtrl
-                      .onArchive(context, pedido, isPedido: false)
-                      .then((result) {
-                    if (result) {
-                      kanbanCtrl.setPedido(null);
-                    }
-                  }),
-                  child: Icon(Icons.archive, color: AppColors.white, size: 20),
-                ),
-              ),
-              const W(12),
-            ],
-            if (pedido.isArchived) ...[
-              Tooltip(
-                message: 'Desarquivar pedido',
-                child: IconButton(
-                  onPressed: () =>
-                      pedidoCtrl.onUnArchivePedido(context, pedido, 0),
-                  icon: Icon(Icons.unarchive, color: AppColors.white),
-                ),
-              ),
-              const W(12),
-            ],
-            Tooltip(
-              message: 'Editar pedido',
-              child: InkWell(
-                onTap: () async =>
-                    push(context, PedidoCreatePage(pedido: pedido)),
-                child: Icon(Icons.edit, color: AppColors.white, size: 20),
-              ),
-            ),
-            const W(12),
-            Tooltip(
-              message: 'Excluir pedido',
-              child: InkWell(
-                onTap: () async => pedidoCtrl
-                    .onDelete(context, pedido, isPedido: false)
-                    .then((e) {
-                  if (e) {
-                    kanbanCtrl.setPedido(null);
-                  }
-                }),
-                child: Icon(Icons.delete, color: AppColors.white, size: 20),
-              ),
+            const SizedBox(width: 12),
+            Expanded(child: _titulo()),
+            // ── Botões equidistantes com gap de 4px ──
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: _acoes(context, isKanban: true)
+                  .expand((btn) => [btn, const SizedBox(width: 4)])
+                  .toList()
+                ..removeLast(), // remove o último SizedBox extra
             ),
           ],
         ),
       );
 
+  // ── Versão Página (AppBar) ────────────────────────────────────────────────
   Widget _pedidoWidget(BuildContext context) => AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text(
-                    pedido.isArchived
-                        ? '${pedido.localizador} - Arquivado'
-                        : pedido.localizador,
-                    style: AppCss.largeBold.setColor(AppColors.white).setSize(20),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                if (pedido.isMestre) ...[
-                  const W(8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEF3C7),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text('MESTRE',
-                        style: AppCss.minimumBold.copyWith(
-                            fontSize: 9, color: const Color(0xFF92400E))),
-                  ),
-                ],
-                if (pedido.isParcial) ...[
-                  const W(8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFDBEAFE),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text('PARCIAL',
-                        style: AppCss.minimumBold.copyWith(
-                            fontSize: 9, color: const Color(0xFF1E40AF))),
-                  ),
-                ],
-              ],
-            ),
-            Text(
-              pedido.cliente.nome,
-              style: AppCss.minimumRegular
-                  .setColor(Colors.white.withValues(alpha: 0.7))
-                  .setSize(11),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
+        title: _titulo(),
         backgroundColor: AppColors.primaryMain,
         actions: [
-          const W(12),
-          if (pedido.podeGerarParcial)
-            Tooltip(
-              message: 'Criar Pedido Parcial',
-              child: IconButton(
-                onPressed: () => push(context, PedidoCreatePage(pai: pedido)),
-                icon: Icon(Icons.add, color: AppColors.white),
-              ),
-            ),
-          Tooltip(
-            message: 'Acompanhar pedido',
-            child: IconButton(
-              onPressed: () =>
-                  context.push('/acompanhamento/pedidos/${pedido.id}'),
-              icon: Icon(Icons.local_shipping, color: AppColors.white),
-            ),
-          ),
-
-          if (pedido.step.isArchivedAvailable && !pedido.isArchived)
-            Tooltip(
-              message: 'Arquivar pedido',
-              child: IconButton(
-                onPressed: () => pedidoCtrl.onArchive(context, pedido),
-                icon: Icon(Icons.archive, color: AppColors.white),
-              ),
-            ),
-          if (pedido.isArchived)
-            Tooltip(
-              message: 'Desarquivar pedido',
-              child: IconButton(
-                onPressed: () =>
-                    pedidoCtrl.onUnArchivePedido(context, pedido, 2),
-                icon: Icon(Icons.unarchive, color: AppColors.white),
-              ),
-            ),
-          Tooltip(
-            message: 'Editar pedido',
-            child: IconButton(
-              onPressed: () async =>
-                  push(context, PedidoCreatePage(pedido: pedido)),
-              icon: Icon(Icons.edit, color: AppColors.white),
-            ),
-          ),
-          Tooltip(
-            message: 'Excluir pedido',
-            child: IconButton(
-              onPressed: () async => pedidoCtrl.onDelete(context, pedido),
-              icon: Icon(Icons.delete, color: AppColors.white),
+          // Wrap em Row para aplicar gap uniforme de 4px entre os botões
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: _acoes(context, isKanban: false)
+                  .expand((btn) => [btn, const SizedBox(width: 4)])
+                  .toList()
+                ..removeLast(),
             ),
           ),
         ],

@@ -102,7 +102,9 @@ class ArchivesGridWidget extends StatelessWidget {
     if (!await showConfirmDialog(
       'Deseja excluir anexo?',
       'Anexo não estará mais disponível',
-    )) return;
+    )) {
+      return;
+    }
     final nova = List<ArchiveModel>.from(archives)..remove(archive);
     onChanged?.call(nova);
   }

@@ -1,3 +1,5 @@
+import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/enums/automatizacao_enum.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
@@ -91,16 +93,41 @@ class StepController {
     await FirestoreClient.steps.fetch();
   }
 
-  Future<bool> _isDeleteUnavailable(StepModel step) async =>
-      !await onDeleteProcess(
-        deleteTitle: 'Deseja excluir a etapa?',
-        deleteMessage: 'Todos os dados da etapa serão excluidos do sistema',
-        infoMessage:
-            'Para excluir a etapa, nenhum pedido pode estar vinculado a ela',
-        conditional: !FirestoreClient.pedidos.data.every(
-          (e) => e.step.id != step.id,
-        ),
+  Future<bool> _isDeleteUnavailable(StepModel step) async {
+    // Proteção 1: Verifica se o step está vinculado a alguma regra de automação
+    // (tanto como step único quanto dentro de uma lista de steps)
+    final automatizacao = BackendClient.automatizacao.data;
+    final regrasVinculadas = <String>[];
+
+    for (final item in automatizacao.itens) {
+      final emStepUnico = item.step?.id == step.id;
+      final emListaSteps = item.steps?.any((s) => s.id == step.id) ?? false;
+      if (emStepUnico || emListaSteps) {
+        regrasVinculadas.add(item.type.label);
+      }
+    }
+
+    if (regrasVinculadas.isNotEmpty) {
+      NotificationService.showNegative(
+        'Etapa em uso na Automação',
+        'Esta etapa está configurada em: ${regrasVinculadas.join(', ')}. '
+        'Remova-a das regras de automação antes de excluir.',
+        position: NotificationPosition.bottom,
       );
+      return true;
+    }
+
+    // Proteção 2: Verifica se há pedidos vinculados à etapa
+    return !await onDeleteProcess(
+      deleteTitle: 'Deseja excluir a etapa?',
+      deleteMessage: 'Todos os dados da etapa serão excluidos do sistema',
+      infoMessage:
+          'Para excluir a etapa, nenhum pedido pode estar vinculado a ela',
+      conditional: !FirestoreClient.pedidos.data.every(
+        (e) => e.step.id != step.id,
+      ),
+    );
+  }
 
   void onValid() {
     String name = form.name.text.trim();

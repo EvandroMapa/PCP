@@ -13,6 +13,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:aco_plus/app/core/components/archive/archive_model.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
 import 'package:aco_plus/app/core/enums/sort_type.dart';
@@ -215,7 +216,11 @@ class PedidoController {
     form.descricao.text = pai.descricao;
     form.cliente = pai.cliente;
     form.obra = pai.obra;
-    form.step = BackendClient.steps.getById(pai.step.id);
+    // Parcial inicia sempre na etapa definida em criacaoPedido da automação,
+    // assim como um pedido normal — não herda a etapa atual do Mestre.
+    form.step = FirestoreClient.automatizacao.data.criacaoPedido.step ??
+        BackendClient.steps.data.firstWhereOrNull((e) => e.isDefault) ??
+        BackendClient.steps.getById(pai.step.id);
     if (pai.checklistId != null) {
       form.checklist = BackendClient.checklists.getById(pai.checklistId!);
     }
@@ -401,6 +406,9 @@ class PedidoController {
       pop(value);
     }
 
+    // Exibe o spinner durante as operações async
+    showLoadingDialog();
+
     // Se é parcial, desvincular do mestre e devolver quantidade antes de deletar
     if (pedido.isParcial) {
       try {
@@ -430,6 +438,10 @@ class PedidoController {
     }
 
     await BackendClient.pedidos.delete(pedido);
+
+    // Fecha o spinner
+    if (contextGlobal.mounted) Navigator.pop(contextGlobal);
+
     NotificationService.showPositive(
       'Pedido Excluído',
       'Operação realizada com sucesso',
@@ -574,6 +586,14 @@ class PedidoController {
     _ultimaGravacaoLocal = DateTime.now();
     pedidoStream.update();
     BackendClient.pedidos.update(pedido);
+  }
+
+  /// Atualiza os arquivos do pedido com proteção contra race condition do Realtime.
+  void onArquivosChanged(List<ArchiveModel> arquivos) {
+    _ultimaGravacaoLocal = DateTime.now();
+    final atualizado = pedidoStream.value.copyWith(archives: arquivos);
+    pedidoStream.add(atualizado);
+    BackendClient.pedidos.update(atualizado);
   }
 
   /// Recalcula o saldo (qtde) de cada produto do mestre com base na fórmula:

@@ -1,7 +1,5 @@
-import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
-import 'package:aco_plus/app/core/components/archive/archive_model.dart';
 import 'package:aco_plus/app/core/components/archive/ui/archives_grid_widget.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
@@ -42,12 +40,7 @@ class PedidoAnexosWidget extends StatelessWidget {
     return ArchivesGridWidget(
       path: 'pedidos/${pedido.id}',
       archives: pedido.archives,
-      onChanged: (List<ArchiveModel> archives) {
-        final latest = pedidoCtrl.pedidoStream.value;
-        final updated = latest.copyWith(archives: archives);
-        pedidoCtrl.pedidoStream.add(updated);
-        BackendClient.pedidos.update(updated);
-      },
+      onChanged: pedidoCtrl.onArquivosChanged,
     );
   }
 }

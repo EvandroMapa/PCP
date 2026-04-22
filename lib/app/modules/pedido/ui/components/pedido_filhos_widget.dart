@@ -205,7 +205,19 @@ class _ParcialCardState extends State<_ParcialCard> {
                           'Deseja excluir "${filho.localizador}"? O saldo será devolvido ao Mestre.',
                         );
                         if (confirm && context.mounted) {
-                          await pedidoCtrl.onDelete(context, filho);
+                          // isPedido: false evita que o onDelete tente dar pop() na página
+                          // (o parcial é um card, não uma página separada)
+                          final excluiu = await pedidoCtrl.onDelete(
+                            context,
+                            filho,
+                            isPedido: false,
+                          );
+                          if (excluiu) {
+                            // Atualiza o stream do Mestre para refletir a remoção imediatamente
+                            final mestreAtualizado =
+                                FirestoreClient.pedidos.getById(pedido.id);
+                            pedidoCtrl.pedidoStream.add(mestreAtualizado);
+                          }
                         }
                       },
                       child: Container(
