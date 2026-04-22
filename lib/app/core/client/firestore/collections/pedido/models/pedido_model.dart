@@ -378,7 +378,9 @@ class PedidoModel {
         map['status']?.map((x) => PedidoStatusModel.fromMap(x)) ?? [],
       ),
       produtos: List<PedidoProdutoModel>.from(
-        map['produtos']?.map((x) => PedidoProdutoModel.fromMap(x)) ?? [],
+        (map['produtos']?.map((x) => PedidoProdutoModel.fromMap(x)) ?? [])
+            .toList()
+          ..sort((a, b) => a.produto.sortIndex.compareTo(b.produto.sortIndex)),
       ),
       archives: List<ArchiveModel>.from(
         map['archives']?.map((x) => ArchiveModel.fromMap(x)) ?? [],
@@ -492,7 +494,8 @@ class PedidoModel {
     }
 
     final produtos = produtosRaw != null
-        ? produtosRaw.map((p) => PedidoProdutoModel.fromSupabaseMap(p)).toList()
+        ? (produtosRaw.map((p) => PedidoProdutoModel.fromSupabaseMap(p)).toList()
+          ..sort((a, b) => a.produto.sortIndex.compareTo(b.produto.sortIndex)))
         : <PedidoProdutoModel>[];
 
     final elementos = elementosRaw != null
