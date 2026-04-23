@@ -18,14 +18,19 @@ class UsuarioModel {
   final List<StepModel> steps;
   final List<String> deviceTokens;
 
-  bool get isOperador => tipo?.isOperador ?? role == UsuarioRole.operador;
-  bool get isArmador => tipo?.isArmador ?? false;
-  bool get isNotOperador => !isOperador && !isArmador;
+  bool get isAdmin =>
+      (tipo?.nome.toLowerCase() == 'administrador') ||
+      role == UsuarioRole.administrador;
+
+  bool get isOperador =>
+      !isAdmin && (tipo?.isOperador ?? role == UsuarioRole.operador);
+  bool get isArmador => !isAdmin && (tipo?.isArmador ?? false);
+  bool get isNotOperador => isAdmin || (!isOperador && !isArmador);
 
   bool get temAcessoElementos =>
-      tipo?.isPermitirElementos ?? role == UsuarioRole.administrador;
+      isAdmin || (tipo?.isPermitirElementos ?? false);
   bool get podeEditarElementos =>
-      tipo?.isPermitirEditarElementos ?? role == UsuarioRole.administrador;
+      isAdmin || (tipo?.isPermitirEditarElementos ?? false);
 
   static UsuarioModel get system => UsuarioModel(
         id: 'system',
@@ -132,6 +137,13 @@ class UsuarioModel {
   }
 
   factory UsuarioModel.fromSupabaseMap(Map<String, dynamic> map) {
+    final tipo = map['perfis'] != null
+        ? UsuarioTipoModel.fromSupabaseMap(map['perfis'])
+        : null;
+
+    final isAdmin = tipo?.nome.toLowerCase() == 'administrador' ||
+        _parseRole(map['role']) == UsuarioRole.administrador;
+
     return UsuarioModel(
       id: map['id'] ?? '',
       nome: map['nome'] ?? '',
@@ -139,14 +151,14 @@ class UsuarioModel {
       senha: map['senha'] ?? '',
       role: _parseRole(map['role']),
       usuarioTipoId: (map['perfil_id'] ?? '').toString(),
-      tipo: map['perfis'] != null
-          ? UsuarioTipoModel.fromSupabaseMap(map['perfis'])
-          : null,
-      permission: map['permission'] != null
-          ? UserPermissionModel.fromMap(map['permission'] is String
-              ? json.decode(map['permission'])
-              : map['permission'])
-          : UserPermissionModel.all(),
+      tipo: tipo,
+      permission: isAdmin
+          ? UserPermissionModel.all()
+          : (map['permission'] != null
+              ? UserPermissionModel.fromMap(map['permission'] is String
+                  ? json.decode(map['permission'])
+                  : map['permission'])
+              : UserPermissionModel.all()),
       steps: map['steps'] != null
           ? List<Map<String, dynamic>>.from(map['steps'] is String
                   ? json.decode(map['steps'])

@@ -1,6 +1,5 @@
 import 'package:aco_plus/app/core/client/firestore/collections/notificacao/notificacao_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/user_permission_type.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/usuario_role.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -210,7 +209,7 @@ class AppDrawerNotOperatorList extends StatelessWidget {
           module: module,
           notificacoes: notificacoes,
         ),
-        if (usuario.role == UsuarioRole.administrador) ...[
+        if (usuario.isAdmin) ...[
           Container(
             decoration: BoxDecoration(
               border: Border(
@@ -281,7 +280,7 @@ class AppDrawerHeader extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              if (usuario.role == UsuarioRole.administrador) ...[
+              if (usuario.isAdmin) ...[
                 if (kIsDev)
                   Container(
                     padding:
@@ -438,11 +437,11 @@ class AppDrawerItem extends StatelessWidget {
 
               break;
             case AppModule.steps:
-              isEnabled = usuario.role == UsuarioRole.administrador;
+              isEnabled = usuario.isAdmin;
 
               break;
             case AppModule.tags:
-              isEnabled = usuario.role == UsuarioRole.administrador;
+              isEnabled = usuario.isAdmin;
               break;
             default:
           }
