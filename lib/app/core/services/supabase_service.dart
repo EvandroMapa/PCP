@@ -1,5 +1,5 @@
+import 'package:flutter/foundation.dart';
 import 'package:aco_plus/app/core/models/service_model.dart';
-import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sf;
 
 class SupabaseService implements Service {
@@ -25,9 +25,9 @@ class SupabaseService implements Service {
       );
       // AppSupabaseClient.init() é chamado em background (initAplicationServices)
       // para não bloquear o runApp com dezenas de queries sequenciais
-      print('Supabase: Initialized successfully with URL: $url');
+      debugPrint('Supabase: Initialized successfully with URL: $url');
     } catch (e) {
-      print('Supabase: Error during initialization: $e');
+      debugPrint('Supabase: Error during initialization: $e');
     }
   }
 

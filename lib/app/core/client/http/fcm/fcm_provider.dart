@@ -4,16 +4,22 @@ import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/services/push_notification_service.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:http/http.dart' as http;
 
 class FCMProvider {
   static Future<void> putToken() async {
-    final token = await getDeviceToken();
-    if (token == null || usuario.deviceTokens.contains(token)) return;
-    usuario.deviceTokens.clear();
-    usuario.deviceTokens.add(token);
-    BackendClient.usuarios.update(usuario);
+    try {
+      final token = await getDeviceToken();
+      if (token == null || usuario.deviceTokens.contains(token)) return;
+      usuario.deviceTokens.clear();
+      usuario.deviceTokens.add(token);
+      BackendClient.usuarios.update(usuario);
+    } catch (e) {
+      // Firebase pode não estar inicializado ou permissão negada — ignora silenciosamente
+      debugPrint('[FCM] putToken ignorado: $e');
+    }
   }
 
   static Future<void> postSend(String userId, Map<String, dynamic> body) async {

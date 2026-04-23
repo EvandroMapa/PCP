@@ -81,7 +81,7 @@ class _MigracaoPageState extends State<MigracaoPage> {
                     decoration: const InputDecoration(labelText: 'Etapa de Origem (Firebase)'),
                     value: valorAtual,
                     hint: etapas.isEmpty
-                        ? const Text('Carregando etapas...')
+                        ? const Text('Clique em "Buscar" para conectar ao Firebase')
                         : const Text('Selecione a etapa de origem'),
                     items: etapas
                         .map((e) => DropdownMenuItem(value: e, child: Text(e.name)))
@@ -97,10 +97,17 @@ class _MigracaoPageState extends State<MigracaoPage> {
                 ),
                 const SizedBox(width: 16),
                 ElevatedButton(
-                  onPressed: controller.etapaOrigemSelecionada != null
-                      ? () => controller.buscarPedidosLegados(controller.etapaOrigemSelecionada!)
-                      : null,
-                  child: const Text('Buscar Pedidos'),
+                  onPressed: () async {
+                    // Se etapas ainda não foram carregadas, busca primeiro (inicializa Firebase)
+                    if (etapas.isEmpty) {
+                      await controller.buscarEtapasLegadas();
+                      return;
+                    }
+                    if (controller.etapaOrigemSelecionada != null) {
+                      controller.buscarPedidosLegados(controller.etapaOrigemSelecionada!);
+                    }
+                  },
+                  child: Text(etapas.isEmpty ? 'Conectar Firebase' : 'Buscar Pedidos'),
                 ),
               ],
             );
@@ -134,72 +141,73 @@ class _MigracaoPageState extends State<MigracaoPage> {
             final legados = snapLegados.data ?? [];
             if (legados.isEmpty) return const EmptyData();
 
-            return StreamBuilder<List<PedidoModel>>(
-              stream: controller.pedidosSelecionados.listen,
-              builder: (context, snapSelected) {
-                final selected = snapSelected.data ?? [];
-                
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Selecionados: ${selected.length} / ${legados.length}'),
-                        TextButton(
-                          onPressed: () => controller.toggleTodos(),
-                          child: const Text('Marcar/Desmarcar Todos'),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      height: 300,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Dropdown de etapa destino fixo no topo
+                DropdownButtonFormField<StepModel>(
+                  decoration: const InputDecoration(labelText: 'Etapa de Destino (Supabase)'),
+                  value: controller.etapaDestinoSelecionada,
+                  items: BackendClient.steps.data
+                      .map((e) => DropdownMenuItem(value: e, child: Text(e.name)))
+                      .toList(),
+                  onChanged: (val) {
+                    setState(() => controller.etapaDestinoSelecionada = val);
+                  },
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '${legados.length} pedido(s) encontrado(s) — clique em Importar para enviar um por vez',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+                StreamBuilder<bool>(
+                  stream: controller.isLoading.listen,
+                  builder: (context, snapLoading) {
+                    final loading = snapLoading.data ?? false;
+                    return Container(
+                      height: 380,
                       decoration: BoxDecoration(
                         border: Border.all(color: Colors.grey.shade300),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: ListView.builder(
+                      child: ListView.separated(
                         itemCount: legados.length,
+                        separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey.shade200),
                         itemBuilder: (context, index) {
                           final pedido = legados[index];
-                          final isSelected = selected.contains(pedido);
-                          return CheckboxListTile(
-                            title: Text('${pedido.localizador} - ${pedido.cliente.nome}'),
-                            subtitle: Text(pedido.descricao),
-                            value: isSelected,
-                            onChanged: (_) => controller.togglePedido(pedido),
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                            title: Text(
+                              pedido.localizador,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Text(
+                              '${pedido.cliente.nome}${pedido.descricao.isNotEmpty ? ' · ${pedido.descricao}' : ''}',
+                              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                            ),
+                            trailing: ElevatedButton.icon(
+                              onPressed: (loading || controller.etapaDestinoSelecionada == null)
+                                  ? null
+                                  : () => controller.importarPedidoUnico(
+                                      pedido,
+                                      controller.etapaDestinoSelecionada!,
+                                      context,
+                                    ),
+                              icon: const Icon(Icons.upload, size: 16),
+                              label: const Text('Importar'),
+                              style: ElevatedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                textStyle: const TextStyle(fontSize: 13),
+                              ),
+                            ),
                           );
                         },
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<StepModel>(
-                            decoration: const InputDecoration(labelText: 'Etapa de Destino (Supabase)'),
-                            value: controller.etapaDestinoSelecionada,
-                            items: BackendClient.steps.data.map((e) => DropdownMenuItem(value: e, child: Text(e.name))).toList(),
-                            onChanged: (val) {
-                              setState(() {
-                                controller.etapaDestinoSelecionada = val;
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        ElevatedButton(
-                          onPressed: (controller.etapaDestinoSelecionada != null && selected.isNotEmpty)
-                              ? () => controller.importarPedidosSelecionados(
-                                  controller.etapaDestinoSelecionada!, context)
-                              : null,
-                          child: const Text('Importar Selecionados'),
-                        ),
-                      ],
-                    )
-                  ],
-                );
-              }
+                    );
+                  }
+                ),
+              ],
             );
           }
         ),

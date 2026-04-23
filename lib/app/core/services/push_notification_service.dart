@@ -15,7 +15,7 @@ late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
 
 String? urlAfterAppOen;
 
-final _menssaging = FirebaseMessaging.instance;
+FirebaseMessaging get _menssaging => FirebaseMessaging.instance;
 
 String? deviceToken;
 

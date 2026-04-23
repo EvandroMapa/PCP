@@ -622,8 +622,8 @@ class PedidoModel {
         'localizador': localizador,
         'descricao': descricao,
         'tipo': tipo.name,
-        'cliente_id': cliente.id,
-        'obra_id': obra.id,
+        'cliente_id': cliente.id.isEmpty ? null : cliente.id,
+        'obra_id': (obra.id.isEmpty || obra.id == 'NOTFOUND') ? null : obra.id,
         'step_id': steps.isNotEmpty
             ? (steps.last.stepId.isNotEmpty &&
                     steps.last.stepId != 'step-not-found'
@@ -634,7 +634,7 @@ class PedidoModel {
             : null,
         'status': statusess.isNotEmpty ? statusess.last.status.name : null,
         'is_archived': isArchived,
-        'checklist_id': checklistId,
+        'checklist_id': (checklistId == null || checklistId!.isEmpty) ? null : checklistId,
         'planilhamento': planilhamento,
         'pedido_financeiro': pedidoFinanceiro,
         'instrucoes_entrega': instrucoesEntrega,
