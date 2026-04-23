@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/checklist/models/checklist_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
@@ -945,13 +946,17 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
             if (!isDisabled) ...[
               IconButton(
                 onPressed: () async {
-                  // Mestre não pode alterar quantidade — parciais dependem do original
-                  if (widget.pedido != null &&
-                      widget.pedido!.pedidosFilhos.isNotEmpty) {
+                  // Bloqueia edição apenas se essa bitola já foi usada em algum parcial
+                  // (ou seja, qtde < qtdeOriginal — parte já foi direcionada)
+                  final produtoOriginal = widget.pedido?.produtos
+                      .firstWhereOrNull((p) => p.produto.id == produto.produtoModel?.id);
+                  final foiUsadoEmParcial = produtoOriginal != null &&
+                      produtoOriginal.qtde < produtoOriginal.qtdeOriginal;
+                  if (foiUsadoEmParcial) {
                     NotificationService.showNegative(
                       'Edição bloqueada',
-                      'Este pedido possui parciais vinculados. '
-                      'A quantidade original não pode ser alterada.',
+                      'Esta bitola já foi parcialmente direcionada. '
+                      'Quantidade original não pode ser alterada.',
                     );
                     return;
                   }
@@ -965,20 +970,26 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
                 icon: Icon(Icons.edit_outlined,
                     color: Colors.blue[700], size: 20),
               ),
-              if (widget.pai == null &&
-                  (widget.pedido == null ||
-                      widget.pedido!.pedidosFilhos.isEmpty))
-                IconButton(
-                  onPressed: () async {
-                    if (await showConfirmDialog('Remover Produto',
-                        'Deseja remover ${produto.produtoModel?.descricao}?')) {
-                      form.produtos.remove(produto);
-                      pedidoCtrl.formStream.update();
-                    }
-                  },
-                  icon: Icon(Icons.delete_outline,
-                      color: AppColors.error, size: 20),
-                ),
+              if (widget.pai == null)
+                Builder(builder: (context) {
+                  // Permite deletar só se a bitola nunca foi usada em parcial
+                  final produtoOriginal = widget.pedido?.produtos
+                      .firstWhereOrNull((p) => p.produto.id == produto.produtoModel?.id);
+                  final foiUsadoEmParcial = produtoOriginal != null &&
+                      produtoOriginal.qtde < produtoOriginal.qtdeOriginal;
+                  if (foiUsadoEmParcial) return const SizedBox.shrink();
+                  return IconButton(
+                    onPressed: () async {
+                      if (await showConfirmDialog('Remover Produto',
+                          'Deseja remover ${produto.produtoModel?.descricao}?')) {
+                        form.produtos.remove(produto);
+                        pedidoCtrl.formStream.update();
+                      }
+                    },
+                    icon: Icon(Icons.delete_outline,
+                        color: AppColors.error, size: 20),
+                  );
+                }),
               if (widget.pai != null)
                 AppCheckbox(
                   value: produto.isSelected,
