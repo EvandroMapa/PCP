@@ -10,6 +10,7 @@ class ProdutoModel {
   final double massaFinal;
   final String codigoFinanceiro;
   final int sortIndex;
+  bool isImportado;
 
   factory ProdutoModel.empty() => ProdutoModel(
         id: HashService.get,
@@ -18,6 +19,7 @@ class ProdutoModel {
         massaFinal: 0.0,
         codigoFinanceiro: '',
         sortIndex: 999,
+        isImportado: false,
       );
 
   String get descricaoReplaced =>
@@ -33,6 +35,7 @@ class ProdutoModel {
     required this.massaFinal,
     this.codigoFinanceiro = '',
     this.sortIndex = 999,
+    this.isImportado = false,
   });
 
   String get label => '$nome - $descricao - $massaFinal';
@@ -47,6 +50,7 @@ class ProdutoModel {
       'massaFinal': massaFinal,
       'codigoFinanceiro': codigoFinanceiro,
       'sortIndex': sortIndex,
+      'is_importado': isImportado,
     };
   }
 
@@ -58,6 +62,7 @@ class ProdutoModel {
       'massa_final': massaFinal,
       'codigo_financeiro': codigoFinanceiro,
       'sort_index': sortIndex,
+      'is_importado': isImportado,
     };
   }
 
@@ -73,6 +78,7 @@ class ProdutoModel {
           (map['codigoFinanceiro'] ?? map['codigo_financeiro'] ?? '')
               .toString(),
       sortIndex: (map['sortIndex'] ?? map['sort_index'] ?? 999) as int,
+      isImportado: map['is_importado'] ?? false,
     );
   }
 
@@ -92,6 +98,7 @@ class ProdutoModel {
     double? massaFinal,
     String? codigoFinanceiro,
     int? sortIndex,
+    bool? isImportado,
   }) {
     return ProdutoModel(
       id: id ?? this.id,
@@ -100,6 +107,7 @@ class ProdutoModel {
       massaFinal: massaFinal ?? this.massaFinal,
       codigoFinanceiro: codigoFinanceiro ?? this.codigoFinanceiro,
       sortIndex: sortIndex ?? this.sortIndex,
+      isImportado: isImportado ?? this.isImportado,
     );
   }
 }

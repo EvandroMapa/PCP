@@ -18,6 +18,7 @@ import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:aco_plus/app/core/utils/app_env.dart';
 import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -209,6 +210,23 @@ class AppDrawerNotOperatorList extends StatelessWidget {
           module: module,
           notificacoes: notificacoes,
         ),
+        if (usuario.role == UsuarioRole.administrador) ...[
+          Container(
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: AppColors.black.withValues(alpha: 0.1)),
+              ),
+            ),
+            child: ListTile(
+              leading: const Icon(Icons.import_export),
+              title: const Text('Migração (Firebase)'),
+              onTap: () {
+                Navigator.pop(context);
+                context.push('/migracao');
+              },
+            ),
+          ),
+        ],
       ],
     );
   }

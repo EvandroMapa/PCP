@@ -9,6 +9,7 @@ import 'package:aco_plus/app/modules/kanban/ui/kanban_page.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordens_page.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedidos_page.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_acompanhamento_page.dart';
+import 'package:aco_plus/app/modules/migracao/ui/migracao_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -50,6 +51,12 @@ class RouteConfig {
           path: '/acompanhamento/pedidos/:id',
           pageBuilder: (context, state) => NoTransitionPage(
             child: PedidoAcompanhamentoPage(id: state.pathParameters['id']!),
+          ),
+        ),
+        GoRoute(
+          path: '/migracao',
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: GlobalLoadingWrapper(child: MigracaoPage()),
           ),
         ),
       ],

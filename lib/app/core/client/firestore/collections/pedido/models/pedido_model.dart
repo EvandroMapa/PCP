@@ -56,6 +56,7 @@ class PedidoModel {
   bool isFilho = false;
   String? romaneio;
   final List<ElementoModel> elementos;
+  bool isImportado;
 
   /// true quando o pedido tem filhos — é só um container de informações da venda
   bool get isMestre => pedidosFilhos.isNotEmpty;
@@ -116,6 +117,7 @@ class PedidoModel {
         valorDesconto: 0.0,
         valorTotal: 0.0,
         armacaoResumo: {},
+        isImportado: false,
       );
 
   String get filtro => localizador + pedidoFinanceiro;
@@ -212,6 +214,7 @@ class PedidoModel {
     this.valorTaxas = 0.0,
     this.valorDesconto = 0.0,
     this.valorTotal = 0.0,
+    this.isImportado = false,
     Map<String, dynamic>? armacaoResumo,
   }) : armacaoResumo = armacaoResumo ?? {};
 
@@ -356,6 +359,7 @@ class PedidoModel {
       'valor_taxas': valorTaxas,
       'valor_desconto': valorDesconto,
       'valor_total': valorTotal,
+      'is_importado': isImportado,
     };
   }
 
@@ -379,8 +383,10 @@ class PedidoModel {
       ),
       produtos: List<PedidoProdutoModel>.from(
         (map['produtos']?.map((x) => PedidoProdutoModel.fromMap(x)) ?? [])
+            .cast<PedidoProdutoModel>()
             .toList()
-          ..sort((a, b) => a.produto.sortIndex.compareTo(b.produto.sortIndex)),
+          ..sort((PedidoProdutoModel a, PedidoProdutoModel b) =>
+              a.produto.sortIndex.compareTo(b.produto.sortIndex)),
       ),
       archives: List<ArchiveModel>.from(
         map['archives']?.map((x) => ArchiveModel.fromMap(x)) ?? [],
@@ -434,6 +440,7 @@ class PedidoModel {
       valorDesconto: (map['valor_desconto'] ?? 0.0).toDouble(),
       valorTotal: (map['valor_total'] ?? 0.0).toDouble(),
       armacaoResumo: map['armacao_resumo'] ?? {},
+      isImportado: map['is_importado'] ?? false,
       elementos: [],
     );
   }
@@ -591,6 +598,7 @@ class PedidoModel {
       valorDesconto: _parseNum(map['valor_desconto']),
       valorTotal: _parseNum(map['valor_total']),
       armacaoResumo: map['armacao_resumo'] ?? {},
+      isImportado: map['is_importado'] ?? false,
       elementos: elementos,
     );
 
@@ -644,11 +652,12 @@ class PedidoModel {
         'histories': histories.map((h) => h.toMap()).toList(),
         'user_ids': users.map((u) => u.id).toList(),
         'armacao_resumo': armacaoResumo,
-        'pai_id': pai,
+        'pai_id': (pai == null || pai!.isEmpty) ? null : pai,
         'is_filho': isFilho,
         'pedidos_filhos': pedidosFilhos,
         'pedidos_vinculados': pedidosVinculados,
         'romaneio': romaneio,
+        'is_importado': isImportado,
       };
 
   PedidoModel copyWith({
@@ -687,6 +696,7 @@ class PedidoModel {
     double? valorTotal,
     Map<String, dynamic>? armacaoResumo,
     List<ElementoModel>? elementos,
+    bool? isImportado,
   }) {
     return PedidoModel(
       id: id ?? this.id,
@@ -726,6 +736,7 @@ class PedidoModel {
       valorTaxas: valorTaxas ?? this.valorTaxas,
       valorDesconto: valorDesconto ?? this.valorDesconto,
       valorTotal: valorTotal ?? this.valorTotal,
+      isImportado: isImportado ?? this.isImportado,
     );
   }
 
