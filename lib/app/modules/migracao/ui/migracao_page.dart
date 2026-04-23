@@ -190,7 +190,8 @@ class _MigracaoPageState extends State<MigracaoPage> {
                         const SizedBox(width: 16),
                         ElevatedButton(
                           onPressed: (controller.etapaDestinoSelecionada != null && selected.isNotEmpty)
-                              ? () => controller.importarPedidosSelecionados(controller.etapaDestinoSelecionada!)
+                              ? () => controller.importarPedidosSelecionados(
+                                  controller.etapaDestinoSelecionada!, context)
                               : null,
                           child: const Text('Importar Selecionados'),
                         ),

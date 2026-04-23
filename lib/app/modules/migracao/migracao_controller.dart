@@ -167,8 +167,29 @@ class MigracaoController {
     }
   }
 
-  Future<void> importarPedidosSelecionados(StepModel etapaDestino) async {
-    final list = pedidosSelecionados.value;
+  /// Normaliza o localizador para comparação fuzzy:
+  /// remove espaços, pontos, traços e converte para minúsculas.
+  String _normalizarLocalizador(String loc) {
+    return loc
+        .toLowerCase()
+        .replaceAll(RegExp(r'[\s.\-_]+'), '');
+  }
+
+  /// Verifica se já existe no Supabase um pedido com localizador similar.
+  PedidoModel? _buscarDuplicata(String localizador) {
+    final normalizado = _normalizarLocalizador(localizador);
+    try {
+      return BackendClient.pedidos.data.firstWhere(
+        (p) => _normalizarLocalizador(p.localizador) == normalizado,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> importarPedidosSelecionados(
+      StepModel etapaDestino, BuildContext context) async {
+    final list = List<PedidoModel>.from(pedidosSelecionados.value);
     if (list.isEmpty) {
       toast('Selecione ao menos um pedido.');
       return;
@@ -184,32 +205,87 @@ class MigracaoController {
     try {
       isLoading.add(true);
       int salvos = 0;
+      int pulados = 0;
+
       for (var i = 0; i < list.length; i++) {
         final pedido = list[i];
+
+        // Verifica duplicata por localizador normalizado
+        final duplicata = _buscarDuplicata(pedido.localizador);
+        if (duplicata != null) {
+          isLoading.add(false); // libera UI para exibir dialog
+          final importarMesmoAssim = await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              title: const Text('⚠️ Localizador já existe'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'O pedido "${pedido.localizador}" do Firebase parece já estar importado no PCP:',
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Text(
+                      '"${duplicata.localizador}" — ${duplicata.cliente.nome}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('Deseja importar mesmo assim?'),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: const Text('Pular este pedido'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: const Text('Importar mesmo assim'),
+                ),
+              ],
+            ),
+          ) ?? false;
+
+          isLoading.add(true);
+
+          if (!importarMesmoAssim) {
+            pulados++;
+            statusText.add('Pulando pedido duplicado: ${pedido.localizador} (${i + 1} de ${list.length})...');
+            continue;
+          }
+        }
+
         pedido.isImportado = true;
-        
-        // Adiciona a etapa destino como novo step (garante stepId correto no Supabase)
         pedido.steps.add(PedidoStepModel.create(etapaDestino));
 
-        statusText.add('Importando pedido ${pedido.localizador} (${i + 1} de ${list.length})...');
-        
-        // No supabase precisaremos garantir que Cliente, Obra e Produtos existem
-        // A lógica do BackendClient.pedidos.add já lida com o save das relations de forma transparente no backend se o backend suportar,
-        // mas idealmente os IDs do Firebase devem ser mantidos.
+        statusText.add('Importando ${pedido.localizador} (${i + 1} de ${list.length})...');
         await BackendClient.pedidos.add(pedido);
         salvos++;
         progress.add(salvos / list.length);
       }
-      final salvosCount = salvos;
-      toast('✅ Importação concluída! $salvosCount pedidos importados com sucesso.');
-      statusText.add('✅ Importação concluída! $salvosCount pedidos importados.');
+
+      final msg = pulados > 0
+          ? '✅ Concluído! $salvos importados, $pulados pulados por duplicata.'
+          : '✅ Importação concluída! $salvos pedidos importados com sucesso.';
+      toast(msg);
+      statusText.add(msg);
       importacaoConcluida.add(true);
-      
+
       // Limpa seleções
       pedidosLegados.value.removeWhere((p) => list.contains(p));
       pedidosLegados.update();
       pedidosSelecionados.add(<PedidoModel>[]);
-      
+
     } catch (e) {
       toast('Erro ao importar pedidos: $e');
     } finally {
