@@ -48,105 +48,27 @@ class PedidoSupabaseCollection extends PedidoCollection {
     _isStarted = true;
   }
 
+  static const String _fullPedidoSelect = '''
+    *,
+    pedido_produtos (*),
+    pedido_status_history (*),
+    pedido_steps_history (*),
+    pedido_tags (*),
+    elementos (*, elemento_posicoes (*))
+  ''';
+
   @override
   Future<void> start({bool lock = true, GetOptions? options}) async {
     if (_isStarted && lock) return;
     _isStarted = true;
     try {
-      // 1. Fetch main table first (critical)
-      final pedidosRaw = await SupabaseService.client
+      final response = await SupabaseService.client
           .from(name)
-          .select()
+          .select(_fullPedidoSelect)
           .eq('is_archived', false);
 
-      if (pedidosRaw.isEmpty) {
-        pedidosUnarchivedsStream.add(<PedidoModel>[]);
-        dataStream.add(<PedidoModel>[]);
-        return;
-      }
-
-      final List<String> pIds =
-          pedidosRaw.map((e) => e['id'].toString().trim()).toList();
-
-      // 2. Fetch auxiliary tables FILTERED by pIds in parallel
-      Future<List<Map<String, dynamic>>> safeFetch(String table) async {
-        try {
-          final res = await SupabaseService.client
-              .from(table)
-              .select()
-              .filter('pedido_id', 'in', pIds);
-          final list = res as List;
-          return list.map((item) {
-            try {
-              if (item is Map) {
-                return item
-                    .map((key, value) => MapEntry(key.toString(), value));
-              }
-            } catch (_) {}
-            return <String, dynamic>{};
-          }).toList();
-        } catch (_) {
-          return [];
-        }
-      }
-
-      final results = await Future.wait([
-        safeFetch('pedido_produtos'),
-        safeFetch('pedido_status_history'),
-        safeFetch('pedido_steps_history'),
-        safeFetch('pedido_tags'),
-        safeFetch('elementos'),
-      ]);
-
-      final List<Map<String, dynamic>> produtosRaw = results[0];
-      final List<Map<String, dynamic>> statusRaw = results[1];
-      final List<Map<String, dynamic>> stepsRaw = results[2];
-      final List<Map<String, dynamic>> tagsRaw = results[3];
-      final List<Map<String, dynamic>> elementosRaw = results[4];
-
-      final List<String> eIds =
-          elementosRaw.map((e) => e['id'].toString()).toList();
-      final List<Map<String, dynamic>> posicoesRaw = eIds.isEmpty
-          ? []
-          : List<Map<String, dynamic>>.from(await SupabaseService.client
-              .from('elemento_posicoes')
-              .select()
-              .filter('elemento_id', 'in', eIds));
-
-      final pedidos = pedidosRaw.map((pMap) {
-        final String pId = pMap['id'].toString().trim();
-
-        final pProdutos = produtosRaw.where((r) {
-          final String pedidoId = (r['pedido_id'] ?? '').toString().trim();
-          return pedidoId == pId;
-        }).toList();
-
-        return PedidoModel.fromSupabaseMap(
-          pMap,
-          produtosRaw: pProdutos,
-          statusRaw: statusRaw
-              .where((r) => r['pedido_id'].toString().trim() == pId)
-              .toList(),
-          stepsRaw: stepsRaw
-              .where((r) => r['pedido_id'].toString().trim() == pId)
-              .toList(),
-          tagsIds: tagsRaw
-              .where((r) => r['pedido_id'].toString().trim() == pId)
-              .map((r) => r['tag_id'].toString())
-              .toList(),
-          elementosRaw: elementosRaw
-              .where((e) => e['pedido_id'].toString().trim() == pId)
-              .map((e) {
-            final String eId = e['id'].toString().trim();
-            return {
-              ...e,
-              'posicoesRaw': posicoesRaw
-                  .where((pos) => pos['elemento_id'].toString().trim() == eId)
-                  .toList(),
-            };
-          }).toList(),
-        );
-      }).toList();
+      final List<dynamic> dataRaw = response as List;
+      final pedidos = dataRaw.map((pMap) => _mapPedido(pMap)).toList();
 
       pedidosUnarchivedsStream.add(pedidos);
       dataStream.add(pedidos);
@@ -158,92 +80,13 @@ class PedidoSupabaseCollection extends PedidoCollection {
   @override
   Future<void> startOnlyArquivadas() async {
     try {
-      final pedidosRaw = await SupabaseService.client
+      final response = await SupabaseService.client
           .from(name)
-          .select()
+          .select(_fullPedidoSelect)
           .eq('is_archived', true);
 
-      if (pedidosRaw.isEmpty) {
-        pedidosArchivedsStream.add(<PedidoModel>[]);
-        return;
-      }
-
-      final List<String> pIds =
-          pedidosRaw.map((e) => e['id'].toString().trim()).toList();
-
-      Future<List<Map<String, dynamic>>> safeFetch(String table) async {
-        try {
-          final res = await SupabaseService.client
-              .from(table)
-              .select()
-              .filter('pedido_id', 'in', pIds);
-          final list = res as List;
-          return list.map((item) {
-            if (item is Map) {
-              return item.map((key, value) => MapEntry(key.toString(), value));
-            }
-            return <String, dynamic>{};
-          }).toList();
-        } catch (_) {
-          return [];
-        }
-      }
-
-      final results = await Future.wait([
-        safeFetch('pedido_produtos'),
-        safeFetch('pedido_status_history'),
-        safeFetch('pedido_steps_history'),
-        safeFetch('pedido_tags'),
-        safeFetch('elementos'),
-      ]);
-
-      final List<Map<String, dynamic>> produtosRaw = results[0];
-      final List<Map<String, dynamic>> statusRaw = results[1];
-      final List<Map<String, dynamic>> stepsRaw = results[2];
-      final List<Map<String, dynamic>> tagsRaw = results[3];
-      final List<Map<String, dynamic>> elementosRaw = results[4];
-
-      final List<String> eIds =
-          elementosRaw.map((e) => e['id'].toString()).toList();
-      final List<Map<String, dynamic>> posicoesRaw = eIds.isEmpty
-          ? []
-          : List<Map<String, dynamic>>.from(await SupabaseService.client
-              .from('elemento_posicoes')
-              .select()
-              .filter('elemento_id', 'in', eIds));
-
-      final pedidos = pedidosRaw.map((pMap) {
-        final String pId = pMap['id'].toString().trim();
-        final pProdutos = produtosRaw
-            .where((r) => (r['pedido_id'] ?? '').toString().trim() == pId)
-            .toList();
-
-        return PedidoModel.fromSupabaseMap(
-          pMap,
-          produtosRaw: pProdutos,
-          statusRaw: statusRaw
-              .where((r) => r['pedido_id'].toString().trim() == pId)
-              .toList(),
-          stepsRaw: stepsRaw
-              .where((r) => r['pedido_id'].toString().trim() == pId)
-              .toList(),
-          tagsIds: tagsRaw
-              .where((r) => r['pedido_id'].toString().trim() == pId)
-              .map((r) => r['tag_id'].toString())
-              .toList(),
-          elementosRaw: elementosRaw
-              .where((e) => e['pedido_id'].toString().trim() == pId)
-              .map((e) {
-            final String eId = e['id'].toString().trim();
-            return {
-              ...e,
-              'posicoesRaw': posicoesRaw
-                  .where((pos) => pos['elemento_id'].toString().trim() == eId)
-                  .toList(),
-            };
-          }).toList(),
-        );
-      }).toList();
+      final List<dynamic> dataRaw = response as List;
+      final pedidos = dataRaw.map((pMap) => _mapPedido(pMap)).toList();
 
       pedidosArchivedsStream.add(pedidos);
     } catch (e) {
@@ -251,83 +94,41 @@ class PedidoSupabaseCollection extends PedidoCollection {
     }
   }
 
-  Timer? _streamDebounce;
-
-  void _updateStreams(List<Map<String, dynamic>> raw) {
-    _streamDebounce?.cancel();
-    _streamDebounce = Timer(const Duration(milliseconds: 500), () {
-      if (!kanbanCtrl.isDragging) start(lock: false);
-    });
+  /// Mapeia o resultado do Select aninhado do Supabase para o PedidoModel
+  PedidoModel _mapPedido(Map<String, dynamic> pMap) {
+    return PedidoModel.fromSupabaseMap(
+      pMap,
+      produtosRaw: (pMap['pedido_produtos'] as List?)?.cast<Map<String, dynamic>>(),
+      statusRaw: (pMap['pedido_status_history'] as List?)?.cast<Map<String, dynamic>>(),
+      stepsRaw: (pMap['pedido_steps_history'] as List?)?.cast<Map<String, dynamic>>(),
+      tagsIds: (pMap['pedido_tags'] as List?)
+          ?.map((t) => t['tag_id'].toString())
+          .toList(),
+      elementosRaw: (pMap['elementos'] as List?)?.map((e) {
+        final eMap = Map<String, dynamic>.from(e);
+        return {
+          ...eMap,
+          'posicoesRaw': eMap['elemento_posicoes'],
+        };
+      }).cast<Map<String, dynamic>>().toList(),
+    );
   }
+
+
+
+
 
   @override
   Future<PedidoModel?> getByIdSupabase(String id) async {
     try {
       final pRaw = await SupabaseService.client
           .from(name)
-          .select()
+          .select(_fullPedidoSelect)
           .eq('id', id)
           .maybeSingle();
 
       if (pRaw == null) return null;
-
-      final Map<String, dynamic> pMap = pRaw;
-
-      Future<List<Map<String, dynamic>>> safeFetch(String table) async {
-        try {
-          final res = await SupabaseService.client
-              .from(table)
-              .select()
-              .eq('pedido_id', id);
-          final list = res as List;
-          return list.map((item) {
-            try {
-              if (item is Map) {
-                return item
-                    .map((key, value) => MapEntry(key.toString(), value));
-              }
-            } catch (_) {}
-            return <String, dynamic>{};
-          }).toList();
-        } catch (_) {
-          return [];
-        }
-      }
-
-      final results = await Future.wait([
-        safeFetch('pedido_produtos'),
-        safeFetch('pedido_status_history'),
-        safeFetch('pedido_steps_history'),
-        safeFetch('pedido_tags'),
-        safeFetch('elementos'),
-      ]);
-
-      final List<Map<String, dynamic>> elementosRaw = results[4];
-      final List<String> eIds =
-          elementosRaw.map((e) => e['id'].toString()).toList();
-      final List<Map<String, dynamic>> posicoesRaw = eIds.isEmpty
-          ? []
-          : List<Map<String, dynamic>>.from(await SupabaseService.client
-              .from('elemento_posicoes')
-              .select()
-              .filter('elemento_id', 'in', eIds));
-
-      return PedidoModel.fromSupabaseMap(
-        pMap,
-        produtosRaw: results[0],
-        statusRaw: results[1],
-        stepsRaw: results[2],
-        tagsIds: results[3].map((t) => (t['tag_id'] ?? '').toString()).toList(),
-        elementosRaw: elementosRaw.map((e) {
-          final String eId = e['id'].toString().trim();
-          return {
-            ...e,
-            'posicoesRaw': posicoesRaw
-                .where((pos) => pos['elemento_id'].toString().trim() == eId)
-                .toList(),
-          };
-        }).toList(),
-      );
+      return _mapPedido(pRaw);
     } catch (e) {
       log('Supabase Error (Pedido.getByIdSupabase): $e');
       return null;
@@ -359,124 +160,44 @@ class PedidoSupabaseCollection extends PedidoCollection {
         .stream(primaryKey: ['id'])
         .eq('is_archived', false)
         .listen((List<Map<String, dynamic>> data) {
-          // Debounce: aguarda 800ms antes de fazer o fetch completo.
-          // Isso evita o flash de tags incorretas porque:
-          // 1) O Realtime dispara ao atualizar 'pedidos', mas 'pedido_tags'
-          //    só é atualizado depois em _syncRelationships().
-          // 2) O debounce garante que o fetch só roda após todas as
-          //    tabelas relacionadas estarem atualizadas.
+          // Debounce maior (1.2s) para garantir que updates em massa no banco terminaram
           _realtimeDebounce?.cancel();
           _realtimeDebounce =
-              Timer(const Duration(milliseconds: 800), () async {
+              Timer(const Duration(milliseconds: 1200), () async {
             if (!kanbanCtrl.isDropLocked) {
-              await fetch(lock: false);
+              await start(lock: false);
             }
           });
         });
   }
 
-
   @override
   Future<void> fetchByIds(List<String> ids) async {
     if (ids.isEmpty) return;
     try {
-      log('Supabase (Pedido.fetchByIds): Fetching ${ids.length} records...');
-      // 1. Fetch main table
-      final pedidosRaw = await SupabaseService.client
+      final response = await SupabaseService.client
           .from(name)
-          .select()
-          .filter('id', 'in', ids);
+          .select(_fullPedidoSelect)
+          .filter('id', 'in', '(${ids.join(",")})');
 
-      if (pedidosRaw.isEmpty) return;
+      final List<dynamic> dataRaw = response as List;
+      final newPedidos = dataRaw.map((pMap) => _mapPedido(pMap as Map<String, dynamic>)).toList();
 
-      final List<String> pIds =
-          pedidosRaw.map((e) => e['id'].toString().trim()).toList();
-
-      // 2. Fetch auxiliary tables in parallel
-      Future<List<Map<String, dynamic>>> safeFetch(String table) async {
-        try {
-          final res = await SupabaseService.client
-              .from(table)
-              .select()
-              .filter('pedido_id', 'in', pIds);
-          final list = res as List;
-          return list.map((item) => Map<String, dynamic>.from(item)).toList();
-        } catch (_) {
-          return [];
-        }
-      }
-
-      final results = await Future.wait([
-        safeFetch('pedido_produtos'),
-        safeFetch('pedido_status_history'),
-        safeFetch('pedido_steps_history'),
-        safeFetch('pedido_tags'),
-        safeFetch('elementos'),
-      ]);
-
-      final List<Map<String, dynamic>> produtosRaw = results[0];
-      final List<Map<String, dynamic>> statusRaw = results[1];
-      final List<Map<String, dynamic>> stepsRaw = results[2];
-      final List<Map<String, dynamic>> tagsRaw = results[3];
-      final List<Map<String, dynamic>> elementosRaw = results[4];
-
-      final List<String> eIds =
-          elementosRaw.map((e) => e['id'].toString()).toList();
-      final List<Map<String, dynamic>> posicoesRaw = eIds.isEmpty
-          ? []
-          : List<Map<String, dynamic>>.from(await SupabaseService.client
-              .from('elemento_posicoes')
-              .select()
-              .filter('elemento_id', 'in', eIds));
-
-      final newPedidos = pedidosRaw.map((pMap) {
-        final String pId = pMap['id'].toString().trim();
-        return PedidoModel.fromSupabaseMap(
-          pMap,
-          produtosRaw: produtosRaw
-              .where((r) => r['pedido_id'].toString().trim() == pId)
-              .toList(),
-          statusRaw: statusRaw
-              .where((r) => r['pedido_id'].toString().trim() == pId)
-              .toList(),
-          stepsRaw: stepsRaw
-              .where((r) => r['pedido_id'].toString().trim() == pId)
-              .toList(),
-          tagsIds: tagsRaw
-              .where((r) => r['pedido_id'].toString().trim() == pId)
-              .map((r) => r['tag_id'].toString())
-              .toList(),
-          elementosRaw: elementosRaw
-              .where((e) => e['pedido_id'].toString().trim() == pId)
-              .map((e) {
-            final String eId = e['id'].toString().trim();
-            return {
-              ...e,
-              'posicoesRaw': posicoesRaw
-                  .where((pos) => pos['elemento_id'].toString().trim() == eId)
-                  .toList(),
-            };
-          }).toList(),
-        );
-      }).toList();
-
-      // 3. Merge with local data and update streams
-      final currentData =
-          Map<String, PedidoModel>.fromIterable(data, key: (e) => e.id);
+      // Merge com os dados locais
+      final currentData = Map<String, PedidoModel>.fromIterable(data, key: (e) => e.id);
       for (var p in newPedidos) {
         currentData[p.id] = p;
       }
 
       final updatedList = currentData.values.toList();
       dataStream.add(updatedList);
-      pedidosUnarchivedsStream
-          .add(updatedList.where((e) => !e.isArchived).toList());
-
-      log('Supabase (Pedido.fetchByIds): ${newPedidos.length} records synced.');
+      pedidosUnarchivedsStream.add(updatedList.where((e) => !e.isArchived).toList());
     } catch (e) {
       log('Supabase Error (Pedido.fetchByIds): $e');
     }
   }
+
+
 
   @override
   PedidoModel getById(String id) =>
@@ -504,8 +225,9 @@ class PedidoSupabaseCollection extends PedidoCollection {
             'Pedido Salvo com Alertas', 'Erros: ${errorLogs.join(", ")}');
       }
 
-      log('Supabase (Pedido.add): Fetching updated data...');
-      await fetch();
+      // O Realtime cuidará de atualizar os dados após o debounce
+      // log('Supabase (Pedido.add): Fetching updated data...');
+      // await fetch();
       return model;
     } catch (e) {
       log('Supabase CRITICAL ERROR (Pedido.add): $e');
@@ -575,9 +297,9 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
       await _syncRelationships(model);
 
-      if (!kanbanCtrl.isDropLocked) {
-        await fetch(lock: false);
-      }
+      // if (!kanbanCtrl.isDropLocked) {
+      //   await fetch(lock: false);
+      // }
 
       return model;
     } catch (e) {
@@ -736,7 +458,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
         }
       }
 
-      await fetch(lock: false);
+      // await fetch(lock: false);
     } catch (e) {
       log('Supabase Error (updateProdutosMateriaPrima): $e');
     }
@@ -765,7 +487,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
           .update({'index': pedido.index}).eq('id', pedido.id);
 
       // Força um fetch local imediato para a janela atual
-      await fetch(lock: false);
+      // await fetch(lock: false);
     } catch (e) {
       log('Supabase Error (updateProdutoPause): $e');
     }
@@ -828,7 +550,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
         }
       }
 
-      await fetch(lock: false);
+      // await fetch(lock: false);
     } catch (e) {
       log('Supabase Error (updateProdutosStatus): $e');
     }
@@ -858,7 +580,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
           .update({'index': pedido.index}).eq('id', pedido.id);
 
       // Força um fetch local imediato para a janela atual
-      await fetch(lock: false);
+      // await fetch(lock: false);
 
       return pedido;
     } catch (e) {

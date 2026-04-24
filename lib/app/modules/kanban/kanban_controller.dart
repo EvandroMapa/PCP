@@ -42,7 +42,6 @@ class StepController {
   bool _pendingDrop = false;
   bool get isDropLocked => isDragging || _pendingDrop;
   StreamSubscription? _pedidosSubscription;
-  Timer? _refreshTimer;
 
   void startDrag() => isDragging = true;
   void endDrag() {
@@ -75,13 +74,7 @@ class StepController {
       final calendar = _mountCalendar();
       utilsStream.add(KanbanUtils(kanban: kanban, calendar: calendar));
 
-      // Timer de atualizaÃ§Ã£o automÃ¡tica a cada 3 segundos
-      _refreshTimer?.cancel();
-      _refreshTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
-        if (!isDropLocked) {
-          BackendClient.pedidos.fetch();
-        }
-      });
+
 
       onMount();
     } catch (e) {
