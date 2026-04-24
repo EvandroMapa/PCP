@@ -48,45 +48,133 @@ class PedidoSupabaseCollection extends PedidoCollection {
     _isStarted = true;
   }
 
-  static const String _fullPedidoSelect = '''
-    *,
-    pedido_produtos (*),
-    pedido_status_history (*),
-    pedido_steps_history (*),
-    pedido_tags (*),
-    elementos (*, elemento_posicoes (*))
-  ''';
+  // Helper para buscar tabelas auxiliares com segurança
+  Future<List<Map<String, dynamic>>> _safeFetch(
+      String table, String campo, dynamic valor) async {
+    try {
+      final res = await SupabaseService.client
+          .from(table)
+          .select()
+          .eq(campo, valor);
+      return List<Map<String, dynamic>>.from(res);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _safeFetchIn(
+      String table, String campo, List<String> ids) async {
+    if (ids.isEmpty) return [];
+    try {
+      final res = await SupabaseService.client
+          .from(table)
+          .select()
+          .filter(campo, 'in', '(${ids.join(",")})');
+      return List<Map<String, dynamic>>.from(res);
+    } catch (_) {
+      return [];
+    }
+  }
 
   @override
   Future<void> start({bool lock = true, GetOptions? options}) async {
     if (_isStarted && lock) return;
     _isStarted = true;
     try {
-      final response = await SupabaseService.client
+      final pedidosRaw = await SupabaseService.client
           .from(name)
-          .select(_fullPedidoSelect)
+          .select()
           .eq('is_archived', false);
 
-      final List<dynamic> dataRaw = response as List;
-      final pedidos = dataRaw.map((pMap) => _mapPedido(pMap)).toList();
+      if (pedidosRaw.isEmpty) {
+        pedidosUnarchivedsStream.add(<PedidoModel>[]);
+        dataStream.add(<PedidoModel>[]);
+        return;
+      }
+
+      log('Supabase (Pedido.start): ${pedidosRaw.length} pedidos encontrados. Buscando detalhes...');
+
+      final pIds = pedidosRaw.map((e) => e['id'].toString()).toList();
+
+      final results = await Future.wait([
+        _safeFetchIn('pedido_produtos', 'pedido_id', pIds),
+        _safeFetchIn('pedido_status_history', 'pedido_id', pIds),
+        _safeFetchIn('pedido_steps_history', 'pedido_id', pIds),
+        _safeFetchIn('pedido_tags', 'pedido_id', pIds),
+        _safeFetchIn('elementos', 'pedido_id', pIds),
+      ]);
+
+      final produtosRaw   = results[0];
+      final statusRaw     = results[1];
+      final stepsRaw      = results[2];
+      final tagsRaw       = results[3];
+      final elementosRaw  = results[4];
+
+      final eIds = elementosRaw.map((e) => e['id'].toString()).toList();
+      final posicoesRaw = await _safeFetchIn('elemento_posicoes', 'elemento_id', eIds);
+
+      final pedidos = pedidosRaw.map((pMap) {
+        final pId = pMap['id'].toString();
+        return _mapPedido(
+          pMap,
+          produtosRaw: produtosRaw.where((r) => r['pedido_id'] == pId).toList(),
+          statusRaw: statusRaw.where((r) => r['pedido_id'] == pId).toList(),
+          stepsRaw: stepsRaw.where((r) => r['pedido_id'] == pId).toList(),
+          tagsIds: tagsRaw.where((r) => r['pedido_id'] == pId).map((r) => r['tag_id'].toString()).toList(),
+          elementosRaw: elementosRaw.where((e) => e['pedido_id'] == pId).map((e) {
+            final eId = e['id'].toString();
+            return {...e, 'posicoesRaw': posicoesRaw.where((p) => p['elemento_id'] == eId).toList()};
+          }).toList(),
+        );
+      }).toList();
 
       pedidosUnarchivedsStream.add(pedidos);
       dataStream.add(pedidos);
     } catch (e) {
-      log('Supabase Error (Pedido.start): $e');
+      log('Supabase CRITICAL Error (Pedido.start): $e');
+      NotificationService.showNegative('Erro ao Carregar Pedidos', e.toString());
     }
   }
 
   @override
   Future<void> startOnlyArquivadas() async {
     try {
-      final response = await SupabaseService.client
+      final pedidosRaw = await SupabaseService.client
           .from(name)
-          .select(_fullPedidoSelect)
+          .select()
           .eq('is_archived', true);
 
-      final List<dynamic> dataRaw = response as List;
-      final pedidos = dataRaw.map((pMap) => _mapPedido(pMap)).toList();
+      if (pedidosRaw.isEmpty) {
+        pedidosArchivedsStream.add(<PedidoModel>[]);
+        return;
+      }
+
+      final pIds = pedidosRaw.map((e) => e['id'].toString()).toList();
+      final results = await Future.wait([
+        _safeFetchIn('pedido_produtos', 'pedido_id', pIds),
+        _safeFetchIn('pedido_status_history', 'pedido_id', pIds),
+        _safeFetchIn('pedido_steps_history', 'pedido_id', pIds),
+        _safeFetchIn('pedido_tags', 'pedido_id', pIds),
+        _safeFetchIn('elementos', 'pedido_id', pIds),
+      ]);
+
+      final eIds = results[4].map((e) => e['id'].toString()).toList();
+      final posicoesRaw = await _safeFetchIn('elemento_posicoes', 'elemento_id', eIds);
+
+      final pedidos = pedidosRaw.map((pMap) {
+        final pId = pMap['id'].toString();
+        return _mapPedido(
+          pMap,
+          produtosRaw: results[0].where((r) => r['pedido_id'] == pId).toList(),
+          statusRaw: results[1].where((r) => r['pedido_id'] == pId).toList(),
+          stepsRaw: results[2].where((r) => r['pedido_id'] == pId).toList(),
+          tagsIds: results[3].where((r) => r['pedido_id'] == pId).map((r) => r['tag_id'].toString()).toList(),
+          elementosRaw: results[4].where((e) => e['pedido_id'] == pId).map((e) {
+            final eId = e['id'].toString();
+            return {...e, 'posicoesRaw': posicoesRaw.where((p) => p['elemento_id'] == eId).toList()};
+          }).toList(),
+        );
+      }).toList();
 
       pedidosArchivedsStream.add(pedidos);
     } catch (e) {
@@ -94,23 +182,22 @@ class PedidoSupabaseCollection extends PedidoCollection {
     }
   }
 
-  /// Mapeia o resultado do Select aninhado do Supabase para o PedidoModel
-  PedidoModel _mapPedido(Map<String, dynamic> pMap) {
+  /// Mapeia os dados brutos do Supabase para o PedidoModel
+  PedidoModel _mapPedido(
+    Map<String, dynamic> pMap, {
+    List<Map<String, dynamic>>? produtosRaw,
+    List<Map<String, dynamic>>? statusRaw,
+    List<Map<String, dynamic>>? stepsRaw,
+    List<String>? tagsIds,
+    List<Map<String, dynamic>>? elementosRaw,
+  }) {
     return PedidoModel.fromSupabaseMap(
       pMap,
-      produtosRaw: (pMap['pedido_produtos'] as List?)?.cast<Map<String, dynamic>>(),
-      statusRaw: (pMap['pedido_status_history'] as List?)?.cast<Map<String, dynamic>>(),
-      stepsRaw: (pMap['pedido_steps_history'] as List?)?.cast<Map<String, dynamic>>(),
-      tagsIds: (pMap['pedido_tags'] as List?)
-          ?.map((t) => t['tag_id'].toString())
-          .toList(),
-      elementosRaw: (pMap['elementos'] as List?)?.map((e) {
-        final eMap = Map<String, dynamic>.from(e);
-        return {
-          ...eMap,
-          'posicoesRaw': eMap['elemento_posicoes'],
-        };
-      }).cast<Map<String, dynamic>>().toList(),
+      produtosRaw: produtosRaw,
+      statusRaw: statusRaw,
+      stepsRaw: stepsRaw,
+      tagsIds: tagsIds,
+      elementosRaw: elementosRaw,
     );
   }
 
@@ -123,12 +210,34 @@ class PedidoSupabaseCollection extends PedidoCollection {
     try {
       final pRaw = await SupabaseService.client
           .from(name)
-          .select(_fullPedidoSelect)
+          .select()
           .eq('id', id)
           .maybeSingle();
 
       if (pRaw == null) return null;
-      return _mapPedido(pRaw);
+
+      final results = await Future.wait([
+        _safeFetch('pedido_produtos', 'pedido_id', id),
+        _safeFetch('pedido_status_history', 'pedido_id', id),
+        _safeFetch('pedido_steps_history', 'pedido_id', id),
+        _safeFetch('pedido_tags', 'pedido_id', id),
+        _safeFetch('elementos', 'pedido_id', id),
+      ]);
+
+      final eIds = results[4].map((e) => e['id'].toString()).toList();
+      final posicoesRaw = await _safeFetchIn('elemento_posicoes', 'elemento_id', eIds);
+
+      return _mapPedido(
+        pRaw,
+        produtosRaw: results[0],
+        statusRaw: results[1],
+        stepsRaw: results[2],
+        tagsIds: results[3].map((t) => t['tag_id'].toString()).toList(),
+        elementosRaw: results[4].map((e) {
+          final eId = e['id'].toString();
+          return {...e, 'posicoesRaw': posicoesRaw.where((p) => p['elemento_id'] == eId).toList()};
+        }).toList(),
+      );
     } catch (e) {
       log('Supabase Error (Pedido.getByIdSupabase): $e');
       return null;
@@ -175,20 +284,45 @@ class PedidoSupabaseCollection extends PedidoCollection {
   Future<void> fetchByIds(List<String> ids) async {
     if (ids.isEmpty) return;
     try {
-      final response = await SupabaseService.client
+      final pedidosRaw = await SupabaseService.client
           .from(name)
-          .select(_fullPedidoSelect)
+          .select()
           .filter('id', 'in', '(${ids.join(",")})');
 
-      final List<dynamic> dataRaw = response as List;
-      final newPedidos = dataRaw.map((pMap) => _mapPedido(pMap as Map<String, dynamic>)).toList();
+      if (pedidosRaw.isEmpty) return;
 
-      // Merge com os dados locais
+      final pIds = pedidosRaw.map((e) => e['id'].toString()).toList();
+      final results = await Future.wait([
+        _safeFetchIn('pedido_produtos', 'pedido_id', pIds),
+        _safeFetchIn('pedido_status_history', 'pedido_id', pIds),
+        _safeFetchIn('pedido_steps_history', 'pedido_id', pIds),
+        _safeFetchIn('pedido_tags', 'pedido_id', pIds),
+        _safeFetchIn('elementos', 'pedido_id', pIds),
+      ]);
+
+      final eIds = results[4].map((e) => e['id'].toString()).toList();
+      final posicoesRaw = await _safeFetchIn('elemento_posicoes', 'elemento_id', eIds);
+
+      final newPedidos = pedidosRaw.map((pMap) {
+        final pId = pMap['id'].toString();
+        return _mapPedido(
+          pMap,
+          produtosRaw: results[0].where((r) => r['pedido_id'] == pId).toList(),
+          statusRaw: results[1].where((r) => r['pedido_id'] == pId).toList(),
+          stepsRaw: results[2].where((r) => r['pedido_id'] == pId).toList(),
+          tagsIds: results[3].where((r) => r['pedido_id'] == pId).map((r) => r['tag_id'].toString()).toList(),
+          elementosRaw: results[4].where((e) => e['pedido_id'] == pId).map((e) {
+            final eId = e['id'].toString();
+            return {...e, 'posicoesRaw': posicoesRaw.where((p) => p['elemento_id'] == eId).toList()};
+          }).toList(),
+        );
+      }).toList();
+
+      // Merge com dados locais
       final currentData = Map<String, PedidoModel>.fromIterable(data, key: (e) => e.id);
       for (var p in newPedidos) {
         currentData[p.id] = p;
       }
-
       final updatedList = currentData.values.toList();
       dataStream.add(updatedList);
       pedidosUnarchivedsStream.add(updatedList.where((e) => !e.isArchived).toList());
