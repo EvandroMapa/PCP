@@ -209,23 +209,7 @@ class AppDrawerNotOperatorList extends StatelessWidget {
           module: module,
           notificacoes: notificacoes,
         ),
-        if (usuario.isAdmin) ...[
-          Container(
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: AppColors.black.withValues(alpha: 0.1)),
-              ),
-            ),
-            child: ListTile(
-              leading: const Icon(Icons.import_export),
-              title: const Text('Migração (Firebase)'),
-              onTap: () {
-                Navigator.pop(context);
-                context.push('/migracao');
-              },
-            ),
-          ),
-        ],
+
       ],
     );
   }
