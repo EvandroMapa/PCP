@@ -329,6 +329,7 @@ class ElementoController {
           'produto_id': posicao.produto!.id,
           'peso_kg': posicao.pesoDouble,
           'qtde': posicao.qtdeInt,
+          'compr_corte': posicao.comprCorteDouble,
         });
       }
 
@@ -683,6 +684,8 @@ class ElementoController {
       final idxPeso = getIndex(['PESO (KG)', 'PESO']);
       final idxQtde =
           getIndex(['QTDE', 'QUANTIDADE', 'QTD']); // qtde da posicao
+      final idxComprCorte =
+          getIndex(['COMPR. CORTE', 'COMPR CORTE', 'COMPRIMENTO CORTE', 'COMPR.CORTE']);
 
       if (idxElemento == -1 ||
           idxPosicao == -1 ||
@@ -729,6 +732,9 @@ class ElementoController {
         final posQtdeStr = idxQtde != -1 && columns.length > idxQtde
             ? columns[idxQtde].trim()
             : '0';
+        final comprCorteStr = idxComprCorte != -1 && columns.length > idxComprCorte
+            ? columns[idxComprCorte].trim().replaceAll(',', '.')
+            : '0';
 
         if (elNome.isEmpty || posNome.isEmpty) continue;
 
@@ -756,6 +762,7 @@ class ElementoController {
           pos.numeroOs.text = osNumber;
           pos.pesoKg.text = pesoLido.toStringAsFixed(3);
           pos.qtde.text = posQtdeStr;
+          pos.comprCorte.text = comprCorteStr;
 
           // Busca no catálogo GLOBAL de produtos (não só nos do pedido),
           // pois o comparativo é quem aponta diferenças depois
@@ -849,6 +856,7 @@ class ElementoController {
             'produto_id': posicao.produto!.id,
             'peso_kg': posicao.pesoDouble,
             'qtde': posicao.qtdeInt,
+            'compr_corte': posicao.comprCorteDouble,
           });
         }
 

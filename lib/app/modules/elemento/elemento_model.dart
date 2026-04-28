@@ -84,6 +84,7 @@ class ElementoPosicaoModel {
   ProdutoModel? produto; // bitola do catálogo
   final double pesoKg;
   final int qtde; // quantidade de peças/barras na posição
+  final double comprCorte; // comprimento de corte (importado do CSV)
   PosicaoStatus status; // status de produção CD
   final DateTime createdAt;
 
@@ -96,6 +97,7 @@ class ElementoPosicaoModel {
     required this.pesoKg,
     required this.createdAt,
     this.qtde = 0,
+    this.comprCorte = 0,
     this.produto,
     this.status = PosicaoStatus.aguardando,
   });
@@ -110,6 +112,7 @@ class ElementoPosicaoModel {
       produtoId: produtoId,
       pesoKg: double.tryParse((map['peso_kg'] ?? '0').toString()) ?? 0.0,
       qtde: int.tryParse((map['qtde'] ?? '0').toString()) ?? 0,
+      comprCorte: double.tryParse((map['compr_corte'] ?? '0').toString()) ?? 0.0,
       status: PosicaoStatus.values.firstWhere(
           (e) => e.name == (map['status'] ?? 'aguardando'),
           orElse: () => PosicaoStatus.aguardando),
@@ -130,6 +133,7 @@ class ElementoPosicaoModel {
         'produto_id': produtoId,
         'peso_kg': pesoKg,
         'qtde': qtde,
+        'compr_corte': comprCorte,
         'status': status.name,
       };
 }
@@ -253,6 +257,7 @@ class ElementoPosicaoCreateModel {
   final TextController numeroOs = TextController();
   final TextController pesoKg = TextController();
   final TextController qtde = TextController(text: '0');
+  final TextController comprCorte = TextController(text: '0');
   ProdutoModel? produto;
   bool isEdit;
 
@@ -266,6 +271,7 @@ class ElementoPosicaoCreateModel {
     numeroOs.text = m.numeroOs;
     pesoKg.text = m.pesoKg.toStringAsFixed(3);
     qtde.text = m.qtde.toString();
+    comprCorte.text = m.comprCorte.toStringAsFixed(3);
   }
 
   bool get isValid =>
@@ -277,6 +283,8 @@ class ElementoPosicaoCreateModel {
   double get pesoDouble =>
       double.tryParse(pesoKg.text.replaceAll(',', '.')) ?? 0.0;
   int get qtdeInt => int.tryParse(qtde.text) ?? 0;
+  double get comprCorteDouble =>
+      double.tryParse(comprCorte.text.replaceAll(',', '.')) ?? 0.0;
 
   ElementoPosicaoModel toModel(String elementoId) => ElementoPosicaoModel(
         id: id,
@@ -287,6 +295,7 @@ class ElementoPosicaoCreateModel {
         produto: produto,
         pesoKg: pesoDouble,
         qtde: qtdeInt,
+        comprCorte: comprCorteDouble,
         createdAt: DateTime.now(),
       );
 }
