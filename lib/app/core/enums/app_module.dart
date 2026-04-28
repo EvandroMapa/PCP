@@ -10,7 +10,8 @@ import 'package:aco_plus/app/modules/pedido/ui/pedidos_page.dart';
 import 'package:aco_plus/app/modules/produto/ui/produtos_page.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/ordem/relatorios_ordem_page.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/pedido/relatorios_pedido_page.dart';
-import 'package:aco_plus/app/modules/relatorio/ui/producao/relatorios_producao_page.dart';
+import 'package:aco_plus/app/modules/relatorio/ui/plano_corte/planos_corte_page.dart';
+import 'package:aco_plus/app/modules/ponta/ui/pontas_page.dart';
 import 'package:aco_plus/app/modules/step/ui/steps_page.dart';
 import 'package:aco_plus/app/modules/tag/ui/tags_page.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
@@ -26,13 +27,14 @@ enum AppModule {
   ordens,
   pedidoRelatorio,
   ordemRelatorio,
-  producaoRelatorio,
+  planoCorte,
   cliente,
   steps,
   tags,
   fabricantes,
   produtos,
   materiaPrima,
+  pontas,
   armacao,
 }
 
@@ -51,8 +53,8 @@ extension AppModuleExt on AppModule {
         return const RelatoriosPedidoPage();
       case AppModule.ordemRelatorio:
         return const RelatoriosOrdemPage();
-      case AppModule.producaoRelatorio:
-        return const RelatoriosProducaoPage();
+      case AppModule.planoCorte:
+        return const PlanosCortePage();
       case AppModule.steps:
         return const StepsPage();
       case AppModule.tags:
@@ -65,6 +67,8 @@ extension AppModuleExt on AppModule {
         return const ProdutosPage();
       case AppModule.materiaPrima:
         return const MateriasPrimasPage();
+      case AppModule.pontas:
+        return const PontasPage();
       case AppModule.armacao:
         return const ArmacaoPage();
     }
@@ -110,8 +114,8 @@ extension AppModuleExt on AppModule {
         return Icons.shopping_cart_outlined;
       case AppModule.ordemRelatorio:
         return Icons.work_outline;
-      case AppModule.producaoRelatorio:
-        return Icons.timer_outlined;
+      case AppModule.planoCorte:
+        return Icons.content_cut;
       case AppModule.steps:
         return Icons.list_alt_outlined;
       case AppModule.tags:
@@ -124,6 +128,8 @@ extension AppModuleExt on AppModule {
         return Icons.inventory_2_outlined;
       case AppModule.materiaPrima:
         return Icons.warehouse_outlined;
+      case AppModule.pontas:
+        return Icons.flip_to_back;
       case AppModule.armacao:
         return Icons.iron_rounded;
     }
@@ -143,8 +149,8 @@ extension AppModuleExt on AppModule {
         return 'Ordens de Produção';
       case AppModule.pedidoRelatorio:
         return 'Relatório de Consumo';
-      case AppModule.producaoRelatorio:
-        return 'Produção';
+      case AppModule.planoCorte:
+        return 'Plano de Corte';
       case AppModule.steps:
         return 'Etapas';
       case AppModule.kanban:
@@ -157,6 +163,8 @@ extension AppModuleExt on AppModule {
         return 'Produtos';
       case AppModule.materiaPrima:
         return 'Materia Prima';
+      case AppModule.pontas:
+        return 'Pontas';
       case AppModule.armacao:
         return 'Armação';
     }

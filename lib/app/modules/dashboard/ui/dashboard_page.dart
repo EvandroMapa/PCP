@@ -16,6 +16,8 @@ import 'package:aco_plus/app/modules/ordem/ui/ordem/ordem_page.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 
+import 'package:aco_plus/app/core/services/supabase_service.dart';
+import 'package:aco_plus/app/modules/ponta/ponta_model.dart';
 import 'package:flutter/material.dart';
 
 import 'package:material_symbols_icons/symbols.dart';
@@ -28,10 +30,44 @@ class DashboardPage extends StatefulWidget {
 }
 
 class DashboardPageState extends State<DashboardPage> {
+  List<PontaBitolaGrupo> _pontasGrupos = [];
+  double _totalPontasKg = 0.0;
+  bool _pontasCarregando = true;
+
   @override
   void initState() {
     setWebTitle('AçoPlus - Planejamento e controle de Produção');
     super.initState();
+    _carregarPontas();
+  }
+
+  Future<void> _carregarPontas() async {
+    try {
+      final data = await SupabaseService.client.from('pontas').select();
+      final pontas = data.map((e) => PontaModel.fromSupabaseMap(e)).toList();
+
+      final Map<String, PontaBitolaGrupo> mapa = {};
+      for (final p in pontas) {
+        mapa.putIfAbsent(
+          p.bitolaId,
+          () => PontaBitolaGrupo(
+            bitolaId: p.bitolaId,
+            bitolaDescricao: p.bitolaDescricao,
+            pontas: [],
+          ),
+        );
+        mapa[p.bitolaId]!.pontas.add(p);
+      }
+
+      final grupos = mapa.values.toList();
+      double total = 0.0;
+      for (final g in grupos) {
+        total += g.totalPeso;
+      }
+      if (mounted) setState(() { _pontasGrupos = grupos; _totalPontasKg = total; _pontasCarregando = false; });
+    } catch (_) {
+      if (mounted) setState(() => _pontasCarregando = false);
+    }
   }
 
   @override
@@ -54,6 +90,8 @@ class DashboardPageState extends State<DashboardPage> {
                   padding: const EdgeInsets.all(16),
                   children: [
                     _kpiCards(pedidos),
+                    const H(12),
+                    _pontasStripWidget(),
                     const H(16),
                     if (constraints.maxWidth < 1000) ...[
                       // 1 Coluna (Mobile)
@@ -181,6 +219,102 @@ class DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Widget _pontasStripWidget() {
+    if (_pontasCarregando) {
+      return Container(
+        height: 48,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: const Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))),
+      );
+    }
+
+    if (_pontasGrupos.isEmpty) return const SizedBox.shrink();
+
+    // Ordenar por descrição
+    final grupos = List<PontaBitolaGrupo>.from(_pontasGrupos);
+    grupos.sort((a, b) => a.bitolaDescricao.compareTo(b.bitolaDescricao));
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[300]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.flip_to_back, size: 18, color: Colors.teal[700]),
+          const W(8),
+          Text('PONTAS',
+              style: AppCss.minimumBold.setSize(11).setColor(Colors.teal[700]!)),
+          const W(6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.teal.withAlpha(20),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              '${_totalPontasKg.toStringAsFixed(1)} kg',
+              style: AppCss.minimumBold.setSize(11).setColor(Colors.teal[800]!),
+            ),
+          ),
+          const W(12),
+          Container(width: 1, height: 24, color: Colors.grey[200]),
+          const W(12),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: grupos.map((g) {
+                  // Extrair só a descrição curta (ex: "8.0mm")
+                  final descCurta = g.bitolaDescricao.split(' - ').length > 1
+                      ? g.bitolaDescricao.split(' - ').last.trim()
+                      : g.bitolaDescricao;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            descCurta,
+                            style: AppCss.minimumBold.setSize(11).setColor(Colors.grey[700]!),
+                          ),
+                          const W(6),
+                          Text(
+                            '${g.totalPeso.toStringAsFixed(1)} kg',
+                            style: AppCss.minimumBold.setSize(11).setColor(Colors.teal[700]!),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
   Widget _consumoBitolaWidget() {
     final consumoMap = dashCtrl.getConsumoEstimado();
     final produtos = FirestoreClient.produtos.data
@@ -237,26 +371,27 @@ class DashboardPageState extends State<DashboardPage> {
                       final p = produtos[i];
                       final peso = consumoMap[p.id] ?? 0.0;
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.only(bottom: 8),
                         child: Column(
                           children: [
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(p.descricao,
-                                    style: AppCss.mediumBold.setSize(15)),
+                                    style: AppCss.mediumBold.setSize(13)),
                                 Text(peso.toKg(),
                                     style: AppCss.mediumBold
+                                        .setSize(13)
                                         .setColor(AppColors.primaryMain)),
                               ],
                             ),
-                            const H(8),
+                            const H(5),
                             LinearProgressIndicator(
                               value: 1.0,
                               backgroundColor: Colors.grey[100],
                               valueColor: AlwaysStoppedAnimation(
                                   AppColors.primaryMain.withAlpha(25)),
-                              minHeight: 4,
+                              minHeight: 3,
                             ),
                           ],
                         ),

@@ -186,8 +186,8 @@ class AppDrawerNotOperatorList extends StatelessWidget {
         ),
         AppDrawerDropdown(
           icon: Icons.work_outline,
-          title: 'Ordem de Produção',
-          items: [AppModule.ordens, AppModule.materiaPrima],
+          title: 'Produção',
+          items: [AppModule.ordens, AppModule.planoCorte, AppModule.pontas, AppModule.materiaPrima],
           module: module,
           notificacoes: notificacoes,
         ),
@@ -197,7 +197,6 @@ class AppDrawerNotOperatorList extends StatelessWidget {
           items: [
             AppModule.pedidoRelatorio,
             AppModule.ordemRelatorio,
-            AppModule.producaoRelatorio,
           ],
           module: module,
           notificacoes: notificacoes,
