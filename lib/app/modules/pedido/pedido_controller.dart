@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
@@ -307,6 +308,10 @@ class PedidoController {
       }
       if (form.isEdit) {
         final edit = form.toPedidoModel(pedido);
+        // Validação: não permite gravar sem membro
+        if (edit.users.isEmpty) {
+          throw Exception('O pedido precisa ter pelo menos um membro responsável');
+        }
         // Se NÃO é Mestre, qtdeOriginal deve acompanhar a qtde editada
         if (edit.pedidosFilhos.isEmpty) {
           for (int i = 0; i < edit.produtos.length; i++) {
@@ -323,6 +328,10 @@ class PedidoController {
         }
       } else {
         PedidoModel pedidoModel = form.toPedidoModel(pedido);
+        // Validação: não permite gravar sem membro
+        if (pedidoModel.users.isEmpty) {
+          throw Exception('O pedido precisa ter pelo menos um membro responsável');
+        }
 
         // Validar saldo disponível se for pedido parcial
         if (form.pai != null) {
@@ -351,6 +360,22 @@ class PedidoController {
         } else if (pedidoModel.tipo == PedidoTipo.cda &&
             defaultCDATags.isNotEmpty) {
           pedidoModel.tags.addAll(defaultCDATags);
+        }
+
+        // Definir posição na lista conforme configuração de automação
+        final pedidosDaEtapa = BackendClient.pedidos.pepidosUnarchiveds
+            .where((e) => e.step.id == pedidoModel.step.id)
+            .toList();
+        if (automatizacaoConfig.novoPedidoNoTopo) {
+          final menorIndex = pedidosDaEtapa.isEmpty
+              ? 0
+              : pedidosDaEtapa.map((e) => e.index).reduce((a, b) => a < b ? a : b);
+          pedidoModel.index = menorIndex - 1;
+        } else {
+          final maiorIndex = pedidosDaEtapa.isEmpty
+              ? 0
+              : pedidosDaEtapa.map((e) => e.index).reduce((a, b) => a > b ? a : b);
+          pedidoModel.index = maiorIndex + 1;
         }
 
         await BackendClient.pedidos.add(pedidoModel);

@@ -68,14 +68,7 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
               children: [
                 _buildSectionHeader('Regras de Transição de Etapas'),
                 const SizedBox(height: 16),
-                _buildSingleStepRule(
-                  '01 - Criação de pedido',
-                  'Novos pedidos serão alocados na etapa:',
-                  model.criacaoPedido.step,
-                  steps,
-                  (step) => setState(() => model = model.copyWith(
-                      criacaoPedido: model.criacaoPedido.copyWith(step: step))),
-                ),
+                _buildCriacaoPedidoRule(steps),
                 _buildSingleStepRule(
                   '02 - Produto separado',
                   'Ao Marcar produto como separado:',
@@ -187,6 +180,103 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
         ),
         const Divisor(),
       ],
+    );
+  }
+
+  Widget _buildCriacaoPedidoRule(List<StepModel> allSteps) {
+    StepModel? currentStep = model.criacaoPedido.step;
+    StepModel? selected = currentStep != null
+        ? allSteps.firstWhere(
+            (e) => e.id == currentStep.id,
+            orElse: () => currentStep,
+          )
+        : null;
+    if (selected != null && !allSteps.any((e) => e.id == selected!.id)) {
+      selected = null;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: AppColors.neutralLight),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('01 - Criação de pedido',
+              style: AppCss.largeBold.copyWith(fontSize: 15)),
+          const SizedBox(height: 12),
+          // Linha 1: Etapa
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: Text('Novos pedidos serão alocados na etapa:',
+                    style: AppCss.smallRegular
+                        .copyWith(color: AppColors.neutralDark)),
+              ),
+              const SizedBox(width: 24),
+              Expanded(
+                flex: 2,
+                child: AppDropDown<StepModel?>(
+                  item: selected,
+                  itens: allSteps,
+                  itemLabel: (v) => v?.name ?? 'Selecione',
+                  required: false,
+                  onSelect: (step) {
+                    if (step != null) {
+                      setState(() => model = model.copyWith(
+                          criacaoPedido:
+                              model.criacaoPedido.copyWith(step: step)));
+                    }
+                  },
+                  hint: 'Selecione a etapa',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Linha 2: Posição na lista
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: Text('Novos pedidos devem ser alocados:',
+                    style: AppCss.smallRegular
+                        .copyWith(color: AppColors.neutralDark)),
+              ),
+              const SizedBox(width: 24),
+              Expanded(
+                flex: 2,
+                child: AppDropDown<bool>(
+                  item: model.novoPedidoNoTopo,
+                  itens: const [true, false],
+                  itemLabel: (v) =>
+                      v ? 'No topo da lista' : 'No final da lista',
+                  required: false,
+                  onSelect: (valor) {
+                    if (valor != null) {
+                      setState(() => model =
+                          model.copyWith(novoPedidoNoTopo: valor));
+                    }
+                  },
+                  hint: 'Selecione a posição',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

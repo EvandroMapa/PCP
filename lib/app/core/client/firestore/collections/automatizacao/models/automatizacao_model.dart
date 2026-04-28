@@ -14,6 +14,7 @@ class AutomatizacaoModel {
   final AutomatizacaoItemModel naoMostrarNoCalendario;
   final AutomatizacaoItemModel removerListaPrioridade;
   final AutomatizacaoItemModel finalizacaoArmacaoPedido;
+  final bool novoPedidoNoTopo;
 
   List<AutomatizacaoItemModel> get itens => [
         criacaoPedido,
@@ -39,6 +40,7 @@ class AutomatizacaoModel {
     required this.naoMostrarNoCalendario,
     required this.removerListaPrioridade,
     required this.finalizacaoArmacaoPedido,
+    this.novoPedidoNoTopo = true,
   });
 
   AutomatizacaoModel copyWith({
@@ -52,6 +54,7 @@ class AutomatizacaoModel {
     AutomatizacaoItemModel? naoMostrarNoCalendario,
     AutomatizacaoItemModel? removerListaPrioridade,
     AutomatizacaoItemModel? finalizacaoArmacaoPedido,
+    bool? novoPedidoNoTopo,
   }) {
     return AutomatizacaoModel(
       criacaoPedido: criacaoPedido ?? this.criacaoPedido,
@@ -70,6 +73,7 @@ class AutomatizacaoModel {
           removerListaPrioridade ?? this.removerListaPrioridade,
       finalizacaoArmacaoPedido:
           finalizacaoArmacaoPedido ?? this.finalizacaoArmacaoPedido,
+      novoPedidoNoTopo: novoPedidoNoTopo ?? this.novoPedidoNoTopo,
     );
   }
 
@@ -85,6 +89,7 @@ class AutomatizacaoModel {
       'nao_mostrar_no_calendario': naoMostrarNoCalendario.toMap(),
       'remover_lista_prioridade': removerListaPrioridade.toMap(),
       'finalizacao_armacao_pedido': finalizacaoArmacaoPedido.toMap(),
+      'novo_pedido_no_topo': novoPedidoNoTopo,
     };
   }
 
@@ -148,6 +153,7 @@ class AutomatizacaoModel {
                   ? json.decode(map['finalizacao_armacao_pedido'])
                   : map['finalizacao_armacao_pedido'])
           : empty.finalizacaoArmacaoPedido,
+      novoPedidoNoTopo: map['novo_pedido_no_topo'] ?? true,
     );
   }
 
@@ -163,6 +169,7 @@ class AutomatizacaoModel {
       'naoMostrarNoCalendario': naoMostrarNoCalendario.toMap(),
       'removerListaPrioridade': removerListaPrioridade.toMap(),
       'finalizacaoArmacaoPedido': finalizacaoArmacaoPedido.toMap(),
+      'novoPedidoNoTopo': novoPedidoNoTopo,
     };
   }
 
@@ -194,6 +201,7 @@ class AutomatizacaoModel {
       finalizacaoArmacaoPedido: AutomatizacaoItemModel.fromMap(
         map['finalizacaoArmacaoPedido'] ?? {},
       ),
+      novoPedidoNoTopo: map['novoPedidoNoTopo'] ?? true,
     );
   }
 
@@ -220,7 +228,8 @@ class AutomatizacaoModel {
         other.prontoArmacaoPedido == prontoArmacaoPedido &&
         other.naoMostrarNoCalendario == naoMostrarNoCalendario &&
         other.removerListaPrioridade == removerListaPrioridade &&
-        other.finalizacaoArmacaoPedido == finalizacaoArmacaoPedido;
+        other.finalizacaoArmacaoPedido == finalizacaoArmacaoPedido &&
+        other.novoPedidoNoTopo == novoPedidoNoTopo;
   }
 
   @override
@@ -233,7 +242,8 @@ class AutomatizacaoModel {
         prontoArmacaoPedido.hashCode ^
         naoMostrarNoCalendario.hashCode ^
         removerListaPrioridade.hashCode ^
-        finalizacaoArmacaoPedido.hashCode;
+        finalizacaoArmacaoPedido.hashCode ^
+        novoPedidoNoTopo.hashCode;
   }
 
   static AutomatizacaoModel get empty => AutomatizacaoModel(
@@ -287,5 +297,6 @@ class AutomatizacaoModel {
           step: null,
           steps: [],
         ),
+        novoPedidoNoTopo: true,
       );
 }

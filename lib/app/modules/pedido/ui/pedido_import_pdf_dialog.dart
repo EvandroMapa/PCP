@@ -28,6 +28,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:collection/collection.dart';
+import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
 
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
@@ -323,6 +326,8 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
         valorTaxas: vTaxas,
         valorDesconto: vDesconto,
         valorTotal: vTotal,
+        users: [if (usuarioCtrl.usuario != null) usuarioCtrl.usuario!],
+        isImportado: true,
         produtos: produtosMapped
             .map((p) => p.copyWith(
                   pedidoId:
@@ -332,6 +337,15 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       );
 
       final finalPedido = pedido.copyWith();
+
+      // Validação: não permite gravar sem membro
+      if (finalPedido.users.isEmpty) {
+        NotificationService.showNegative(
+            'Atenção', 'O pedido precisa ter pelo menos um membro responsável.');
+        setState(() => isUploading = false);
+        return;
+      }
+
       final defaultCDTags =
           FirestoreClient.tags.data.where((e) => e.isDefaultCD).toList();
       final defaultCDATags =
@@ -342,6 +356,21 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       } else if (finalPedido.tipo == PedidoTipo.cda &&
           defaultCDATags.isNotEmpty) {
         finalPedido.tags.addAll(defaultCDATags);
+      }
+      // Definir posição na lista conforme configuração de automação
+      final pedidosDaEtapa = BackendClient.pedidos.pepidosUnarchiveds
+          .where((e) => e.step.id == finalPedido.step.id)
+          .toList();
+      if (automatizacaoConfig.novoPedidoNoTopo) {
+        final menorIndex = pedidosDaEtapa.isEmpty
+            ? 0
+            : pedidosDaEtapa.map((e) => e.index).reduce((a, b) => a < b ? a : b);
+        finalPedido.index = menorIndex - 1;
+      } else {
+        final maiorIndex = pedidosDaEtapa.isEmpty
+            ? 0
+            : pedidosDaEtapa.map((e) => e.index).reduce((a, b) => a > b ? a : b);
+        finalPedido.index = maiorIndex + 1;
       }
 
       await AppSupabaseClient.pedidos.add(finalPedido);

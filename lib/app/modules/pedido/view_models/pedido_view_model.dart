@@ -177,7 +177,7 @@ class PedidoCreateModel {
       checks: checklist?.checklist.map((e) => e.copyWith()).toList() ?? [],
       checklistId: checklist?.id,
       comments: pedido?.comments ?? [],
-      users: pedido?.users ?? [],
+      users: pedido?.users ?? [if (usuarioCtrl.usuario != null) usuarioCtrl.usuario!],
       index: pedido?.index ?? 0,
       isArchived: pedido?.isArchived ?? false,
       archives: pedido?.archives ?? [],
