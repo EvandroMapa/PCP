@@ -221,7 +221,8 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
           const H(24),
           Text('Resumo por Bitola', style: AppCss.mediumBold),
           const H(8),
-          for (final produto in FirestoreClient.produtos.data)
+          for (final produto in FirestoreClient.produtos.data.toList()
+            ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex)))
             Builder(
               builder: (context) {
                 double totalBitola =

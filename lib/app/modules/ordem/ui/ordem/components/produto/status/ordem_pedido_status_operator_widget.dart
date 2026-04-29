@@ -15,16 +15,16 @@ class OrdemPedidoStatusOperatorWidget extends StatelessWidget {
     this.readOnly = false,
   });
 
-  IconData _iconFor(PedidoProdutoStatus status) {
+  IconData _iconFor(PedidoProdutoStatus status, {bool isActive = false}) {
     switch (status) {
       case PedidoProdutoStatus.aguardandoProducao:
-        return Icons.hourglass_empty_rounded;
+        return isActive ? Icons.hourglass_bottom_rounded : Icons.hourglass_empty_rounded;
       case PedidoProdutoStatus.produzindo:
         return Icons.construction_rounded;
       case PedidoProdutoStatus.pronto:
-        return Icons.check_circle_rounded;
+        return isActive ? Icons.check_circle_rounded : Icons.check_circle_outline_rounded;
       default:
-        return Icons.circle_outlined;
+        return isActive ? Icons.circle : Icons.circle_outlined;
     }
   }
 
@@ -63,21 +63,33 @@ class OrdemPedidoStatusOperatorWidget extends StatelessWidget {
                     vertical: isActive ? 12 : 8,
                   ),
                   decoration: BoxDecoration(
-                    color: color.withValues(alpha: isActive ? 0.15 : 0.06),
+                    color: isActive ? color : color.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: color.withValues(alpha: isActive ? 1.0 : 0.55),
-                      width: isActive ? 2.5 : 1.5,
-                    ),
+                    border: isActive 
+                        ? null 
+                        : Border.all(
+                            color: color.withValues(alpha: 0.55),
+                            width: 1.5,
+                          ),
+                    boxShadow: isActive
+                        ? [
+                            BoxShadow(
+                              color: color.withValues(alpha: 0.6),
+                              blurRadius: 14,
+                              spreadRadius: 3,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                        : null,
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.max,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        _iconFor(status),
+                        _iconFor(status, isActive: isActive),
                         size: isActive ? 18 : 15,
-                        color: color.withValues(alpha: isActive ? 1.0 : 0.7),
+                        color: isActive ? Colors.black : color.withValues(alpha: 0.7),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -87,10 +99,10 @@ class OrdemPedidoStatusOperatorWidget extends StatelessWidget {
                         style: TextStyle(
                           fontSize: isActive ? 14 : 12,
                           fontWeight:
-                              isActive ? FontWeight.w800 : FontWeight.w500,
-                          // Texto sempre preto
-                          color: Colors.black
-                              .withValues(alpha: isActive ? 0.85 : 0.55),
+                              isActive ? FontWeight.w900 : FontWeight.w500,
+                          color: isActive
+                              ? Colors.black
+                              : Colors.black.withValues(alpha: 0.55),
                         ),
                       ),
                     ],

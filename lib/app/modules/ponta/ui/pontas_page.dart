@@ -112,59 +112,62 @@ class _PontasPageState extends State<PontasPage> {
 
   // ─── Adicionar ponta dentro de uma bitola ─────────────────────────────────
   Future<void> _adicionarPonta(PontaBitolaGrupo grupo) async {
-    final resultado = await showDialog<_PontaResultado>(
+    await showDialog(
       context: context,
-      builder: (ctx) => _DialogPonta(bitolaDescricao: grupo.bitolaDescricao),
+      builder: (ctx) => _DialogPonta(
+        bitolaDescricao: grupo.bitolaDescricao,
+        onSalvar: (resultado) async {
+          try {
+            await SupabaseService.client.from('pontas').insert({
+              'bitola_id': grupo.bitolaId,
+              'bitola_descricao': grupo.bitolaDescricao,
+              'tamanho': resultado.tamanho,
+              'quantidade': resultado.quantidade,
+              'localizador': resultado.localizador,
+            });
+            _bitolaAbertaId = grupo.bitolaId;
+            _carregarPontas();
+            // Notification opcional
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Erro ao adicionar: $e')),
+              );
+            }
+          }
+        },
+      ),
     );
-    if (resultado == null) return;
-
-    try {
-      await SupabaseService.client.from('pontas').insert({
-        'bitola_id': grupo.bitolaId,
-        'bitola_descricao': grupo.bitolaDescricao,
-        'tamanho': resultado.tamanho,
-        'quantidade': resultado.quantidade,
-        'localizador': resultado.localizador,
-      });
-      _bitolaAbertaId = grupo.bitolaId;
-      _carregarPontas();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao adicionar: $e')),
-        );
-      }
-    }
   }
 
   // ─── Editar ponta ─────────────────────────────────────────────────────────
   Future<void> _editarPonta(PontaModel ponta) async {
-    final resultado = await showDialog<_PontaResultado>(
+    await showDialog(
       context: context,
       builder: (ctx) => _DialogPonta(
         bitolaDescricao: ponta.bitolaDescricao,
         tamanhoInicial: ponta.tamanho,
         quantidadeInicial: ponta.quantidade,
         localizadorInicial: ponta.localizador,
+        onSalvar: (resultado) async {
+          try {
+            await SupabaseService.client.from('pontas').update({
+              'tamanho': resultado.tamanho,
+              'quantidade': resultado.quantidade,
+              'localizador': resultado.localizador,
+              'updated_at': DateTime.now().toIso8601String(),
+            }).eq('id', ponta.id);
+            _carregarPontas();
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Erro ao editar: $e')),
+              );
+            }
+          }
+        },
       ),
     );
-    if (resultado == null) return;
-
-    try {
-      await SupabaseService.client.from('pontas').update({
-        'tamanho': resultado.tamanho,
-        'quantidade': resultado.quantidade,
-        'localizador': resultado.localizador,
-        'updated_at': DateTime.now().toIso8601String(),
-      }).eq('id', ponta.id);
-      _carregarPontas();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao editar: $e')),
-        );
-      }
-    }
   }
 
   // ─── Remover ponta ────────────────────────────────────────────────────────
@@ -661,12 +664,14 @@ class _DialogPonta extends StatefulWidget {
   final double? tamanhoInicial;
   final int? quantidadeInicial;
   final String? localizadorInicial;
+  final Future<void> Function(_PontaResultado)? onSalvar;
 
   const _DialogPonta({
     required this.bitolaDescricao,
     this.tamanhoInicial,
     this.quantidadeInicial,
     this.localizadorInicial,
+    this.onSalvar,
   });
 
   @override
@@ -678,8 +683,11 @@ class _DialogPontaState extends State<_DialogPonta> {
   late final TextEditingController _quantidadeCtrl;
   late final TextEditingController _localizadorCtrl;
 
+  late final FocusNode _tamanhoFocus;
   late final FocusNode _quantidadeFocus;
   late final FocusNode _localizadorFocus;
+  
+  bool _salvando = false;
 
   bool get _editando => widget.tamanhoInicial != null;
 
@@ -693,6 +701,7 @@ class _DialogPontaState extends State<_DialogPonta> {
     _localizadorCtrl =
         TextEditingController(text: widget.localizadorInicial ?? '');
 
+    _tamanhoFocus = FocusNode();
     _quantidadeFocus = FocusNode();
     _localizadorFocus = FocusNode();
   }
@@ -702,6 +711,7 @@ class _DialogPontaState extends State<_DialogPonta> {
     _tamanhoCtrl.dispose();
     _quantidadeCtrl.dispose();
     _localizadorCtrl.dispose();
+    _tamanhoFocus.dispose();
     _quantidadeFocus.dispose();
     _localizadorFocus.dispose();
     super.dispose();
@@ -720,6 +730,7 @@ class _DialogPontaState extends State<_DialogPonta> {
           children: [
             TextField(
               controller: _tamanhoCtrl,
+              focusNode: _tamanhoFocus,
               autofocus: true,
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => _quantidadeFocus.requestFocus(),
@@ -771,30 +782,58 @@ class _DialogPontaState extends State<_DialogPonta> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
+          onPressed: _salvando ? null : () => Navigator.of(context).pop(),
+          child: Text(_editando ? 'Cancelar' : 'Fechar'),
         ),
         ElevatedButton(
-          onPressed: _confirmar,
+          onPressed: _salvando ? null : _confirmar,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryMain,
             foregroundColor: Colors.white,
           ),
-          child: Text(_editando ? 'Salvar' : 'Adicionar'),
+          child: _salvando
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation(Colors.white),
+                  ),
+                )
+              : Text(_editando ? 'Salvar' : 'Adicionar'),
         ),
       ],
     );
   }
 
-  void _confirmar() {
+  void _confirmar() async {
     final tamanho =
         double.tryParse(_tamanhoCtrl.text.replaceAll(',', '.').trim());
     final qtde = int.tryParse(_quantidadeCtrl.text.trim());
     if (tamanho == null || tamanho <= 0) return;
-    Navigator.of(context).pop(_PontaResultado(
+    
+    final resultado = _PontaResultado(
       tamanho: tamanho,
       quantidade: qtde ?? 1,
       localizador: _localizadorCtrl.text.trim(),
-    ));
+    );
+
+    if (widget.onSalvar != null) {
+      setState(() => _salvando = true);
+      await widget.onSalvar!(resultado);
+      if (mounted) {
+        setState(() => _salvando = false);
+        if (_editando) {
+          Navigator.of(context).pop();
+        } else {
+          _tamanhoCtrl.clear();
+          _quantidadeCtrl.text = '1';
+          _localizadorCtrl.clear();
+          _tamanhoFocus.requestFocus();
+        }
+      }
+    } else {
+      Navigator.of(context).pop(resultado);
+    }
   }
 }

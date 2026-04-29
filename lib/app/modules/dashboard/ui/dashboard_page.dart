@@ -321,7 +321,7 @@ class DashboardPageState extends State<DashboardPage> {
         .where((p) => consumoMap.containsKey(p.id))
         .toList();
 
-    produtos.sort((a, b) => a.number.compareTo(b.number));
+    produtos.sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
 
     return Container(
       height: 450,

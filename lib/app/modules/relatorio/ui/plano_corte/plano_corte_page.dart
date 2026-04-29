@@ -716,20 +716,8 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
         Text('Resultado — ${_ordemSelecionada!.localizator}',
             style: AppCss.mediumBold),
         const H(12),
-        // KPIs
-        Row(
-          children: [
-            _kpi('Barras Usadas', '${r.totalBarrasUsadas}',
-                Icons.straighten, Colors.blue),
-            const SizedBox(width: 8),
-            _kpi('Aproveitamento',
-                '${r.percentualAproveitamento.toStringAsFixed(1)}%',
-                Icons.pie_chart, Colors.green),
-            const SizedBox(width: 8),
-            _kpi('Sobra Total', r.totalSobra.toStringAsFixed(1),
-                Icons.content_cut, Colors.orange),
-          ],
-        ),
+        // Resumo
+        _buildResumoGeral(r),
         if (r.temFalta) ...[
           const H(12),
           Container(
@@ -766,26 +754,83 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
     );
   }
 
-  Widget _kpi(String label, String valor, IconData icone, Color cor) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: cor.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: cor.withValues(alpha: 0.2)),
-        ),
-        child: Column(
-          children: [
-            Icon(icone, size: 20, color: cor),
-            const H(4),
-            Text(valor,
-                style: AppCss.mediumBold.setColor(cor)),
-            Text(label,
-                style: AppCss.minimumRegular.setColor(Colors.grey[600]!),
-                textAlign: TextAlign.center),
+  Widget _buildResumoGeral(PlanoCorteResultado r) {
+    final Map<double, List<BarraUsadaModel>> porTamanho = {};
+    for (final b in r.barrasUsadas) {
+      porTamanho.putIfAbsent(b.comprimentoTotal, () => []).add(b);
+    }
+
+    final tamanhos = porTamanho.keys.toList()..sort((a, b) => b.compareTo(a));
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+              border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
+            ),
+            child: Row(
+              children: [
+                Expanded(flex: 2, child: Text('Matéria Prima', style: AppCss.minimumBold.setColor(Colors.grey[700]!))),
+                Expanded(flex: 1, child: Text('Barras Usadas', style: AppCss.minimumBold.setColor(Colors.grey[700]!), textAlign: TextAlign.center)),
+                Expanded(flex: 1, child: Text('Sobra (cm)', style: AppCss.minimumBold.setColor(Colors.grey[700]!), textAlign: TextAlign.center)),
+                Expanded(flex: 1, child: Text('Aproveitamento', style: AppCss.minimumBold.setColor(Colors.grey[700]!), textAlign: TextAlign.right)),
+              ],
+            ),
+          ),
+          // Itens
+          for (final size in tamanhos) ...[
+            Builder(builder: (_) {
+              final barras = porTamanho[size]!;
+              final qtde = barras.length;
+              final sobra = barras.fold(0.0, (s, b) => s + b.sobra);
+              final usado = barras.fold(0.0, (s, b) => s + b.comprimentoUsado);
+              final total = barras.fold(0.0, (s, b) => s + b.comprimentoTotal);
+              final aproveitamento = total > 0 ? (usado / total) * 100 : 0.0;
+
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(flex: 2, child: Text('Barra ${size.toStringAsFixed(0)}', style: AppCss.minimumRegular)),
+                    Expanded(flex: 1, child: Text('$qtde', style: AppCss.minimumRegular, textAlign: TextAlign.center)),
+                    Expanded(flex: 1, child: Text(sobra.toStringAsFixed(1), style: AppCss.minimumRegular, textAlign: TextAlign.center)),
+                    Expanded(flex: 1, child: Text('${aproveitamento.toStringAsFixed(1)}%', style: AppCss.minimumBold.setColor(Colors.green[700]!), textAlign: TextAlign.right)),
+                  ],
+                ),
+              );
+            }),
           ],
-        ),
+          // Footer
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.primaryMain.withValues(alpha: 0.05),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(10)),
+            ),
+            child: Row(
+              children: [
+                Expanded(flex: 2, child: Text('TOTAL GERAL', style: AppCss.minimumBold.setColor(AppColors.primaryMain))),
+                Expanded(flex: 1, child: Text('${r.totalBarrasUsadas}', style: AppCss.mediumBold.setColor(AppColors.primaryMain), textAlign: TextAlign.center)),
+                Expanded(flex: 1, child: Text(r.totalSobra.toStringAsFixed(1), style: AppCss.mediumBold.setColor(AppColors.primaryMain), textAlign: TextAlign.center)),
+                Expanded(flex: 1, child: Text('${r.percentualAproveitamento.toStringAsFixed(1)}%', style: AppCss.mediumBold.setColor(Colors.green[700]!), textAlign: TextAlign.right)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
