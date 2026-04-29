@@ -26,7 +26,7 @@ class _PontasPageState extends State<PontasPage> {
   @override
   void initState() {
     super.initState();
-    setWebTitle('Pontas');
+    setWebTitle('Cadastro de Pontas');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       baseCtrl.appBarActionsStream.add([
         Tooltip(
@@ -418,9 +418,12 @@ class _PontasPageState extends State<PontasPage> {
       child: Table(
         columnWidths: const {
           0: FlexColumnWidth(2),
-          1: FlexColumnWidth(1.2),
-          2: FlexColumnWidth(2),
-          3: FixedColumnWidth(72),
+          1: FlexColumnWidth(1),
+          2: FlexColumnWidth(1.3),
+          3: FlexColumnWidth(1.3),
+          4: FlexColumnWidth(2),
+          5: FlexColumnWidth(2),
+          6: FixedColumnWidth(72),
         },
         defaultVerticalAlignment: TableCellVerticalAlignment.middle,
         children: [
@@ -432,7 +435,10 @@ class _PontasPageState extends State<PontasPage> {
             children: [
               _headerCell('Comprimento (cm)', columnId: 'tamanho', grupo: grupo),
               _headerCell('Qtde', columnId: 'quantidade', grupo: grupo),
+              _headerCell('Peso Uni.'),
+              _headerCell('Peso Total'),
               _headerCell('Localizador', columnId: 'localizador', grupo: grupo),
+              _headerCell('Origem'),
               _headerCell(''),
             ],
           ),
@@ -446,8 +452,14 @@ class _PontasPageState extends State<PontasPage> {
               children: [
                 _dataCell(p.tamanho.toStringAsFixed(0)),
                 _dataCell('${p.quantidade}'),
-                _dataCell(p.localizador.isEmpty ? '—' : p.localizador,
-                    cor: p.localizador.isEmpty ? Colors.grey[400]! : null),
+                _dataCell(_pesoUnitario(grupo, p),
+                    cor: Colors.grey[600]),
+                _dataCell(_pesoTotal(grupo, p),
+                    cor: Colors.teal[700]),
+                _dataCell(_localizadorLabel(p),
+                    cor: _localizadorLabel(p) == '—' ? Colors.grey[400]! : null),
+                _dataCell(_origemLabel(p),
+                    cor: p.ordemId == null ? Colors.grey[400]! : Colors.teal[700]),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 2),
                   child: Row(
@@ -535,6 +547,58 @@ class _PontasPageState extends State<PontasPage> {
               .setSize(16)
               .setColor(cor ?? Colors.black)),
     );
+  }
+
+  String _origemLabel(PontaModel p) {
+    if (p.ordemId == null || p.ordemId!.isEmpty) return '—';
+    try {
+      final ordem = FirestoreClient.ordens.data
+          .firstWhere((o) => o.id == p.ordemId);
+      return ordem.localizator;
+    } catch (_) {
+      return p.ordemId!;
+    }
+  }
+
+  /// Peso de 1 ponta: (tamanho_cm / 100) * massaFinal
+  String _pesoUnitario(PontaBitolaGrupo grupo, PontaModel p) {
+    try {
+      final produto = FirestoreClient.produtos.data
+          .firstWhere((pr) => pr.id == grupo.bitolaId);
+      final peso = (p.tamanho / 100) * produto.massaFinal;
+      return '${peso.toStringAsFixed(2)} kg';
+    } catch (_) {
+      return '—';
+    }
+  }
+
+  /// Peso total da linha: peso unitário × quantidade
+  String _pesoTotal(PontaBitolaGrupo grupo, PontaModel p) {
+    try {
+      final produto = FirestoreClient.produtos.data
+          .firstWhere((pr) => pr.id == grupo.bitolaId);
+      final peso = (p.tamanho / 100) * produto.massaFinal * p.quantidade;
+      return '${peso.toStringAsFixed(2)} kg';
+    } catch (_) {
+      return '—';
+    }
+  }
+
+  /// Retorna o localizador do pedido vinculado à ordem (se for de plano)
+  /// ou o localizador original da ponta.
+  String _localizadorLabel(PontaModel p) {
+    if (p.ordemId != null && p.ordemId!.isNotEmpty) {
+      try {
+        final ordem = FirestoreClient.ordens.data
+            .firstWhere((o) => o.id == p.ordemId);
+        final pedidosLocalizadores =
+            ordem.pedidos.map((e) => e.localizador).join(', ');
+        if (pedidosLocalizadores.isNotEmpty) {
+          return pedidosLocalizadores;
+        }
+      } catch (_) {}
+    }
+    return p.localizador.isEmpty ? '—' : p.localizador;
   }
 }
 

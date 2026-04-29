@@ -7,7 +7,10 @@ import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/services/pdf_download_service/pdf_download_service_mobile.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
+import 'package:aco_plus/app/core/services/notification_service.dart';
+import 'package:overlay_support/overlay_support.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
+import 'package:aco_plus/app/modules/ponta/ponta_model.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
@@ -43,6 +46,8 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
 
   bool get _editando => widget.planoParaEditar != null;
   String? get _planoId => widget.planoParaEditar?.id;
+  String get _planoStatus => widget.planoParaEditar?.status ?? 'pendente';
+  bool get _planoExecutado => _planoStatus == 'executado';
 
   @override
   void initState() {
@@ -59,6 +64,23 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
     // Restaurar matéria prima
     _materiaPrima.clear();
     for (final mp in plano.materiaPrimaJson) {
+      final pontaId = mp['ponta_id']?.toString();
+      if (pontaId != null) {
+        // Restaurar como ponta importada
+        try {
+          final pontaData = await SupabaseService.client
+              .from('pontas')
+              .select()
+              .eq('id', pontaId)
+              .maybeSingle();
+          if (pontaData != null) {
+            final ponta = PontaModel.fromSupabaseMap(pontaData);
+            _materiaPrima.add(_MateriaPrimaItem.dePonta(ponta));
+            continue;
+          }
+        } catch (_) {}
+        // Se não encontrar a ponta, cai no fluxo padrão
+      }
       final item = _MateriaPrimaItem();
       item.comprimentoCtrl.text = (mp['comprimento'] ?? 0).toString();
       item.isIlimitado = mp['ilimitado'] == true;
@@ -178,6 +200,8 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
         // ── Descrição ──
         TextField(
           controller: _descricaoCtrl,
+          readOnly: _planoExecutado,
+          enabled: !_planoExecutado,
           decoration: InputDecoration(
             hintText: 'Descrição do plano (opcional)',
             hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
@@ -202,43 +226,65 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
         if (_ordemSelecionada != null && _materiaPrima.isNotEmpty)
           Row(
             children: [
-              Expanded(
-                child: SizedBox(
-                  height: 52,
-                  child: ElevatedButton.icon(
-                    onPressed: _gerarPlanoCorte,
-                    icon: const Icon(Icons.content_cut, size: 20),
-                    label: Text(
-                        _resultado != null ? 'RECALCULAR PLANO' : 'GERAR PLANO DE CORTE',
-                        style: AppCss.smallBold.setColor(Colors.white)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryMain,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 2,
+              if (!_planoExecutado)
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: _gerarPlanoCorte,
+                      icon: const Icon(Icons.content_cut, size: 20),
+                      label: Text(
+                          _resultado != null ? 'RECALCULAR PLANO' : 'GERAR PLANO DE CORTE',
+                          style: AppCss.smallBold.setColor(Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryMain,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 2,
+                      ),
                     ),
                   ),
                 ),
-              ),
               if (_resultado != null && _editando) ...[
                 const SizedBox(width: 12),
-                SizedBox(
-                  height: 52,
-                  child: ElevatedButton.icon(
-                    onPressed: _executando ? null : _executarPlano,
-                    icon: _executando
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.check_circle_outline, size: 20),
-                    label: Text('EXECUTAR PLANO',
-                        style: AppCss.smallBold.setColor(Colors.white)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green[700],
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 2,
+                if (_planoExecutado)
+                  // Plano já executado — botão Cancelar Execução
+                  SizedBox(
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: _executando ? null : _cancelarExecucao,
+                      icon: _executando
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.undo, size: 20),
+                      label: Text('CANCELAR EXECUÇÃO',
+                          style: AppCss.smallBold.setColor(Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red[700],
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 2,
+                      ),
+                    ),
+                  )
+                else
+                  // Plano pendente — botão Executar
+                  SizedBox(
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: _executando ? null : _executarPlano,
+                      icon: _executando
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.check_circle_outline, size: 20),
+                      label: Text('EXECUTAR PLANO',
+                          style: AppCss.smallBold.setColor(Colors.white)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green[700],
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 2,
+                      ),
                     ),
                   ),
-                ),
               ],
             ],
           ),
@@ -410,11 +456,31 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
             padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               children: [
+                // Badge ponta
+                if (item.isPonta)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Tooltip(
+                      message: 'Importada do Cadastro de Pontas',
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: Colors.amber[50],
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.amber[300]!),
+                        ),
+                        child: Icon(Icons.recycling, size: 16, color: Colors.amber[800]),
+                      ),
+                    ),
+                  ),
                 // Comprimento
                 Expanded(
                   flex: 3,
                   child: TextFormField(
                     controller: item.comprimentoCtrl,
+                    readOnly: _planoExecutado || item.isPonta,
+                    enabled: !_planoExecutado && !item.isPonta,
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
                     inputFormatters: [
@@ -423,8 +489,9 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
                     ],
                     style: AppCss.minimumRegular,
                     decoration: InputDecoration(
-                      labelText: 'Comprimento',
-                      labelStyle: AppCss.minimumRegular.setColor(Colors.grey),
+                      labelText: item.isPonta ? 'Ponta (cm)' : 'Comprimento',
+                      labelStyle: AppCss.minimumRegular.setColor(
+                          item.isPonta ? Colors.amber[800]! : Colors.grey),
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8)),
                       contentPadding: const EdgeInsets.symmetric(
@@ -452,6 +519,8 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
                         )
                       : TextFormField(
                           controller: item.quantidadeCtrl,
+                          readOnly: _planoExecutado || item.isPonta,
+                          enabled: !_planoExecutado && !item.isPonta,
                           keyboardType: TextInputType.number,
                           inputFormatters: [
                             FilteringTextInputFormatter.digitsOnly,
@@ -469,47 +538,168 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
                         ),
                 ),
                 const SizedBox(width: 4),
-                // Toggle ilimitado
-                Tooltip(
-                  message:
-                      item.isIlimitado ? 'Definir quantidade' : 'Ilimitado',
-                  child: IconButton(
-                    onPressed: () {
-                      setState(() => item.isIlimitado = !item.isIlimitado);
-                    },
-                    icon: Icon(
-                      item.isIlimitado ? Icons.all_inclusive : Icons.pin,
-                      size: 20,
-                      color: item.isIlimitado
-                          ? Colors.green[600]
-                          : Colors.grey[500],
+                // Toggle ilimitado — oculto para pontas
+                if (!_planoExecutado && !item.isPonta)
+                  Tooltip(
+                    message:
+                        item.isIlimitado ? 'Definir quantidade' : 'Ilimitado',
+                    child: IconButton(
+                      onPressed: () {
+                        setState(() => item.isIlimitado = !item.isIlimitado);
+                      },
+                      icon: Icon(
+                        item.isIlimitado ? Icons.all_inclusive : Icons.pin,
+                        size: 20,
+                        color: item.isIlimitado
+                            ? Colors.green[600]
+                            : Colors.grey[500],
+                      ),
                     ),
                   ),
-                ),
+                // Espaçador para pontas (manter alinhamento)
+                if (!_planoExecutado && item.isPonta)
+                  const SizedBox(width: 48),
                 // Remover
-                IconButton(
-                  onPressed: () =>
-                      setState(() => _materiaPrima.removeAt(idx)),
-                  icon: Icon(Icons.close, size: 18, color: Colors.red[400]),
-                ),
+                if (!_planoExecutado)
+                  IconButton(
+                    onPressed: () =>
+                        setState(() => _materiaPrima.removeAt(idx)),
+                    icon: Icon(Icons.close, size: 18, color: Colors.red[400]),
+                  ),
               ],
             ),
           );
         }),
         const H(8),
-        OutlinedButton.icon(
-          onPressed: () => setState(() => _materiaPrima.add(_MateriaPrimaItem())),
-          icon: const Icon(Icons.add, size: 18),
-          label: const Text('Adicionar Barra'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: AppColors.primaryMain,
-            side: BorderSide(color: AppColors.primaryMain.withValues(alpha: 0.3)),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        if (!_planoExecutado)
+          Row(
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => setState(() => _materiaPrima.add(_MateriaPrimaItem())),
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Adicionar Barra'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primaryMain,
+                  side: BorderSide(color: AppColors.primaryMain.withValues(alpha: 0.3)),
+                  shape:
+                      RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+              if (_ordemSelecionada != null) ...[
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  onPressed: _importarPontas,
+                  icon: Icon(Icons.recycling, size: 18, color: Colors.amber[800]),
+                  label: Text('Importar Pontas',
+                      style: TextStyle(color: Colors.amber[900])),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.amber[300]!),
+                    backgroundColor: Colors.amber[50],
+                    shape:
+                        RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ],
+            ],
           ),
-        ),
       ],
     );
+  }
+
+  // ─── Importar pontas do cadastro ───────────────────────────────────────────
+  Future<void> _importarPontas() async {
+    if (_ordemSelecionada == null) return;
+    final bitolaId = _ordemSelecionada!.produto.id;
+
+    // Buscar pontas disponíveis da mesma bitola
+    final data = await SupabaseService.client
+        .from('pontas')
+        .select()
+        .eq('bitola_id', bitolaId)
+        .order('tamanho', ascending: false);
+    final pontasDisponiveis =
+        data.map((e) => PontaModel.fromSupabaseMap(e)).toList();
+
+    // Filtrar pontas já importadas na lista atual
+    final idsJaImportados = _materiaPrima
+        .where((m) => m.isPonta)
+        .map((m) => m.pontaOrigem!.id)
+        .toSet();
+    final pontasFiltradas =
+        pontasDisponiveis.where((p) => !idsJaImportados.contains(p.id)).toList();
+
+    if (pontasFiltradas.isEmpty) {
+      NotificationService.showNeutral(
+        'Sem pontas disponíveis',
+        'Não há pontas dessa bitola no cadastro para importar.',
+        position: NotificationPosition.bottom,
+      );
+      return;
+    }
+
+    if (!mounted) return;
+
+    // Dialog: importar todas ou escolher?
+    final opcao = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: Icon(Icons.recycling, size: 40, color: Colors.amber[800]),
+        title: const Text('Importar Pontas'),
+        content: Text(
+            '${pontasFiltradas.length} ponta${pontasFiltradas.length > 1 ? 's' : ''} disponíve${pontasFiltradas.length > 1 ? 'is' : 'l'} para esta bitola.\n\nDeseja importar todas ou escolher individualmente?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(null),
+            child: const Text('Cancelar'),
+          ),
+          OutlinedButton(
+            onPressed: () => Navigator.of(ctx).pop('escolher'),
+            child: const Text('Escolher'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop('todas'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber[700],
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Importar Todas'),
+          ),
+        ],
+      ),
+    );
+
+    if (opcao == null) return;
+
+    if (opcao == 'todas') {
+      setState(() {
+        for (final p in pontasFiltradas) {
+          _materiaPrima.add(_MateriaPrimaItem.dePonta(p));
+        }
+      });
+      NotificationService.showPositive(
+        'Pontas Importadas',
+        '${pontasFiltradas.length} ponta${pontasFiltradas.length > 1 ? 's' : ''} adicionada${pontasFiltradas.length > 1 ? 's' : ''} à matéria prima.',
+        position: NotificationPosition.bottom,
+      );
+    } else {
+      // Dialog de seleção individual
+      if (!mounted) return;
+      final selecionadas = await showDialog<List<PontaModel>>(
+        context: context,
+        builder: (ctx) => _DialogSelecionarPontas(pontas: pontasFiltradas),
+      );
+      if (selecionadas == null || selecionadas.isEmpty) return;
+      setState(() {
+        for (final p in selecionadas) {
+          _materiaPrima.add(_MateriaPrimaItem.dePonta(p));
+        }
+      });
+      NotificationService.showPositive(
+        'Pontas Importadas',
+        '${selecionadas.length} ponta${selecionadas.length > 1 ? 's' : ''} adicionada${selecionadas.length > 1 ? 's' : ''} à matéria prima.',
+        position: NotificationPosition.bottom,
+      );
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -912,10 +1102,10 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
     }
 
     if (demandas.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Nenhuma posição com comprimento de corte encontrada.')),
+      NotificationService.showNegative(
+        'Sem posições',
+        'Nenhuma posição com comprimento de corte encontrada.',
+        position: NotificationPosition.bottom,
       );
       return;
     }
@@ -941,10 +1131,10 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
     }
 
     if (estoque.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content:
-                Text('Informe ao menos uma barra de matéria prima válida.')),
+      NotificationService.showNegative(
+        'Matéria prima inválida',
+        'Informe ao menos uma barra de matéria prima válida.',
+        position: NotificationPosition.bottom,
       );
       return;
     }
@@ -1006,6 +1196,8 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
                     ? null
                     : int.tryParse(m.quantidadeCtrl.text.trim()),
                 'ilimitado': m.isIlimitado,
+                if (m.isPonta) 'ponta_id': m.pontaOrigem!.id,
+                if (m.isPonta) 'ponta_quantidade_original': m.pontaOrigem!.quantidade,
               })
           .toList();
 
@@ -1050,8 +1242,10 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar: $e')),
+        NotificationService.showNegative(
+          'Erro ao salvar',
+          e.toString(),
+          position: NotificationPosition.bottom,
         );
       }
     } finally {
@@ -1065,13 +1259,46 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
   Future<void> _executarPlano() async {
     if (_resultado == null || _ordemSelecionada == null || _planoId == null) return;
 
+    // Verificar se a ordem já tem algum plano executado
+    try {
+      final planosExistentes = await SupabaseService.client
+          .from('planos_corte')
+          .select('id')
+          .eq('ordem_id', _ordemSelecionada!.id)
+          .eq('status', 'executado');
+      if (planosExistentes.isNotEmpty) {
+        if (mounted) {
+          await showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              icon: Icon(Icons.info_outline, size: 40, color: Colors.orange[700]),
+              title: const Text('Ordem já possui plano executado'),
+              content: const Text(
+                  'Esta ordem de produção já possui um plano de corte executado.\n\nCancele a execução do plano existente antes de executar outro.'),
+              actions: [
+                ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryMain,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Entendi'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+    } catch (_) {}
+
     // Confirmar ação
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Executar Plano de Corte?'),
         content: const Text(
-            'Ao executar, o plano será marcado como concluído e as sobras de cada barra serão cadastradas automaticamente no módulo de Pontas.\n\nEssa ação não pode ser desfeita.'),
+            'Ao executar, o plano será marcado como concluído e as sobras de cada barra serão cadastradas automaticamente no módulo de Pontas.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -1103,38 +1330,181 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
         'updated_at': DateTime.now().toIso8601String(),
       }).eq('id', _planoId!);
 
-      // 2) Cadastrar sobras como pontas (apenas barras com sobra > 0)
-      final pontasParaInserir = <Map<String, dynamic>>[];
+      // 1.5) Baixar pontas consumidas do estoque
+      for (final item in _materiaPrima) {
+        if (!item.isPonta) continue;
+        final ponta = item.pontaOrigem!;
+        final qtdeUsada = int.tryParse(item.quantidadeCtrl.text.trim()) ?? 0;
+        if (qtdeUsada <= 0) continue;
+
+        if (qtdeUsada >= ponta.quantidade) {
+          // Consumiu tudo → deleta a ponta do cadastro
+          await SupabaseService.client
+              .from('pontas')
+              .delete()
+              .eq('id', ponta.id);
+        } else {
+          // Consumiu parcialmente → decrementa a quantidade
+          await SupabaseService.client.from('pontas').update({
+            'quantidade': ponta.quantidade - qtdeUsada,
+            'updated_at': DateTime.now().toIso8601String(),
+          }).eq('id', ponta.id);
+        }
+      }
+
+      // 2) Cadastrar sobras como pontas com rastreio de origem
+      // Agrupar sobras iguais (mesmo comprimento) somando a quantidade
+      final Map<double, int> sobrasAgrupadas = {};
       for (final barra in r.barrasUsadas) {
         if (barra.sobra > 0) {
-          pontasParaInserir.add({
-            'bitola_id': bitolaId,
-            'bitola_descricao': bitolaDescricao,
-            'tamanho': barra.sobra,
-            'quantidade': 1,
-            'localizador': 'Plano ${ordem.localizator}',
-          });
+          final chave = double.parse(barra.sobra.toStringAsFixed(2));
+          sobrasAgrupadas[chave] = (sobrasAgrupadas[chave] ?? 0) + 1;
         }
+      }
+
+      final pontasParaInserir = <Map<String, dynamic>>[];
+      final pedidosLocalizadores = ordem.pedidos.map((e) => e.localizador).join(', ');
+      final localizadorPonta = pedidosLocalizadores.isNotEmpty ? pedidosLocalizadores : 'Plano ${ordem.localizator}';
+
+      for (final entry in sobrasAgrupadas.entries) {
+        pontasParaInserir.add({
+          'bitola_id': bitolaId,
+          'bitola_descricao': bitolaDescricao,
+          'tamanho': entry.key,
+          'quantidade': entry.value,
+          'localizador': localizadorPonta,
+          'plano_corte_id': _planoId,
+          'ordem_id': ordem.id,
+        });
       }
 
       if (pontasParaInserir.isNotEmpty) {
         await SupabaseService.client.from('pontas').insert(pontasParaInserir);
       }
 
+      final totalPontas = sobrasAgrupadas.values.fold(0, (s, v) => s + v);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Plano executado! ${pontasParaInserir.length} ponta${pontasParaInserir.length != 1 ? 's' : ''} cadastrada${pontasParaInserir.length != 1 ? 's' : ''}.'),
-            backgroundColor: Colors.green[700],
-          ),
+        NotificationService.showPositive(
+          'Plano Executado',
+          '$totalPontas ponta${totalPontas != 1 ? 's' : ''} cadastrada${totalPontas != 1 ? 's' : ''} (${pontasParaInserir.length} tamanho${pontasParaInserir.length != 1 ? 's' : ''}).',
+          position: NotificationPosition.bottom,
         );
         Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao executar: $e')),
+        NotificationService.showNegative(
+          'Erro ao executar',
+          e.toString(),
+          position: NotificationPosition.bottom,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _executando = false);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CANCELAR EXECUÇÃO — volta para pendente e remove pontas geradas
+  // ═══════════════════════════════════════════════════════════════════════════
+  Future<void> _cancelarExecucao() async {
+    if (_planoId == null) return;
+
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancelar Execução?'),
+        content: const Text(
+            'Ao cancelar, o plano voltará ao status pendente e todas as pontas geradas por esta execução serão removidas do cadastro de Pontas.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Não'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red[700],
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Cancelar Execução'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true) return;
+
+    setState(() => _executando = true);
+    try {
+      // 1) Remover pontas geradas por este plano
+      await SupabaseService.client
+          .from('pontas')
+          .delete()
+          .eq('plano_corte_id', _planoId!);
+
+      // 1.5) Restaurar pontas consumidas durante a execução
+      final planoData = await SupabaseService.client
+          .from('planos_corte')
+          .select('materia_prima_json')
+          .eq('id', _planoId!)
+          .single();
+      final mpJson = planoData['materia_prima_json'] as List<dynamic>? ?? [];
+      for (final mp in mpJson) {
+        final pontaId = mp['ponta_id']?.toString();
+        final qtdeOriginal = mp['ponta_quantidade_original'] as int?;
+        final qtdeUsada = mp['quantidade'] as int?;
+        if (pontaId == null || qtdeOriginal == null || qtdeUsada == null) continue;
+
+        // Verificar se a ponta ainda existe (consumo parcial)
+        final existente = await SupabaseService.client
+            .from('pontas')
+            .select('id, quantidade')
+            .eq('id', pontaId);
+
+        if (existente.isNotEmpty) {
+          // Ponta existe → somar de volta a quantidade usada
+          final qtdeAtual = existente.first['quantidade'] as int;
+          await SupabaseService.client.from('pontas').update({
+            'quantidade': qtdeAtual + qtdeUsada,
+            'updated_at': DateTime.now().toIso8601String(),
+          }).eq('id', pontaId);
+        } else {
+          // Ponta foi deletada (consumo total) → recriar
+          final bitolaId = _ordemSelecionada?.produto.id ?? '';
+          final bitolaDescricao = _ordemSelecionada != null
+              ? '${_ordemSelecionada!.produto.nome} - ${_ordemSelecionada!.produto.descricao}'
+              : '';
+          await SupabaseService.client.from('pontas').insert({
+            'id': pontaId,
+            'bitola_id': bitolaId,
+            'bitola_descricao': bitolaDescricao,
+            'tamanho': mp['comprimento'] ?? 0,
+            'quantidade': qtdeOriginal,
+            'localizador': '',
+          });
+        }
+      }
+
+      // 2) Voltar status do plano para 'pendente'
+      await SupabaseService.client.from('planos_corte').update({
+        'status': 'pendente',
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', _planoId!);
+
+      if (mounted) {
+        NotificationService.showPositive(
+          'Execução Cancelada',
+          'Pontas geradas foram removidas do cadastro.',
+          position: NotificationPosition.bottom,
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        NotificationService.showNegative(
+          'Erro ao cancelar',
+          e.toString(),
+          position: NotificationPosition.bottom,
         );
       }
     } finally {
@@ -1343,16 +1713,29 @@ class _MateriaPrimaItem {
   final TextEditingController comprimentoCtrl;
   final TextEditingController quantidadeCtrl;
   bool isIlimitado;
+  PontaModel? pontaOrigem; // se veio do cadastro de pontas
 
   _MateriaPrimaItem()
       : comprimentoCtrl = TextEditingController(),
         quantidadeCtrl = TextEditingController(),
-        isIlimitado = false;
+        isIlimitado = false,
+        pontaOrigem = null;
 
   _MateriaPrimaItem.padrao()
       : comprimentoCtrl = TextEditingController(text: '1200'),
         quantidadeCtrl = TextEditingController(),
-        isIlimitado = true;
+        isIlimitado = true,
+        pontaOrigem = null;
+
+  _MateriaPrimaItem.dePonta(PontaModel ponta)
+      : comprimentoCtrl =
+            TextEditingController(text: ponta.tamanho.toStringAsFixed(0)),
+        quantidadeCtrl =
+            TextEditingController(text: ponta.quantidade.toString()),
+        isIlimitado = false,
+        pontaOrigem = ponta;
+
+  bool get isPonta => pontaOrigem != null;
 }
 
 // ─── Agrupamento de layouts idênticos ────────────────────────────────────────
@@ -1366,4 +1749,121 @@ class _LayoutAgrupado {
     required this.chave,
     this.quantidade = 1,
   });
+}
+
+// ─── Dialog de seleção individual de pontas ──────────────────────────────────
+class _DialogSelecionarPontas extends StatefulWidget {
+  final List<PontaModel> pontas;
+  const _DialogSelecionarPontas({required this.pontas});
+
+  @override
+  State<_DialogSelecionarPontas> createState() =>
+      _DialogSelecionarPontasState();
+}
+
+class _DialogSelecionarPontasState extends State<_DialogSelecionarPontas> {
+  final Set<String> _selecionados = {};
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Selecionar Pontas'),
+      content: SizedBox(
+        width: 400,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Selecionar/desmarcar todas
+            Row(
+              children: [
+                TextButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      if (_selecionados.length == widget.pontas.length) {
+                        _selecionados.clear();
+                      } else {
+                        _selecionados
+                            .addAll(widget.pontas.map((p) => p.id));
+                      }
+                    });
+                  },
+                  icon: Icon(
+                    _selecionados.length == widget.pontas.length
+                        ? Icons.check_box
+                        : Icons.check_box_outline_blank,
+                    size: 20,
+                  ),
+                  label: Text(
+                      _selecionados.length == widget.pontas.length
+                          ? 'Desmarcar todas'
+                          : 'Selecionar todas',
+                      style: const TextStyle(fontSize: 13)),
+                ),
+                const Spacer(),
+                Text('${_selecionados.length} selecionada${_selecionados.length != 1 ? 's' : ''}',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+              ],
+            ),
+            const Divider(),
+            // Lista de pontas
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 350),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: widget.pontas.length,
+                itemBuilder: (ctx, i) {
+                  final p = widget.pontas[i];
+                  final selecionada = _selecionados.contains(p.id);
+                  return CheckboxListTile(
+                    dense: true,
+                    value: selecionada,
+                    onChanged: (v) {
+                      setState(() {
+                        if (v == true) {
+                          _selecionados.add(p.id);
+                        } else {
+                          _selecionados.remove(p.id);
+                        }
+                      });
+                    },
+                    title: Text(
+                        '${p.tamanho.toStringAsFixed(0)} cm  ×  ${p.quantidade}',
+                        style: const TextStyle(fontSize: 14)),
+                    subtitle: p.localizador.isNotEmpty
+                        ? Text(p.localizador,
+                            style: TextStyle(
+                                fontSize: 11, color: Colors.grey[600]))
+                        : null,
+                    secondary: Icon(Icons.recycling,
+                        size: 18, color: Colors.amber[700]),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          onPressed: _selecionados.isEmpty
+              ? null
+              : () {
+                  final resultado = widget.pontas
+                      .where((p) => _selecionados.contains(p.id))
+                      .toList();
+                  Navigator.of(context).pop(resultado);
+                },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.amber[700],
+            foregroundColor: Colors.white,
+          ),
+          child: const Text('Importar Selecionadas'),
+        ),
+      ],
+    );
+  }
 }

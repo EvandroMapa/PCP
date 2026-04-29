@@ -3,6 +3,8 @@ import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/services/pdf_download_service/pdf_download_service_mobile.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
+import 'package:aco_plus/app/core/services/notification_service.dart';
+import 'package:overlay_support/overlay_support.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/core/utils/logo_helper.dart';
@@ -64,6 +66,16 @@ class _PlanosCortePageState extends State<PlanosCortePage> {
 
   // ─── Excluir ──────────────────────────────────────────────────────────────
   Future<void> _excluirPlano(PlanoCorteGravadoModel plano) async {
+    // Plano executado não pode ser excluído
+    if (plano.status == 'executado') {
+      NotificationService.showNegative(
+        'Plano protegido',
+        'Plano executado não pode ser excluído. Cancele a execução antes.',
+        position: NotificationPosition.bottom,
+      );
+      return;
+    }
+
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -95,11 +107,11 @@ class _PlanosCortePageState extends State<PlanosCortePage> {
           .eq('id', plano.id);
       _carregarPlanos();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao excluir: $e')),
-        );
-      }
+      NotificationService.showNegative(
+        'Erro ao excluir',
+        e.toString(),
+        position: NotificationPosition.bottom,
+      );
     }
   }
 
@@ -338,11 +350,14 @@ class _PlanosCortePageState extends State<PlanosCortePage> {
   }
 
   Widget _itemPlanoWidget(PlanoCorteGravadoModel plano) {
-    final aprovCor = plano.percentualAproveitamento >= 90
+    final isExecutado = plano.status == 'executado';
+    final aprovCor = isExecutado
         ? Colors.green[700]!
-        : plano.percentualAproveitamento >= 70
-            ? Colors.blue[600]!
-            : Colors.orange[600]!;
+        : plano.percentualAproveitamento >= 90
+            ? Colors.green[700]!
+            : plano.percentualAproveitamento >= 70
+                ? Colors.blue[600]!
+                : Colors.orange[600]!;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -354,9 +369,12 @@ class _PlanosCortePageState extends State<PlanosCortePage> {
         borderRadius: BorderRadius.circular(14),
         child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isExecutado ? Colors.green[50] : Colors.white,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(
+            color: isExecutado ? Colors.green[300]! : const Color(0xFFE2E8F0),
+            width: isExecutado ? 1.5 : 1.0,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -395,6 +413,20 @@ class _PlanosCortePageState extends State<PlanosCortePage> {
                                 .setSize(11)
                                 .setColor(Colors.grey[400]!),
                           ),
+                          if (isExecutado) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: Colors.green[700],
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text('EXECUTADO',
+                                  style: AppCss.minimumBold
+                                      .setSize(10)
+                                      .setColor(Colors.white)),
+                            ),
+                          ],
                         ],
                       ),
                       const H(6),
@@ -449,23 +481,24 @@ class _PlanosCortePageState extends State<PlanosCortePage> {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          // Botão Excluir
-                          Tooltip(
-                            message: 'Excluir',
-                            child: InkWell(
-                              onTap: () => _excluirPlano(plano),
-                              borderRadius: BorderRadius.circular(6),
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: Colors.red.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(6),
+                          // Botão Excluir (oculto para planos executados)
+                          if (plano.status != 'executado')
+                            Tooltip(
+                              message: 'Excluir',
+                              child: InkWell(
+                                onTap: () => _excluirPlano(plano),
+                                borderRadius: BorderRadius.circular(6),
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Icon(Icons.delete_outline,
+                                      size: 18, color: Colors.red[700]),
                                 ),
-                                child: Icon(Icons.delete_outline,
-                                    size: 18, color: Colors.red[700]),
                               ),
                             ),
-                          ),
                         ],
                       ),
                       // Linha 3: Descrição

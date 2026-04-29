@@ -8,6 +8,8 @@ class PontaModel {
   double tamanho;
   int quantidade;
   String localizador;
+  final String? planoCorteId;
+  final String? ordemId;
   final DateTime createdAt;
   DateTime updatedAt;
 
@@ -18,6 +20,8 @@ class PontaModel {
     required this.tamanho,
     required this.quantidade,
     this.localizador = '',
+    this.planoCorteId,
+    this.ordemId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -30,6 +34,8 @@ class PontaModel {
       tamanho: (map['tamanho'] ?? 0).toDouble(),
       quantidade: map['quantidade'] ?? 1,
       localizador: map['localizador'] ?? '',
+      planoCorteId: map['plano_corte_id']?.toString(),
+      ordemId: map['ordem_id']?.toString(),
       createdAt: DateTime.tryParse(map['created_at']?.toString() ?? '') ??
           DateTime.now(),
       updatedAt: DateTime.tryParse(map['updated_at']?.toString() ?? '') ??
@@ -43,6 +49,8 @@ class PontaModel {
         'tamanho': tamanho,
         'quantidade': quantidade,
         'localizador': localizador,
+        if (planoCorteId != null) 'plano_corte_id': planoCorteId,
+        if (ordemId != null) 'ordem_id': ordemId,
       };
 
   Map<String, dynamic> toUpdateMap() => {

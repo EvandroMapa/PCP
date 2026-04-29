@@ -164,7 +164,7 @@ extension AppModuleExt on AppModule {
       case AppModule.materiaPrima:
         return 'Materia Prima';
       case AppModule.pontas:
-        return 'Pontas';
+        return 'Cadastro de Pontas';
       case AppModule.armacao:
         return 'Armação';
     }

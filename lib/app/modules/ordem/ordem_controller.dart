@@ -374,6 +374,23 @@ class OrdemController {
   }
 
   Future<void> onDelete(value, OrdemModel ordem) async {
+    // Verificar se a ordem possui plano de corte executado
+    try {
+      final planosExecutados = await SupabaseService.client
+          .from('planos_corte')
+          .select('id')
+          .eq('ordem_id', ordem.id)
+          .eq('status', 'executado');
+      if (planosExecutados.isNotEmpty) {
+        NotificationService.showNegative(
+          'Ordem protegida',
+          'Esta ordem possui um plano de corte executado. Cancele a execução do plano antes de excluir a ordem.',
+          position: NotificationPosition.bottom,
+        );
+        return;
+      }
+    } catch (_) {}
+
     if (await _isDeleteUnavailable(ordem)) return;
     for (var pedidoProduto in ordem.produtos
         .map<PedidoProdutoModel>(
