@@ -143,3 +143,4 @@ app.*.symbols
 
 # Chaves Privadas e Credenciais
 assets/google_service_account.json
+*.code-workspace

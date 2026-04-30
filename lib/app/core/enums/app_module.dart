@@ -2,7 +2,6 @@ import 'package:aco_plus/app/modules/armacao/ui/armacao_page.dart';
 import 'package:aco_plus/app/modules/cliente/ui/clientes_page.dart';
 import 'package:aco_plus/app/modules/dashboard/ui/dashboard_page.dart';
 import 'package:aco_plus/app/modules/fabricante/ui/fabricantes_page.dart';
-import 'package:aco_plus/app/modules/kanban/ui/components/kanban/kanban_top_bar_widget.dart';
 import 'package:aco_plus/app/modules/kanban/ui/kanban_page.dart';
 import 'package:aco_plus/app/modules/materia_prima/ui/materias_primas_page.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordens_page.dart';
@@ -76,7 +75,10 @@ extension AppModuleExt on AppModule {
 
   PreferredSizeWidget? appBar(BuildContext context) {
     if (this == AppModule.kanban) {
-      return const KanbanTopBarWidget();
+      return PreferredSize(
+        preferredSize: Size.zero,
+        child: SizedBox.shrink(),
+      );
     }
     if (this == AppModule.dashboard) {
       return AppBar(

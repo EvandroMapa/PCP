@@ -48,6 +48,7 @@ class _KanbanCardCalendarWidgetState extends State<KanbanCardCalendarWidget> {
           onTap: () => kanbanCtrl.setPedido(widget.pedido),
           child: StreamOut<List<NotificacaoModel>>(
             stream: FirestoreClient.notificacoes.dataStream.listen,
+            loading: const SizedBox.shrink(),
             builder: (context, value) {
               final notificacoes = notificacaoCtrl.getNotificaoByUsuarioPedido(
                 value,

@@ -8,7 +8,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/us
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:info_popup/info_popup.dart';
+
 import 'package:table_calendar/table_calendar.dart';
 
 enum KanbanViewMode { calendar, kanban }
@@ -27,13 +27,13 @@ class KanbanUtils {
   ClienteModel? cliente;
   TextController clienteEC = TextController();
   Timer? timer;
-  late InfoPopupController controller;
+
   DateTime focusedDay = DateTime.now();
   UsuarioModel? usuario;
   TextController usuarioEC = TextController();
   PageController? pageController;
   TextController localidadeEC = TextController();
-  TagModel? tag;
+  List<TagModel> tagsSelecionadas = [];
   TextController tagEC = TextController();
 
   void cancelTimer() {
@@ -57,7 +57,7 @@ class KanbanUtils {
     if (localidadeEC.text.isNotEmpty) {
       qtde++;
     }
-    if (tag != null) {
+    if (tagsSelecionadas.isNotEmpty) {
       qtde++;
     }
     if (usuarioEC.text.isNotEmpty) {
@@ -71,38 +71,38 @@ class KanbanUtils {
       cliente != null ||
       usuario != null ||
       localidadeEC.text.isNotEmpty ||
-      tag != null ||
+      tagsSelecionadas.isNotEmpty ||
       usuarioEC.text.isNotEmpty;
 
   bool isPedidoVisibleFiltered(PedidoModel pedido) {
     if (!hasFilter()) return true;
     if (search.text.isNotEmpty) {
-      if (pedido.filtro.toCompare.contains(search.text.toCompare)) {
-        return true;
+      if (!pedido.filtro.toCompare.contains(search.text.toCompare)) {
+        return false;
       }
     }
     if (cliente != null) {
-      if (pedido.cliente.id == cliente!.id) return true;
+      if (pedido.cliente.id != cliente!.id) return false;
     }
     if (usuario != null) {
-      if (pedido.users.any((user) => user.id == usuario!.id)) {
-        return true;
+      if (!pedido.users.any((user) => user.id == usuario!.id)) {
+        return false;
       }
     }
     if (localidadeEC.text.isNotEmpty) {
-      if (pedido.obra.endereco?.localidade.toCompare.contains(
+      if (!(pedido.obra.endereco?.localidade.toCompare.contains(
             localidadeEC.text.toCompare,
           ) ??
-          false) {
-        return true;
+          false)) {
+        return false;
       }
     }
-    if (tag != null) {
-      if (pedido.tags.any((tag) => tag.id == this.tag!.id)) {
-        return true;
+    if (tagsSelecionadas.isNotEmpty) {
+      if (!pedido.tags.any((t) => tagsSelecionadas.any((s) => s.id == t.id))) {
+        return false;
       }
     }
-    return false;
+    return true;
   }
 
   KanbanUtils({required this.kanban, required this.calendar});

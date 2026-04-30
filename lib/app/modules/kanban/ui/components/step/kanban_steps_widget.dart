@@ -9,6 +9,7 @@ class KanbanStepsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final steps = utils.kanban.keys.toList();
     return RawScrollbar(
       trackColor: Colors.grey[400],
       trackRadius: const Radius.circular(8),
@@ -22,14 +23,14 @@ class KanbanStepsWidget extends StatelessWidget {
       child: ListView.separated(
         controller: utils.scroll,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        itemCount: utils.kanban.keys.length,
+        itemCount: steps.length,
         scrollDirection: Axis.horizontal,
         cacheExtent: 500,
         separatorBuilder: (_, i) => const W(16),
         itemBuilder: (_, i) => KanbanStepWidget(
           utils,
-          utils.kanban.keys.toList()[i],
-          utils.kanban[utils.kanban.keys.toList()[i]]!,
+          steps[i],
+          utils.kanban[steps[i]]!,
         ),
       ),
     );

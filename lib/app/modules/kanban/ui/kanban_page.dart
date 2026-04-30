@@ -63,10 +63,19 @@ class _KanbanPageState extends State<KanbanPage> {
     );
     if (widget.standalone) {
       return Scaffold(
-        appBar: const KanbanTopBarWidget(standalone: true),
-        body: body,
+        body: Column(
+          children: [
+            const KanbanTopBarWidget(standalone: true),
+            Expanded(child: body),
+          ],
+        ),
       );
     }
-    return body;
+    return Column(
+      children: [
+        const KanbanTopBarWidget(),
+        Expanded(child: body),
+      ],
+    );
   }
 }

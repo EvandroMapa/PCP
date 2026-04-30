@@ -40,7 +40,9 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
   bool _carregando = false;
   bool _salvando = false;
   bool _exportandoPdf = false;
+  bool _exportandoEtiqueta = false;
   bool _executando = false;
+  bool _modificado = false;
   List<ElementoModel>? _elementosOrdem;
   final TextEditingController _descricaoCtrl = TextEditingController();
 
@@ -106,13 +108,14 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
     } finally {
       setState(() => _carregando = false);
     }
+    _modificado = false;
   }
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: _resultado == null,
+      canPop: !_modificado,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         final sair = await _confirmarSairSemSalvar();
@@ -134,6 +137,14 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const Icon(Icons.picture_as_pdf, color: Colors.white),
               ),
+              if (_planoExecutado)
+                IconButton(
+                  onPressed: _exportandoEtiqueta ? null : _exportarEtiquetasSobras,
+                  tooltip: 'Etiquetas de Sobras',
+                  icon: _exportandoEtiqueta
+                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.label_outline, color: Colors.white),
+                ),
               IconButton(
                 onPressed: _salvando ? null : _salvarPlanoCorte,
                 tooltip: 'Salvar',
@@ -144,9 +155,43 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
             ],
           ],
         ),
-        body: _carregando
-            ? const Center(child: CircularProgressIndicator())
-            : _buildConteudo(),
+        body: Stack(
+          children: [
+            _carregando
+                ? const Center(child: CircularProgressIndicator())
+                : _buildConteudo(),
+            if (_exportandoPdf || _exportandoEtiqueta)
+              Container(
+                color: Colors.black.withValues(alpha: 0.45),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 20,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const CircularProgressIndicator(),
+                        const H(16),
+                        Text(
+                          _exportandoEtiqueta ? 'Gerando etiquetas...' : 'Gerando PDF...',
+                          style: AppCss.smallBold,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -360,6 +405,7 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
             _ordemSelecionada = o;
             _resultado = null;
             _elementosOrdem = null;
+            _modificado = true;
             setState(() {});
             if (o != null) await _carregarElementosOrdem(o);
           },
@@ -413,12 +459,14 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
     if (_elementosOrdem == null) return const SizedBox.shrink();
     int totalPosicoes = 0;
     int posicoesSemCorte = 0;
+
     for (final e in _elementosOrdem!) {
       for (final p in e.posicoes) {
         totalPosicoes++;
         if (p.comprCorte <= 0) posicoesSemCorte++;
       }
     }
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -434,12 +482,157 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
             style: AppCss.minimumBold,
           ),
           if (posicoesSemCorte > 0) ...[
-            const H(4),
-            Text(
-              '⚠ $posicoesSemCorte posições sem comprimento de corte definido (serão ignoradas)',
-              style: AppCss.minimumRegular.setColor(Colors.orange[800]!),
+            const H(8),
+            InkWell(
+              onTap: _mostrarPosicoesSemCorte,
+              borderRadius: BorderRadius.circular(6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFFDBA74)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, size: 16, color: Colors.orange[800]),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '$posicoesSemCorte posições sem comprimento de corte',
+                        style: AppCss.minimumBold.setColor(Colors.orange[900]!),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.orange[700],
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Ver detalhes',
+                        style: AppCss.minimumBold.setSize(11).setColor(Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  // ── Dialog: posições sem comprimento de corte ──
+  void _mostrarPosicoesSemCorte() {
+    if (_elementosOrdem == null || _ordemSelecionada == null) return;
+
+    final List<Map<String, String>> itens = [];
+    for (final e in _elementosOrdem!) {
+      String localizador = '';
+      try {
+        final pedido = FirestoreClient.pedidos.getById(e.pedidoId);
+        localizador = pedido.localizador;
+      } catch (_) {}
+
+      for (final p in e.posicoes) {
+        if (p.comprCorte <= 0) {
+          itens.add({
+            'localizador': localizador,
+            'elemento': e.nome,
+            'posicao': p.nome,
+            'os': p.numeroOs,
+          });
+        }
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: Icon(Icons.warning_amber_rounded, size: 40, color: Colors.orange[700]),
+        title: Text(
+          'Posições sem Comprimento de Corte',
+          style: AppCss.mediumBold,
+        ),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${_ordemSelecionada!.localizator} — ${itens.length} posições serão ignoradas no plano de corte.',
+                style: AppCss.minimumRegular.setColor(Colors.grey[600]!),
+              ),
+              const H(12),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                clipBehavior: Clip.antiAlias,
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(ctx).size.height * 0.45,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      // Header
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(flex: 4, child: Text('Localizador', style: AppCss.minimumBold.setColor(Colors.grey[700]!))),
+                            Expanded(flex: 3, child: Padding(padding: const EdgeInsets.only(left: 40), child: Text('Elemento', style: AppCss.minimumBold.setColor(Colors.grey[700]!)))),
+                            Expanded(flex: 2, child: Padding(padding: const EdgeInsets.only(left: 10), child: Text('Posição', style: AppCss.minimumBold.setColor(Colors.grey[700]!)))),
+                            Expanded(flex: 1, child: Text('OS', style: AppCss.minimumBold.setColor(Colors.grey[700]!))),
+                          ],
+                        ),
+                      ),
+                      // Rows
+                      ...itens.asMap().entries.map((entry) {
+                        final i = entry.key;
+                        final item = entry.value;
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                          decoration: BoxDecoration(
+                            color: i.isEven ? Colors.white : Colors.grey[50],
+                            border: i < itens.length - 1
+                                ? Border(bottom: BorderSide(color: Colors.grey[200]!))
+                                : null,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(flex: 4, child: Text(item['localizador']!, style: AppCss.minimumRegular, overflow: TextOverflow.ellipsis)),
+                              Expanded(flex: 3, child: Padding(padding: const EdgeInsets.only(left: 40), child: Text(item['elemento']!, style: AppCss.minimumRegular, overflow: TextOverflow.ellipsis))),
+                              Expanded(flex: 2, child: Padding(padding: const EdgeInsets.only(left: 10), child: Text(item['posicao']!, style: AppCss.minimumRegular, overflow: TextOverflow.ellipsis))),
+                              Expanded(flex: 1, child: Text(item['os']!, style: AppCss.minimumRegular, overflow: TextOverflow.ellipsis)),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryMain,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Entendi'),
+          ),
         ],
       ),
     );
@@ -545,7 +738,7 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
                         item.isIlimitado ? 'Definir quantidade' : 'Ilimitado',
                     child: IconButton(
                       onPressed: () {
-                        setState(() => item.isIlimitado = !item.isIlimitado);
+                        setState(() { item.isIlimitado = !item.isIlimitado; _modificado = true; });
                       },
                       icon: Icon(
                         item.isIlimitado ? Icons.all_inclusive : Icons.pin,
@@ -563,7 +756,7 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
                 if (!_planoExecutado)
                   IconButton(
                     onPressed: () =>
-                        setState(() => _materiaPrima.removeAt(idx)),
+                        setState(() { _materiaPrima.removeAt(idx); _modificado = true; }),
                     icon: Icon(Icons.close, size: 18, color: Colors.red[400]),
                   ),
               ],
@@ -575,7 +768,7 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
           Row(
             children: [
               OutlinedButton.icon(
-                onPressed: () => setState(() => _materiaPrima.add(_MateriaPrimaItem())),
+                onPressed: () => setState(() { _materiaPrima.add(_MateriaPrimaItem()); _modificado = true; }),
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('Adicionar Barra'),
                 style: OutlinedButton.styleFrom(
@@ -1190,7 +1383,7 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
       estoque: estoque,
     );
 
-    setState(() => _resultado = resultado);
+    setState(() { _resultado = resultado; _modificado = true; });
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1283,6 +1476,7 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
       }
 
       if (mounted) {
+        _modificado = false;
         Navigator.of(context).pop();
       }
     } catch (e) {
@@ -1639,6 +1833,231 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
     await downloadPDF(nome, '/relatorio/plano_corte/', bytes);
     } finally {
       if (mounted) setState(() => _exportandoPdf = false);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EXPORTAR ETIQUETAS DE SOBRAS (impressora térmica 9×14cm)
+  // ═══════════════════════════════════════════════════════════════════════════
+  Future<void> _exportarEtiquetasSobras() async {
+    if (_resultado == null || _ordemSelecionada == null) return;
+    setState(() => _exportandoEtiqueta = true);
+    try {
+      final r = _resultado!;
+      final ordem = _ordemSelecionada!;
+      final agora = DateTime.now();
+      final dataFormatada = DateFormat('dd/MM/yyyy').format(agora);
+      final horaFormatada = DateFormat('HH:mm').format(agora);
+
+      // Agrupar por layout (mesma lógica do relatório)
+      final layouts = _agruparLayouts(r.barrasUsadas);
+
+      // Filtrar apenas layouts com sobra > 0
+      final layoutsComSobra = <int, _LayoutAgrupado>{};
+      for (var i = 0; i < layouts.length; i++) {
+        if (layouts[i].barra.sobra > 0) {
+          layoutsComSobra[i + 1] = layouts[i]; // índice 1-based
+        }
+      }
+
+      if (layoutsComSobra.isEmpty) {
+        NotificationService.showNeutral(
+          'Sem sobras',
+          'Este plano de corte não gerou sobras.',
+          position: NotificationPosition.bottom,
+        );
+        return;
+      }
+
+      // Página 9cm × 14cm
+      const larguraCm = 9.0;
+      const alturaCm = 14.0;
+      final pageFormat = PdfPageFormat(
+        larguraCm * PdfPageFormat.cm,
+        alturaCm * PdfPageFormat.cm,
+        marginAll: 0,
+      );
+
+      final pdf = pw.Document();
+
+      final bitolaDescricao = ordem.produto.descricao;
+      final localizador = ordem.localizator;
+      final planoNome = _descricaoCtrl.text.trim().isNotEmpty
+          ? _descricaoCtrl.text.trim()
+          : (widget.planoParaEditar?.descricao ?? '');
+
+      // Uma página por layout com sobra (ordenado por número do layout)
+      final layoutIndices = layoutsComSobra.keys.toList()..sort();
+
+      for (final idx in layoutIndices) {
+        final layout = layoutsComSobra[idx]!;
+        final sobra = layout.barra.sobra;
+        final quantidade = layout.quantidade;
+
+        pdf.addPage(pw.Page(
+          pageFormat: pageFormat,
+          theme: pw.ThemeData.withFont(
+            base: pw.Font.helvetica(),
+            bold: pw.Font.helveticaBold(),
+          ),
+          build: (ctx) {
+            return pw.Container(
+              width: double.infinity,
+              height: double.infinity,
+              padding: const pw.EdgeInsets.all(12),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+                children: [
+                  // ── Header preto ──
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: const pw.BoxDecoration(
+                      color: PdfColors.black,
+                      borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
+                    ),
+                    child: pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text('SOBRA',
+                          style: pw.TextStyle(
+                            color: PdfColors.white,
+                            fontSize: 14,
+                            fontWeight: pw.FontWeight.bold,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                        pw.Text('LAYOUT $idx',
+                          style: pw.TextStyle(
+                            color: PdfColors.white,
+                            fontSize: 12,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  pw.SizedBox(height: 10),
+
+                  // ── BITOLA ──
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    decoration: pw.BoxDecoration(
+                      border: pw.Border.all(color: PdfColors.black, width: 1.5),
+                      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(3)),
+                    ),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('BITOLA',
+                          style: pw.TextStyle(fontSize: 7, color: PdfColors.grey600, fontWeight: pw.FontWeight.bold, letterSpacing: 1),
+                        ),
+                        pw.SizedBox(height: 2),
+                        pw.Text(bitolaDescricao,
+                          style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                  pw.SizedBox(height: 8),
+
+                  // ── TAMANHO + QUANTIDADE ── (destaque principal)
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                    decoration: const pw.BoxDecoration(
+                      color: PdfColors.black,
+                      borderRadius: pw.BorderRadius.all(pw.Radius.circular(4)),
+                    ),
+                    child: pw.Row(
+                      children: [
+                        pw.Expanded(
+                          flex: 3,
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text('TAMANHO',
+                                style: pw.TextStyle(fontSize: 7, color: PdfColors.grey400, fontWeight: pw.FontWeight.bold, letterSpacing: 1),
+                              ),
+                              pw.SizedBox(height: 2),
+                              pw.Text('${sobra.toStringAsFixed(1)} cm',
+                                style: pw.TextStyle(fontSize: 28, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                        pw.Container(width: 1.5, height: 40, color: PdfColors.grey600),
+                        pw.Expanded(
+                          flex: 2,
+                          child: pw.Column(
+                            children: [
+                              pw.Text('QTD',
+                                style: pw.TextStyle(fontSize: 7, color: PdfColors.grey400, fontWeight: pw.FontWeight.bold, letterSpacing: 1),
+                              ),
+                              pw.SizedBox(height: 2),
+                              pw.Text('$quantidade',
+                                style: pw.TextStyle(fontSize: 28, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  pw.SizedBox(height: 8),
+
+                  // ── PLANO DE CORTE ──
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    decoration: pw.BoxDecoration(
+                      border: pw.Border.all(color: PdfColors.black, width: 1.5),
+                      borderRadius: const pw.BorderRadius.all(pw.Radius.circular(3)),
+                    ),
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text('PLANO DE CORTE',
+                          style: pw.TextStyle(fontSize: 7, color: PdfColors.grey600, fontWeight: pw.FontWeight.bold, letterSpacing: 1),
+                        ),
+                        pw.SizedBox(height: 2),
+                        pw.Text(planoNome.isNotEmpty ? planoNome : localizador,
+                          style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  pw.Spacer(),
+
+                  // ── Rodapé: DATA e HORA ──
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    decoration: const pw.BoxDecoration(
+                      color: PdfColors.black,
+                      borderRadius: pw.BorderRadius.all(pw.Radius.circular(3)),
+                    ),
+                    child: pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                      children: [
+                        pw.Text(dataFormatada,
+                          style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                        ),
+                        pw.Text(horaFormatada,
+                          style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ));
+      }
+
+      final bytes = await pdf.save();
+      final nome = 'etiquetas_sobras_${ordem.localizator.toLowerCase()}_${agora.toFileName()}.pdf';
+      await downloadPDF(nome, '/relatorio/plano_corte/', bytes);
+    } finally {
+      if (mounted) setState(() => _exportandoEtiqueta = false);
     }
   }
 

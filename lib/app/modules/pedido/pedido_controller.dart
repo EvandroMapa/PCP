@@ -382,6 +382,10 @@ class PedidoController {
         if (form.pai != null) {
           final pai = BackendClient.pedidos.getById(form.pai!);
           pai.pedidosFilhos.add(pedidoModel.id);
+
+          // Ao se tornar mestre, apaga a data de entrega — 
+          // a entrega passa a ser controlada pelos parciais
+          pai.deliveryAt = null;
           
           // Deduct quantity physically from parent
           for (final produtoFilho in pedidoModel.produtos) {

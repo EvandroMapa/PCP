@@ -12,16 +12,11 @@ import 'package:aco_plus/app/modules/pedido/ui/pedido_create_page.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:aco_plus/app/core/components/w.dart';
 import 'package:flutter/material.dart';
-import 'package:info_popup/info_popup.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_import_pdf_dialog.dart';
 
-class KanbanTopBarWidget extends StatelessWidget
-    implements PreferredSizeWidget {
+class KanbanTopBarWidget extends StatelessWidget {
   final bool standalone;
   const KanbanTopBarWidget({this.standalone = false, super.key});
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
@@ -40,164 +35,193 @@ class _KanbanTopbarConcreteWidget extends StatefulWidget {
 
 class _KanbanTopbarConcreteWidgetState
     extends State<_KanbanTopbarConcreteWidget> {
-  late InfoPopupController controller;
+  bool _filtroAberto = false;
+
+  void _toggleFiltro() {
+    setState(() => _filtroAberto = !_filtroAberto);
+  }
+
+  void _fecharFiltro() {
+    setState(() => _filtroAberto = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamOut<KanbanUtils>(
       loading: const KanbanTopBarShimmerWidget(),
       stream: kanbanCtrl.utilsStream.listen,
-      builder: (_, utils) => AppBar(
-        iconTheme: const IconThemeData(color: Colors.white, size: 20),
-        leading: widget.standalone
-            ? null
-            : Builder(
-                builder: (context) => IconButton(
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                  icon: Icon(Icons.menu, color: AppColors.white),
-                ),
-              ),
-        title: Text(
-          'Kanban',
-          style: AppCss.largeBold.setColor(AppColors.white),
-        ),
-        actions: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (!widget.standalone) ...[
-                IconButton(
-                  onPressed: () => openInNewTab('/kanban'),
-                  icon: Icon(Icons.open_in_new, color: AppColors.white),
-                  tooltip: 'Abrir em nova aba',
-                ),
-                const W(4),
-              ],
-              InfoPopupWidget(
-                onControllerCreated: (value) {
-                  controller = value;
-                  utils.controller = value;
-                  kanbanCtrl.utilsStream.update();
-                },
-                onAreaPressed: (e) {},
-                dismissTriggerBehavior: PopupDismissTriggerBehavior.manuel,
-                customContent: () => KanbanFilterWidget(utils),
-                contentOffset: const Offset(-10, 0),
-                infoPopupDismissed: () {},
-                arrowTheme: InfoPopupArrowTheme(color: AppColors.white),
-                child: Stack(
-                  children: [
-                    IconButton(
-                      onPressed: () => controller.show(),
-                      icon: Icon(
-                        Icons.filter_list,
-                        color: utils.hasFilter()
-                            ? Colors.redAccent
-                            : AppColors.white,
-                      ),
+      builder: (_, utils) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ── AppBar ──
+          AppBar(
+            iconTheme: const IconThemeData(color: Colors.white, size: 20),
+            leading: widget.standalone
+                ? null
+                : Builder(
+                    builder: (context) => IconButton(
+                      onPressed: () => Scaffold.of(context).openDrawer(),
+                      icon: Icon(Icons.menu, color: AppColors.white),
                     ),
-                    if (utils.hasFilter())
-                      Positioned(
-                        right: 8,
-                        top: 0,
-                        child: InkWell(
-                          onTap: () {
-                            utils.search.text = '';
-                            utils.cliente = null;
-                            utils.clienteEC.text = '';
-                            utils.usuario = null;
-                            utils.usuarioEC.text = '';
-                            utils.localidadeEC.text = '';
-                            utils.tag = null;
-                            utils.tagEC.text = '';
-                            controller.dismissInfoPopup();
-                            kanbanCtrl.utilsStream.update();
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.all(2),
-                            width: 14,
-                            height: 14,
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Icon(
-                                Icons.close,
-                                size: 10,
-                                color: AppColors.primaryMain,
+                  ),
+            title: Text(
+              'Kanban',
+              style: AppCss.largeBold.setColor(AppColors.white),
+            ),
+            actions: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!widget.standalone) ...[
+                    IconButton(
+                      onPressed: () => openInNewTab('/kanban'),
+                      icon: Icon(Icons.open_in_new, color: AppColors.white),
+                      tooltip: 'Abrir em nova aba',
+                    ),
+                    const W(4),
+                  ],
+                  // ── Botão de filtro ──
+                  Stack(
+                    children: [
+                      IconButton(
+                        onPressed: _toggleFiltro,
+                        tooltip: _filtroAberto
+                            ? 'Fechar filtros'
+                            : 'Abrir filtros',
+                        icon: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: Icon(
+                            _filtroAberto
+                                ? Icons.filter_list_off_rounded
+                                : Icons.filter_list,
+                            key: ValueKey(_filtroAberto),
+                            color: utils.hasFilter()
+                                ? Colors.redAccent
+                                : AppColors.white,
+                          ),
+                        ),
+                      ),
+                      if (utils.hasFilter() && !_filtroAberto)
+                        Positioned(
+                          right: 8,
+                          top: 0,
+                          child: InkWell(
+                            onTap: () {
+                              utils.search.text = '';
+                              utils.cliente = null;
+                              utils.clienteEC.text = '';
+                              utils.usuario = null;
+                              utils.usuarioEC.text = '';
+                              utils.localidadeEC.text = '';
+                              utils.tagsSelecionadas.clear();
+                              utils.tagEC.text = '';
+                              kanbanCtrl.utilsStream.update();
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.all(2),
+                              width: 14,
+                              height: 14,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Icon(
+                                  Icons.close,
+                                  size: 10,
+                                  color: AppColors.primaryMain,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                  ],
-                ),
-              ),
-              const W(4),
-              IconButton(
-                onPressed: () {
-                  if (utils.view == KanbanViewMode.calendar) {
-                    utils.view = KanbanViewMode.kanban;
-                  } else {
-                    utils.view = KanbanViewMode.calendar;
-                  }
-                  kanbanCtrl.utilsStream.update();
-                },
-                icon: Icon(
-                  utils.view != KanbanViewMode.calendar
-                      ? Icons.calendar_month
-                      : Icons.view_kanban,
-                  color: AppColors.white,
-                ),
-              ),
-              const W(8),
-              if (usuario.permission.pedido.contains(UserPermissionType.create))
-                PopupMenuButton<int>(
-                  tooltip: 'Criar Pedido',
-                  icon: Icon(Icons.add, color: AppColors.white),
-                  color: AppColors.white,
-                  surfaceTintColor: AppColors.white,
-                  offset: const Offset(0, 40),
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 1,
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit_document, size: 20, color: AppColors.primaryMain),
-                          const W(8),
-                          Text('Criar Cartão Manualmente', style: AppCss.minimumBold.setSize(13)),
-                        ],
-                      ),
+                    ],
+                  ),
+                  const W(4),
+                  IconButton(
+                    onPressed: () {
+                      if (utils.view == KanbanViewMode.calendar) {
+                        utils.view = KanbanViewMode.kanban;
+                      } else {
+                        utils.view = KanbanViewMode.calendar;
+                      }
+                      kanbanCtrl.utilsStream.update();
+                    },
+                    icon: Icon(
+                      utils.view != KanbanViewMode.calendar
+                          ? Icons.calendar_month
+                          : Icons.view_kanban,
+                      color: AppColors.white,
                     ),
-                    const PopupMenuDivider(),
-                    PopupMenuItem(
-                      value: 2,
-                      child: Row(
-                        children: [
-                          Icon(Icons.picture_as_pdf, size: 20, color: AppColors.primaryMain),
-                          const W(8),
-                          Text('Criar Cartão via PDF', style: AppCss.minimumBold.setSize(13)),
-                        ],
-                      ),
+                  ),
+                  const W(8),
+                  if (usuario.permission.pedido
+                      .contains(UserPermissionType.create))
+                    PopupMenuButton<int>(
+                      tooltip: 'Criar Pedido',
+                      icon: Icon(Icons.add, color: AppColors.white),
+                      color: AppColors.white,
+                      surfaceTintColor: AppColors.white,
+                      offset: const Offset(0, 40),
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 1,
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit_document,
+                                  size: 20, color: AppColors.primaryMain),
+                              const W(8),
+                              Text('Criar Cartão Manualmente',
+                                  style: AppCss.minimumBold.setSize(13)),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuDivider(),
+                        PopupMenuItem(
+                          value: 2,
+                          child: Row(
+                            children: [
+                              Icon(Icons.picture_as_pdf,
+                                  size: 20, color: AppColors.primaryMain),
+                              const W(8),
+                              Text('Criar Cartão via PDF',
+                                  style: AppCss.minimumBold.setSize(13)),
+                            ],
+                          ),
+                        ),
+                      ],
+                      onSelected: (val) async {
+                        if (val == 1) {
+                          await push(context, const PedidoCreatePage());
+                          final pedidos = FirestoreClient.pedidos.data;
+                          if (pedidos.isEmpty) return;
+                          pedidos.sort((a, b) => a.id.compareTo(b.id));
+                          kanbanCtrl.onAccept(
+                              pedidos.last.step, pedidos.last, 0);
+                        } else if (val == 2) {
+                          await showPedidoImportPdfDialog();
+                        }
+                      },
                     ),
-                  ],
-                  onSelected: (val) async {
-                    if (val == 1) {
-                      await push(context, const PedidoCreatePage());
-                      final pedidos = FirestoreClient.pedidos.data;
-                      if (pedidos.isEmpty) return;
-                      pedidos.sort((a, b) => a.id.compareTo(b.id));
-                      kanbanCtrl.onAccept(pedidos.last.step, pedidos.last, 0);
-                    } else if (val == 2) {
-                      await showPedidoImportPdfDialog();
-                    }
-                  },
-                ),
-              const W(8),
+                  const W(8),
+                ],
+              ),
             ],
+            backgroundColor: AppColors.primaryMain,
+          ),
+
+          // ── Painel de filtro animado ──
+          AnimatedSize(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            child: _filtroAberto
+                ? KanbanFilterPanel(
+                    utils: utils,
+                    onClose: _fecharFiltro,
+                  )
+                : const SizedBox.shrink(),
           ),
         ],
-        backgroundColor: AppColors.primaryMain,
       ),
     );
   }

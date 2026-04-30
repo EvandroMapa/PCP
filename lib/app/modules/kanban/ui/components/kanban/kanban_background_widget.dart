@@ -10,9 +10,14 @@ class KanbanBackgroundWidget extends StatelessWidget {
       width: double.maxFinite,
       height: double.maxFinite,
       decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/images/kanban_background.png'),
-          fit: BoxFit.cover,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF4A5568),
+            Color(0xFF3D4A5C),
+            Color(0xFF354152),
+          ],
         ),
       ),
       child: child,

@@ -29,12 +29,6 @@ class AppController {
       kanbanCtrl.onInit();
       pedidoCtrl.onInit();
       _setupCascadeListeners();
-      if (key.currentState?.context != null) {
-        precacheImage(
-          const AssetImage('assets/images/kanban_background.png'),
-          key.currentState!.context,
-        );
-      }
     } catch (e) {
       log('AppController: Erro no onInit: $e');
     }

@@ -8,6 +8,7 @@ class PlanoCorteGravadoModel {
   final String bitolaDescricao;
   final String descricao;
   final String status; // 'pendente' ou 'executado'
+  final bool arquivado;
   final int totalBarrasUsadas;
   final double percentualAproveitamento;
   final double totalSobra;
@@ -25,6 +26,7 @@ class PlanoCorteGravadoModel {
     required this.bitolaDescricao,
     required this.descricao,
     this.status = 'pendente',
+    this.arquivado = false,
     required this.totalBarrasUsadas,
     required this.percentualAproveitamento,
     required this.totalSobra,
@@ -44,6 +46,7 @@ class PlanoCorteGravadoModel {
       bitolaDescricao: map['bitola_descricao'] ?? '',
       descricao: map['descricao'] ?? '',
       status: map['status'] ?? 'pendente',
+      arquivado: map['arquivado'] == true,
       totalBarrasUsadas: map['total_barras_usadas'] ?? 0,
       percentualAproveitamento:
           (map['percentual_aproveitamento'] ?? 0).toDouble(),
@@ -70,6 +73,7 @@ class PlanoCorteGravadoModel {
         'bitola_descricao': bitolaDescricao,
         'descricao': descricao,
         'status': status,
+        'arquivado': arquivado,
         'total_barras_usadas': totalBarrasUsadas,
         'percentual_aproveitamento': percentualAproveitamento,
         'total_sobra': totalSobra,

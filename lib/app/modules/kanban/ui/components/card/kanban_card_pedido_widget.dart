@@ -36,6 +36,7 @@ class KanbanCardPedidoWidget extends StatelessWidget {
       onTap: () => kanbanCtrl.setPedido(pedido),
       child: StreamOut<List<NotificacaoModel>>(
         stream: FirestoreClient.notificacoes.dataStream.listen,
+        loading: const SizedBox.shrink(),
         builder: (context, value) {
           final notificacoes = notificacaoCtrl.getNotificaoByUsuarioPedido(
             value,

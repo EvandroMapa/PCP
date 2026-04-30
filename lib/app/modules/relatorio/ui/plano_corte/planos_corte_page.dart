@@ -6,6 +6,7 @@ import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
@@ -28,12 +29,45 @@ class _PlanosCortePageState extends State<PlanosCortePage> {
   bool _carregando = true;
   String? _exportandoId;
 
+  // ─── Filtros ──
+  String? _filtroBitola;
+  int _filtroDias = 7; // 7 = últimos 7 dias por padrão
+  bool _ordenacaoRecente = true; // true = mais recente primeiro
+
+  List<String> get _bitolasList {
+    final set = _planos.map((p) => p.bitolaDescricao).toSet().toList();
+    set.sort();
+    return set;
+  }
+
+  List<PlanoCorteGravadoModel> get _planosFiltrados {
+    var lista = _planos.toList();
+    if (_filtroBitola != null) {
+      lista = lista.where((p) => p.bitolaDescricao == _filtroBitola).toList();
+    }
+    if (_filtroDias > 0) {
+      final limite = DateTime.now().subtract(Duration(days: _filtroDias));
+      lista = lista.where((p) => p.createdAt.isAfter(limite)).toList();
+    }
+    lista.sort((a, b) => _ordenacaoRecente
+        ? b.createdAt.compareTo(a.createdAt)
+        : a.createdAt.compareTo(b.createdAt));
+    return lista;
+  }
+
   @override
   void initState() {
     super.initState();
     setWebTitle('Planos de Corte');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       baseCtrl.appBarActionsStream.add([
+        Tooltip(
+          message: 'Planos Arquivados',
+          child: IconButton(
+            onPressed: () => _mostrarArquivados(),
+            icon: const Icon(Icons.inventory_2_outlined, color: Colors.white),
+          ),
+        ),
         Tooltip(
           message: 'Novo Plano de Corte',
           child: IconButton(
@@ -55,6 +89,7 @@ class _PlanosCortePageState extends State<PlanosCortePage> {
       final data = await SupabaseService.client
           .from('planos_corte')
           .select()
+          .eq('arquivado', false)
           .order('created_at', ascending: false);
       _planos =
           data.map((e) => PlanoCorteGravadoModel.fromSupabaseMap(e)).toList();
@@ -62,6 +97,283 @@ class _PlanosCortePageState extends State<PlanosCortePage> {
       _planos = [];
     }
     setState(() => _carregando = false);
+  }
+
+  Future<void> _arquivarPlano(PlanoCorteGravadoModel plano) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Arquivar plano de corte?'),
+        content: Text(
+            'Deseja arquivar o plano "${plano.descricao.isNotEmpty ? plano.descricao : plano.ordemLocalizator}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryMain,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Arquivar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true) return;
+
+    try {
+      await SupabaseService.client
+          .from('planos_corte')
+          .update({'arquivado': true})
+          .eq('id', plano.id);
+      NotificationService.showPositive(
+        'Plano arquivado',
+        plano.descricao.isNotEmpty ? plano.descricao : plano.ordemLocalizator,
+        position: NotificationPosition.bottom,
+      );
+      _carregarPlanos();
+    } catch (e) {
+      NotificationService.showNegative(
+        'Erro ao arquivar',
+        e.toString(),
+        position: NotificationPosition.bottom,
+      );
+    }
+  }
+
+  Future<bool> _desarquivarPlano(PlanoCorteGravadoModel plano) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Desarquivar plano de corte?'),
+        content: Text(
+            'Deseja desarquivar o plano "${plano.descricao.isNotEmpty ? plano.descricao : plano.ordemLocalizator}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryMain,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Desarquivar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true) return false;
+
+    try {
+      await SupabaseService.client
+          .from('planos_corte')
+          .update({'arquivado': false})
+          .eq('id', plano.id);
+      NotificationService.showPositive(
+        'Plano desarquivado',
+        plano.descricao.isNotEmpty ? plano.descricao : plano.ordemLocalizator,
+        position: NotificationPosition.bottom,
+      );
+      return true;
+    } catch (e) {
+      NotificationService.showNegative(
+        'Erro ao desarquivar',
+        e.toString(),
+        position: NotificationPosition.bottom,
+      );
+      return false;
+    }
+  }
+
+  Future<void> _mostrarArquivados() async {
+    List<PlanoCorteGravadoModel> arquivados = [];
+    bool carregando = true;
+    String? filtroBitolaArq;
+    bool ordenarRecenteArq = true;
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          if (carregando) {
+            SupabaseService.client
+                .from('planos_corte')
+                .select()
+                .eq('arquivado', true)
+                .order('created_at', ascending: false)
+                .then((data) {
+              arquivados = data
+                  .map((e) => PlanoCorteGravadoModel.fromSupabaseMap(e))
+                  .toList();
+              carregando = false;
+              setDialogState(() {});
+            });
+          }
+
+          final bitolasArq = arquivados.map((p) => p.bitolaDescricao).toSet().toList()..sort();
+          var filtrados = filtroBitolaArq != null
+              ? arquivados.where((p) => p.bitolaDescricao == filtroBitolaArq).toList()
+              : arquivados.toList();
+          filtrados.sort((a, b) => ordenarRecenteArq
+              ? b.createdAt.compareTo(a.createdAt)
+              : a.createdAt.compareTo(b.createdAt));
+
+          return AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.inventory_2_outlined, color: Colors.grey[600]),
+                const SizedBox(width: 8),
+                Text('Planos Arquivados', style: AppCss.mediumBold),
+                const Spacer(),
+                if (arquivados.isNotEmpty)
+                  Text('${filtrados.length} plano(s)',
+                      style: AppCss.minimumRegular.setSize(11).setColor(Colors.grey[400]!)),
+              ],
+            ),
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600, maxHeight: 500),
+              child: carregando
+                  ? const Center(child: CircularProgressIndicator())
+                  : arquivados.isEmpty
+                      ? Center(
+                          child: Text('Nenhum plano arquivado.',
+                              style: AppCss.minimumRegular.setColor(Colors.grey[500]!)),
+                        )
+                      : Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Filtro de bitola + ordenação
+                            Row(
+                              children: [
+                                if (bitolasArq.length > 1)
+                                  Expanded(
+                                    child: Container(
+                                      height: 34,
+                                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[50],
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.grey[300]!),
+                                      ),
+                                      child: DropdownButtonHideUnderline(
+                                        child: DropdownButton<String?>(
+                                          value: filtroBitolaArq,
+                                          isExpanded: true,
+                                          hint: Text('Todas as bitolas',
+                                              style: AppCss.minimumRegular.setSize(12).setColor(Colors.grey[500]!)),
+                                          style: AppCss.minimumRegular.setSize(12).setColor(Colors.black),
+                                          icon: Icon(Icons.filter_list, size: 16, color: Colors.grey[400]),
+                                          items: [
+                                            DropdownMenuItem<String?>(
+                                              value: null,
+                                              child: Text('Todas as bitolas', style: AppCss.minimumRegular.setSize(12)),
+                                            ),
+                                            ...bitolasArq.map((b) => DropdownMenuItem(
+                                                  value: b,
+                                                  child: Text(b, style: AppCss.minimumRegular.setSize(12)),
+                                                )),
+                                          ],
+                                          onChanged: (v) => setDialogState(() => filtroBitolaArq = v),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                if (bitolasArq.length > 1) const SizedBox(width: 8),
+                                Tooltip(
+                                  message: ordenarRecenteArq ? 'Mais recente primeiro' : 'Mais antigo primeiro',
+                                  child: InkWell(
+                                    onTap: () => setDialogState(() => ordenarRecenteArq = !ordenarRecenteArq),
+                                    borderRadius: BorderRadius.circular(6),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[50],
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(color: Colors.grey[300]!),
+                                      ),
+                                      child: Icon(
+                                        ordenarRecenteArq ? Icons.arrow_downward : Icons.arrow_upward,
+                                        size: 16,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            // Lista
+                            Flexible(
+                              child: SizedBox(
+                                width: double.maxFinite,
+                                child: ListView.separated(
+                                  shrinkWrap: true,
+                                  itemCount: filtrados.length,
+                                  separatorBuilder: (_, __) =>
+                                      Divider(height: 1, color: Colors.grey[200]),
+                                  itemBuilder: (_, i) {
+                                    final p = filtrados[i];
+                                    final isExec = p.status == 'executado';
+                                    return ListTile(
+                                      dense: true,
+                                      leading: Icon(
+                                        isExec ? Icons.check_circle : Icons.pending_outlined,
+                                        color: isExec ? Colors.green[600] : Colors.orange[600],
+                                        size: 20,
+                                      ),
+                                      title: Text(
+                                        '${p.ordemLocalizator} — ${p.bitolaDescricao}',
+                                        style: AppCss.minimumBold,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      subtitle: Text(
+                                        '${p.descricao.isNotEmpty ? '${p.descricao} · ' : ''}${DateFormat('dd/MM/yy').format(p.createdAt)} · ${p.percentualAproveitamento.toStringAsFixed(1)}%',
+                                        style: AppCss.minimumRegular.setSize(11).setColor(Colors.grey[500]!),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      trailing: Tooltip(
+                                        message: 'Desarquivar',
+                                        child: IconButton(
+                                          icon: Icon(Icons.unarchive_outlined,
+                                              size: 20, color: Colors.blue[700]),
+                                          onPressed: () async {
+                                            final ok = await _desarquivarPlano(p);
+                                            if (ok) {
+                                              arquivados.remove(p);
+                                              setDialogState(() {});
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryMain,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Fechar'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    _carregarPlanos();
   }
 
   // ─── Excluir ──────────────────────────────────────────────────────────────
@@ -339,12 +651,124 @@ class _PlanosCortePageState extends State<PlanosCortePage> {
       return const Center(child: EmptyData());
     }
 
+    final filtrados = _planosFiltrados;
+
     return RefreshIndicator(
       onRefresh: _carregarPlanos,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _planos.length,
-        itemBuilder: (_, i) => _itemPlanoWidget(_planos[i]),
+      child: Column(
+        children: [
+          // ── Barra de filtros ──
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Row(
+              children: [
+                // Filtro Bitola
+                Expanded(
+                  child: Container(
+                    height: 36,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String?>(
+                        value: _filtroBitola,
+                        isExpanded: true,
+                        hint: Text('Todas as bitolas',
+                            style: AppCss.minimumRegular.setSize(12).setColor(Colors.grey[500]!)),
+                        style: AppCss.minimumRegular.setSize(12).setColor(Colors.black),
+                        icon: Icon(Icons.filter_list, size: 16, color: Colors.grey[400]),
+                        items: [
+                          DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text('Todas as bitolas',
+                                style: AppCss.minimumRegular.setSize(12)),
+                          ),
+                          ..._bitolasList.map((b) => DropdownMenuItem(
+                                value: b,
+                                child: Text(b, style: AppCss.minimumRegular.setSize(12)),
+                              )),
+                        ],
+                        onChanged: (v) => setState(() => _filtroBitola = v),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // Filtro Período
+                ...[
+                  _chipDias('Todos', 0),
+                  _chipDias('7d', 7),
+                  _chipDias('30d', 30),
+                  _chipDias('90d', 90),
+                ],
+                const SizedBox(width: 8),
+                // Ordenação
+                Tooltip(
+                  message: _ordenacaoRecente ? 'Mais recente primeiro' : 'Mais antigo primeiro',
+                  child: InkWell(
+                    onTap: () => setState(() => _ordenacaoRecente = !_ordenacaoRecente),
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: Icon(
+                        _ordenacaoRecente ? Icons.arrow_downward : Icons.arrow_upward,
+                        size: 16,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // ── Lista ──
+          Expanded(
+            child: filtrados.isEmpty
+                ? Center(
+                    child: Text('Nenhum plano encontrado com esses filtros.',
+                        style: AppCss.minimumRegular.setColor(Colors.grey[500]!)),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                    itemCount: filtrados.length,
+                    itemBuilder: (_, i) => _itemPlanoWidget(filtrados[i]),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _chipDias(String label, int dias) {
+    final selecionado = _filtroDias == dias;
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: InkWell(
+        onTap: () => setState(() => _filtroDias = dias),
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: selecionado ? AppColors.primaryMain : Colors.white,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: selecionado ? AppColors.primaryMain : Colors.grey[300]!,
+            ),
+          ),
+          child: Text(
+            label,
+            style: AppCss.minimumBold.setSize(11).setColor(
+                  selecionado ? Colors.white : Colors.grey[600]!),
+          ),
+        ),
       ),
     );
   }
@@ -477,6 +901,24 @@ class _PlanosCortePageState extends State<PlanosCortePage> {
                                       )
                                     : Icon(Icons.picture_as_pdf,
                                         size: 18, color: Colors.blue[700]),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          // Botão Arquivar
+                          Tooltip(
+                            message: 'Arquivar',
+                            child: InkWell(
+                              onTap: () => _arquivarPlano(plano),
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Icon(Icons.inventory_2_outlined,
+                                    size: 18, color: Colors.grey[600]),
                               ),
                             ),
                           ),
