@@ -400,7 +400,6 @@ class PedidoController {
 
           await BackendClient.pedidos.update(pai);
         }
-        await BackendClient.pedidos.fetch();
       }
       if (isFromOrder) {
         Navigator.pop(value, form.isEdit ? pedido : null);

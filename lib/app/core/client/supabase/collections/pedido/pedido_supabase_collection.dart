@@ -220,9 +220,14 @@ class PedidoSupabaseCollection extends PedidoCollection {
             'Pedido Salvo com Alertas', 'Erros: ${errorLogs.join(", ")}');
       }
 
-      // O Realtime cuidará de atualizar os dados após o debounce
-      // log('Supabase (Pedido.add): Fetching updated data...');
-      // await fetch();
+      // ── Atualização otimista: injeta na lista local imediatamente ──
+      final currentData = List<PedidoModel>.from(data);
+      currentData.removeWhere((p) => p.id == model.id);
+      currentData.add(model);
+      dataStream.add(currentData);
+      pedidosUnarchivedsStream
+          .add(currentData.where((e) => !e.isArchived).toList());
+
       return model;
     } catch (e) {
       log('Supabase CRITICAL ERROR (Pedido.add): $e');
@@ -292,9 +297,17 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
       await _syncRelationships(model);
 
-      // if (!kanbanCtrl.isDropLocked) {
-      //   await fetch(lock: false);
-      // }
+      // ── Atualização otimista: atualiza lista local imediatamente ──
+      final currentData = List<PedidoModel>.from(data);
+      final idx = currentData.indexWhere((p) => p.id == model.id);
+      if (idx != -1) {
+        currentData[idx] = model;
+      } else {
+        currentData.add(model);
+      }
+      dataStream.add(currentData);
+      pedidosUnarchivedsStream
+          .add(currentData.where((e) => !e.isArchived).toList());
 
       return model;
     } catch (e) {
