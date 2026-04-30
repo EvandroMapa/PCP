@@ -60,12 +60,25 @@ class PedidoSupabaseCollection extends PedidoCollection {
   @override
   Future<void> start({bool lock = true, GetOptions? options}) async {
     if (_isStarted && lock) return;
+
+    // Se estiver no cooldown otimista, não sobrescreve os dados locais
+    if (_optimisticCooldown) {
+      log('Supabase (Pedido.start): bloqueado pelo cooldown otimista.');
+      return;
+    }
+
     _isStarted = true;
     try {
       final response = await SupabaseService.client
           .from(name)
           .select(_selectCompleto)
           .eq('is_archived', false);
+
+      // Verificação DUPLA: o cooldown pode ter sido ativado durante o await
+      if (_optimisticCooldown) {
+        log('Supabase (Pedido.start): cooldown ativado durante fetch, descartando resultado.');
+        return;
+      }
 
       log('Supabase (Pedido.start): ${response.length} pedidos carregados.');
       final pedidos = response.map((pMap) => _mapPedido(pMap)).toList();
@@ -160,6 +173,11 @@ class PedidoSupabaseCollection extends PedidoCollection {
   bool _isListen = false;
   Timer? _realtimeDebounce;
 
+  /// Janela de proteção: após add/update otimista, bloqueia o Realtime
+  /// de sobrescrever os dados locais por alguns segundos.
+  bool _optimisticCooldown = false;
+  Timer? _optimisticTimer;
+
   @override
   Future<void> listen({
     Object? field,
@@ -185,7 +203,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
           _realtimeDebounce?.cancel();
           _realtimeDebounce =
               Timer(const Duration(milliseconds: 1200), () async {
-            if (!kanbanCtrl.isDropLocked) {
+            if (!kanbanCtrl.isDropLocked && !_optimisticCooldown) {
               await start(lock: false);
             }
           });
@@ -227,6 +245,15 @@ class PedidoSupabaseCollection extends PedidoCollection {
       dataStream.add(currentData);
       pedidosUnarchivedsStream
           .add(currentData.where((e) => !e.isArchived).toList());
+
+      // Protege contra o Realtime sobrescrever dados otimistas
+      _optimisticCooldown = true;
+      _optimisticTimer?.cancel();
+      _optimisticTimer = Timer(const Duration(seconds: 4), () {
+        _optimisticCooldown = false;
+        // Após o cooldown, faz fetch para garantir sincronização completa
+        start(lock: false);
+      });
 
       return model;
     } catch (e) {
@@ -308,6 +335,14 @@ class PedidoSupabaseCollection extends PedidoCollection {
       dataStream.add(currentData);
       pedidosUnarchivedsStream
           .add(currentData.where((e) => !e.isArchived).toList());
+
+      // Protege contra o Realtime sobrescrever dados otimistas
+      _optimisticCooldown = true;
+      _optimisticTimer?.cancel();
+      _optimisticTimer = Timer(const Duration(seconds: 4), () {
+        _optimisticCooldown = false;
+        start(lock: false);
+      });
 
       return model;
     } catch (e) {
