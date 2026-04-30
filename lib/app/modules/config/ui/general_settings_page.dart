@@ -9,6 +9,7 @@ import 'package:aco_plus/app/core/services/supabase_storage_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/logo_helper.dart';
+import 'package:aco_plus/app/modules/config/ui/manutencao_settings_widget.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:overlay_support/overlay_support.dart';
@@ -31,6 +32,7 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
     _SidebarItem(icon: Icons.assignment_outlined, label: 'Apontamento CD'),
     _SidebarItem(icon: Icons.alt_route_outlined, label: 'Acompanhamento'),
     _SidebarItem(icon: Icons.image_outlined, label: 'Logomarca'),
+    _SidebarItem(icon: Icons.build_outlined, label: 'Manutenção'),
   ];
 
   @override
@@ -163,6 +165,8 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
         return _trackingSettings();
       case 5:
         return _logoSettings();
+      case 6:
+        return const ManutencaoSettingsWidget();
       default:
         return const SizedBox.shrink();
     }

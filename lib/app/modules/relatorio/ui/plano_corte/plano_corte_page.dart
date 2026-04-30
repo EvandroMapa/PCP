@@ -543,6 +543,7 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
             'elemento': e.nome,
             'posicao': p.nome,
             'os': p.numeroOs,
+            'comprCorte': p.comprCorte.toStringAsFixed(3),
           });
         }
       }
@@ -588,10 +589,11 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
                         ),
                         child: Row(
                           children: [
-                            Expanded(flex: 4, child: Text('Localizador', style: AppCss.minimumBold.setColor(Colors.grey[700]!))),
-                            Expanded(flex: 3, child: Padding(padding: const EdgeInsets.only(left: 40), child: Text('Elemento', style: AppCss.minimumBold.setColor(Colors.grey[700]!)))),
+                            Expanded(flex: 3, child: Text('Localizador', style: AppCss.minimumBold.setColor(Colors.grey[700]!))),
+                            Expanded(flex: 2, child: Padding(padding: const EdgeInsets.only(left: 10), child: Text('Elemento', style: AppCss.minimumBold.setColor(Colors.grey[700]!)))),
                             Expanded(flex: 2, child: Padding(padding: const EdgeInsets.only(left: 10), child: Text('Posição', style: AppCss.minimumBold.setColor(Colors.grey[700]!)))),
                             Expanded(flex: 1, child: Text('OS', style: AppCss.minimumBold.setColor(Colors.grey[700]!))),
+                            Expanded(flex: 2, child: Text('Comprimento', style: AppCss.minimumBold.setColor(Colors.grey[700]!))),
                           ],
                         ),
                       ),
@@ -609,10 +611,11 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
                           ),
                           child: Row(
                             children: [
-                              Expanded(flex: 4, child: Text(item['localizador']!, style: AppCss.minimumRegular, overflow: TextOverflow.ellipsis)),
-                              Expanded(flex: 3, child: Padding(padding: const EdgeInsets.only(left: 40), child: Text(item['elemento']!, style: AppCss.minimumRegular, overflow: TextOverflow.ellipsis))),
+                              Expanded(flex: 3, child: Text(item['localizador']!, style: AppCss.minimumRegular, overflow: TextOverflow.ellipsis)),
+                              Expanded(flex: 2, child: Padding(padding: const EdgeInsets.only(left: 10), child: Text(item['elemento']!, style: AppCss.minimumRegular, overflow: TextOverflow.ellipsis))),
                               Expanded(flex: 2, child: Padding(padding: const EdgeInsets.only(left: 10), child: Text(item['posicao']!, style: AppCss.minimumRegular, overflow: TextOverflow.ellipsis))),
                               Expanded(flex: 1, child: Text(item['os']!, style: AppCss.minimumRegular, overflow: TextOverflow.ellipsis)),
+                              Expanded(flex: 2, child: Text(item['comprCorte']!, style: AppCss.minimumBold.setColor(Colors.red[700]!), overflow: TextOverflow.ellipsis)),
                             ],
                           ),
                         );
