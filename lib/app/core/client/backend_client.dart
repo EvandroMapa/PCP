@@ -8,6 +8,9 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/pedido_col
 import 'package:aco_plus/app/core/client/firestore/collections/step/step_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/usuario_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/tag/tag_collection.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/patio/patio_collection.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/box/box_collection.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido_box/pedido_box_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/ordem_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
@@ -45,6 +48,17 @@ class BackendClient {
 
   static TagCollection get tags =>
       type == BackendType.firestore ? TagCollection() : AppSupabaseClient.tags;
+
+  static PatioCollection get patios =>
+      type == BackendType.firestore ? PatioCollection() : AppSupabaseClient.patios;
+
+  static BoxCollection get boxes =>
+      type == BackendType.firestore ? BoxCollection() : AppSupabaseClient.boxes;
+
+  static PedidoBoxCollection get pedidoBoxes =>
+      type == BackendType.firestore
+          ? PedidoBoxCollection()
+          : AppSupabaseClient.pedidoBoxes;
 
   static ProdutoCollection get produtos => type == BackendType.firestore
       ? ProdutoCollection()

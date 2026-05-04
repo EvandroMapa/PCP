@@ -17,6 +17,7 @@ import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_users
 import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_cd_widget.dart';
 import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_elementos_widget.dart';
 import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_vinculados_widget.dart';
+import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_patio_widget.dart';
 import 'package:aco_plus/app/modules/notificacao/notificacao_controller.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
@@ -168,6 +169,7 @@ class KanbanCardPedidoWidget extends StatelessWidget {
                     },
                   ),
                   KanbanCardVinculadosWidget(pedido: pedido),
+                  KanbanCardPatioWidget(pedido: pedido),
                 ],
               ],
             ),

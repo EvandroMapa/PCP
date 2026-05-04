@@ -19,6 +19,9 @@ class PreferencesService implements Service {
   static final AppStream<List<String>> stepsAcompanhamento =
       AppStream<List<String>>.seed([]);
   static final AppStream<String> whatsappSuporte = AppStream<String>.seed('');
+  static final AppStream<int> maxPedidosPorBox = AppStream<int>.seed(1);
+  static final AppStream<double?> empresaLat = AppStream<double?>.seed(null);
+  static final AppStream<double?> empresaLng = AppStream<double?>.seed(null);
 
   @override
   Future<void> initialize() async {
@@ -83,6 +86,23 @@ class PreferencesService implements Service {
       log('Erro ao carregar apontamento CD: $e');
     }
 
+    // Recupera max pedidos por box
+    try {
+      final maxBoxConfig = await SupabaseService.client
+          .from('configs')
+          .select()
+          .eq('key', 'max_pedidos_por_box')
+          .maybeSingle();
+      if (maxBoxConfig != null) {
+        final val = int.tryParse(maxBoxConfig['value'].toString());
+        if (val != null) {
+          maxPedidosPorBox.add(val.clamp(1, 10));
+        }
+      }
+    } catch (e) {
+      log('Erro ao carregar max pedidos por box: $e');
+    }
+
     // Listeners para salvamento automático
     kanbanColumnWidth.listen.listen((value) {
       instance.setDouble('kanbanColumnWidth', value);
@@ -116,6 +136,16 @@ class PreferencesService implements Service {
             onConflict: 'key');
       } catch (e) {
         log('Erro ao salvar apontamento CD: $e');
+      }
+    });
+
+    maxPedidosPorBox.listen.skip(1).listen((value) async {
+      try {
+        await SupabaseService.client.from('configs').upsert(
+            {'key': 'max_pedidos_por_box', 'value': value},
+            onConflict: 'key');
+      } catch (e) {
+        log('Erro ao salvar max pedidos por box: $e');
       }
     });
 
@@ -187,6 +217,49 @@ class PreferencesService implements Service {
             onConflict: 'key');
       } catch (e) {
         log('Erro ao salvar WhatsApp suporte: $e');
+      }
+    });
+
+    // Recupera localização da empresa
+    try {
+      final latConfig = await SupabaseService.client
+          .from('configs')
+          .select()
+          .eq('key', 'empresa_lat')
+          .maybeSingle();
+      if (latConfig != null) {
+        empresaLat.add(double.tryParse(latConfig['value'].toString()));
+      }
+
+      final lngConfig = await SupabaseService.client
+          .from('configs')
+          .select()
+          .eq('key', 'empresa_lng')
+          .maybeSingle();
+      if (lngConfig != null) {
+        empresaLng.add(double.tryParse(lngConfig['value'].toString()));
+      }
+    } catch (e) {
+      log('Erro ao carregar localização da empresa: $e');
+    }
+
+    empresaLat.listen.skip(1).listen((value) async {
+      try {
+        await SupabaseService.client.from('configs').upsert(
+            {'key': 'empresa_lat', 'value': value.toString()},
+            onConflict: 'key');
+      } catch (e) {
+        log('Erro ao salvar empresa lat: $e');
+      }
+    });
+
+    empresaLng.listen.skip(1).listen((value) async {
+      try {
+        await SupabaseService.client.from('configs').upsert(
+            {'key': 'empresa_lng', 'value': value.toString()},
+            onConflict: 'key');
+      } catch (e) {
+        log('Erro ao salvar empresa lng: $e');
       }
     });
   }

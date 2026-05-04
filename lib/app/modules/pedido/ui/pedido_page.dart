@@ -32,6 +32,7 @@ import 'package:aco_plus/app/modules/pedido/ui/components/pedido_timeline_widget
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_top_bar.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_users_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_vinculados_widget.dart';
+import 'package:aco_plus/app/modules/pedido/ui/components/pedido_localizacao_widget.dart';
 import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_pedido_view_model.dart';
 import 'package:flutter/material.dart';
 
@@ -324,7 +325,9 @@ class _PedidoPageState extends State<PedidoPage>
             _SidebarItemData(Icons.checklist_rounded, 'Checklist', 3),
             _SidebarItemData(
                 Icons.chat_bubble_outline_rounded, 'Comentários', 4),
-            _SidebarItemData(Icons.timeline_rounded, 'Histórico', 5),
+            _SidebarItemData(
+                Icons.place_outlined, 'Localização', 5),
+            _SidebarItemData(Icons.timeline_rounded, 'Histórico', 6),
           ],
           onTap: (i) => setState(() => _dashboardIdx = i),
         ),
@@ -546,8 +549,12 @@ class _PedidoPageState extends State<PedidoPage>
         if (_dashboardIdx == 4)
           PedidoCommentsWidget(pedido),
 
-        // ── 5: Histórico ──
+        // ── 5: Localização ──
         if (_dashboardIdx == 5)
+          PedidoLocalizacaoWidget(pedido),
+
+        // ── 6: Histórico ──
+        if (_dashboardIdx == 6)
           if (pedido.histories.isNotEmpty)
             PedidoTimelineWidget(pedido: pedido),
       ],

@@ -40,7 +40,7 @@ dependencies:
   cpf_cnpj_validator: ^2.0.0
   pdf: ^3.10.7
   shared_preferences: ^2.2.3
-  url_launcher: ^6.2.6
+  url_launcher: ^6.3.2
   file_picker: ^10.0.0
   web: ^1.1.0
   flutter_colorpicker: ^1.1.0
@@ -70,6 +70,9 @@ dependencies:
   mobile_scanner: ^7.0.1
   validators: ^3.0.0
   supabase_flutter: ^2.8.1
+  google_maps_flutter: ^2.17.0
+  google_maps_flutter_web: ^0.6.2+1
+  pointer_interceptor: ^0.10.1+2
 
   # f pub run flutter_launcher_icons && dart run flutter_native_splash:create
 

@@ -32,6 +32,7 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
     _SidebarItem(icon: Icons.assignment_outlined, label: 'Apontamento CD'),
     _SidebarItem(icon: Icons.alt_route_outlined, label: 'Acompanhamento'),
     _SidebarItem(icon: Icons.image_outlined, label: 'Logomarca'),
+    _SidebarItem(icon: Icons.location_on_outlined, label: 'Localização'),
     _SidebarItem(icon: Icons.build_outlined, label: 'Manutenção'),
   ];
 
@@ -166,6 +167,8 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
       case 5:
         return _logoSettings();
       case 6:
+        return _locationSettings();
+      case 7:
         return const ManutencaoSettingsWidget();
       default:
         return const SizedBox.shrink();
@@ -176,65 +179,130 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
   //  PRODUÇÃO
   // ═══════════════════════════════════════════════════
   Widget _productionSettings() {
-    return _settingsCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Limite de Produção Simultânea',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+    return Column(
+      children: [
+        _settingsCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Limite de Produção Simultânea',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Quantidade máxima de elementos que podem ser colocados em produção ao mesmo tempo por pedido.',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 24),
+              StreamOut<int>(
+                stream: PreferencesService.maxElementosProducao.listen,
+                builder: (context, value) {
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _numericButton(
+                        icon: Icons.remove,
+                        onPressed: value > 1
+                            ? () => PreferencesService.maxElementosProducao
+                                .add(value - 1)
+                            : null,
+                      ),
+                      const SizedBox(width: 24),
+                      Container(
+                        width: 100,
+                        height: 60,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.secondary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                              color: AppColors.secondary.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          value.toString(),
+                          style: AppCss.largeBold
+                              .setSize(28)
+                              .setColor(AppColors.secondary),
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      _numericButton(
+                        icon: Icons.add,
+                        onPressed: value < 30
+                            ? () => PreferencesService.maxElementosProducao
+                                .add(value + 1)
+                            : null,
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Quantidade máxima de elementos que podem ser colocados em produção ao mesmo tempo por pedido.',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+        ),
+        const SizedBox(height: 16),
+        _settingsCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Quantidade Máxima de Pedidos por Box',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Define o limite global de pedidos que podem ser alocados simultaneamente em um único box do pátio.',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 24),
+              StreamOut<int>(
+                stream: PreferencesService.maxPedidosPorBox.listen,
+                builder: (context, value) {
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _numericButton(
+                        icon: Icons.remove,
+                        onPressed: value > 1
+                            ? () => PreferencesService.maxPedidosPorBox
+                                .add(value - 1)
+                            : null,
+                      ),
+                      const SizedBox(width: 24),
+                      Container(
+                        width: 100,
+                        height: 60,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.secondary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                              color: AppColors.secondary.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          value.toString(),
+                          style: AppCss.largeBold
+                              .setSize(28)
+                              .setColor(AppColors.secondary),
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      _numericButton(
+                        icon: Icons.add,
+                        onPressed: value < 10
+                            ? () => PreferencesService.maxPedidosPorBox
+                                .add(value + 1)
+                            : null,
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
           ),
-          const SizedBox(height: 24),
-          StreamOut<int>(
-            stream: PreferencesService.maxElementosProducao.listen,
-            builder: (context, value) {
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _numericButton(
-                    icon: Icons.remove,
-                    onPressed: value > 1
-                        ? () => PreferencesService.maxElementosProducao
-                            .add(value - 1)
-                        : null,
-                  ),
-                  const SizedBox(width: 24),
-                  Container(
-                    width: 100,
-                    height: 60,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: AppColors.secondary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color: AppColors.secondary.withValues(alpha: 0.3)),
-                    ),
-                    child: Text(
-                      value.toString(),
-                      style: AppCss.largeBold
-                          .setSize(28)
-                          .setColor(AppColors.secondary),
-                    ),
-                  ),
-                  const SizedBox(width: 24),
-                  _numericButton(
-                    icon: Icons.add,
-                    onPressed: value < 30
-                        ? () => PreferencesService.maxElementosProducao
-                            .add(value + 1)
-                        : null,
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -735,6 +803,124 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
       'O sistema voltará a usar a logo padrão',
       position: NotificationPosition.bottom,
     );
+  }
+
+  // ═══════════════════════════════════════════════════
+  //  LOCALIZAÇÃO
+  // ═══════════════════════════════════════════════════
+  Widget _locationSettings() {
+    final savedLat = PreferencesService.empresaLat.value;
+    final savedLng = PreferencesService.empresaLng.value;
+    final colarController = TextEditingController(
+      text: (savedLat != null && savedLng != null) ? '$savedLat, $savedLng' : '',
+    );
+
+    return _settingsCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Localização da Empresa',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Defina as coordenadas da sede da empresa. '
+            'Este ponto será usado como centro inicial nos mapas do sistema.',
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 24),
+          TextFormField(
+            controller: colarController,
+            decoration: InputDecoration(
+              labelText: 'Coordenadas (Latitude, Longitude)',
+              hintText: 'Cole aqui: -20.644818, -43.809243',
+              prefixIcon: const Icon(Icons.content_paste_rounded),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Center(
+            child: ElevatedButton.icon(
+              onPressed: () {
+                final parsed = _parseCoordenadas(colarController.text);
+                if (parsed != null) {
+                  PreferencesService.empresaLat.add(parsed.$1);
+                  PreferencesService.empresaLng.add(parsed.$2);
+                  NotificationService.showPositive(
+                    'Localização salva',
+                    'Lat: ${parsed.$1} | Lng: ${parsed.$2}',
+                    position: NotificationPosition.bottom,
+                  );
+                } else {
+                  NotificationService.showNegative(
+                    'Formato inválido',
+                    'Cole no formato: -20.6448, -43.8092',
+                    position: NotificationPosition.bottom,
+                  );
+                }
+              },
+              icon: const Icon(Icons.save_outlined, size: 18),
+              label: const Text('Salvar Localização'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryMain,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.blue[100]!),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.tips_and_updates_outlined, color: Colors.blue[700], size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Dica: No Google Maps, clique com o botão direito sobre o local da empresa e copie as coordenadas. Cole diretamente no campo acima.',
+                    style: TextStyle(fontSize: 12, color: Colors.blue[900], height: 1.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Faz o parse de coordenadas coladas do Google Maps
+  /// Aceita formatos: "-20.644818, -43.809243" ou "-20.644818 -43.809243"
+  (double, double)? _parseCoordenadas(String input) {
+    final cleaned = input.trim();
+    if (cleaned.isEmpty) return null;
+
+    // Tenta separar por vírgula
+    List<String> parts;
+    if (cleaned.contains(',')) {
+      parts = cleaned.split(',').map((s) => s.trim()).toList();
+    } else {
+      // Tenta separar por espaço (quando não tem vírgula)
+      parts = cleaned.split(RegExp(r'\s+')).where((s) => s.isNotEmpty).toList();
+    }
+
+    if (parts.length != 2) return null;
+
+    final lat = double.tryParse(parts[0]);
+    final lng = double.tryParse(parts[1]);
+    if (lat == null || lng == null) return null;
+
+    return (lat, lng);
   }
 
   // ═══════════════════════════════════════════════════

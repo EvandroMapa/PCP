@@ -16,6 +16,9 @@ import 'package:aco_plus/app/core/client/supabase/collections/automatizacao/auto
 import 'package:aco_plus/app/core/client/supabase/collections/notificacao/notificacao_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/elemento/elemento_arquivo_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/elemento/elemento_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/patio/patio_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/box/box_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/pedido_box/pedido_box_supabase_collection.dart';
 
 class AppSupabaseClient {
   static OrdemSupabaseCollection ordens = OrdemSupabaseCollection();
@@ -43,6 +46,10 @@ class AppSupabaseClient {
   static ElementoArquivoSupabaseCollection elementoArquivos =
       ElementoArquivoSupabaseCollection();
   static ElementoSupabaseCollection elementos = ElementoSupabaseCollection();
+  static PatioSupabaseCollection patios = PatioSupabaseCollection();
+  static BoxSupabaseCollection boxes = BoxSupabaseCollection();
+  static PedidoBoxSupabaseCollection pedidoBoxes =
+      PedidoBoxSupabaseCollection();
 
   static Future<void> init() async {
     try {
@@ -64,6 +71,9 @@ class AppSupabaseClient {
       notificacoes.listen();
       elementoArquivos.listen();
       elementos.listen();
+      patios.listen();
+      boxes.listen();
+      pedidoBoxes.listen();
 
       // ── 2. Fetches sequenciais (dados iniciais) ─────────────────────────
       await usuarioTipos
@@ -108,6 +118,15 @@ class AppSupabaseClient {
       await elementos
           .start()
           .catchError((e) => log('Error starting elementos: $e'));
+      await patios
+          .start()
+          .catchError((e) => log('Error starting patios: $e'));
+      await boxes
+          .start()
+          .catchError((e) => log('Error starting boxes: $e'));
+      await pedidoBoxes
+          .start()
+          .catchError((e) => log('Error starting pedidoBoxes: $e'));
       await ordens.startOnlyArquivadas();
 
       // Pedidos depende de clientes/steps para mapeamento

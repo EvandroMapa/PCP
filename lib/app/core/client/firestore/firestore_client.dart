@@ -9,6 +9,9 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/pedido_col
 import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/step_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/tag/tag_collection.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/patio/patio_collection.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/box/box_collection.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido_box/pedido_box_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/usuario_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/version/version_collection.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
@@ -27,6 +30,9 @@ class FirestoreClient {
   static OrdemCollection get ordens => BackendClient.ordens;
   static AutomatizacaoCollection get automatizacao =>
       BackendClient.automatizacao;
+  static PatioCollection get patios => BackendClient.patios;
+  static BoxCollection get boxes => BackendClient.boxes;
+  static PedidoBoxCollection get pedidoBoxes => BackendClient.pedidoBoxes;
 
   static NotificacaoCollection get notificacoes => BackendClient.notificacoes;
 

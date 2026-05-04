@@ -138,25 +138,38 @@ class ElementoController {
       loadingMessageStream.add(
           'Montando ${elementosRaw.length} elementos detectados...\nBaixando posições e arquivos...');
 
-      log('onFetch: 3 - Buscando posicoes e arquivos...');
-      // Busca todas as posições e arquivos em paralelo (2 queries em vez de N*2)
-      final results = await Future.wait([
-        SupabaseService.client
-            .from('elemento_posicoes')
-            .select()
-            .filter('elemento_id', 'in', eIds)
-            .timeout(const Duration(seconds: 15)),
-        SupabaseService.client
-            .from('elemento_arquivos')
-            .select()
-            .filter('elemento_id', 'in', eIds)
-            .timeout(const Duration(seconds: 15)),
-      ]);
+      log('onFetch: 3 - Buscando posicoes e arquivos em lotes...');
+      
+      // Busca em lotes de 100 para evitar erro 400 (URL muito longa) no Supabase
+      const batchSize = 100;
+      final List<Map<String, dynamic>> allPosicoes = [];
+      final List<Map<String, dynamic>> allArquivos = [];
+
+      for (var i = 0; i < eIds.length; i += batchSize) {
+        final end = (i + batchSize < eIds.length) ? i + batchSize : eIds.length;
+        final batchIds = eIds.sublist(i, end);
+        
+        loadingMessageStream.add(
+          'Baixando posições e arquivos...\nLote ${(i ~/ batchSize) + 1} de ${(eIds.length / batchSize).ceil()}');
+
+        final batchResults = await Future.wait([
+          SupabaseService.client
+              .from('elemento_posicoes')
+              .select()
+              .filter('elemento_id', 'in', batchIds)
+              .timeout(const Duration(seconds: 15)),
+          SupabaseService.client
+              .from('elemento_arquivos')
+              .select()
+              .filter('elemento_id', 'in', batchIds)
+              .timeout(const Duration(seconds: 15)),
+        ]);
+        
+        allPosicoes.addAll(List<Map<String, dynamic>>.from(batchResults[0]));
+        allArquivos.addAll(List<Map<String, dynamic>>.from(batchResults[1]));
+      }
       log('onFetch: 4 - Consultas filhas concluidas.');
       loadingMessageStream.add('Processando dados recebidos...');
-
-      final allPosicoes = List<Map<String, dynamic>>.from(results[0]);
-      final allArquivos = List<Map<String, dynamic>>.from(results[1]);
 
       final List<ElementoModel> result = elementosRaw.map((e) {
         final eId = e['id'].toString();
