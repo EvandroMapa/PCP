@@ -128,7 +128,7 @@ class _PatioTabsPageState extends State<PatioTabsPage>
                         children: [
                           Icon(Icons.map_outlined, size: 16),
                           SizedBox(width: 6),
-                          Text('Parque'),
+                          Text('Parque Logístico'),
                         ],
                       ),
                     ),

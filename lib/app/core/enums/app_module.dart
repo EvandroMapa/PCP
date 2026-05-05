@@ -13,8 +13,8 @@ import 'package:aco_plus/app/modules/relatorio/ui/plano_corte/planos_corte_page.
 import 'package:aco_plus/app/modules/ponta/ui/pontas_page.dart';
 import 'package:aco_plus/app/modules/step/ui/steps_page.dart';
 import 'package:aco_plus/app/modules/tag/ui/tags_page.dart';
-import 'package:aco_plus/app/core/utils/app_colors.dart';
-import 'package:aco_plus/app/core/utils/app_css.dart';
+
+
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -74,27 +74,10 @@ extension AppModuleExt on AppModule {
   }
 
   PreferredSizeWidget? appBar(BuildContext context) {
-    if (this == AppModule.kanban) {
+    if (this == AppModule.kanban || this == AppModule.dashboard) {
       return PreferredSize(
         preferredSize: Size.zero,
         child: SizedBox.shrink(),
-      );
-    }
-    if (this == AppModule.dashboard) {
-      return AppBar(
-        iconTheme: const IconThemeData(color: Colors.white, size: 20),
-        backgroundColor: AppColors.primaryMain,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Gestão a Vista',
-                style: AppCss.mediumBold.setSize(20).setColor(Colors.white)),
-            Text('Monitoramento em tempo real de produção e consumo',
-                style: AppCss.minimumRegular
-                    .setSize(12)
-                    .setColor(Colors.white.withValues(alpha: 0.8))),
-          ],
-        ),
       );
     }
     return null;

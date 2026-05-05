@@ -6,8 +6,10 @@ import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
+import 'package:aco_plus/app/core/services/preferences_service.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PedidoLocalizacaoWidget extends StatefulWidget {
@@ -366,7 +368,6 @@ class _PedidoLocalizacaoWidgetState extends State<PedidoLocalizacaoWidget> {
                     child: Row(
                     children: patios.map((p) {
                     final sel = _patioSelecionado?.id == p.id;
-                    // Contar boxes com alocação deste pedido neste pátio
                     final boxIds = FirestoreClient.boxes.data
                         .where((b) => b.patioId == p.id)
                         .map((b) => b.id)
@@ -375,6 +376,7 @@ class _PedidoLocalizacaoWidgetState extends State<PedidoLocalizacaoWidget> {
                         .getByPedidoId(widget.pedido.id)
                         .where((a) => boxIds.contains(a.boxId))
                         .length;
+                    final temPedido = qtdAlocados > 0;
 
                     return Padding(
                       padding: const EdgeInsets.only(right: 8),
@@ -390,13 +392,17 @@ class _PedidoLocalizacaoWidgetState extends State<PedidoLocalizacaoWidget> {
                         decoration: BoxDecoration(
                           color: sel
                               ? AppColors.primaryMain
-                              : const Color(0xFFF1F5F9),
+                              : temPedido
+                                  ? const Color(0xFF16A34A).withValues(alpha: 0.08)
+                                  : const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: sel
                                 ? AppColors.primaryMain
-                                : const Color(0xFFE2E8F0),
-                            width: sel ? 1.5 : 1,
+                                : temPedido
+                                    ? const Color(0xFF16A34A).withValues(alpha: 0.5)
+                                    : const Color(0xFFE2E8F0),
+                            width: sel ? 1.5 : temPedido ? 1.5 : 1,
                           ),
                           boxShadow: sel
                               ? [
@@ -413,51 +419,19 @@ class _PedidoLocalizacaoWidgetState extends State<PedidoLocalizacaoWidget> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              Icons.grid_view_rounded,
+                              temPedido && !sel ? Icons.check_circle_rounded : Icons.grid_view_rounded,
                               size: 14,
-                              color:
-                                  sel ? Colors.white : const Color(0xFF94A3B8),
+                              color: sel ? Colors.white : temPedido ? const Color(0xFF16A34A) : const Color(0xFF94A3B8),
                             ),
                             const SizedBox(width: 6),
                             Text(
                               p.nome,
                               style: TextStyle(
                                 fontSize: 13,
-                                fontWeight:
-                                    sel ? FontWeight.w700 : FontWeight.w500,
-                                color: sel
-                                    ? Colors.white
-                                    : const Color(0xFF475569),
+                                fontWeight: sel || temPedido ? FontWeight.w700 : FontWeight.w500,
+                                color: sel ? Colors.white : temPedido ? const Color(0xFF15803D) : const Color(0xFF475569),
                               ),
                             ),
-                            if (p.latitude != null && p.longitude != null) ...[
-                              const SizedBox(width: 8),
-                              GestureDetector(
-                                onTap: () async {
-                                  final url =
-                                      'https://www.google.com/maps/search/${p.latitude},${p.longitude}/@${p.latitude},${p.longitude},21z/data=!3m1!1e3';
-                                  if (await canLaunchUrl(Uri.parse(url))) {
-                                    await launchUrl(Uri.parse(url),
-                                        mode: LaunchMode.externalApplication);
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: BoxDecoration(
-                                    color: sel
-                                        ? Colors.white.withValues(alpha: 0.2)
-                                        : AppColors.primaryMain
-                                            .withValues(alpha: 0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.map_rounded,
-                                    size: 14,
-                                    color: sel ? Colors.white : AppColors.primaryMain,
-                                  ),
-                                ),
-                              ),
-                            ],
                             if (qtdAlocados > 0) ...[
                               const SizedBox(width: 6),
                               Container(
@@ -513,6 +487,7 @@ class _PedidoLocalizacaoWidgetState extends State<PedidoLocalizacaoWidget> {
               selecionados: salvos,
               onToggle: _toggleBox,
               localizador: widget.pedido.localizador,
+              onAbrirMapa: _temLinkMapa(_patioSelecionado!) ? () => _abrirMapa(context, _patioSelecionado!) : null,
             ),
           ),
 
@@ -544,6 +519,32 @@ class _PedidoLocalizacaoWidgetState extends State<PedidoLocalizacaoWidget> {
       ],
     );
   }
+
+  bool _temLinkMapa(PatioModel p) {
+    if (PreferencesService.modoMapa.value == 'geo') {
+      return p.latitude != null && p.longitude != null;
+    } else {
+      return p.parqueX != null && p.parqueY != null;
+    }
+  }
+
+  void _abrirMapa(BuildContext context, PatioModel p) async {
+    if (PreferencesService.modoMapa.value == 'geo') {
+      if (p.latitude != null && p.longitude != null) {
+        final url = 'https://www.google.com/maps/place/${p.latitude},${p.longitude}/@${p.latitude},${p.longitude},21z/data=!3m1!1e3';
+        if (await canLaunchUrl(Uri.parse(url))) {
+          await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+        }
+      }
+    } else {
+      if (p.parqueX != null && p.parqueY != null) {
+        showDialog(
+          context: context,
+          builder: (ctx) => _DialogCroquiParque(patioDestaque: p, localizador: widget.pedido.localizador),
+        );
+      }
+    }
+  }
 }
 
 // ── Mapa compacto de boxes clicáveis ──────────────────────────────────────────
@@ -554,6 +555,7 @@ class _MapaCompacto extends StatelessWidget {
   final Set<String> selecionados;
   final String localizador;
   final void Function(BoxModel) onToggle;
+  final VoidCallback? onAbrirMapa;
 
   const _MapaCompacto({
     required this.patio,
@@ -561,6 +563,7 @@ class _MapaCompacto extends StatelessWidget {
     required this.selecionados,
     required this.onToggle,
     required this.localizador,
+    this.onAbrirMapa,
   });
 
   @override
@@ -652,45 +655,30 @@ class _MapaCompacto extends StatelessWidget {
                             final w = box.comprimento * cellSize;
                             final h = box.largura * cellSize;
                             final vertical = h > w * 1.3;
-
                             final textWidget = FittedBox(
                               fit: BoxFit.scaleDown,
-                              child: Text(
-                                label,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight:
-                                      sel ? FontWeight.w900 : FontWeight.w700,
-                                  color: sel
-                                      ? box.color.withValues(alpha: 0.95)
-                                      : lotado
-                                          ? Colors.red.withValues(alpha: 0.6)
-                                          : box.color,
-                                  height: 1.3,
-                                ),
-                              ),
+                              child: Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 13, fontWeight: sel ? FontWeight.w900 : FontWeight.w700, color: sel ? box.color.withValues(alpha: 0.95) : lotado ? Colors.red.withValues(alpha: 0.6) : box.color, height: 1.3)),
                             );
-
+                            Widget content;
                             if (vertical) {
-                              return Center(
-                                child: RotatedBox(
-                                  quarterTurns: 1,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(2),
-                                    child: textWidget,
-                                  ),
-                                ),
-                              );
+                              content = Center(child: RotatedBox(quarterTurns: 1, child: Padding(padding: const EdgeInsets.all(2), child: textWidget)));
+                            } else {
+                              content = Align(alignment: Alignment.center, child: Padding(padding: const EdgeInsets.all(2), child: textWidget));
                             }
-
-                            return Align(
-                              alignment: Alignment.center,
-                              child: Padding(
-                                padding: const EdgeInsets.all(2),
-                                child: textWidget,
-                              ),
-                            );
+                            if (sel && onAbrirMapa != null) {
+                              return Stack(children: [
+                                content,
+                                Positioned(top: 2, right: 2, child: GestureDetector(
+                                  onTap: onAbrirMapa,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(color: box.color.withValues(alpha: 0.85), shape: BoxShape.circle),
+                                    child: Icon(PreferencesService.modoMapa.value == 'geo' ? Icons.map_rounded : Icons.grid_on_rounded, size: 16, color: Colors.white),
+                                  ),
+                                )),
+                              ]);
+                            }
+                            return content;
                           }),
                         ),
                       ),
@@ -734,6 +722,133 @@ class _MapaCompactoPainter extends CustomPainter {
     }
   }
 
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+class _DialogCroquiParque extends StatefulWidget {
+  final PatioModel patioDestaque;
+  final String localizador;
+  const _DialogCroquiParque({required this.patioDestaque, required this.localizador});
+  @override
+  State<_DialogCroquiParque> createState() => _DialogCroquiParqueState();
+}
+
+class _DialogCroquiParqueState extends State<_DialogCroquiParque> with SingleTickerProviderStateMixin {
+  late AnimationController _pulseCtrl;
+  late Animation<double> _pulseAnim;
+  static const _cores = [Color(0xFF3B82F6), Color(0xFF10B981), Color(0xFFF59E0B), Color(0xFFEF4444), Color(0xFF8B5CF6), Color(0xFF06B6D4), Color(0xFFF97316), Color(0xFFEC4899)];
+  Color _corDoPatio(int i) => _cores[i % _cores.length];
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat(reverse: true);
+    _pulseAnim = Tween<double>(begin: 0.3, end: 0.9).animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() { _pulseCtrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    final comp = PreferencesService.parqueComprimento.value;
+    final larg = PreferencesService.parqueLargura.value;
+    if (comp <= 0 || larg <= 0) return Dialog(child: Padding(padding: const EdgeInsets.all(32), child: Text('Parque n\u00e3o configurado.')));
+    final patios = FirestoreClient.patios.data.where((p) => p.parqueX != null && p.parqueY != null).toList();
+
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: KeyboardListener(
+        focusNode: FocusNode()..requestFocus(),
+        autofocus: true,
+        onKeyEvent: (event) {
+          if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+            Navigator.pop(context);
+          }
+        },
+        child: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: SizedBox(
+            width: 1000, height: 800,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: LayoutBuilder(builder: (context, constraints) {
+              final maxW = constraints.maxWidth;
+              final maxH = constraints.maxHeight;
+              final cellSize = (maxW / comp) < (maxH / larg) ? maxW / comp : maxH / larg;
+              final totalW = cellSize * comp;
+              final totalH = cellSize * larg;
+              return Center(child: Container(
+                width: totalW, height: totalH,
+                decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFCBD5E1))),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(7),
+                  child: CustomPaint(
+                    size: Size(totalW, totalH),
+                    painter: _ParqueGridPainter(comprimento: comp, largura: larg, cellSize: cellSize),
+                    child: Stack(children: patios.asMap().entries.map((entry) {
+                      final idx = entry.key;
+                      final p = entry.value;
+                      final cor = _corDoPatio(idx);
+                      final isDestaque = p.id == widget.patioDestaque.id;
+                      return Positioned(
+                        left: p.parqueX! * cellSize, top: p.parqueY! * cellSize,
+                        width: p.comprimento * cellSize, height: p.largura * cellSize,
+                        child: isDestaque
+                          ? AnimatedBuilder(animation: _pulseAnim, builder: (_, __) => Container(
+                              margin: const EdgeInsets.all(1),
+                              decoration: BoxDecoration(
+                                color: cor.withValues(alpha: 0.35), borderRadius: BorderRadius.circular(4),
+                                border: Border.all(color: cor, width: 3),
+                                boxShadow: [BoxShadow(color: cor.withValues(alpha: _pulseAnim.value), blurRadius: 12, spreadRadius: 2)],
+                              ),
+                              child: Stack(children: [
+                                Center(child: FittedBox(fit: BoxFit.scaleDown, child: Padding(padding: const EdgeInsets.all(4), child: Column(mainAxisSize: MainAxisSize.min, children: [
+                                  Text(p.nome, textAlign: TextAlign.center, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: cor)),
+                                  Text('${p.comprimento}m \u00d7 ${p.largura}m', style: TextStyle(fontSize: 9, color: cor.withValues(alpha: 0.7))),
+                                ])))),
+                                Positioned(top: 2, right: 4, child: Icon(Icons.location_on, size: 16, color: cor)),
+                              ]),
+                            ))
+                          : Tooltip(
+                              message: '${p.nome} (${p.comprimento}m \u00d7 ${p.largura}m)',
+                              child: Container(
+                                margin: const EdgeInsets.all(1),
+                                decoration: BoxDecoration(color: cor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(4), border: Border.all(color: cor.withValues(alpha: 0.4), width: 1)),
+                                child: Center(child: FittedBox(fit: BoxFit.scaleDown, child: Padding(padding: const EdgeInsets.all(4), child: Text(p.nome, textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cor.withValues(alpha: 0.7)))))),
+                              ),
+                            ),
+                      );
+                    }).toList()),
+                  ),
+                ),
+              ));
+            }),
+           ),
+        ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ParqueGridPainter extends CustomPainter {
+  final int comprimento, largura;
+  final double cellSize;
+  _ParqueGridPainter({required this.comprimento, required this.largura, required this.cellSize});
+  @override
+  void paint(Canvas canvas, Size size) {
+    final sw = (cellSize * 0.04).clamp(0.3, 1.5);
+    final paint = Paint()..color = const Color(0xFFB0BEC5)..strokeWidth = sw;
+    for (int i = 0; i <= largura; i++) {
+      canvas.drawLine(Offset(0, i * cellSize), Offset(size.width, i * cellSize), paint);
+    }
+    for (int i = 0; i <= comprimento; i++) {
+      canvas.drawLine(Offset(i * cellSize, 0), Offset(i * cellSize, size.height), paint);
+    }
+  }
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

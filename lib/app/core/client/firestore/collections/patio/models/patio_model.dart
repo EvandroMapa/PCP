@@ -7,6 +7,8 @@ class PatioModel {
   final int largura; // metros (eixo Y)
   final double? latitude;
   final double? longitude;
+  final int? parqueX; // posição X no croqui do parque (metros)
+  final int? parqueY; // posição Y no croqui do parque (metros)
   final DateTime createdAt;
 
   PatioModel({
@@ -16,6 +18,8 @@ class PatioModel {
     required this.largura,
     this.latitude,
     this.longitude,
+    this.parqueX,
+    this.parqueY,
     required this.createdAt,
   });
 
@@ -26,6 +30,8 @@ class PatioModel {
         largura: 0,
         latitude: null,
         longitude: null,
+        parqueX: null,
+        parqueY: null,
         createdAt: DateTime.now(),
       );
 
@@ -37,6 +43,8 @@ class PatioModel {
       'largura': largura,
       'latitude': latitude,
       'longitude': longitude,
+      'parque_x': parqueX,
+      'parque_y': parqueY,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -49,6 +57,8 @@ class PatioModel {
       largura: map['largura'] ?? 0,
       latitude: map['latitude'] != null ? (map['latitude'] as num).toDouble() : null,
       longitude: map['longitude'] != null ? (map['longitude'] as num).toDouble() : null,
+      parqueX: map['parque_x'] as int?,
+      parqueY: map['parque_y'] as int?,
       createdAt: map['created_at'] != null
           ? DateTime.parse(map['created_at'])
           : DateTime.now(),
@@ -63,6 +73,8 @@ class PatioModel {
       'largura': largura,
       'latitude': latitude,
       'longitude': longitude,
+      'parqueX': parqueX,
+      'parqueY': parqueY,
       'createdAt': createdAt.millisecondsSinceEpoch,
     };
   }
@@ -75,6 +87,8 @@ class PatioModel {
       largura: map['largura'] ?? 0,
       latitude: map['latitude'] != null ? (map['latitude'] as num).toDouble() : null,
       longitude: map['longitude'] != null ? (map['longitude'] as num).toDouble() : null,
+      parqueX: map['parqueX'] as int?,
+      parqueY: map['parqueY'] as int?,
       createdAt: map['createdAt'] != null
           ? DateTime.fromMillisecondsSinceEpoch(map['createdAt'])
           : DateTime.now(),
@@ -93,6 +107,8 @@ class PatioModel {
     int? largura,
     double? Function()? latitude,
     double? Function()? longitude,
+    int? Function()? parqueX,
+    int? Function()? parqueY,
     DateTime? createdAt,
   }) {
     return PatioModel(
@@ -102,6 +118,8 @@ class PatioModel {
       largura: largura ?? this.largura,
       latitude: latitude != null ? latitude() : this.latitude,
       longitude: longitude != null ? longitude() : this.longitude,
+      parqueX: parqueX != null ? parqueX() : this.parqueX,
+      parqueY: parqueY != null ? parqueY() : this.parqueY,
       createdAt: createdAt ?? this.createdAt,
     );
   }

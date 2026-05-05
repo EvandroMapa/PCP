@@ -815,87 +815,138 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
       text: (savedLat != null && savedLng != null) ? '$savedLat, $savedLng' : '',
     );
 
-    return _settingsCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Localização da Empresa',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Defina as coordenadas da sede da empresa. '
-            'Este ponto será usado como centro inicial nos mapas do sistema.',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 24),
-          TextFormField(
-            controller: colarController,
-            decoration: InputDecoration(
-              labelText: 'Coordenadas (Latitude, Longitude)',
-              hintText: 'Cole aqui: -20.644818, -43.809243',
-              prefixIcon: const Icon(Icons.content_paste_rounded),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
+    return Column(
+      children: [
+        // ── Modo do Mapa ──
+        _settingsCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Modo de Visualização do Mapa',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Center(
-            child: ElevatedButton.icon(
-              onPressed: () {
-                final parsed = _parseCoordenadas(colarController.text);
-                if (parsed != null) {
-                  PreferencesService.empresaLat.add(parsed.$1);
-                  PreferencesService.empresaLng.add(parsed.$2);
-                  NotificationService.showPositive(
-                    'Localização salva',
-                    'Lat: ${parsed.$1} | Lng: ${parsed.$2}',
-                    position: NotificationPosition.bottom,
-                  );
-                } else {
-                  NotificationService.showNegative(
-                    'Formato inválido',
-                    'Cole no formato: -20.6448, -43.8092',
-                    position: NotificationPosition.bottom,
-                  );
-                }
-              },
-              icon: const Icon(Icons.save_outlined, size: 18),
-              label: const Text('Salvar Localização'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryMain,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              const SizedBox(height: 8),
+              Text(
+                'Define como a localização dos pedidos será exibida no sistema: '
+                'no mapa do Google Maps ou no croqui do parque logístico.',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
-            ),
+              const SizedBox(height: 24),
+              StreamOut<String>(
+                stream: PreferencesService.modoMapa.listen,
+                builder: (_, currentValue) {
+                  return Column(
+                    children: [
+                      _apontamentoOption(
+                        title: 'Croqui',
+                        subtitle: 'Exibe o mapa visual do parque logístico com os pátios e boxes',
+                        icon: Icons.grid_on_rounded,
+                        value: 'croqui',
+                        currentValue: currentValue,
+                        onTap: () => PreferencesService.modoMapa.add('croqui'),
+                      ),
+                      const SizedBox(height: 12),
+                      _apontamentoOption(
+                        title: 'Geolocalização',
+                        subtitle: 'Abre o Google Maps com a localização real do pátio',
+                        icon: Icons.map_outlined,
+                        value: 'geo',
+                        currentValue: currentValue,
+                        onTap: () => PreferencesService.modoMapa.add('geo'),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
           ),
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.blue[100]!),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.tips_and_updates_outlined, color: Colors.blue[700], size: 18),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Dica: No Google Maps, clique com o botão direito sobre o local da empresa e copie as coordenadas. Cole diretamente no campo acima.',
-                    style: TextStyle(fontSize: 12, color: Colors.blue[900], height: 1.5),
+        ),
+        const SizedBox(height: 16),
+        // ── Localização da Empresa ──
+        _settingsCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Localização da Empresa',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Defina as coordenadas da sede da empresa. '
+                'Este ponto será usado como centro inicial nos mapas do sistema.',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 24),
+              TextFormField(
+                controller: colarController,
+                decoration: InputDecoration(
+                  labelText: 'Coordenadas (Latitude, Longitude)',
+                  hintText: 'Cole aqui: -20.644818, -43.809243',
+                  prefixIcon: const Icon(Icons.content_paste_rounded),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 24),
+              Center(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    final parsed = _parseCoordenadas(colarController.text);
+                    if (parsed != null) {
+                      PreferencesService.empresaLat.add(parsed.$1);
+                      PreferencesService.empresaLng.add(parsed.$2);
+                      NotificationService.showPositive(
+                        'Localização salva',
+                        'Lat: ${parsed.$1} | Lng: ${parsed.$2}',
+                        position: NotificationPosition.bottom,
+                      );
+                    } else {
+                      NotificationService.showNegative(
+                        'Formato inválido',
+                        'Cole no formato: -20.6448, -43.8092',
+                        position: NotificationPosition.bottom,
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.save_outlined, size: 18),
+                  label: const Text('Salvar Localização'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryMain,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.blue[100]!),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.tips_and_updates_outlined, color: Colors.blue[700], size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Dica: No Google Maps, clique com o botão direito sobre o local da empresa e copie as coordenadas. Cole diretamente no campo acima.',
+                        style: TextStyle(fontSize: 12, color: Colors.blue[900], height: 1.5),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -969,11 +1020,12 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
     required IconData icon,
     required String value,
     required String currentValue,
+    VoidCallback? onTap,
   }) {
     final isSelected = value == currentValue;
     final color = isSelected ? AppColors.secondary : Colors.grey[400]!;
     return InkWell(
-      onTap: () => PreferencesService.apontamentoProducaoCD.add(value),
+      onTap: onTap ?? () => PreferencesService.apontamentoProducaoCD.add(value),
       borderRadius: BorderRadius.circular(12),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),

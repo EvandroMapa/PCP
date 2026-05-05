@@ -18,6 +18,9 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/modules/ponta/ponta_model.dart';
+import 'package:aco_plus/app/core/services/preferences_service.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/box/models/box_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/patio/models/patio_model.dart';
 import 'package:flutter/material.dart';
 
 import 'package:material_symbols_icons/symbols.dart';
@@ -33,6 +36,7 @@ class DashboardPageState extends State<DashboardPage> {
   List<PontaBitolaGrupo> _pontasGrupos = [];
   double _totalPontasKg = 0.0;
   bool _pontasCarregando = true;
+  int _modoDash = 0; // 0 = Gestão a Vista, 1 = Mapa de Pedidos
 
   @override
   void initState() {
@@ -72,7 +76,12 @@ class DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return body();
+    return Column(
+      children: [
+        _buildAppBar(),
+        Expanded(child: _modoDash == 0 ? body() : _mapaParqueWidget()),
+      ],
+    );
   }
 
   Widget body() {
@@ -817,4 +826,294 @@ class DashboardPageState extends State<DashboardPage> {
       ),
     );
   }
+
+  // ═══════════════════════════════════════════════════
+  //  APP BAR COM TOGGLE
+  // ═══════════════════════════════════════════════════
+  Widget _buildAppBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.primaryMain,
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.menu, color: Colors.white, size: 20),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _modoDash == 0 ? 'Gest\u00e3o a Vista' : 'Mapa de Pedidos',
+                  style: AppCss.mediumBold.setSize(20).setColor(Colors.white),
+                ),
+                Text(
+                  _modoDash == 0
+                      ? 'Monitoramento em tempo real de produ\u00e7\u00e3o e consumo'
+                      : 'Vis\u00e3o geral do parque log\u00edstico',
+                  style: AppCss.minimumRegular.setSize(12).setColor(Colors.white.withValues(alpha: 0.8)),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _toggleBtn(0, Icons.dashboard_outlined, 'Gest\u00e3o'),
+                _toggleBtn(1, Icons.map_outlined, 'Mapa'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _toggleBtn(int modo, IconData icon, String label) {
+    final sel = _modoDash == modo;
+    return GestureDetector(
+      onTap: () => setState(() => _modoDash = modo),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: sel ? Colors.white.withValues(alpha: 0.25) : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: sel ? Colors.white : Colors.white.withValues(alpha: 0.5)),
+            const SizedBox(width: 6),
+            Text(label, style: TextStyle(fontSize: 13, fontWeight: sel ? FontWeight.w700 : FontWeight.w400, color: sel ? Colors.white : Colors.white.withValues(alpha: 0.5))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════
+  //  MAPA DE PEDIDOS (PARQUE COMPLETO)
+  // ═══════════════════════════════════════════════════
+
+  static const _coresPatios = [
+    Color(0xFF3B82F6), Color(0xFF10B981), Color(0xFFF59E0B), Color(0xFFEF4444),
+    Color(0xFF8B5CF6), Color(0xFF06B6D4), Color(0xFFF97316), Color(0xFFEC4899),
+  ];
+
+  Widget _mapaParqueWidget() {
+    final comp = PreferencesService.parqueComprimento.value;
+    final larg = PreferencesService.parqueLargura.value;
+
+    if (comp <= 0 || larg <= 0) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.map_outlined, size: 64, color: Colors.grey[300]),
+            const H(16),
+            Text('Parque log\u00edstico n\u00e3o configurado.', style: AppCss.mediumRegular.setColor(Colors.grey[400]!)),
+          ],
+        ),
+      );
+    }
+
+    final patios = FirestoreClient.patios.data
+        .where((p) => p.parqueX != null && p.parqueY != null)
+        .toList();
+
+    final pedidosAtivos = FirestoreClient.pedidos.data
+        .where((p) => !p.isArchived)
+        .toList();
+
+    return Container(
+      color: const Color(0xFFCBD5E1),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final maxW = constraints.maxWidth;
+            final maxH = constraints.maxHeight;
+            final cellW = maxW / comp;
+            final cellH = maxH / larg;
+            final cellSize = cellW < cellH ? cellW : cellH;
+            final totalW = cellSize * comp;
+            final totalH = cellSize * larg;
+
+            return InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 5.0,
+              boundaryMargin: const EdgeInsets.all(100),
+              child: Center(
+              child: Container(
+                width: totalW,
+                height: totalH,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 16, offset: const Offset(0, 4)),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(7),
+                  child: CustomPaint(
+                    size: Size(totalW, totalH),
+                    painter: _DashParqueGridPainter(comprimento: comp, largura: larg, cellSize: cellSize),
+                    child: Stack(
+                      children: patios.asMap().entries.map((entry) {
+                        final idx = entry.key;
+                        final patio = entry.value;
+                        final cor = _coresPatios[idx % _coresPatios.length];
+
+                        final boxes = FirestoreClient.boxes.data
+                            .where((b) => b.patioId == patio.id)
+                            .toList();
+
+                        return Positioned(
+                          left: patio.parqueX! * cellSize,
+                          top: patio.parqueY! * cellSize,
+                          width: patio.comprimento * cellSize,
+                          height: patio.largura * cellSize,
+                          child: _patioComBoxes(patio, boxes, cor, cellSize, pedidosAtivos),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _patioComBoxes(PatioModel patio, List<BoxModel> boxes, Color cor, double parqueCellSize, List pedidosAtivos) {
+    // Cell size relativo ao p\u00e1tio (pixels por metro dentro do p\u00e1tio)
+    final patioCellSize = parqueCellSize; // 1 metro = 1 cellSize
+
+    return Stack(
+      children: [
+        // Fundo do pátio
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              color: cor.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+        ),
+        // Nome do pátio no topo
+          Positioned(
+            left: 4, top: 2,
+            child: Text(
+              patio.nome,
+              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: cor.withValues(alpha: 0.5)),
+            ),
+          ),
+          // Boxes
+          ...boxes.map((box) {
+            final alocacoes = FirestoreClient.pedidoBoxes.data
+                .where((pb) => pb.boxId == box.id)
+                .toList();
+            final localizadores = alocacoes
+                .map((pb) => pedidosAtivos.where((p) => p.id == pb.pedidoId).firstOrNull?.localizador)
+                .where((l) => l != null)
+                .cast<String>()
+                .toList();
+            final temPedido = localizadores.isNotEmpty;
+
+            return Positioned(
+              left: box.x * patioCellSize,
+              top: box.y * patioCellSize,
+              width: box.comprimento * patioCellSize,
+              height: box.largura * patioCellSize,
+              child: Tooltip(
+                message: 'Box ${box.nome}${localizadores.isNotEmpty ? '\n${localizadores.join(', ')}' : ''}',
+                child: Container(
+                  margin: const EdgeInsets.all(0.5),
+                  decoration: BoxDecoration(
+                    color: temPedido ? box.color.withValues(alpha: 0.25) : box.color.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(2),
+                    border: Border.all(
+                      color: temPedido ? box.color.withValues(alpha: 0.5) : box.color.withValues(alpha: 0.15),
+                      width: temPedido ? 0.8 : 0.3,
+                    ),
+                  ),
+                  child: ClipRect(
+                    child: Center(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Padding(
+                          padding: const EdgeInsets.all(2),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                box.nome,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: box.color.withValues(alpha: temPedido ? 0.9 : 0.5)),
+                              ),
+                              if (localizadores.isNotEmpty)
+                                ...localizadores.map((loc) => Text(
+                                  loc,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: cor),
+                                )),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        // Borda do pátio (por cima de tudo)
+        Positioned.fill(
+          child: IgnorePointer(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(3),
+                border: Border.all(color: cor.withValues(alpha: 0.35), width: 0.8),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DashParqueGridPainter extends CustomPainter {
+  final int comprimento, largura;
+  final double cellSize;
+  _DashParqueGridPainter({required this.comprimento, required this.largura, required this.cellSize});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = const Color(0xFFE2E8F0)..strokeWidth = 0.3;
+    for (int i = 0; i <= largura; i++) {
+      canvas.drawLine(Offset(0, i * cellSize), Offset(size.width, i * cellSize), paint);
+    }
+    for (int i = 0; i <= comprimento; i++) {
+      canvas.drawLine(Offset(i * cellSize, 0), Offset(i * cellSize, size.height), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

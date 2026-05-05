@@ -22,6 +22,9 @@ class PreferencesService implements Service {
   static final AppStream<int> maxPedidosPorBox = AppStream<int>.seed(1);
   static final AppStream<double?> empresaLat = AppStream<double?>.seed(null);
   static final AppStream<double?> empresaLng = AppStream<double?>.seed(null);
+  static final AppStream<int> parqueComprimento = AppStream<int>.seed(0);
+  static final AppStream<int> parqueLargura = AppStream<int>.seed(0);
+  static final AppStream<String> modoMapa = AppStream<String>.seed('croqui');
 
   @override
   Future<void> initialize() async {
@@ -103,6 +106,23 @@ class PreferencesService implements Service {
       log('Erro ao carregar max pedidos por box: $e');
     }
 
+    // Recupera modo do mapa
+    try {
+      final mapaConfig = await SupabaseService.client
+          .from('configs')
+          .select()
+          .eq('key', 'modo_mapa')
+          .maybeSingle();
+      if (mapaConfig != null) {
+        final val = mapaConfig['value'].toString();
+        if (val == 'croqui' || val == 'geo') {
+          modoMapa.add(val);
+        }
+      }
+    } catch (e) {
+      log('Erro ao carregar modo mapa: $e');
+    }
+
     // Listeners para salvamento automático
     kanbanColumnWidth.listen.listen((value) {
       instance.setDouble('kanbanColumnWidth', value);
@@ -146,6 +166,16 @@ class PreferencesService implements Service {
             onConflict: 'key');
       } catch (e) {
         log('Erro ao salvar max pedidos por box: $e');
+      }
+    });
+
+    modoMapa.listen.skip(1).listen((value) async {
+      try {
+        await SupabaseService.client.from('configs').upsert(
+            {'key': 'modo_mapa', 'value': value},
+            onConflict: 'key');
+      } catch (e) {
+        log('Erro ao salvar modo mapa: $e');
       }
     });
 
@@ -260,6 +290,51 @@ class PreferencesService implements Service {
             onConflict: 'key');
       } catch (e) {
         log('Erro ao salvar empresa lng: $e');
+      }
+    });
+
+    // Recupera dimensões do parque
+    try {
+      final compConfig = await SupabaseService.client
+          .from('configs')
+          .select()
+          .eq('key', 'parque_comprimento')
+          .maybeSingle();
+      if (compConfig != null) {
+        final val = int.tryParse(compConfig['value'].toString());
+        if (val != null) parqueComprimento.add(val);
+      }
+
+      final largConfig = await SupabaseService.client
+          .from('configs')
+          .select()
+          .eq('key', 'parque_largura')
+          .maybeSingle();
+      if (largConfig != null) {
+        final val = int.tryParse(largConfig['value'].toString());
+        if (val != null) parqueLargura.add(val);
+      }
+    } catch (e) {
+      log('Erro ao carregar dimensões do parque: $e');
+    }
+
+    parqueComprimento.listen.skip(1).listen((value) async {
+      try {
+        await SupabaseService.client.from('configs').upsert(
+            {'key': 'parque_comprimento', 'value': value.toString()},
+            onConflict: 'key');
+      } catch (e) {
+        log('Erro ao salvar parque comprimento: $e');
+      }
+    });
+
+    parqueLargura.listen.skip(1).listen((value) async {
+      try {
+        await SupabaseService.client.from('configs').upsert(
+            {'key': 'parque_largura', 'value': value.toString()},
+            onConflict: 'key');
+      } catch (e) {
+        log('Erro ao salvar parque largura: $e');
       }
     });
   }

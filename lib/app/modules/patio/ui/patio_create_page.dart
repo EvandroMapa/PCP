@@ -360,8 +360,8 @@ class _PatioGridPainter extends CustomPainter {
 
     // Linhas do grid
     final gridPaint = Paint()
-      ..color = const Color(0xFFE2E8F0)
-      ..strokeWidth = 0.5
+      ..color = const Color(0xFFB0BEC5)
+      ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
     // Linhas horizontais
