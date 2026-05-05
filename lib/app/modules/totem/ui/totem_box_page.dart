@@ -7,9 +7,11 @@ import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:web/web.dart' as web;
+import 'package:aco_plus/app/modules/totem/utils/totem_fullscreen.dart';
 
 class TotemBoxPage extends StatefulWidget {
   const TotemBoxPage({super.key});
@@ -28,6 +30,14 @@ class _TotemBoxPageState extends State<TotemBoxPage> {
     _carregarBoxSalvo();
   }
 
+  @override
+  void dispose() {
+    if (!kIsWeb) {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    }
+    super.dispose();
+  }
+
   Future<void> _carregarBoxSalvo() async {
     final prefs = await SharedPreferences.getInstance();
     final salvo = prefs.getString('totem_box_id');
@@ -35,7 +45,7 @@ class _TotemBoxPageState extends State<TotemBoxPage> {
       // Verificar se o box ainda existe
       final existe = FirestoreClient.boxes.data.any((b) => b.id == salvo);
       if (existe) {
-        _entrarFullscreen();
+        TotemFullscreen.entrar();
         setState(() {
           _boxId = salvo;
           _carregando = false;
@@ -49,21 +59,11 @@ class _TotemBoxPageState extends State<TotemBoxPage> {
   Future<void> _selecionarBox(String boxId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('totem_box_id', boxId);
-    _entrarFullscreen();
+    TotemFullscreen.entrar();
     setState(() => _boxId = boxId);
   }
 
-  void _entrarFullscreen() {
-    try {
-      web.document.documentElement?.requestFullscreen();
-    } catch (_) {}
-  }
 
-  void _sairFullscreen() {
-    try {
-      web.document.exitFullscreen();
-    } catch (_) {}
-  }
 
   Future<void> _sairDoTotem() async {
     final emailCtrl = TextEditingController();
@@ -129,7 +129,7 @@ class _TotemBoxPageState extends State<TotemBoxPage> {
       ),
     );
     if (confirmar == true) {
-      _sairFullscreen();
+      TotemFullscreen.sair();
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('totem_box_id');
       setState(() => _boxId = null);
@@ -203,7 +203,7 @@ class _TotemBoxPageState extends State<TotemBoxPage> {
           Positioned(
             top: 16, right: 16,
             child: IconButton(
-              onPressed: _entrarFullscreen,
+              onPressed: TotemFullscreen.entrar,
               icon: const Icon(Icons.fullscreen, color: Colors.white38, size: 32),
               tooltip: 'Tela cheia',
             ),
@@ -455,7 +455,7 @@ class _TotemBoxPageState extends State<TotemBoxPage> {
           Positioned(
             top: 0, right: 0,
             child: GestureDetector(
-              onTap: _entrarFullscreen,
+              onTap: TotemFullscreen.entrar,
               child: Icon(Icons.fullscreen, size: 24, color: Colors.white.withValues(alpha: 0.15)),
             ),
           ),
