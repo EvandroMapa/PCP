@@ -7,6 +7,7 @@ import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:web/web.dart' as web;
 
 class TotemBoxPage extends StatefulWidget {
   const TotemBoxPage({super.key});
@@ -32,6 +33,7 @@ class _TotemBoxPageState extends State<TotemBoxPage> {
       // Verificar se o box ainda existe
       final existe = FirestoreClient.boxes.data.any((b) => b.id == salvo);
       if (existe) {
+        _entrarFullscreen();
         setState(() {
           _boxId = salvo;
           _carregando = false;
@@ -45,7 +47,20 @@ class _TotemBoxPageState extends State<TotemBoxPage> {
   Future<void> _selecionarBox(String boxId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('totem_box_id', boxId);
+    _entrarFullscreen();
     setState(() => _boxId = boxId);
+  }
+
+  void _entrarFullscreen() {
+    try {
+      web.document.documentElement?.requestFullscreen();
+    } catch (_) {}
+  }
+
+  void _sairFullscreen() {
+    try {
+      web.document.exitFullscreen();
+    } catch (_) {}
   }
 
   Future<void> _sairDoTotem() async {
@@ -72,6 +87,7 @@ class _TotemBoxPageState extends State<TotemBoxPage> {
       ),
     );
     if (confirmar == true) {
+      _sairFullscreen();
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('totem_box_id');
       setState(() => _boxId = null);
