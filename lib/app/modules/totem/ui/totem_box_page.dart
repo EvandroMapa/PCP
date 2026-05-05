@@ -2,6 +2,8 @@ import 'package:aco_plus/app/core/client/firestore/collections/box/models/box_mo
 import 'package:aco_plus/app/core/client/firestore/collections/patio/models/patio_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
@@ -64,24 +66,64 @@ class _TotemBoxPageState extends State<TotemBoxPage> {
   }
 
   Future<void> _sairDoTotem() async {
-    final usuario = usuarioCtrl.usuario;
-    if (usuario == null || !usuario.isAdmin) {
-      _mostrarBloqueio();
-      return;
+    final emailCtrl = TextEditingController();
+    final senhaCtrl = TextEditingController();
+
+    void tentarLogin(BuildContext ctx) {
+      final valido = _validarLoginAdmin(emailCtrl.text, senhaCtrl.text);
+      if (!valido) {
+        NotificationService.showNegative(
+          'Acesso negado',
+          'Usuário ou senha inválidos, ou sem permissão de administrador.',
+        );
+        return;
+      }
+      Navigator.pop(ctx, true);
     }
+
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Sair do Totem'),
-        content: const Text('Deseja trocar de box ou sair do modo totem?'),
+        icon: Icon(Icons.lock_outline, size: 36, color: AppColors.primaryMain),
+        title: const Text('Login de Administrador'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Digite as credenciais de um administrador para sair do modo totem.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: emailCtrl,
+              autofocus: true,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'E-mail',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.email_outlined),
+              ),
+              onSubmitted: (_) => FocusScope.of(ctx).nextFocus(),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: senhaCtrl,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Senha',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.key),
+              ),
+              onSubmitted: (_) => tentarLogin(ctx),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Sair'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryMain),
+            onPressed: () => tentarLogin(ctx),
+            child: const Text('Entrar', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -94,25 +136,11 @@ class _TotemBoxPageState extends State<TotemBoxPage> {
     }
   }
 
-  void _mostrarBloqueio() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        icon: Icon(Icons.info_outline, size: 40, color: Colors.orange[700]),
-        title: const Text('Acesso restrito'),
-        content: const Text(
-            'Somente administradores podem sair do modo totem.\nFaça login com uma conta de administrador.'),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryMain),
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Entendi',
-                style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
+  bool _validarLoginAdmin(String email, String senha) {
+    final admins = BackendClient.usuarios.data.where((u) => u.isAdmin).toList();
+    return admins.any((u) =>
+        u.email.toLowerCase().trim() == email.toLowerCase().trim() &&
+        u.senha.toLowerCase().trim() == senha.toLowerCase().trim());
   }
 
   @override
@@ -169,7 +197,18 @@ class _TotemBoxPageState extends State<TotemBoxPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF1E293B),
-      body: Center(
+      body: Stack(
+        children: [
+          // Botão tela cheia
+          Positioned(
+            top: 16, right: 16,
+            child: IconButton(
+              onPressed: _entrarFullscreen,
+              icon: const Icon(Icons.fullscreen, color: Colors.white38, size: 32),
+              tooltip: 'Tela cheia',
+            ),
+          ),
+          Center(
         child: Container(
           constraints: const BoxConstraints(maxWidth: 500),
           padding: const EdgeInsets.all(32),
@@ -269,6 +308,8 @@ class _TotemBoxPageState extends State<TotemBoxPage> {
           ),
         ),
       ),
+      ],
+      ),
     );
   }
 
@@ -349,61 +390,74 @@ class _TotemBoxPageState extends State<TotemBoxPage> {
           bottom: BorderSide(color: box.color.withValues(alpha: 0.25), width: 2),
         ),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Stack(
         children: [
-          // Nome do box — centralizado, grande
-          Text(
-            'BOX ${box.nome}',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 75,
-              fontWeight: FontWeight.w900,
-              color: box.color,
-              height: 1.0,
+          // Conteúdo centralizado
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'BOX ${box.nome}',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 75,
+                    fontWeight: FontWeight.w900,
+                    color: box.color,
+                    height: 1.0,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (patio != null) ...[
+                      Text(
+                        patio.nome,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.white.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                    ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: qtdPedidos > 0
+                            ? box.color.withValues(alpha: 0.15)
+                            : Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: qtdPedidos > 0
+                              ? box.color.withValues(alpha: 0.3)
+                              : Colors.white.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      child: Text(
+                        '$qtdPedidos / ${box.maxPedidos}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: qtdPedidos > 0
+                              ? box.color.withValues(alpha: 0.7)
+                              : Colors.white.withValues(alpha: 0.25),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 6),
-          // Pátio + badge — linha secundária
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (patio != null) ...[
-                Text(
-                  patio.nome,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white.withValues(alpha: 0.35),
-                  ),
-                ),
-                const SizedBox(width: 16),
-              ],
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: qtdPedidos > 0
-                      ? box.color.withValues(alpha: 0.15)
-                      : Colors.white.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: qtdPedidos > 0
-                        ? box.color.withValues(alpha: 0.3)
-                        : Colors.white.withValues(alpha: 0.1),
-                  ),
-                ),
-                child: Text(
-                  '$qtdPedidos / ${box.maxPedidos}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: qtdPedidos > 0
-                        ? box.color.withValues(alpha: 0.7)
-                        : Colors.white.withValues(alpha: 0.25),
-                  ),
-                ),
-              ),
-            ],
+          // Botão tela cheia — canto superior direito
+          Positioned(
+            top: 0, right: 0,
+            child: GestureDetector(
+              onTap: _entrarFullscreen,
+              child: Icon(Icons.fullscreen, size: 24, color: Colors.white.withValues(alpha: 0.15)),
+            ),
           ),
         ],
       ),
