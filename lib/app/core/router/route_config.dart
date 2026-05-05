@@ -81,6 +81,13 @@ class GlobalLoadingWrapper extends StatelessWidget {
           return child;
         }
 
+        // Se o app ainda não terminou de inicializar, mostra loading
+        if (!appCtrl.isInitialized) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
         // Se a conexão ainda tá esperando (stream não emitiu nada)
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
