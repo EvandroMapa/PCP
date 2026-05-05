@@ -1,5 +1,7 @@
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/user_permission_type.dart';
+import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+
 import 'package:aco_plus/app/core/components/app_field.dart';
 import 'package:aco_plus/app/core/components/app_multiple_registers.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
@@ -44,15 +46,44 @@ class ClienteCreatePage extends StatefulWidget {
 class _ClienteCreatePageState extends State<ClienteCreatePage> {
   _ClienteSection _selected = _ClienteSection.dadosGerais;
   String _initialSnapshot = '';
+  bool _clienteSalvo = false;
 
   String _snapshot(ClienteCreateModel form) =>
-      '${form.nome.text}|${form.telefone.text}|${form.cpf.text}|${form.obras.length}';
+      '${form.nome.text}|${form.telefone.text}|${form.cpf.text}';
+
+  bool get _isDirty => _snapshot(clienteCtrl.form) != _initialSnapshot;
+
+  bool get _obrasBlockedByDirty =>
+      _isDirty || (!clienteCtrl.form.isEdit && !_clienteSalvo);
 
   @override
   void initState() {
     setWebTitle(widget.cliente != null ? 'Editar Cliente' : 'Novo Cliente');
-    clienteCtrl.init(widget.cliente);
+
+    // Ao editar, busca a versão mais atualizada do cliente no dataStream
+    // (widget.cliente pode ter sido capturado antes do fetch completar)
+    final clienteAtualizado = widget.cliente != null
+        ? FirestoreClient.clientes.getById(widget.cliente!.id)
+        : null;
+
+    clienteCtrl.init(
+      clienteAtualizado?.id == widget.cliente?.id ? clienteAtualizado : widget.cliente,
+    );
     _initialSnapshot = _snapshot(clienteCtrl.form);
+    _clienteSalvo = widget.cliente != null;
+
+    // Força recarregamento dos dados para garantir obras atualizadas
+    if (widget.cliente != null) {
+      FirestoreClient.clientes.fetch().then((_) {
+        if (!mounted) return;
+        final fresh = FirestoreClient.clientes.getById(widget.cliente!.id);
+        if (fresh.id.isNotEmpty) {
+          clienteCtrl.form.obras = List.from(fresh.obras);
+          clienteCtrl.formStream.update();
+        }
+      });
+    }
+
     super.initState();
   }
 
@@ -64,17 +95,14 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () async {
-            final isDirty = _snapshot(clienteCtrl.form) != _initialSnapshot;
-            if (isDirty) {
+            if (_isDirty) {
               final confirm = await showConfirmDialog(
                 'Deseja realmente sair?',
                 widget.cliente != null
                     ? 'A edição que realizou será perdida.'
                     : 'Os dados do cliente serão perdidos.',
               );
-              if (confirm && context.mounted) {
-                pop(context);
-              }
+              if (confirm && context.mounted) pop(context);
             } else {
               pop(context);
             }
@@ -87,19 +115,25 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
         ),
         actions: [
           if ((widget.cliente != null &&
-                  usuario.permission.cliente.contains(
-                    UserPermissionType.update,
-                  )) ||
+                  usuario.permission.cliente
+                      .contains(UserPermissionType.update)) ||
               (widget.cliente == null &&
-                  usuario.permission.cliente.contains(
-                    UserPermissionType.create,
-                  )))
+                  usuario.permission.cliente
+                      .contains(UserPermissionType.create)))
             IconLoadingButton(
-              () async => await clienteCtrl.onConfirm(
-                context,
-                widget.cliente,
-                widget.isFromOrder,
-              ),
+              () async {
+                await clienteCtrl.onConfirm(
+                  context,
+                  widget.cliente,
+                  widget.isFromOrder,
+                );
+                if (mounted) {
+                  setState(() {
+                    _initialSnapshot = _snapshot(clienteCtrl.form);
+                    _clienteSalvo = true;
+                  });
+                }
+              },
             ),
         ],
         backgroundColor: AppColors.primaryMain,
@@ -109,14 +143,14 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
         builder: (_, form) => Row(
           children: [
             _buildSidebar(form),
-            Expanded(
-              child: _buildContent(form),
-            ),
+            Expanded(child: _buildContent(form)),
           ],
         ),
       ),
     );
   }
+
+  // ── Sidebar ────────────────────────────────────────────────────────────────
 
   Widget _buildSidebar(ClienteCreateModel form) {
     return Container(
@@ -124,15 +158,13 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
       height: double.infinity,
       decoration: const BoxDecoration(
         color: Color(0xFFF1F5F9),
-        border: Border(
-          right: BorderSide(color: Color(0xFFE2E8F0)),
-        ),
+        border: Border(right: BorderSide(color: Color(0xFFE2E8F0))),
       ),
       child: Column(
         children: [
           _buildSidebarPreview(form),
           const SizedBox(height: 8),
-          ..._ClienteSection.values.map((section) => _buildMenuItem(section)),
+          ..._ClienteSection.values.map((s) => _buildMenuItem(s)),
           const Spacer(),
           if (form.isEdit &&
               usuario.permission.cliente.contains(UserPermissionType.delete))
@@ -173,12 +205,45 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
 
   Widget _buildMenuItem(_ClienteSection section) {
     final isSelected = _selected == section;
+    final isBlocked =
+        section == _ClienteSection.obras && _obrasBlockedByDirty;
+    final tooltipMsg = isBlocked
+        ? (_isDirty
+            ? 'Salve as alterações antes de acessar Obras'
+            : 'Salve o cliente primeiro')
+        : section.label;
+
     return Tooltip(
-      message: section.label,
+      message: tooltipMsg,
       preferBelow: false,
       waitDuration: const Duration(milliseconds: 300),
       child: InkWell(
-        onTap: () => setState(() => _selected = section),
+        onTap: () {
+          if (isBlocked) {
+            showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                icon: Icon(Icons.info_outline,
+                    size: 40, color: Colors.orange[700]),
+                title: Text(
+                    _isDirty ? 'Alterações não salvas' : 'Cliente não salvo'),
+                content: Text(_isDirty
+                    ? 'Salve as alterações do cliente antes de gerenciar obras.'
+                    : 'Salve o cliente primeiro para gerenciar suas obras.'),
+                actions: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryMain),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Entendi'),
+                  ),
+                ],
+              ),
+            );
+            return;
+          }
+          setState(() => _selected = section);
+        },
         borderRadius: BorderRadius.circular(8),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -198,7 +263,11 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
           child: Icon(
             section.icon,
             size: 18,
-            color: isSelected ? AppColors.primaryMain : Colors.grey[400],
+            color: isBlocked
+                ? Colors.grey[300]
+                : isSelected
+                    ? AppColors.primaryMain
+                    : Colors.grey[400],
           ),
         ),
       ),
@@ -224,6 +293,8 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
       ),
     );
   }
+
+  // ── Conteúdo principal ─────────────────────────────────────────────────────
 
   Widget _buildContent(ClienteCreateModel form) {
     return AnimatedSwitcher(
@@ -255,6 +326,8 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
       ],
     );
   }
+
+  // ── Dados gerais ───────────────────────────────────────────────────────────
 
   Widget _buildDadosGerais(ClienteCreateModel form) {
     return Container(
@@ -317,6 +390,8 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
     );
   }
 
+  // ── Obras ──────────────────────────────────────────────────────────────────
+
   Widget _buildObras(ClienteCreateModel form) {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -332,63 +407,69 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppMultipleRegisters<ObraModel>(
-            icon: Icons.business_outlined,
-            title: 'Gerenciar Obras',
-            createPage: ObraCreatePage(endereco: form.endereco),
-            onEdit: (obraForm) async {
-              ObraModel? obra = await push(
-                context,
-                ObraCreatePage(obra: obraForm),
-              );
-              if (obra != null) {
-                final i =
-                    form.obras.map((e) => e.id).toList().indexOf(obraForm.id);
-                if (obra.id != 'delete') {
-                  form.obras[i] = obra;
-                } else {
-                  form.obras.removeAt(i);
-                }
-              }
-              clienteCtrl.formStream.update();
-            },
-            onAdd: (e) {
-              form.obras.add(e);
-              clienteCtrl.formStream.update();
-            },
-            itens: form.obras,
-            titleBuilder: (e) => Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    e.descricao,
-                    style: AppCss.minimumBold.setSize(14),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: e.status.color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                        color: e.status.color.withValues(alpha: 0.2)),
-                  ),
-                  child: Text(
-                    e.status.label.toUpperCase(),
-                    style:
-                        AppCss.minimumBold.setSize(10).setColor(e.status.color),
-                  ),
-                ),
-              ],
+      child: AppMultipleRegisters<ObraModel>(
+        icon: Icons.business_outlined,
+        title: 'Gerenciar Obras',
+        // clienteId é passado para que ObraController persista direto no banco
+        createPage: ObraCreatePage(
+          endereco: form.endereco,
+          clienteId: form.id,
+        ),
+        onEdit: (obraForm) async {
+          // O ObraController já persiste a edição/exclusão via clienteId.
+          // Aqui apenas sincronizamos a lista local para refletir na UI.
+          final obra = await push(
+            context,
+            ObraCreatePage(obra: obraForm, clienteId: form.id),
+          ) as ObraModel?;
+
+          if (obra == null) return;
+
+          final idx =
+              form.obras.map((e) => e.id).toList().indexOf(obraForm.id);
+          if (idx < 0) return;
+
+          if (obra.id != 'delete') {
+            form.obras[idx] = obra;
+          } else {
+            form.obras.removeAt(idx);
+          }
+          clienteCtrl.formStream.update();
+        },
+        onAdd: (novaObra) async {
+          // A obra já foi persistida pelo ObraController.
+          // Apenas refletimos na lista local.
+          form.obras.add(novaObra);
+          clienteCtrl.formStream.update();
+        },
+        itens: form.obras,
+        titleBuilder: (e) => Row(
+          children: [
+            Expanded(
+              child: Text(
+                e.descricao,
+                style: AppCss.minimumBold.setSize(14),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: e.status.color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border:
+                    Border.all(color: e.status.color.withValues(alpha: 0.2)),
+              ),
+              child: Text(
+                e.status.label.toUpperCase(),
+                style:
+                    AppCss.minimumBold.setSize(10).setColor(e.status.color),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

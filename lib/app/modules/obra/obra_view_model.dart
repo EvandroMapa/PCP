@@ -24,6 +24,7 @@ class ObraCreateModel {
       : id = obra.id,
         isEdit = true {
     descricao.text = obra.descricao;
+    telefoneFixo.text = obra.telefoneFixo;
     endereco = obra.endereco;
     status = obra.status;
   }

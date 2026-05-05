@@ -63,12 +63,14 @@ class ClienteModel {
     List<Map<String, dynamic>> obrasRaw,
   ) {
     return ClienteModel(
-      id: map['id'] ?? '',
+      id: map['id']?.toString() ?? '',
       codigo: int.tryParse(map['codigo']?.toString() ?? '0') ?? 0,
-      nome: map['nome'] ?? '',
-      telefone: map['telefone'] ?? '',
-      cpf: map['cnpj'] ?? '',
-      endereco: EnderecoModel.empty(),
+      nome: map['nome']?.toString() ?? '',
+      telefone: map['telefone']?.toString() ?? '',
+      cpf: map['cnpj']?.toString() ?? '',
+      endereco: map['endereco'] != null
+          ? EnderecoModel.fromMap(Map<String, dynamic>.from(map['endereco']))
+          : EnderecoModel.empty(),
       obras: obrasRaw.map((o) => ObraModel.fromSupabaseMap(o)).toList(),
     );
   }
@@ -79,6 +81,7 @@ class ClienteModel {
         'nome': nome,
         'telefone': telefone,
         'cnpj': cpf,
+        if (endereco.localidade.isNotEmpty) 'endereco': endereco.toMap(),
       };
 
   String toJson() => json.encode(toMap());
@@ -159,12 +162,14 @@ class ObraModel {
 
   factory ObraModel.fromSupabaseMap(Map<String, dynamic> map) {
     return ObraModel(
-      id: map['id'] ?? '',
-      descricao: map['nome'] ?? '',
-      telefoneFixo: map['telefone'] ?? '',
-      endereco: null,
+      id: map['id']?.toString() ?? '',
+      descricao: map['nome']?.toString() ?? '',
+      telefoneFixo: map['telefone']?.toString() ?? '',
+      endereco: map['endereco'] != null
+          ? EnderecoModel.fromMap(Map<String, dynamic>.from(map['endereco']))
+          : null,
       status: map['status'] != null
-          ? ObraStatus.values[map['status']]
+          ? ObraStatus.values[int.tryParse(map['status'].toString()) ?? 0]
           : ObraStatus.emAndamento,
     );
   }
@@ -172,7 +177,11 @@ class ObraModel {
   Map<String, dynamic> toSupabaseMap(String clienteId) => {
         'id': id,
         'nome': descricao,
+        'telefone': telefoneFixo,
         'cliente_id': clienteId,
+        'status': status.index,
+        if (endereco != null && endereco!.localidade.isNotEmpty)
+          'endereco': endereco!.toMap(),
       };
 
   String toJson() => json.encode(toMap());

@@ -114,7 +114,9 @@ class ClienteController {
   Future<void> onDelete(value, ClienteModel cliente) async {
     if (await _isDeleteUnavailable(cliente)) return;
     await FirestoreClient.clientes.delete(cliente);
-    pop(value);
+    if (value is BuildContext && Navigator.canPop(value)) {
+      pop(value);
+    }
     NotificationService.showPositive(
       'Cliente Excluido',
       'Operação realizada com sucesso',

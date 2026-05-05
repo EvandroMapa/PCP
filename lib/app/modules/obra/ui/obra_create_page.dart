@@ -21,7 +21,17 @@ import 'package:flutter/material.dart';
 class ObraCreatePage extends StatefulWidget {
   final ObraModel? obra;
   final EnderecoModel? endereco;
-  const ObraCreatePage({this.obra, this.endereco, super.key});
+
+  /// Quando fornecido, o controller persiste diretamente ao confirmar.
+  /// Deixe nulo apenas para fluxos que não usam Supabase (ex: legado).
+  final String? clienteId;
+
+  const ObraCreatePage({
+    this.obra,
+    this.endereco,
+    this.clienteId,
+    super.key,
+  });
 
   @override
   State<ObraCreatePage> createState() => _ObraCreatePageState();
@@ -35,7 +45,11 @@ class _ObraCreatePageState extends State<ObraCreatePage> {
 
   @override
   void initState() {
-    obraCtrl.init(widget.obra, widget.endereco);
+    obraCtrl.init(
+      widget.obra,
+      widget.endereco,
+      clienteId: widget.clienteId,
+    );
     _initialSnapshot = _snapshot(obraCtrl.form);
     super.initState();
   }
@@ -54,7 +68,7 @@ class _ObraCreatePageState extends State<ObraCreatePage> {
                 'Deseja realmente sair?',
                 'Os dados da obra serão perdidos.',
               )) {
-                pop(context);
+                if (context.mounted) pop(context);
               }
             } else {
               pop(context);
@@ -168,18 +182,43 @@ class _ObraCreatePageState extends State<ObraCreatePage> {
   Widget _buildDeleteButton() {
     return InkWell(
       onTap: () async {
-        if (!await onDeleteProcess(
-          deleteTitle: 'Excluir obra?',
-          deleteMessage: 'Todos os dados da obra serão apagados do sistema',
-          infoMessage:
-              'Não é possível excluir obra, pois há pedidos vinculados a ela',
-          conditional: FirestoreClient.pedidos.data.any(
-            (e) => e.obra.id == widget.obra!.id,
-          ),
-        )) {
+        final confirm = await showConfirmDialog(
+          'Excluir obra?',
+          'Todos os dados da obra serão apagados do sistema',
+        );
+        if (!confirm) return;
+
+        // Verifica se há pedidos vinculados
+        final temPedidos = FirestoreClient.pedidos.data.any(
+          (e) => e.obra.id == widget.obra!.id,
+        );
+        if (temPedidos) {
+          if (context.mounted) {
+            showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                icon: Icon(Icons.info_outline,
+                    size: 40, color: Colors.orange[700]),
+                title: const Text('Obra com pedidos vinculados'),
+                content: const Text(
+                    'Não é possível excluir esta obra pois há pedidos vinculados a ela.'),
+                actions: [
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryMain),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Entendi'),
+                  ),
+                ],
+              ),
+            );
+          }
           return;
         }
-        Navigator.pop(context, obraDeleteObj);
+
+        if (context.mounted) {
+          await obraCtrl.onDelete(context, widget.obra!);
+        }
       },
       child: Container(
         height: 54,

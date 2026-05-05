@@ -100,27 +100,7 @@ class _ClientesPageState extends State<ClientesPage> {
             visualDensity: VisualDensity.compact,
             padding: EdgeInsets.zero,
             icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-            onPressed: () => _confirmDelete(context, cliente),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _confirmDelete(BuildContext context, ClienteModel cliente) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Excluir Cliente'),
-        content: Text('Deseja realmente excluir o cliente "${cliente.nome}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => pop(context),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
             onPressed: () => clienteCtrl.onDelete(context, cliente),
-            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

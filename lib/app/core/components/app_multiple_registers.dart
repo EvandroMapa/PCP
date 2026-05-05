@@ -6,8 +6,8 @@ class AppMultipleRegisters<T> extends StatelessWidget {
   final IconData icon;
   final String title;
   final Widget createPage;
-  final Function(T) onEdit;
-  final Function(T) onAdd;
+  final Future<void> Function(T) onEdit;
+  final Future<void> Function(T) onAdd;
   final List<T> itens;
   final Widget Function(T) titleBuilder;
 
@@ -32,7 +32,7 @@ class AppMultipleRegisters<T> extends StatelessWidget {
             onTap: () async {
               final result = await push(context, createPage);
               if (result != null) {
-                onAdd(result as T);
+                await onAdd(result as T);
               }
             },
             child: ListTile(
