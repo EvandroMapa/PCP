@@ -624,11 +624,14 @@ class _MapaCompacto extends StatelessWidget {
 
                   final lotado = outrosAlocados.length >= box.maxPedidos && !sel;
 
+                  final boxW = box.comprimento * cellSize;
+                  final boxH = box.largura * cellSize;
+
                   return Positioned(
                     left: box.x * cellSize,
                     top: box.y * cellSize,
-                    width: box.comprimento * cellSize,
-                    height: box.largura * cellSize,
+                    width: boxW,
+                    height: boxH,
                     child: GestureDetector(
                       onTap: () => onToggle(box),
                       child: Tooltip(
@@ -652,12 +655,15 @@ class _MapaCompacto extends StatelessWidget {
                             ),
                           ),
                           child: Builder(builder: (_) {
-                            final w = box.comprimento * cellSize;
-                            final h = box.largura * cellSize;
-                            final vertical = h > w * 1.3;
+                            final vertical = boxH > boxW * 1.3;
+                            final corTexto = sel
+                                ? box.color.withValues(alpha: 0.95)
+                                : lotado
+                                    ? Colors.red.withValues(alpha: 0.6)
+                                    : box.color;
                             final textWidget = FittedBox(
                               fit: BoxFit.scaleDown,
-                              child: Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 13, fontWeight: sel ? FontWeight.w900 : FontWeight.w700, color: sel ? box.color.withValues(alpha: 0.95) : lotado ? Colors.red.withValues(alpha: 0.6) : box.color, height: 1.3)),
+                              child: Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 13, fontWeight: sel ? FontWeight.w900 : FontWeight.w700, color: corTexto, height: 1.3)),
                             );
                             Widget content;
                             if (vertical) {
@@ -665,9 +671,66 @@ class _MapaCompacto extends StatelessWidget {
                             } else {
                               content = Align(alignment: Alignment.center, child: Padding(padding: const EdgeInsets.all(2), child: textWidget));
                             }
+
+                            // ── Cotas de medida nos lados do box ──
+                            final cotaStyle = TextStyle(
+                              fontSize: 7,
+                              fontWeight: FontWeight.w600,
+                              color: corTexto.withValues(alpha: 0.55),
+                              letterSpacing: 0.3,
+                            );
+                            // Comprimento no topo (horizontal)
+                            final mostrarCompr = boxW > 28;
+                            // Largura na esquerda (vertical)
+                            final mostrarLarg = boxH > 28;
+
+                            final children = <Widget>[content];
+
+                            if (mostrarCompr) {
+                              children.add(
+                                Positioned(
+                                  top: 1,
+                                  left: 0,
+                                  right: 0,
+                                  child: Center(
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 0),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(alpha: 0.6),
+                                        borderRadius: BorderRadius.circular(2),
+                                      ),
+                                      child: Text('${box.comprimento}m', style: cotaStyle),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+
+                            if (mostrarLarg) {
+                              children.add(
+                                Positioned(
+                                  left: 1,
+                                  top: 0,
+                                  bottom: 0,
+                                  child: Center(
+                                    child: RotatedBox(
+                                      quarterTurns: 3,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 0),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(alpha: 0.6),
+                                          borderRadius: BorderRadius.circular(2),
+                                        ),
+                                        child: Text('${box.largura}m', style: cotaStyle),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+
                             if (sel && onAbrirMapa != null) {
-                              return Stack(children: [
-                                content,
+                              children.add(
                                 Positioned(top: 2, right: 2, child: GestureDetector(
                                   onTap: onAbrirMapa,
                                   child: Container(
@@ -676,9 +739,13 @@ class _MapaCompacto extends StatelessWidget {
                                     child: Icon(PreferencesService.modoMapa.value == 'geo' ? Icons.map_rounded : Icons.grid_on_rounded, size: 16, color: Colors.white),
                                   ),
                                 )),
-                              ]);
+                              );
                             }
-                            return content;
+
+                            return Stack(
+                              clipBehavior: Clip.none,
+                              children: children,
+                            );
                           }),
                         ),
                       ),
