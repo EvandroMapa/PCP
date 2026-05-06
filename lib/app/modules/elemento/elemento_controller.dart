@@ -168,6 +168,23 @@ class ElementoController {
         allPosicoes.addAll(List<Map<String, dynamic>>.from(batchResults[0]));
         allArquivos.addAll(List<Map<String, dynamic>>.from(batchResults[1]));
       }
+
+      // Buscar medidas variáveis das posições
+      final posIds = allPosicoes.map((p) => p['id'].toString()).toList();
+      final List<Map<String, dynamic>> allMedidas = [];
+      if (posIds.isNotEmpty) {
+        for (var i = 0; i < posIds.length; i += batchSize) {
+          final end = (i + batchSize < posIds.length) ? i + batchSize : posIds.length;
+          final batchPosIds = posIds.sublist(i, end);
+          final medidasBatch = await SupabaseService.client
+              .from('elemento_posicao_medidas')
+              .select()
+              .filter('posicao_id', 'in', batchPosIds)
+              .timeout(const Duration(seconds: 15));
+          allMedidas.addAll(List<Map<String, dynamic>>.from(medidasBatch));
+        }
+      }
+
       log('onFetch: 4 - Consultas filhas concluidas.');
       loadingMessageStream.add('Processando dados recebidos...');
 
@@ -181,6 +198,7 @@ class ElementoController {
           arquivosRaw: allArquivos
               .where((a) => a['elemento_id'].toString() == eId)
               .toList(),
+          medidasRaw: allMedidas,
         );
       }).toList();
 
@@ -342,8 +360,24 @@ class ElementoController {
           'produto_id': posicao.produto!.id,
           'peso_kg': posicao.pesoDouble,
           'qtde': posicao.qtdeInt,
+          'compr_unit': posicao.comprUnitDouble,
           'compr_corte': posicao.comprCorteDouble,
         });
+
+        // Salvar medidas variáveis (limpa e reinsere)
+        await SupabaseService.client
+            .from('elemento_posicao_medidas')
+            .delete()
+            .eq('posicao_id', posicao.id);
+        for (final medida in posicao.medidas) {
+          await SupabaseService.client.from('elemento_posicao_medidas').upsert({
+            'id': medida.id,
+            'posicao_id': posicao.id,
+            'compr_unit': medida.comprUnit,
+            'compr_corte': medida.comprCorte,
+            'qtde': medida.qtde,
+          });
+        }
       }
 
       await onFetch(pedidoId);
@@ -684,6 +718,7 @@ class ElementoController {
 
       // Procura índices usando possíveis variações de nome na sua planilha
       final idxElemento = getIndex(['ELEMENTO']);
+      final idxIdElem = getIndex(['ID ELEM', 'ID_ELEM', 'IDELEM']);
       final idxQtdeElementos = getIndex([
         'QTDE ELEM',
         'QTDE_ELEMENTOS',
@@ -697,6 +732,7 @@ class ElementoController {
       final idxPeso = getIndex(['PESO (KG)', 'PESO']);
       final idxQtde =
           getIndex(['QTDE', 'QUANTIDADE', 'QTD']); // qtde da posicao
+      final idxComprUnit = getIndex(['COMPR. UNIT', 'COMPR UNIT', 'COMPRIMENTO UNIT']);
       final idxComprCorte =
           getIndex(['COMPR. CORTE', 'COMPR CORTE', 'COMPRIMENTO CORTE', 'COMPR.CORTE']);
 
@@ -714,13 +750,17 @@ class ElementoController {
               '• BITOLA (ou DIAMETRO)\n'
               '• PESO (ou PESO (KG))\n\n'
               'Colunas opcionais identificadas pelo sistema:\n'
+              '• ID ELEM (Identificador Único do Elemento)\n'
               '• QTDE ELEMENTOS (Quantidade de conjuntos)\n'
               '• OS ou O.S. (Ordem de Serviço)\n'
-              '• QTDE ou QUANTIDADE (Qtd de peças na posição)\n\n'
+              '• QTDE ou QUANTIDADE (Qtd de peças na posição, ex: 6 ou 2x6)\n'
+              '• COMPR CORTE e COMPR UNIT (Tamanho ou variação, ex: 100 var 150)\n\n'
               'Dica: Salve sua planilha Excel como "CSV UTF-8 (separado por vírgulas)" (que no padrão do Excel BR usará ponto e vírgula).',
           'rawText': rawText
         };
       }
+
+      String currentElementIdStr = '';
 
       // Pula a linha de cabeçalho
       for (int i = 1; i < lines.length; i++) {
@@ -730,6 +770,9 @@ class ElementoController {
         if (columns.length <= idxBitola) continue;
 
         final elNome = columns[idxElemento].trim();
+        final idElemStr = idxIdElem != -1 && columns.length > idxIdElem
+            ? columns[idxIdElem].trim()
+            : '';
         final elQtdeStr =
             idxQtdeElementos != -1 && columns.length > idxQtdeElementos
                 ? columns[idxQtdeElementos].trim()
@@ -748,20 +791,25 @@ class ElementoController {
         final comprCorteStr = idxComprCorte != -1 && columns.length > idxComprCorte
             ? columns[idxComprCorte].trim().replaceAll(',', '.')
             : '0';
+        final comprUnitStr = idxComprUnit != -1 && columns.length > idxComprUnit
+            ? columns[idxComprUnit].trim().replaceAll(',', '.')
+            : '0';
 
         if (elNome.isEmpty || posNome.isEmpty) continue;
 
         final elQtdeNormalizado = int.tryParse(elQtdeStr)?.toString() ?? '1';
 
-        // Agrupa por NOME + QTDE ELEM: mesmo nome com QTDE diferente = elemento distinto
-        // (ex: ESTRIBOS qtde=22 e ESTRIBOS qtde=50 são conjuntos separados)
+        // Agrupa por ID ELEM ou (NOME + QTDE ELEM)
         if (currentElement == null ||
-            currentElement.nome.text != elNome ||
-            currentElement.qtde.text != elQtdeNormalizado) {
+            (idElemStr.isNotEmpty && currentElementIdStr != idElemStr) ||
+            (idElemStr.isEmpty &&
+                (currentElement.nome.text != elNome ||
+                    currentElement.qtde.text != elQtdeNormalizado))) {
           if (currentElement != null && currentElement.posicoes.isNotEmpty) {
             novosElementos.add(currentElement);
           }
           currentElement = ElementoCreateModel();
+          currentElementIdStr = idElemStr;
           currentElement.nome.text = elNome;
           currentElement.qtde.text = elQtdeNormalizado;
         }
@@ -770,16 +818,7 @@ class ElementoController {
         final pesoLido = double.tryParse(pesoStr);
 
         if (bitola != null && pesoLido != null) {
-          final pos = ElementoPosicaoCreateModel();
-          pos.nome.text = posNome;
-          pos.numeroOs.text = osNumber;
-          pos.pesoKg.text = pesoLido.toStringAsFixed(3);
-          pos.qtde.text = posQtdeStr;
-          pos.comprCorte.text = comprCorteStr;
-
-          // Busca no catálogo GLOBAL de produtos (não só nos do pedido),
-          // pois o comparativo é quem aponta diferenças depois
-          pos.produto = BackendClient.produtos.data.where((p) {
+          final produtoEncontrado = BackendClient.produtos.data.where((p) {
             final textToSearch =
                 '${p.nome} ${p.labelMinified}'.replaceAll(',', '.');
             final extractedNumbers =
@@ -790,7 +829,72 @@ class ElementoController {
             });
           }).firstOrNull;
 
-          if (pos.produto != null) {
+          if (produtoEncontrado != null) {
+            // Analisar a quantidade (ex: "6" ou "2x6" ou "2 x 6")
+            final qtyLower = posQtdeStr.toLowerCase();
+            int multiplier = 1;
+            int steps = 1;
+
+            if (qtyLower.contains('x')) {
+              final parts = qtyLower.split('x');
+              steps = int.tryParse(parts[0].trim()) ?? 1;
+              multiplier = int.tryParse(parts[1].trim()) ?? 1;
+            } else {
+              steps = int.tryParse(qtyLower) ?? 1;
+              if (steps == 0) steps = 1;
+            }
+
+            // Calcular a qtde total da posição
+            final int totalQtdePosicao = qtyLower.contains('x')
+                ? multiplier * steps
+                : steps;
+
+            // Analisar Variação COMPR CORTE "100 var 150"
+            final varCorteMatch = RegExp(r'(\d+(?:\.\d+)?)\s*var\s*(\d+(?:\.\d+)?)', caseSensitive: false)
+                .firstMatch(comprCorteStr);
+            // Analisar Variação COMPR UNIT "55 var 609"
+            final varUnitMatch = RegExp(r'(\d+(?:\.\d+)?)\s*var\s*(\d+(?:\.\d+)?)', caseSensitive: false)
+                .firstMatch(comprUnitStr);
+
+            final bool temVariacao = varCorteMatch != null && steps > 1;
+
+            // Criar a posição (sempre UMA só por linha do CSV)
+            final pos = ElementoPosicaoCreateModel();
+            pos.nome.text = posNome;
+            pos.numeroOs.text = osNumber;
+            pos.pesoKg.text = pesoLido.toStringAsFixed(3);
+            pos.qtde.text = totalQtdePosicao.toString();
+            pos.produto = produtoEncontrado;
+
+            if (temVariacao) {
+              // Posição variável: comprUnit e comprCorte ficam 0 (os valores reais estão nas medidas)
+              pos.comprUnit.text = '0';
+              pos.comprCorte.text = '0';
+
+              final minCorte = double.tryParse(varCorteMatch.group(1)!) ?? 0;
+              final maxCorte = double.tryParse(varCorteMatch.group(2)!) ?? 0;
+              final stepCorte = (maxCorte - minCorte) / (steps - 1);
+
+              double minUnit = 0, stepUnit = 0;
+              if (varUnitMatch != null) {
+                minUnit = double.tryParse(varUnitMatch.group(1)!) ?? 0;
+                final maxUnit = double.tryParse(varUnitMatch.group(2)!) ?? 0;
+                stepUnit = (maxUnit - minUnit) / (steps - 1);
+              }
+
+              for (int j = 0; j < steps; j++) {
+                pos.medidas.add(PosicaoMedidaCreateModel(
+                  comprUnit: minUnit + (stepUnit * j),
+                  comprCorte: minCorte + (stepCorte * j),
+                  qtde: multiplier,
+                ));
+              }
+            } else {
+              // Posição com comprimento fixo
+              pos.comprUnit.text = comprUnitStr.replaceAll(RegExp(r'[a-zA-Z\s]'), '');
+              pos.comprCorte.text = comprCorteStr.replaceAll(RegExp(r'[a-zA-Z\s]'), '');
+            }
+
             currentElement.posicoes.add(pos);
           }
         }
@@ -869,8 +973,20 @@ class ElementoController {
             'produto_id': posicao.produto!.id,
             'peso_kg': posicao.pesoDouble,
             'qtde': posicao.qtdeInt,
+            'compr_unit': posicao.comprUnitDouble,
             'compr_corte': posicao.comprCorteDouble,
           });
+
+          // Salvar medidas variáveis na sub-tabela
+          for (final medida in posicao.medidas) {
+            await SupabaseService.client.from('elemento_posicao_medidas').upsert({
+              'id': medida.id,
+              'posicao_id': posicao.id,
+              'compr_unit': medida.comprUnit,
+              'compr_corte': medida.comprCorte,
+              'qtde': medida.qtde,
+            });
+          }
         }
 
         createdElementIds.add(el.id);

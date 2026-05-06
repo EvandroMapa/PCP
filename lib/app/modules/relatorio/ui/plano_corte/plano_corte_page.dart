@@ -463,7 +463,7 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
     for (final e in _elementosOrdem!) {
       for (final p in e.posicoes) {
         totalPosicoes++;
-        if (p.comprCorte <= 0) posicoesSemCorte++;
+        if (p.comprCorte <= 0 && !p.isVariavel) posicoesSemCorte++;
       }
     }
 
@@ -537,7 +537,7 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
       } catch (_) {}
 
       for (final p in e.posicoes) {
-        if (p.comprCorte <= 0) {
+        if (p.comprCorte <= 0 && !p.isVariavel) {
           itens.add({
             'localizador': localizador,
             'elemento': e.nome,
@@ -1298,6 +1298,22 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
           .where((p) => p['produto_id'].toString() == bitolaId)
           .toList();
 
+      // Buscar medidas variáveis das posições filtradas
+      final posIds = posicoesFiltradas.map((p) => p['id'].toString()).toList();
+      final List<Map<String, dynamic>> allMedidas = [];
+      if (posIds.isNotEmpty) {
+        const batchSize = 100;
+        for (var i = 0; i < posIds.length; i += batchSize) {
+          final end = (i + batchSize < posIds.length) ? i + batchSize : posIds.length;
+          final batchPosIds = posIds.sublist(i, end);
+          final medidasBatch = await SupabaseService.client
+              .from('elemento_posicao_medidas')
+              .select()
+              .filter('posicao_id', 'in', batchPosIds);
+          allMedidas.addAll(List<Map<String, dynamic>>.from(medidasBatch));
+        }
+      }
+
       _elementosOrdem = elementosRaw.map((e) {
         final eId = e['id'].toString();
         return ElementoModel.fromSupabaseMap(
@@ -1305,6 +1321,7 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
           posicoesRaw: posicoesFiltradas
               .where((p) => p['elemento_id'].toString() == eId)
               .toList(),
+          medidasRaw: allMedidas,
         );
       }).toList();
 
@@ -1323,7 +1340,6 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
     final List<PecaDemandaModel> demandas = [];
     for (final elem in _elementosOrdem!) {
       for (final pos in elem.posicoes) {
-        if (pos.comprCorte <= 0) continue;
         // Pega localizador do pedido se possível
         String localizador = '';
         try {
@@ -1331,14 +1347,31 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
           localizador = pedido.localizador;
         } catch (_) {}
 
-        demandas.add(PecaDemandaModel(
-          elementoNome: elem.nome,
-          posicaoNome: pos.nome,
-          numeroOs: pos.numeroOs,
-          pedidoLocalizador: localizador,
-          comprCorte: pos.comprCorte,
-          quantidade: elem.qtde,
-        ));
+        if (pos.isVariavel) {
+          // Posição variável: cada medida gera uma demanda individual
+          for (final medida in pos.medidas) {
+            if (medida.comprCorte <= 0) continue;
+            demandas.add(PecaDemandaModel(
+              elementoNome: elem.nome,
+              posicaoNome: pos.nome,
+              numeroOs: pos.numeroOs,
+              pedidoLocalizador: localizador,
+              comprCorte: medida.comprCorte,
+              quantidade: medida.qtde * elem.qtde,
+            ));
+          }
+        } else {
+          // Posição fixa: usa comprCorte direto
+          if (pos.comprCorte <= 0) continue;
+          demandas.add(PecaDemandaModel(
+            elementoNome: elem.nome,
+            posicaoNome: pos.nome,
+            numeroOs: pos.numeroOs,
+            pedidoLocalizador: localizador,
+            comprCorte: pos.comprCorte,
+            quantidade: pos.qtde * elem.qtde,
+          ));
+        }
       }
     }
 

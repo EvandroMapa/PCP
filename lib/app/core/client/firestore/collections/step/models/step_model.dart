@@ -23,6 +23,7 @@ class StepModel {
   bool isExibirArmacao = false;
   bool isExibirGraficoCDA = false;
   bool isAcceptWithoutElements = true;
+  bool isConsiderarTotalProducao = true;
 
   static StepModel notFound = StepModel(
     createdAt: DateTime.now(),
@@ -41,6 +42,7 @@ class StepModel {
     isExibirArmacao: false,
     isExibirGraficoCDA: false,
     isAcceptWithoutElements: true,
+    isConsiderarTotalProducao: true,
   );
 
   List<StepModel> get fromSteps => fromStepsIds
@@ -70,6 +72,7 @@ class StepModel {
     required this.isExibirArmacao,
     required this.isExibirGraficoCDA,
     required this.isAcceptWithoutElements,
+    required this.isConsiderarTotalProducao,
   });
 
   StepModel copyWith({
@@ -90,6 +93,7 @@ class StepModel {
     bool? isExibirArmacao,
     bool? isExibirGraficoCDA,
     bool? isAcceptWithoutElements,
+    bool? isConsiderarTotalProducao,
   }) {
     return StepModel(
       id: id ?? this.id,
@@ -110,6 +114,8 @@ class StepModel {
       isExibirGraficoCDA: isExibirGraficoCDA ?? this.isExibirGraficoCDA,
       isAcceptWithoutElements:
           isAcceptWithoutElements ?? this.isAcceptWithoutElements,
+      isConsiderarTotalProducao:
+          isConsiderarTotalProducao ?? this.isConsiderarTotalProducao,
     );
   }
 
@@ -131,6 +137,7 @@ class StepModel {
       'isExibirArmacao': isExibirArmacao,
       'isExibirGraficoCDA': isExibirGraficoCDA,
       'isAcceptWithoutElements': isAcceptWithoutElements,
+      'isConsiderarTotalProducao': isConsiderarTotalProducao,
     };
   }
 
@@ -168,6 +175,7 @@ class StepModel {
         isExibirArmacao: map['isExibirArmacao'] ?? false,
         isExibirGraficoCDA: map['isExibirGraficoCDA'] ?? false,
         isAcceptWithoutElements: map['isAcceptWithoutElements'] ?? true,
+        isConsiderarTotalProducao: map['isConsiderarTotalProducao'] ?? true,
       );
     }
     return StepModel(
@@ -199,6 +207,7 @@ class StepModel {
       isExibirGraficoCDA: map['isExibirGraficoCDA'] ?? false,
       isAcceptWithoutElements: map['isAcceptWithoutElements'] ?? 
           !(map['isBlockMoveWithoutElements'] ?? false),
+      isConsiderarTotalProducao: map['isConsiderarTotalProducao'] ?? true,
     );
   }
 
@@ -224,6 +233,7 @@ class StepModel {
       isExibirGraficoCDA: map['exibir_grafico_cda'] ?? false,
       isAcceptWithoutElements: map['aceita_sem_elementos'] ??
           !(map['bloqueia_mover_sem_elementos'] ?? false),
+      isConsiderarTotalProducao: map['is_considerar_total_producao'] ?? true,
     );
   }
 
@@ -274,6 +284,7 @@ class StepModel {
       'exibir_armacao': isExibirArmacao,
       'exibir_grafico_cda': isExibirGraficoCDA,
       'aceita_sem_elementos': isAcceptWithoutElements,
+      'is_considerar_total_producao': isConsiderarTotalProducao,
     };
   }
 

@@ -74,6 +74,46 @@ enum PosicaoStatus {
   }
 }
 
+// ─── MEDIDA VARIÁVEL DE POSIÇÃO ───────────────────────────────────────────────
+class PosicaoMedidaModel {
+  final String id;
+  final String posicaoId;
+  final double comprUnit; // comprimento unitário calculado
+  final double comprCorte; // comprimento de corte calculado
+  final int qtde; // multiplicador (ex: 2 do "16x2")
+  final DateTime createdAt;
+
+  PosicaoMedidaModel({
+    required this.id,
+    required this.posicaoId,
+    required this.comprUnit,
+    required this.comprCorte,
+    this.qtde = 1,
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
+
+  factory PosicaoMedidaModel.fromSupabaseMap(Map<String, dynamic> map) {
+    return PosicaoMedidaModel(
+      id: (map['id'] ?? '').toString(),
+      posicaoId: (map['posicao_id'] ?? '').toString(),
+      comprUnit: double.tryParse((map['compr_unit'] ?? '0').toString()) ?? 0.0,
+      comprCorte: double.tryParse((map['compr_corte'] ?? '0').toString()) ?? 0.0,
+      qtde: int.tryParse((map['qtde'] ?? '1').toString()) ?? 1,
+      createdAt: map['created_at'] != null
+          ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
+          : DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toSupabaseMap() => {
+        'id': id,
+        'posicao_id': posicaoId,
+        'compr_unit': comprUnit,
+        'compr_corte': comprCorte,
+        'qtde': qtde,
+      };
+}
+
 // ─── POSIÇÃO / OS ─────────────────────────────────────────────────────────────
 class ElementoPosicaoModel {
   final String id;
@@ -83,10 +123,12 @@ class ElementoPosicaoModel {
   final String produtoId;
   ProdutoModel? produto; // bitola do catálogo
   final double pesoKg;
-  final int qtde; // quantidade de peças/barras na posição
-  final double comprCorte; // comprimento de corte (importado do CSV)
+  final int qtde; // quantidade total de peças/barras na posição
+  final double comprUnit; // comprimento unitário (fixo ou 0 se variável)
+  final double comprCorte; // comprimento de corte (fixo ou 0 se variável)
   PosicaoStatus status; // status de produção CD
   final DateTime createdAt;
+  List<PosicaoMedidaModel> medidas; // medidas variáveis (vazio se comprimento fixo)
 
   ElementoPosicaoModel({
     required this.id,
@@ -97,12 +139,20 @@ class ElementoPosicaoModel {
     required this.pesoKg,
     required this.createdAt,
     this.qtde = 0,
+    this.comprUnit = 0,
     this.comprCorte = 0,
     this.produto,
     this.status = PosicaoStatus.aguardando,
-  });
+    List<PosicaoMedidaModel>? medidas,
+  }) : medidas = medidas ?? [];
 
-  factory ElementoPosicaoModel.fromSupabaseMap(Map<String, dynamic> map) {
+  /// Se esta posição tem comprimentos variáveis
+  bool get isVariavel => medidas.isNotEmpty;
+
+  factory ElementoPosicaoModel.fromSupabaseMap(
+    Map<String, dynamic> map, {
+    List<Map<String, dynamic>>? medidasRaw,
+  }) {
     final produtoId = (map['produto_id'] ?? '').toString();
     return ElementoPosicaoModel(
       id: (map['id'] ?? '').toString(),
@@ -112,6 +162,7 @@ class ElementoPosicaoModel {
       produtoId: produtoId,
       pesoKg: double.tryParse((map['peso_kg'] ?? '0').toString()) ?? 0.0,
       qtde: int.tryParse((map['qtde'] ?? '0').toString()) ?? 0,
+      comprUnit: double.tryParse((map['compr_unit'] ?? '0').toString()) ?? 0.0,
       comprCorte: double.tryParse((map['compr_corte'] ?? '0').toString()) ?? 0.0,
       status: PosicaoStatus.values.firstWhere(
           (e) => e.name == (map['status'] ?? 'aguardando'),
@@ -122,6 +173,9 @@ class ElementoPosicaoModel {
       produto: FirestoreClient.produtos.data
           .where((p) => p.id == produtoId)
           .firstOrNull,
+      medidas: (medidasRaw ?? [])
+          .map((m) => PosicaoMedidaModel.fromSupabaseMap(m))
+          .toList(),
     );
   }
 
@@ -133,6 +187,7 @@ class ElementoPosicaoModel {
         'produto_id': produtoId,
         'peso_kg': pesoKg,
         'qtde': qtde,
+        'compr_unit': comprUnit,
         'compr_corte': comprCorte,
         'status': status.name,
       };
@@ -215,10 +270,15 @@ class ElementoModel {
     Map<String, dynamic> map, {
     List<Map<String, dynamic>>? posicoesRaw,
     List<Map<String, dynamic>>? arquivosRaw,
+    List<Map<String, dynamic>>? medidasRaw,
   }) {
-    final posicoes = (posicoesRaw ?? [])
-        .map((p) => ElementoPosicaoModel.fromSupabaseMap(p))
-        .toList();
+    final posicoes = (posicoesRaw ?? []).map((p) {
+      final pId = (p['id'] ?? '').toString();
+      final medidasDaPosicao = (medidasRaw ?? [])
+          .where((m) => m['posicao_id'].toString() == pId)
+          .toList();
+      return ElementoPosicaoModel.fromSupabaseMap(p, medidasRaw: medidasDaPosicao);
+    }).toList();
     final arquivos = (arquivosRaw ?? [])
         .map((a) => ElementoArquivoModel.fromMap(a))
         .toList();
@@ -251,15 +311,36 @@ class ElementoModel {
 
 // ─── MODELOS DE CRIAÇÃO / EDIÇÃO (para formulário) ───────────────────────────
 
+class PosicaoMedidaCreateModel {
+  final String id;
+  double comprUnit;
+  double comprCorte;
+  int qtde;
+
+  PosicaoMedidaCreateModel({
+    this.comprUnit = 0,
+    this.comprCorte = 0,
+    this.qtde = 1,
+  }) : id = HashService.get;
+
+  PosicaoMedidaCreateModel.fromModel(PosicaoMedidaModel m)
+      : id = m.id,
+        comprUnit = m.comprUnit,
+        comprCorte = m.comprCorte,
+        qtde = m.qtde;
+}
+
 class ElementoPosicaoCreateModel {
   final String id;
   final TextController nome = TextController();
   final TextController numeroOs = TextController();
   final TextController pesoKg = TextController();
   final TextController qtde = TextController(text: '0');
+  final TextController comprUnit = TextController(text: '0');
   final TextController comprCorte = TextController(text: '0');
   ProdutoModel? produto;
   bool isEdit;
+  List<PosicaoMedidaCreateModel> medidas = [];
 
   ElementoPosicaoCreateModel({this.isEdit = false}) : id = HashService.get;
 
@@ -271,8 +352,13 @@ class ElementoPosicaoCreateModel {
     numeroOs.text = m.numeroOs;
     pesoKg.text = m.pesoKg.toStringAsFixed(3);
     qtde.text = m.qtde.toString();
+    comprUnit.text = m.comprUnit.toStringAsFixed(3);
     comprCorte.text = m.comprCorte.toStringAsFixed(3);
+    medidas = m.medidas.map((m) => PosicaoMedidaCreateModel.fromModel(m)).toList();
   }
+
+  /// Se esta posição tem comprimentos variáveis
+  bool get isVariavel => medidas.isNotEmpty;
 
   bool get isValid =>
       nome.text.isNotEmpty &&
@@ -283,6 +369,8 @@ class ElementoPosicaoCreateModel {
   double get pesoDouble =>
       double.tryParse(pesoKg.text.replaceAll(',', '.')) ?? 0.0;
   int get qtdeInt => int.tryParse(qtde.text) ?? 0;
+  double get comprUnitDouble =>
+      double.tryParse(comprUnit.text.replaceAll(',', '.')) ?? 0.0;
   double get comprCorteDouble =>
       double.tryParse(comprCorte.text.replaceAll(',', '.')) ?? 0.0;
 
@@ -295,8 +383,16 @@ class ElementoPosicaoCreateModel {
         produto: produto,
         pesoKg: pesoDouble,
         qtde: qtdeInt,
+        comprUnit: comprUnitDouble,
         comprCorte: comprCorteDouble,
         createdAt: DateTime.now(),
+        medidas: medidas.map((m) => PosicaoMedidaModel(
+          id: m.id,
+          posicaoId: id,
+          comprUnit: m.comprUnit,
+          comprCorte: m.comprCorte,
+          qtde: m.qtde,
+        )).toList(),
       );
 }
 

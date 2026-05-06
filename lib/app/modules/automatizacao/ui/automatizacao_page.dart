@@ -70,8 +70,8 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                 const SizedBox(height: 16),
                 _buildCriacaoPedidoRule(steps),
                 _buildSingleStepRule(
-                  '02 - Produto separado',
-                  'Ao Marcar produto como separado:',
+                  '02 - Aguardando Produção (Corte e Dobra)',
+                  'Quando o pedido recém-criado estiver aguardando para entrar na fábrica, mover para:',
                   model.produtoPedidoSeparado.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
@@ -79,8 +79,8 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                           model.produtoPedidoSeparado.copyWith(step: step))),
                 ),
                 _buildSingleStepRule(
-                  '03 - Produto entra pra produção (Corte e Dobra ou Armado)',
-                  'Quando o item entrar numa Ordem de Produção, mover para:',
+                  '03 - Início de Produção (Corte e Dobra)',
+                  'Quando pelo menos um item do pedido entrar em uma Ordem de Produção, mover para:',
                   model.produzindoCDPedido.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
@@ -88,8 +88,8 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                           model.produzindoCDPedido.copyWith(step: step))),
                 ),
                 _buildSingleStepRule(
-                  '04 - Produção da Etapa de Corte e dobra Finalizado (CD)',
-                  'Quando todos os itens estiverem prontos, mover para:',
+                  '04 - Pedido Finalizado (Apenas Corte e Dobra)',
+                  'Quando 100% das bitolas de um pedido "CD" estiverem prontas, mover para:',
                   model.prontoCDPedido.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
@@ -97,8 +97,8 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                           model.prontoCDPedido.copyWith(step: step))),
                 ),
                 _buildSingleStepRule(
-                  '05 - Produção da Etapa de Corte e dobra Finalizado (CDA)',
-                  'Quando todos os itens estiverem prontos, mover para:',
+                  '05 - Aguardando Armação (Pedidos CDA)',
+                  'Quando o Corte/Dobra terminar e o pedido for liberado para a fila dos armadores, mover para:',
                   model.aguardandoArmacaoPedido.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
@@ -106,8 +106,8 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                           model.aguardandoArmacaoPedido.copyWith(step: step))),
                 ),
                 _buildSingleStepRule(
-                  '06 - Produzindo Armação',
-                  'Muda status para Produzindo Armação:',
+                  '06 - Início da Montagem (Armação)',
+                  'Quando o armador sinalizar o início da montagem das peças, mover para:',
                   model.produzindoArmacaoPedido.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(

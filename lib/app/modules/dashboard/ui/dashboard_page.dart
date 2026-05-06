@@ -148,7 +148,9 @@ class DashboardPageState extends State<DashboardPage> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    final totalKg = pedidos.fold(0.0, (sum, p) => sum + p.getQtdeTotal());
+    final totalKg = pedidos
+        .where((p) => p.step.isConsiderarTotalProducao)
+        .fold(0.0, (sum, p) => sum + p.getQtdeTotal());
     final entregasHoje = pedidos
         .where((p) => p.deliveryAt != null && p.deliveryAt!.isSameDay(today))
         .length;
@@ -332,6 +334,11 @@ class DashboardPageState extends State<DashboardPage> {
 
     produtos.sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
 
+    double totalGeral = 0;
+    for (var p in produtos) {
+      totalGeral += consumoMap[p.id] ?? 0.0;
+    }
+
     return Container(
       height: 450,
       decoration: BoxDecoration(
@@ -359,6 +366,18 @@ class DashboardPageState extends State<DashboardPage> {
                     const W(12),
                     Text('CONSUMO ESTIMADO',
                         style: AppCss.mediumBold.setSize(18)),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryMain.withAlpha(25),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        totalGeral.toKg(),
+                        style: AppCss.minimumBold.setSize(13).setColor(AppColors.primaryMain),
+                      ),
+                    ),
                   ],
                 ),
                 const H(8),

@@ -273,11 +273,26 @@ class StepController {
   }
 
   void _onMovePedido(PedidoModel pedido, StepModel step, int index) {
-    final removedPedido = _onRemovePedidoFromStep(pedido.step.id, pedido.id);
+    final originalStepId = pedido.step.id;
+    final isSameStep = originalStepId == step.id;
+    
+    int originalIndex = -1;
+    if (isSameStep) {
+      final key = utils.kanban.keys.firstWhereOrNull((e) => e.id == originalStepId);
+      if (key != null) {
+        originalIndex = utils.kanban[key]!.indexOf(pedido);
+      }
+    }
+
+    final removedPedido = _onRemovePedidoFromStep(originalStepId, pedido.id);
     if (removedPedido != null) {
+      int finalIndex = index;
+      if (isSameStep && originalIndex != -1 && originalIndex < index) {
+        finalIndex = index - 1;
+      }
       _onAddPedidoFromStep(
         step.id,
-        index,
+        finalIndex,
         pedido: removedPedido,
       );
       _onUpdatePedidosIndex(step.id, removedPedido.id);
@@ -301,6 +316,11 @@ class StepController {
   }) {
     final key = utils.kanban.keys.firstWhereOrNull((e) => e.id == stepId);
     if (key == null) return;
+    
+    if (index > utils.kanban[key]!.length) {
+      index = utils.kanban[key]!.length;
+    }
+    
     utils.kanban[key]!.insert(index, pedido);
     pedido.addStep(key);
   }

@@ -42,22 +42,33 @@ class KanbanStepBodyWidget extends StatelessWidget {
               : const AlwaysScrollableScrollPhysics(),
           controller: step.scrollController,
           cacheExtent: 200,
-          children: [
-            _dragTargetWidget(step, pedidos, 0),
-            const SizedBox(height: 8),
-            for (int i = 0; i < pedidos.length; i++)
-              if (utils.isPedidoVisibleFiltered(pedidos[i])) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: KanbanCardDraggableWidget(pedidos[i]),
-                ),
-                _dragTargetWidget(step, pedidos, i + 1,
-                    isLast: i == pedidos.length - 1),
-              ],
-            if (pedidos.isEmpty)
-              _dragTargetWidget(step, pedidos, pedidos.length, isLast: true),
-            const SizedBox(height: 8),
-          ],
+          children: () {
+            int lastVisibleIndex = -1;
+            for (int i = 0; i < pedidos.length; i++) {
+              if (utils.isPedidoVisibleFiltered(pedidos[i])) {
+                lastVisibleIndex = i;
+              }
+            }
+
+            return [
+              _dragTargetWidget(step, pedidos, 0, isLast: lastVisibleIndex == -1),
+              const SizedBox(height: 8),
+              for (int i = 0; i < pedidos.length; i++)
+                if (utils.isPedidoVisibleFiltered(pedidos[i])) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: KanbanCardDraggableWidget(pedidos[i]),
+                  ),
+                  _dragTargetWidget(
+                    step,
+                    pedidos,
+                    i + 1,
+                    isLast: i == lastVisibleIndex,
+                  ),
+                ],
+              const SizedBox(height: 8),
+            ];
+          }(),
         ),
       ),
     );

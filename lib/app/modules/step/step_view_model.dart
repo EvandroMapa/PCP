@@ -30,6 +30,7 @@ class StepCreateModel {
   bool isExibirArmacao = false;
   bool isExibirGraficoCDA = false;
   bool isAcceptWithoutElements = true;
+  bool isConsiderarTotalProducao = true;
 
   late bool isEdit;
 
@@ -59,6 +60,7 @@ class StepCreateModel {
     isExibirArmacao = etapa.isExibirArmacao;
     isExibirGraficoCDA = etapa.isExibirGraficoCDA;
     isAcceptWithoutElements = etapa.isAcceptWithoutElements;
+    isConsiderarTotalProducao = etapa.isConsiderarTotalProducao;
   }
 
   StepModel toStepModel(StepModel? etapa) => StepModel(
@@ -78,5 +80,6 @@ class StepCreateModel {
         isExibirArmacao: isExibirArmacao,
         isExibirGraficoCDA: isExibirGraficoCDA,
         isAcceptWithoutElements: isAcceptWithoutElements,
+        isConsiderarTotalProducao: isConsiderarTotalProducao,
       );
 }

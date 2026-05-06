@@ -64,7 +64,7 @@ class _StepCreatePageState extends State<StepCreatePage> {
       '|${form.isArchivedAvailable}|${form.isPermiteProducao}'
       '|${form.considerarConsumoRelatorioPedidos}'
       '|${form.isExibirArmacao}|${form.isExibirGraficoCDA}'
-      '|${form.isAcceptWithoutElements}';
+      '|${form.isAcceptWithoutElements}|${form.isConsiderarTotalProducao}';
 
   @override
   void initState() {
@@ -530,6 +530,17 @@ class _StepCreatePageState extends State<StepCreatePage> {
             value: form.isAcceptWithoutElements,
             onChanged: (_) {
               form.isAcceptWithoutElements = !form.isAcceptWithoutElements;
+              stepCtrl.formStream.update();
+            },
+          ),
+          const Divider(height: 28),
+          _switchOption(
+            icon: Icons.functions_outlined,
+            label: 'Considerar no Total em Produção',
+            description: 'Soma pedidos desta etapa no KPI "Total em Produção" (Gestão à Vista).',
+            value: form.isConsiderarTotalProducao,
+            onChanged: (_) {
+              form.isConsiderarTotalProducao = !form.isConsiderarTotalProducao;
               stepCtrl.formStream.update();
             },
           ),
