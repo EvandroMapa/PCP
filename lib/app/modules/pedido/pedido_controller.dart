@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/cliente/cliente_supabase_collection.dart';
+import 'package:overlay_support/overlay_support.dart';
+
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
@@ -929,13 +932,16 @@ class PedidoController {
   ) async {
     showLoadingDialog();
     try {
-      final cliente = BackendClient.clientes.getById(pedido.cliente.id);
-      cliente.obras.firstWhere((e) => e.id == pedido.obra.id).endereco =
-          endereco;
-      await BackendClient.clientes.update(cliente);
+      // Atualização cirúrgica apenas do JSONB endereco no Supabase
+      await ClienteSupabaseCollection().updateObraEndereco(pedido.obra.id, endereco);
+      // Atualiza em memória
       pedido.obra.endereco = endereco;
-      await BackendClient.pedidos.update(pedido);
       pedidoStream.update();
+      NotificationService.showPositive(
+        'Endereço atualizado',
+        'Endereço da obra salvo com sucesso',
+        position: NotificationPosition.bottom,
+      );
     } catch (e) {
       NotificationService.showNegative(
         'Erro ao atualizar endereço',
