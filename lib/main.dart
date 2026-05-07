@@ -1,4 +1,5 @@
 import 'dart:developer';
+
 import 'package:aco_plus/app/app_controller.dart';
 import 'package:aco_plus/app/app_widget.dart';
 import 'package:aco_plus/app/core/models/service_model.dart';
@@ -17,7 +18,7 @@ void main() async {
     // Inicializa apenas o Supabase (obrigatório antes do runApp)
     await Service.initCoreServices();
 
-    // Sobe o app imediatamente — sem esperar queries lentas
+    // Sobe o app imediatamente — sem esperar queries ...lentas
     runApp(const App());
 
     // Carrega dados do banco em background e inicia o controller após
