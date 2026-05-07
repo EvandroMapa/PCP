@@ -184,6 +184,7 @@ class UsuarioController {
       log('Erro ao limpar token do usuário: $e');
     }
     await AppRepository.removeUser();
+    await AppRepository.clearCredentials();
     usuarioStream.add(null);
   }
 }
