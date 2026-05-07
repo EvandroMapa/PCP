@@ -11,6 +11,7 @@ import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/dashboard/dashboard_controller.dart';
 import 'package:aco_plus/app/modules/armacao/ui/armacao_elementos_page.dart';
+import 'package:aco_plus/app/modules/dashboard/ui/mapa_obras_page.dart';
 
 import 'package:aco_plus/app/modules/ordem/ui/ordem/ordem_page.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
@@ -36,7 +37,7 @@ class DashboardPageState extends State<DashboardPage> {
   List<PontaBitolaGrupo> _pontasGrupos = [];
   double _totalPontasKg = 0.0;
   bool _pontasCarregando = true;
-  int _modoDash = 0; // 0 = Gestão a Vista, 1 = Mapa de Pedidos
+  int _modoDash = 0; // 0 = Gestão a Vista, 1 = Mapa Pátio, 2 = Mapa de Obras
 
   @override
   void initState() {
@@ -79,7 +80,11 @@ class DashboardPageState extends State<DashboardPage> {
     return Column(
       children: [
         _buildAppBar(),
-        Expanded(child: _modoDash == 0 ? body() : _mapaParqueWidget()),
+        Expanded(child: switch (_modoDash) {
+          1 => _mapaParqueWidget(),
+          2 => const MapaObrasWidget(),
+          _ => body(),
+        }),
       ],
     );
   }
@@ -867,13 +872,19 @@ class DashboardPageState extends State<DashboardPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _modoDash == 0 ? 'Gest\u00e3o a Vista' : 'Mapa de Pedidos',
+                  switch (_modoDash) {
+                    1 => 'Mapa Pátio',
+                    2 => 'Mapa de Obras',
+                    _ => 'Gestão a Vista',
+                  },
                   style: AppCss.mediumBold.setSize(20).setColor(Colors.white),
                 ),
                 Text(
-                  _modoDash == 0
-                      ? 'Monitoramento em tempo real de produ\u00e7\u00e3o e consumo'
-                      : 'Vis\u00e3o geral do parque log\u00edstico',
+                  switch (_modoDash) {
+                    1 => 'Visão geral do parque logístico',
+                    2 => 'Obras com pedidos ativos no mapa',
+                    _ => 'Monitoramento em tempo real de produção e consumo',
+                  },
                   style: AppCss.minimumRegular.setSize(12).setColor(Colors.white.withValues(alpha: 0.8)),
                 ),
               ],
@@ -887,8 +898,9 @@ class DashboardPageState extends State<DashboardPage> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _toggleBtn(0, Icons.dashboard_outlined, 'Gest\u00e3o'),
-                _toggleBtn(1, Icons.map_outlined, 'Mapa'),
+                _toggleBtn(0, Icons.dashboard_outlined, 'Gestão'),
+                _toggleBtn(1, Icons.map_outlined, 'Mapa Pátio'),
+                _toggleBtn(2, Icons.location_on_outlined, 'Mapa Obras'),
               ],
             ),
           ),

@@ -28,6 +28,31 @@ class EnderecoModel {
 
   EnderecoModel.empty();
 
+  EnderecoModel copyWith({
+    String? cep,
+    String? logradouro,
+    String? bairro,
+    String? localidade,
+    String? estado,
+    String? numero,
+    String? complemento,
+    double? lat,
+    double? lon,
+  }) {
+    return EnderecoModel(
+      cep: cep ?? this.cep,
+      logradouro: logradouro ?? this.logradouro,
+      bairro: bairro ?? this.bairro,
+      localidade: localidade ?? this.localidade,
+      estado: estado ?? this.estado,
+      numero: numero ?? this.numero,
+      complemento: complemento ?? this.complemento,
+      lat: lat ?? this.lat,
+      lon: lon ?? this.lon,
+    );
+  }
+
+
   String get name => localidade.isEmpty
       ? 'Endereço Indisponível'
       : '$logradouro, $numero - $bairro. $localidade-${estado.toUpperCase()}';
