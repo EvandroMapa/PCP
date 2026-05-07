@@ -1,6 +1,7 @@
+import 'dart:convert';
 import 'package:aco_plus/app/core/client/firestore/collections/notificacao/notificacao_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
-import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/core/services/push_notification_service.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:dio/dio.dart';
@@ -15,9 +16,12 @@ class FCMProvider {
       if (token == null || usuario.deviceTokens.contains(token)) return;
       usuario.deviceTokens.clear();
       usuario.deviceTokens.add(token);
-      BackendClient.usuarios.update(usuario);
+      // Update cirúrgico — só atualiza deviceTokens, sem tocar em outros campos
+      await SupabaseService.client
+          .from('usuarios')
+          .update({'deviceTokens': json.encode(usuario.deviceTokens)})
+          .eq('id', usuario.id);
     } catch (e) {
-      // Firebase pode não estar inicializado ou permissão negada — ignora silenciosamente
       debugPrint('[FCM] putToken ignorado: $e');
     }
   }
