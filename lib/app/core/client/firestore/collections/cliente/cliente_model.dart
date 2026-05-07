@@ -117,7 +117,7 @@ class ClienteModel {
 
 class ObraModel {
   final String id;
-  final String descricao;
+  String descricao;
   final String telefoneFixo;
   EnderecoModel? endereco;
   final ObraStatus status;

@@ -951,6 +951,35 @@ class PedidoController {
     if (contextGlobal.mounted) Navigator.pop(contextGlobal);
   }
 
+  /// Atualiza descrição e/ou endereço da obra de forma cirúrgica.
+  Future<void> onUpdateObraCompleto(
+    PedidoModel pedido, {
+    required String descricao,
+    EnderecoModel? endereco,
+  }) async {
+    final supabase = ClienteSupabaseCollection();
+
+    // Salva descrição se mudou
+    if (descricao != pedido.obra.descricao) {
+      await supabase.updateObraDescricao(pedido.obra.id, descricao);
+      pedido.obra.descricao = descricao;
+    }
+
+    // Salva endereço se foi alterado
+    if (endereco != null) {
+      await supabase.updateObraEndereco(pedido.obra.id, endereco);
+      pedido.obra.endereco = endereco;
+    }
+
+    pedidoStream.update();
+    NotificationService.showPositive(
+      'Obra atualizada',
+      'Descrição e endereço salvos com sucesso',
+      position: NotificationPosition.bottom,
+    );
+  }
+
+
   void verificarTags(PedidoModel edit) {
     // Lógica antiga (que forçava etiqueta CDA) foi removida a pedido do usuário
   }

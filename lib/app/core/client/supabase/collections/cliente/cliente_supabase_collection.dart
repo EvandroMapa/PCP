@@ -192,4 +192,12 @@ class ClienteSupabaseCollection extends ClienteCollection {
     }).eq('id', obraId);
     await fetch();
   }
+
+  /// Atualiza SOMENTE o nome/descrição da obra
+  Future<void> updateObraDescricao(String obraId, String descricao) async {
+    await SupabaseService.client.from(obraTableName).update({
+      'nome': descricao,
+    }).eq('id', obraId);
+    await fetch();
+  }
 }
