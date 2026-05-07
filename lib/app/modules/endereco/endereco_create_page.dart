@@ -34,6 +34,10 @@ class _EnderecoCreatePageState extends State<EnderecoCreatePage> {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () async {
+            if (!enderecoCtrl.houveMudanca) {
+              pop(context);
+              return;
+            }
             if (await showConfirmDialog(
               'Deseja realmente sair?',
               'Os dados do endereço serão perdidos.',

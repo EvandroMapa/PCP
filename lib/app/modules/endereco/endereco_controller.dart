@@ -19,13 +19,22 @@ class EnderecoController {
       AppStream<EnderecoCreateModel>();
   EnderecoCreateModel get form => enderecoCreateStream.value;
 
+  /// Snapshot dos valores iniciais para detectar se houve alteração
+  String _snapshotInicial = '';
+
   void onInitEndereco(EnderecoModel? endereco) {
     enderecoCreateStream.add(
       endereco != null
           ? EnderecoCreateModel.edit(endereco)
           : EnderecoCreateModel(),
     );
+    _snapshotInicial = _gerarSnapshot(form);
   }
+
+  String _gerarSnapshot(EnderecoCreateModel f) =>
+      '${f.cep.text}|${f.logradouro.text}|${f.bairro.text}|${f.localidade.text}|${f.estado.text}|${f.numero.text}|${f.complemento.text}|${f.lat.text}|${f.lon.text}';
+
+  bool get houveMudanca => _gerarSnapshot(form) != _snapshotInicial;
 
   List<EnderecoModel> getOrdensFiltered(
     String search,

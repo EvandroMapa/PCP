@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart' show GetOptions;
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
+import 'package:aco_plus/app/core/models/endereco_model.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_collection.dart';
 
@@ -180,6 +181,15 @@ class ClienteSupabaseCollection extends ClienteCollection {
         .from(obraTableName)
         .delete()
         .eq('id', obraId);
+    await fetch();
+  }
+
+  /// Atualiza SOMENTE o endereço da obra (campo JSONB)
+  Future<void> updateObraEndereco(
+      String obraId, EnderecoModel endereco) async {
+    await SupabaseService.client.from(obraTableName).update({
+      'endereco': endereco.toMap(),
+    }).eq('id', obraId);
     await fetch();
   }
 }

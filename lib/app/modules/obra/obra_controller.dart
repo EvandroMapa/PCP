@@ -107,6 +107,21 @@ class ObraController {
     }
   }
 
+  Future<void> salvarEndereco(String obraId, EnderecoModel endereco) async {
+    try {
+      log('[ObraController] salvarEndereco — obraId=$obraId');
+      await _supabaseClientes.updateObraEndereco(obraId, endereco);
+      log('[ObraController] salvarEndereco OK');
+    } catch (e, st) {
+      log('[ObraController] ERRO em salvarEndereco: $e\n$st');
+      NotificationService.showNegative(
+        'Erro ao salvar endereço',
+        e.toString(),
+        position: NotificationPosition.bottom,
+      );
+    }
+  }
+
   void onValid() {
     if (form.descricao.text.length < 2) {
       throw Exception('Descrição deve conter no mínimo 3 caracteres');

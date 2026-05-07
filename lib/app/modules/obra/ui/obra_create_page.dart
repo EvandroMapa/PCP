@@ -40,8 +40,11 @@ class ObraCreatePage extends StatefulWidget {
 class _ObraCreatePageState extends State<ObraCreatePage> {
   String _initialSnapshot = '';
 
+  /// Snapshot considera apenas campos da própria obra.
+  /// O endereço tem salvamento independente (direto no banco),
+  /// então não entra na detecção de "alteração pendente".
   String _snapshot(ObraCreateModel form) =>
-      '${form.descricao.text}|${form.telefoneFixo.text}|${form.status?.index}|${form.endereco?.name}';
+      '${form.descricao.text}|${form.telefoneFixo.text}|${form.status?.index}';
 
   @override
   void initState() {
@@ -68,10 +71,10 @@ class _ObraCreatePageState extends State<ObraCreatePage> {
                 'Deseja realmente sair?',
                 'Os dados da obra serão perdidos.',
               )) {
-                if (context.mounted) pop(context);
+                if (context.mounted) Navigator.pop(context, widget.obra);
               }
             } else {
-              pop(context);
+              Navigator.pop(context, obraCtrl.form.toObraModel());
             }
           },
           icon: Icon(Icons.arrow_back, color: AppColors.white),
@@ -150,11 +153,20 @@ class _ObraCreatePageState extends State<ObraCreatePage> {
                 onTap: () async {
                   final endereco = await push(
                     context,
-                    EnderecoCreatePage(endereco: form.endereco),
+                    EnderecoCreatePage(endereco: obraCtrl.form.endereco),
                   );
                   if (endereco != null) {
-                    form.endereco = endereco;
+                    obraCtrl.form.endereco = endereco;
                     obraCtrl.formStream.update();
+
+                    // Se a obra já existe no banco, persiste o endereço direto
+                    if (widget.obra != null && widget.clienteId != null) {
+                      await obraCtrl.salvarEndereco(
+                        obraCtrl.form.id,
+                        endereco,
+                      );
+                      widget.obra!.endereco = endereco;
+                    }
                   }
                 },
                 child: IgnorePointer(
