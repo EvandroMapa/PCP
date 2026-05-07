@@ -1,3 +1,4 @@
+import 'package:aco_plus/app/app_repository.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
@@ -36,6 +37,18 @@ class SignUpPageState extends State<SignUpPage>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut));
     _animCtrl.forward();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final credentials = await AppRepository.getCredentials();
+    if (credentials != null && mounted) {
+      setState(() {
+        email.text = credentials.email;
+        senha.text = credentials.senha;
+        _rememberMe = true;
+      });
+    }
   }
 
   @override

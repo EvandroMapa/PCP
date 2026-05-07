@@ -27,4 +27,26 @@ class AppRepository {
     final sharedPrefs = await SharedPreferences.getInstance();
     sharedPrefs.clear();
   }
+
+  // ── Credenciais para "Manter conectado" ──
+
+  static Future<void> saveCredentials(String email, String senha) async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('saved_email', email);
+    prefs.setString('saved_senha', senha);
+  }
+
+  static Future<({String email, String senha})?> getCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString('saved_email');
+    final senha = prefs.getString('saved_senha');
+    if (email == null || senha == null) return null;
+    return (email: email, senha: senha);
+  }
+
+  static Future<void> clearCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.remove('saved_email');
+    prefs.remove('saved_senha');
+  }
 }

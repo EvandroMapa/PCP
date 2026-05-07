@@ -1,3 +1,4 @@
+import 'package:aco_plus/app/app_repository.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
@@ -24,6 +25,13 @@ class SignController {
             e.senha.toCompare == senha.toCompare,
       );
       if (user == null) throw Exception('Usuário não encontrado');
+
+      // Salva ou limpa credenciais conforme "Manter conectado"
+      if (rememberMe) {
+        AppRepository.saveCredentials(email, senha);
+      } else {
+        AppRepository.clearCredentials();
+      }
 
       usuarioCtrl.setCurrentUser(user, rememberMe);
     } catch (value) {
