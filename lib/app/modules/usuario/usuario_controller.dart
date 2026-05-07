@@ -139,14 +139,19 @@ class UsuarioController {
       UsuarioModel? user = await AppRepository.get();
       if (user != null) {
         final usuariosData = BackendClient.usuarios.data;
-        if (usuariosData.isNotEmpty &&
-            usuariosData.any((e) => e.id == user!.id)) {
-          user = BackendClient.usuarios.getById(user.id);
-          AppRepository.add(user);
-        } else {
-          user = null;
-          await AppRepository.clear();
+        if (usuariosData.isNotEmpty) {
+          // Dados carregados — valida se o usuário ainda existe
+          if (usuariosData.any((e) => e.id == user!.id)) {
+            user = BackendClient.usuarios.getById(user.id);
+            AppRepository.add(user);
+          } else {
+            // Usuário não existe mais no banco
+            user = null;
+            await AppRepository.clear();
+          }
         }
+        // Se data está vazio, mantém o user do SharedPreferences
+        // (dados ainda não carregaram — não invalida a sessão)
       }
       usuarioStream.add(user);
     } catch (e) {

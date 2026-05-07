@@ -15,7 +15,7 @@ void main() async {
     RouteConfig.setConfig();
     await initializeDateFormatting('pt_BR');
 
-    // Inicializa apenas o Supabase (obrigatório antes do runApp)
+    // Inicializa apenas rererero Supabase (obrigatório antes do runApp)
     await Service.initCoreServices();
 
     // Sobe o app imediatamente — sem esperar queries ...lentas
