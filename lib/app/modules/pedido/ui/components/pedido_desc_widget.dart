@@ -11,7 +11,9 @@ import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/endereco/endereco_create_page.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:overlay_support/overlay_support.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PedidoDescWidget extends StatelessWidget {
   final PedidoModel pedido;
@@ -24,18 +26,13 @@ class PedidoDescWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          RowItensLabel([
-            ItemLabel('Cliente', pedido.cliente.nome),
-            ItemLabel(
-              'Obra',
-              pedido.obra.endereco?.localidade != null &&
-                      pedido.obra.endereco!.localidade.isNotEmpty
-                  ? '${pedido.obra.descricao} - ${pedido.obra.endereco!.localidade.toUpperCase()}'
-                  : pedido.obra.descricao,
-              isEditable: true,
-              onEdit: () => _abrirDialogEditarObra(context),
-            ),
-          ]),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: ItemLabel('Cliente', pedido.cliente.nome)),
+              Expanded(child: _obraLabel(context)),
+            ],
+          ),
           const H(16),
           RowItensLabel([
             ItemLabel(
@@ -90,7 +87,175 @@ class PedidoDescWidget extends StatelessWidget {
       builder: (_) => _EditarObraDialog(pedido: pedido),
     );
   }
+
+  /// Label da obra com lápis de edição + ícone do Google Maps
+  Widget _obraLabel(BuildContext context) {
+    final temEndereco = pedido.obra.endereco != null;
+    final nomeObra = pedido.obra.endereco?.localidade != null &&
+            pedido.obra.endereco!.localidade.isNotEmpty
+        ? '${pedido.obra.descricao} - ${pedido.obra.endereco!.localidade.toUpperCase()}'
+        : pedido.obra.descricao;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Obra',
+              style: AppCss.minimumBold.copyWith(
+                fontWeight: FontWeight.w500,
+                fontSize: 13,
+                color: AppColors.black.withValues(alpha: 0.8),
+              ),
+            ),
+            const SizedBox(width: 5),
+            GestureDetector(
+              onTap: () => _abrirDialogEditarObra(context),
+              child: Icon(Icons.edit, size: 14, color: Colors.grey[700]),
+            ),
+            if (temEndereco) const SizedBox(width: 5),
+            if (temEndereco)
+              Tooltip(
+                message: 'Localização da obra',
+                preferBelow: false,
+                waitDuration: const Duration(milliseconds: 300),
+                child: PopupMenuButton<String>(
+                  onSelected: (opcao) => _onMenuMaps(opcao),
+                  padding: EdgeInsets.zero,
+                  iconSize: 14,
+                  icon: Icon(
+                    Icons.location_on,
+                    size: 14,
+                    color: Colors.red[600],
+                  ),
+                  itemBuilder: (_) => [
+                    PopupMenuItem(
+                      value: 'maps',
+                      child: Row(
+                        children: [
+                          Icon(Icons.map_outlined, size: 18, color: Colors.blue[700]),
+                          const SizedBox(width: 10),
+                          const Text('Abrir no Google Maps'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'whatsapp',
+                      child: Row(
+                        children: [
+                          Icon(Icons.chat, size: 18, color: Colors.green[600]),
+                          const SizedBox(width: 10),
+                          const Text('Enviar pelo WhatsApp'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'copiar',
+                      child: Row(
+                        children: [
+                          Icon(Icons.copy, size: 18, color: Colors.grey[700]),
+                          const SizedBox(width: 10),
+                          const Text('Copiar link'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+        Text(
+          nomeObra,
+          style: AppCss.minimumRegular.setSize(13).setColor(AppColors.black),
+        ),
+      ],
+    );
+  }
+
+  /// Monta a URL do Google Maps para o endereço da obra.
+  String? _montarUrlMaps() {
+    final end = pedido.obra.endereco;
+    if (end == null) return null;
+
+    if (end.lat != 0.0 && end.lon != 0.0) {
+      return 'https://www.google.com/maps/search/?api=1&query=${end.lat},${end.lon}';
+    }
+
+    final partes = [
+      end.logradouro,
+      end.numero,
+      end.bairro,
+      end.localidade,
+      end.estado,
+    ].where((p) => p.isNotEmpty).join(', ');
+
+    if (partes.isEmpty) return null;
+    return 'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(partes)}';
+  }
+
+  Future<void> _onMenuMaps(String opcao) async {
+    final url = _montarUrlMaps();
+    if (url == null) return;
+
+    switch (opcao) {
+      case 'maps':
+        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+        break;
+
+      case 'whatsapp':
+        final mensagem = _montarMensagemWhatsApp(url);
+        final waUrl = 'https://api.whatsapp.com/send?text=${Uri.encodeComponent(mensagem)}';
+        await launchUrl(Uri.parse(waUrl), mode: LaunchMode.externalApplication);
+        break;
+
+      case 'copiar':
+        await Clipboard.setData(ClipboardData(text: url));
+        NotificationService.showPositive(
+          'Link copiado',
+          'Link do Google Maps copiado para a área de transferência',
+          position: NotificationPosition.bottom,
+        );
+        break;
+    }
+  }
+
+  String _montarMensagemWhatsApp(String urlMaps) {
+    final linhas = <String>[];
+
+    linhas.add('🏗️ *ENTREGA DE OBRA*');
+    linhas.add('');
+
+    if (pedido.localizador.isNotEmpty) {
+      linhas.add('📋 *Pedido:* ${pedido.localizador}');
+    }
+    linhas.add('🏢 *Obra:* ${pedido.obra.descricao}');
+    linhas.add('👤 *Cliente:* ${pedido.cliente.nome}');
+
+    if (pedido.cliente.telefone.isNotEmpty &&
+        pedido.cliente.telefone != 'fone') {
+      linhas.add('📞 *Tel. Cliente:* ${pedido.cliente.telefone}');
+    }
+    if (pedido.obra.telefoneFixo.isNotEmpty &&
+        pedido.obra.telefoneFixo != 'fone') {
+      linhas.add('📱 *Tel. Obra:* ${pedido.obra.telefoneFixo}');
+    }
+
+    if (pedido.instrucoesEntrega.isNotEmpty) {
+      linhas.add('');
+      linhas.add('📝 *Instruções de entrega:*');
+      linhas.add(pedido.instrucoesEntrega);
+    }
+
+    linhas.add('');
+    linhas.add('📍 *Localização:*');
+    linhas.add(urlMaps);
+
+    return linhas.join('\n');
+  }
 }
+
 
 // ── Dialog de edição da obra ─────────────────────────────────────────────────
 
