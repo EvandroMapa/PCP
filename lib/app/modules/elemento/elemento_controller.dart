@@ -732,9 +732,9 @@ class ElementoController {
       final idxPeso = getIndex(['PESO (KG)', 'PESO']);
       final idxQtde =
           getIndex(['QTDE', 'QUANTIDADE', 'QTD']); // qtde da posicao
-      final idxComprUnit = getIndex(['COMPR. UNIT', 'COMPR UNIT', 'COMPRIMENTO UNIT']);
+      final idxComprUnit = getIndex(['COMPR. UNIT.', 'COMPR. UNIT', 'COMPR UNIT', 'COMPRIMENTO UNIT', 'COMPR.UNIT']);
       final idxComprCorte =
-          getIndex(['COMPR. CORTE', 'COMPR CORTE', 'COMPRIMENTO CORTE', 'COMPR.CORTE']);
+          getIndex(['COMPR. CORTE', 'COMPR CORTE', 'COMPRIMENTO CORTE', 'COMPR.CORTE', 'COMPR. CORTE.']);
 
       if (idxElemento == -1 ||
           idxPosicao == -1 ||
@@ -830,15 +830,18 @@ class ElementoController {
           }).firstOrNull;
 
           if (produtoEncontrado != null) {
-            // Analisar a quantidade (ex: "6" ou "2x6" ou "2 x 6")
+            // Analisar a quantidade (ex: "6" ou "1 X 19" ou "2 X 16")
+            // Formato CSV: "MULTIPLIER X STEPS"
+            //   parts[0] = multiplier (peças por variante de comprimento)
+            //   parts[1] = steps     (número de variantes/medidas distintas)
             final qtyLower = posQtdeStr.toLowerCase();
             int multiplier = 1;
             int steps = 1;
 
             if (qtyLower.contains('x')) {
               final parts = qtyLower.split('x');
-              steps = int.tryParse(parts[0].trim()) ?? 1;
-              multiplier = int.tryParse(parts[1].trim()) ?? 1;
+              multiplier = int.tryParse(parts[0].trim()) ?? 1; // A = peças por variante
+              steps      = int.tryParse(parts[1].trim()) ?? 1; // B = nº de variantes
             } else {
               steps = int.tryParse(qtyLower) ?? 1;
               if (steps == 0) steps = 1;

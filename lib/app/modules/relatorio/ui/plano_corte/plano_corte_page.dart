@@ -38,6 +38,7 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
   final List<_MateriaPrimaItem> _materiaPrima = [_MateriaPrimaItem.padrao()];
   PlanoCorteResultado? _resultado;
   bool _carregando = false;
+  bool _gerando = false;
   bool _salvando = false;
   bool _exportandoPdf = false;
   bool _exportandoEtiqueta = false;
@@ -102,8 +103,8 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
       if (ordens.isNotEmpty) {
         _ordemSelecionada = ordens.first;
         await _carregarElementosOrdem(_ordemSelecionada!);
-        // Auto-gerar resultado para edição
-        _gerarPlanoCorte();
+        // Auto-gerar resultado para edição (fire-and-forget: _gerando controla o estado)
+        _gerarPlanoCorte(); // ignore: discarded_futures
       }
     } finally {
       setState(() => _carregando = false);
@@ -160,7 +161,7 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
             _carregando
                 ? const Center(child: CircularProgressIndicator())
                 : _buildConteudo(),
-            if (_exportandoPdf || _exportandoEtiqueta)
+            if (_exportandoPdf || _exportandoEtiqueta || _gerando)
               Container(
                 color: Colors.black.withValues(alpha: 0.45),
                 child: Center(
@@ -182,7 +183,11 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
                         const CircularProgressIndicator(),
                         const H(16),
                         Text(
-                          _exportandoEtiqueta ? 'Gerando etiquetas...' : 'Gerando PDF...',
+                          _gerando
+                              ? 'Calculando plano de corte...'
+                              : _exportandoEtiqueta
+                                  ? 'Gerando etiquetas...'
+                                  : 'Gerando PDF...',
                           style: AppCss.smallBold,
                         ),
                       ],
@@ -276,13 +281,24 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
                   child: SizedBox(
                     height: 52,
                     child: ElevatedButton.icon(
-                      onPressed: _gerarPlanoCorte,
-                      icon: const Icon(Icons.content_cut, size: 20),
+                      onPressed: _gerando ? null : _gerarPlanoCorte,
+                      icon: _gerando
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.content_cut, size: 20),
                       label: Text(
                           _resultado != null ? 'RECALCULAR PLANO' : 'GERAR PLANO DE CORTE',
                           style: AppCss.smallBold.setColor(Colors.white)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryMain,
+                        backgroundColor: _gerando
+                            ? AppColors.primaryMain.withValues(alpha: 0.7)
+                            : AppColors.primaryMain,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 2,
@@ -467,59 +483,101 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
       }
     }
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F9FF),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFBAE6FD)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '${_elementosOrdem!.length} elementos • $totalPosicoes posições',
-            style: AppCss.minimumBold,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Card clicável: contagem de elementos/posições ──
+        InkWell(
+          onTap: _mostrarElementosEPosicoes,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0F9FF),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFBAE6FD)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.layers_outlined, size: 16, color: AppColors.primaryMain),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${_elementosOrdem!.length} elemento${_elementosOrdem!.length != 1 ? 's' : ''} • $totalPosicoes posição${totalPosicoes != 1 ? 'ões' : ''}',
+                    style: AppCss.minimumBold.setColor(AppColors.primaryMain),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryMain.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('Ver lista', style: AppCss.minimumBold.setSize(11).setColor(AppColors.primaryMain)),
+                      const SizedBox(width: 4),
+                      Icon(Icons.chevron_right, size: 14, color: AppColors.primaryMain),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          if (posicoesSemCorte > 0) ...[
-            const H(8),
-            InkWell(
-              onTap: _mostrarPosicoesSemCorte,
-              borderRadius: BorderRadius.circular(6),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF7ED),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0xFFFDBA74)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.warning_amber_rounded, size: 16, color: Colors.orange[800]),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        '$posicoesSemCorte posições sem comprimento de corte',
-                        style: AppCss.minimumBold.setColor(Colors.orange[900]!),
-                      ),
+        ),
+        // ── Aviso de posições sem comprimento de corte ──
+        if (posicoesSemCorte > 0) ...[
+          const H(8),
+          InkWell(
+            onTap: _mostrarPosicoesSemCorte,
+            borderRadius: BorderRadius.circular(6),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF7ED),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: const Color(0xFFFDBA74)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, size: 16, color: Colors.orange[800]),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '$posicoesSemCorte posições sem comprimento de corte',
+                      style: AppCss.minimumBold.setColor(Colors.orange[900]!),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.orange[700],
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        'Ver detalhes',
-                        style: AppCss.minimumBold.setSize(11).setColor(Colors.white),
-                      ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[700],
+                      borderRadius: BorderRadius.circular(6),
                     ),
-                  ],
-                ),
+                    child: Text(
+                      'Ver detalhes',
+                      style: AppCss.minimumBold.setSize(11).setColor(Colors.white),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ],
+      ],
+    );
+  }
+
+  // ── Dialog: listagem de todos os elementos e posições ──
+  void _mostrarElementosEPosicoes() {
+    if (_elementosOrdem == null || _ordemSelecionada == null) return;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => _DialogElementosEPosicoes(
+        elementos: _elementosOrdem!,
+        ordemLocalizator: _ordemSelecionada!.localizator,
       ),
     );
   }
@@ -1333,8 +1391,9 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
     setState(() => _carregando = false);
   }
 
-  void _gerarPlanoCorte() {
+  Future<void> _gerarPlanoCorte() async {
     if (_elementosOrdem == null || _elementosOrdem!.isEmpty) return;
+    if (_gerando) return;
 
     // Montar demandas
     final List<PecaDemandaModel> demandas = [];
@@ -1413,13 +1472,17 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
       return;
     }
 
-    // Calcular
-    final resultado = PlanoCorteEngine.calcular(
-      demandas: demandas,
-      estoque: estoque,
-    );
-
-    setState(() { _resultado = resultado; _modificado = true; });
+    // Exibe spinner e executa o cálculo em microtask para não travar a UI
+    setState(() => _gerando = true);
+    try {
+      final resultado = await Future.microtask(() => PlanoCorteEngine.calcular(
+        demandas: demandas,
+        estoque: estoque,
+      ));
+      if (mounted) setState(() { _resultado = resultado; _modificado = true; });
+    } finally {
+      if (mounted) setState(() => _gerando = false);
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -2364,6 +2427,703 @@ class _DialogSelecionarPontasState extends State<_DialogSelecionarPontas> {
           child: const Text('Importar Selecionadas'),
         ),
       ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DIALOG — Listagem de Elementos e Posições
+// ═══════════════════════════════════════════════════════════════════════════════
+class _DialogElementosEPosicoes extends StatefulWidget {
+  final List<ElementoModel> elementos;
+  final String ordemLocalizator;
+
+  const _DialogElementosEPosicoes({
+    required this.elementos,
+    required this.ordemLocalizator,
+  });
+
+  @override
+  State<_DialogElementosEPosicoes> createState() =>
+      _DialogElementosEPosicoesState();
+}
+
+class _DialogElementosEPosicoesState extends State<_DialogElementosEPosicoes> {
+  final TextEditingController _buscaCtrl = TextEditingController();
+  String _filtro = '';
+  final Set<String> _expandidos = {};
+
+  @override
+  void initState() {
+    super.initState();
+    // Expande todos por padrão se houver poucos elementos
+    if (widget.elementos.length <= 6) {
+      _expandidos.addAll(widget.elementos.map((e) => e.id));
+    }
+  }
+
+  @override
+  void dispose() {
+    _buscaCtrl.dispose();
+    super.dispose();
+  }
+
+  List<ElementoModel> get _elementosFiltrados {
+    if (_filtro.isEmpty) return widget.elementos;
+    final f = _filtro.toLowerCase();
+    return widget.elementos.where((el) {
+      if (el.nome.toLowerCase().contains(f)) return true;
+      return el.posicoes.any((p) =>
+          p.nome.toLowerCase().contains(f) ||
+          p.numeroOs.toLowerCase().contains(f));
+    }).toList();
+  }
+
+  // ── Dialog de medidas de uma posição variável ──
+  void _mostrarMedidasPosicao(BuildContext ctx, ElementoPosicaoModel pos) {
+    showDialog(
+      context: ctx,
+      builder: (dCtx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: 420,
+            maxHeight: MediaQuery.of(dCtx).size.height * 0.65,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.fromLTRB(16, 14, 8, 12),
+                decoration: BoxDecoration(
+                  color: Colors.purple[700],
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(14)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.straighten, size: 18, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Medidas — Posição ${pos.nome}',
+                            style: AppCss.minimumBold.setColor(Colors.white),
+                          ),
+                          Text(
+                            'OS ${pos.numeroOs}  ·  ${pos.medidas.length} medidas  ·  ${pos.qtde} peças total',
+                            style: AppCss.minimumRegular
+                                .setColor(Colors.white.withValues(alpha: 0.75))
+                                .setSize(11),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.of(dCtx).pop(),
+                      icon: const Icon(Icons.close,
+                          color: Colors.white, size: 18),
+                      splashRadius: 16,
+                    ),
+                  ],
+                ),
+              ),
+              // Cabeçalho da tabela
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  border: Border(
+                    bottom: BorderSide(color: Colors.grey[200]!),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 32,
+                      child: Text('#',
+                          style: AppCss.minimumBold
+                              .setColor(Colors.grey[500]!)
+                              .setSize(10)),
+                    ),
+                    Expanded(
+                      child: Text('Comp. Corte',
+                          style: AppCss.minimumBold
+                              .setColor(Colors.grey[500]!)
+                              .setSize(10)),
+                    ),
+                    Expanded(
+                      child: Text('Comp. Unit.',
+                          style: AppCss.minimumBold
+                              .setColor(Colors.grey[500]!)
+                              .setSize(10)),
+                    ),
+                    SizedBox(
+                      width: 48,
+                      child: Text('Qtde',
+                          textAlign: TextAlign.right,
+                          style: AppCss.minimumBold
+                              .setColor(Colors.grey[500]!)
+                              .setSize(10)),
+                    ),
+                  ],
+                ),
+              ),
+              // Lista de medidas (ordenada por comprimento de corte crescente)
+              Flexible(
+                child: Builder(builder: (ctx) {
+                  final medidasOrdenadas = [...pos.medidas]
+                    ..sort((a, b) => a.comprCorte.compareTo(b.comprCorte));
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: medidasOrdenadas.length,
+                    itemBuilder: (_, idx) {
+                      final m = medidasOrdenadas[idx];
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 9),
+                        decoration: BoxDecoration(
+                          color: idx.isEven ? Colors.white : Colors.grey[50],
+                          border: idx < medidasOrdenadas.length - 1
+                              ? Border(
+                                  bottom: BorderSide(
+                                      color: Colors.grey[100]!))
+                              : null,
+                        ),
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 32,
+                              child: Text(
+                                '${idx + 1}',
+                                style: AppCss.minimumBold
+                                    .setColor(Colors.purple[300]!)
+                                    .setSize(11),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                m.comprCorte.toStringAsFixed(0),
+                                style: AppCss.minimumBold.setSize(12),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                m.comprUnit > 0
+                                    ? m.comprUnit.toStringAsFixed(0)
+                                    : '—',
+                                style: AppCss.minimumRegular
+                                    .setColor(Colors.grey[600]!)
+                                    .setSize(11),
+                              ),
+                            ),
+                            SizedBox(
+                              width: 48,
+                              child: Text(
+                                '× ${m.qtde}',
+                                textAlign: TextAlign.right,
+                                style: AppCss.minimumRegular
+                                    .setColor(Colors.grey[600]!)
+                                    .setSize(11),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                }),
+              ),
+              // Footer
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: const BorderRadius.vertical(
+                      bottom: Radius.circular(14)),
+                  border:
+                      const Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Corte mín: ${pos.medidas.map((m) => m.comprCorte).reduce((a, b) => a < b ? a : b).toStringAsFixed(0)}  ·  máx: ${pos.medidas.map((m) => m.comprCorte).reduce((a, b) => a > b ? a : b).toStringAsFixed(0)}',
+                      style: AppCss.minimumRegular
+                          .setColor(Colors.grey[500]!)
+                          .setSize(11),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(dCtx).pop(),
+                      child: const Text('Fechar'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final elementos = _elementosFiltrados;
+    final totalPosicoes =
+        widget.elementos.fold(0, (s, e) => s + e.posicoes.length);
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 620,
+          maxHeight: MediaQuery.of(context).size.height * 0.82,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Header ──
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 18, 12, 14),
+              decoration: BoxDecoration(
+                color: AppColors.primaryMain,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(16)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.layers_outlined,
+                      size: 20, color: Colors.white),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Elementos e Posições',
+                          style: AppCss.smallBold.setColor(Colors.white),
+                        ),
+                        Text(
+                          '${widget.ordemLocalizator}  ·  ${widget.elementos.length} elementos  ·  $totalPosicoes posições',
+                          style: AppCss.minimumRegular
+                              .setColor(Colors.white.withValues(alpha: 0.75))
+                              .setSize(11),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                    splashRadius: 18,
+                  ),
+                ],
+              ),
+            ),
+
+            // ── Campo de busca ──
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey[200]!),
+                ),
+              ),
+              child: TextField(
+                controller: _buscaCtrl,
+                autofocus: false,
+                style: AppCss.minimumRegular,
+                onChanged: (v) => setState(() => _filtro = v.trim()),
+                decoration: InputDecoration(
+                  hintText: 'Buscar elemento, posição ou OS...',
+                  hintStyle:
+                      AppCss.minimumRegular.setColor(Colors.grey[400]!),
+                  prefixIcon:
+                      Icon(Icons.search, size: 18, color: Colors.grey[400]),
+                  suffixIcon: _filtro.isNotEmpty
+                      ? IconButton(
+                          icon: Icon(Icons.clear,
+                              size: 16, color: Colors.grey[500]),
+                          onPressed: () {
+                            _buscaCtrl.clear();
+                            setState(() => _filtro = '');
+                          },
+                        )
+                      : null,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide:
+                        BorderSide(color: AppColors.primaryMain, width: 1.5),
+                  ),
+                ),
+              ),
+            ),
+
+            // ── Lista de Elementos ──
+            Flexible(
+              child: elementos.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.search_off,
+                                size: 40, color: Colors.grey[300]),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Nenhum resultado para "$_filtro"',
+                              style: AppCss.minimumRegular
+                                  .setColor(Colors.grey[500]!),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                      itemCount: elementos.length,
+                      itemBuilder: (ctx, idx) {
+                        final el = elementos[idx];
+                        final expandido = _expandidos.contains(el.id);
+                        final posicoesSemCorte = el.posicoes
+                            .where((p) => p.comprCorte <= 0 && !p.isVariavel)
+                            .length;
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.03),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              // ── Header do elemento ──
+                              InkWell(
+                                onTap: () => setState(() {
+                                  if (expandido) {
+                                    _expandidos.remove(el.id);
+                                  } else {
+                                    _expandidos.add(el.id);
+                                  }
+                                }),
+                                borderRadius: BorderRadius.circular(10),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 10),
+                                  child: Row(
+                                    children: [
+                                      // Ícone expansão
+                                      AnimatedRotation(
+                                        turns: expandido ? 0.25 : 0,
+                                        duration:
+                                            const Duration(milliseconds: 200),
+                                        child: Icon(Icons.chevron_right,
+                                            size: 18,
+                                            color: AppColors.primaryMain),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      // Nome do elemento
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              el.nome,
+                                              style: AppCss.minimumBold,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            Text(
+                                              'Qtde: ${el.qtde}  ·  ${el.posicoes.length} posição${el.posicoes.length != 1 ? 'ões' : ''}',
+                                              style: AppCss.minimumRegular
+                                                  .setColor(Colors.grey[500]!)
+                                                  .setSize(11),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      // Badge de aviso
+                                      if (posicoesSemCorte > 0)
+                                        Tooltip(
+                                          message:
+                                              '$posicoesSemCorte sem comprimento de corte',
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: Colors.orange[50],
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                              border: Border.all(
+                                                  color: Colors.orange[300]!),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.warning_amber,
+                                                    size: 12,
+                                                    color: Colors.orange[700]),
+                                                const SizedBox(width: 3),
+                                                Text(
+                                                  '$posicoesSemCorte',
+                                                  style: AppCss.minimumBold
+                                                      .setSize(10)
+                                                      .setColor(
+                                                          Colors.orange[800]!),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              // ── Posições (expansível) ──
+                              AnimatedCrossFade(
+                                firstChild: const SizedBox.shrink(),
+                                secondChild: Container(
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
+                                    borderRadius: const BorderRadius.vertical(
+                                        bottom: Radius.circular(10)),
+                                    border: const Border(
+                                        top: BorderSide(
+                                            color: Color(0xFFE2E8F0))),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      // Cabeçalho da tabela de posições
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 7),
+                                        child: Row(
+                                          children: [
+                                            SizedBox(
+                                              width: 40,
+                                              child: Text('Pos.',
+                                                  style: AppCss.minimumBold
+                                                      .setColor(
+                                                          Colors.grey[500]!)
+                                                      .setSize(10)),
+                                            ),
+                                            SizedBox(
+                                              width: 50,
+                                              child: Text('OS',
+                                                  style: AppCss.minimumBold
+                                                      .setColor(
+                                                          Colors.grey[500]!)
+                                                      .setSize(10)),
+                                            ),
+                                            const Spacer(),
+                                            SizedBox(
+                                              width: 70,
+                                              child: Text('Comp. Corte',
+                                                  textAlign: TextAlign.right,
+                                                  style: AppCss.minimumBold
+                                                      .setColor(
+                                                          Colors.grey[500]!)
+                                                      .setSize(10)),
+                                            ),
+                                            SizedBox(
+                                              width: 50,
+                                              child: Text('Qtde',
+                                                  textAlign: TextAlign.right,
+                                                  style: AppCss.minimumBold
+                                                      .setColor(
+                                                          Colors.grey[500]!)
+                                                      .setSize(10)),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const Divider(height: 1),
+                                      // Linhas das posições
+                                      ...el.posicoes.asMap().entries.map(
+                                        (entry) {
+                                          final i = entry.key;
+                                          final pos = entry.value;
+                                          final semCorte = pos.comprCorte <= 0 &&
+                                              !pos.isVariavel;
+
+                                          return Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 12, vertical: 8),
+                                            decoration: BoxDecoration(
+                                              color: i.isEven
+                                                  ? Colors.white
+                                                      .withValues(alpha: 0.6)
+                                                  : Colors.transparent,
+                                              border: i <
+                                                      el.posicoes.length - 1
+                                                  ? const Border(
+                                                      bottom: BorderSide(
+                                                          color:
+                                                              Color(0xFFEFF0F2)))
+                                                  : null,
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                // Nome da posição
+                                                SizedBox(
+                                                  width: 40,
+                                                  child: Text(
+                                                    pos.nome,
+                                                    style: AppCss.minimumBold
+                                                        .setSize(11),
+                                                  ),
+                                                ),
+                                                // OS
+                                                SizedBox(
+                                                  width: 50,
+                                                  child: Text(
+                                                    pos.numeroOs,
+                                                    style: AppCss.minimumRegular
+                                                        .setColor(
+                                                            Colors.grey[600]!)
+                                                        .setSize(11),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                const Spacer(),
+                                                // Badge variável clicável
+                                                if (pos.isVariavel)
+                                                  GestureDetector(
+                                                    onTap: () => _mostrarMedidasPosicao(context, pos),
+                                                    child: Container(
+                                                      padding: const EdgeInsets.symmetric(
+                                                          horizontal: 6, vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.purple[50],
+                                                        borderRadius: BorderRadius.circular(4),
+                                                        border: Border.all(color: Colors.purple[300]!),
+                                                      ),
+                                                      child: Row(
+                                                        mainAxisSize: MainAxisSize.min,
+                                                        children: [
+                                                          Text(
+                                                            '${pos.medidas.length} medidas',
+                                                            style: AppCss.minimumBold
+                                                                .setSize(10)
+                                                                .setColor(Colors.purple[700]!),
+                                                          ),
+                                                          const SizedBox(width: 3),
+                                                          Icon(Icons.expand_more, size: 11, color: Colors.purple[400]),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  )
+                                                else
+                                                  SizedBox(
+                                                    width: 70,
+                                                    child: Text(
+                                                      semCorte
+                                                          ? '—'
+                                                          : '${pos.comprCorte.toStringAsFixed(0)}',
+                                                      textAlign:
+                                                          TextAlign.right,
+                                                      style: semCorte
+                                                          ? AppCss.minimumBold
+                                                              .setColor(Colors
+                                                                  .red[400]!)
+                                                          : AppCss.minimumRegular
+                                                              .setSize(11),
+                                                    ),
+                                                  ),
+                                                // Qtde
+                                                SizedBox(
+                                                  width: 50,
+                                                  child: Text(
+                                                    '× ${pos.qtde}',
+                                                    textAlign: TextAlign.right,
+                                                    style: AppCss.minimumRegular
+                                                        .setColor(
+                                                            Colors.grey[700]!)
+                                                        .setSize(11),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                crossFadeState: expandido
+                                    ? CrossFadeState.showSecond
+                                    : CrossFadeState.showFirst,
+                                duration: const Duration(milliseconds: 220),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            ),
+
+            // ── Footer ──
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius:
+                    const BorderRadius.vertical(bottom: Radius.circular(16)),
+                border: const Border(
+                    top: BorderSide(color: Color(0xFFE2E8F0))),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _filtro.isEmpty
+                        ? '${widget.elementos.length} elementos'
+                        : '${elementos.length} de ${widget.elementos.length} encontrados',
+                    style: AppCss.minimumRegular.setColor(Colors.grey[500]!),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Fechar'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
