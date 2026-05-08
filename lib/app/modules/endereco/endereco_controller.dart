@@ -122,6 +122,80 @@ class EnderecoController {
     }
   }
 
+  // ── Google Places Autocomplete ────────────────────────────────────────────
+
+  static const _apiKey = 'AIzaSyCU0z9swWm0LqdOkXIeoDuRJkBnqHuMvzw';
+
+  /// Busca sugestões de lugares pelo texto digitado.
+  Future<List<PlaceSugestao>> buscarSugestoes(String texto) async {
+    if (texto.length < 3) return [];
+    try {
+      final url = 'https://maps.googleapis.com/maps/api/place/autocomplete/json'
+          '?input=${Uri.encodeComponent(texto)}'
+          '&language=pt-BR'
+          '&components=country:br'
+          '&key=$_apiKey';
+      final res = await Dio().get(url);
+      final predictions = res.data['predictions'] as List? ?? [];
+      return predictions
+          .map((p) => PlaceSugestao(
+                placeId: p['place_id'] as String,
+                descricao: p['description'] as String,
+              ))
+          .toList();
+    } catch (e) {
+      log('[Places] erro autocomplete: $e');
+      return [];
+    }
+  }
+
+  /// Ao selecionar um lugar, busca os detalhes e preenche todos os campos.
+  Future<void> selecionarLugar(PlaceSugestao sugestao) async {
+    try {
+      final url = 'https://maps.googleapis.com/maps/api/place/details/json'
+          '?place_id=${sugestao.placeId}'
+          '&language=pt-BR'
+          '&fields=geometry,address_components,formatted_address'
+          '&key=$_apiKey';
+      final res = await Dio().get(url);
+      final result = res.data['result'];
+      if (result == null) return;
+
+      // Coordenadas
+      final loc = result['geometry']['location'];
+      form.lat.text = (loc['lat'] as num).toString();
+      form.lon.text = (loc['lng'] as num).toString();
+
+      // Componentes do endereço
+      final components = result['address_components'] as List? ?? [];
+      String logradouro = '', numero = '', bairro = '', cidade = '', estado = '', cep = '';
+
+      for (final c in components) {
+        final types = List<String>.from(c['types'] as List);
+        final long = c['long_name'] as String;
+        final short = c['short_name'] as String;
+        if (types.contains('route')) logradouro = long;
+        if (types.contains('street_number')) numero = long;
+        if (types.contains('sublocality') || types.contains('neighborhood')) bairro = long;
+        if (types.contains('administrative_area_level_2')) cidade = long;
+        if (types.contains('administrative_area_level_1')) estado = short;
+        if (types.contains('postal_code')) cep = long.replaceAll('-', '');
+      }
+
+      form.logradouro.text = logradouro;
+      form.numero.text = numero;
+      form.bairro.text = bairro;
+      form.localidade.text = cidade;
+      form.estado.text = estado;
+      if (cep.isNotEmpty) form.cep.text = cep;
+
+      enderecoCreateStream.update();
+      log('[Places] selecionado: ${sugestao.descricao} → lat=${form.lat.text} lon=${form.lon.text}');
+    } catch (e) {
+      log('[Places] erro detalhes: $e');
+    }
+  }
+
   void onValidEndereco() {
     try {} catch (e) {
       NotificationService.showNegative(
@@ -146,3 +220,11 @@ class EnderecoController {
     }
   }
 }
+
+/// Representa uma sugestão do Google Places Autocomplete.
+class PlaceSugestao {
+  final String placeId;
+  final String descricao;
+  const PlaceSugestao({required this.placeId, required this.descricao});
+}
+

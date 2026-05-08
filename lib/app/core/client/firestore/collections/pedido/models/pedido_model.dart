@@ -30,7 +30,7 @@ class PedidoModel {
   final DateTime createdAt;
   DateTime? deliveryAt;
   final ClienteModel cliente;
-  final ObraModel obra;
+  ObraModel obra;
   final List<PedidoProdutoModel> produtos;
   final PedidoTipo tipo;
   List<PedidoStatusModel> statusess;

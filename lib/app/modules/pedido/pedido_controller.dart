@@ -3,7 +3,8 @@ import 'dart:developer';
 
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/cliente/cliente_supabase_collection.dart';
-import 'package:overlay_support/overlay_support.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
+
 
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
@@ -324,6 +325,22 @@ class PedidoController {
           }
         }
         verificarTags(edit);
+
+        // ── Caso 1: troca de obra no pedido mestre ──────────────────────
+        if (edit.isMestre && pedido != null) {
+          final obraAnteriorId = pedido.obra.id;
+          final obraNovaId = edit.obra.id;
+          if (obraAnteriorId != obraNovaId && edit.pedidosFilhos.isNotEmpty) {
+            final propagar = await _perguntarPropagacaoObra(
+              value, // context
+              edit.pedidosFilhos.length,
+            );
+            if (propagar) {
+              await _propagarObraParaParciais(edit);
+            }
+          }
+        }
+
         final update = await BackendClient.pedidos.update(edit);
         if (update != null) {
           pedidoStream.add(update);
@@ -982,5 +999,55 @@ class PedidoController {
 
   void verificarTags(PedidoModel edit) {
     // Lógica antiga (que forçava etiqueta CDA) foi removida a pedido do usuário
+  }
+
+  // ── Propagação de obra para parciais ─────────────────────────────────────
+
+  /// Pergunta ao usuário se deseja propagar a troca de obra aos parciais.
+  Future<bool> _perguntarPropagacaoObra(BuildContext context, int qtd) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            icon: Icon(Icons.info_outline,
+                size: 40, color: Colors.orange[700]),
+            title: const Text('Pedido Mestre'),
+            content: Text(
+              'A obra foi alterada. Este pedido possui $qtd '
+              'parcial${qtd > 1 ? 'is' : ''}. '
+              'Deseja aplicar a mesma obra a eles também?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Não, só o mestre'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryMain,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                child: Text('Sim, aplicar aos $qtd'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  /// Propaga a obra do mestre para todos os pedidos parciais.
+  Future<void> _propagarObraParaParciais(PedidoModel mestre) async {
+    final filhos = FirestoreClient.pedidos.data
+        .where((p) => mestre.pedidosFilhos.contains(p.id))
+        .toList();
+
+    for (final filho in filhos) {
+      filho.obra = mestre.obra;
+      await BackendClient.pedidos.update(filho);
+    }
   }
 }

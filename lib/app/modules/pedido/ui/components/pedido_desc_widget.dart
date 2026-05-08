@@ -110,8 +110,7 @@ class _EditarObraDialogState extends State<_EditarObraDialog> {
   @override
   void initState() {
     super.initState();
-    _descricaoCtrl =
-        TextEditingController(text: widget.pedido.obra.descricao);
+    _descricaoCtrl = TextEditingController(text: widget.pedido.obra.descricao);
     _endereco = widget.pedido.obra.endereco;
   }
 
@@ -153,6 +152,15 @@ class _EditarObraDialogState extends State<_EditarObraDialog> {
       return;
     }
 
+    // Caso 2: editar dados da obra de pedido mestre
+    // Como parciais compartilham a mesma obraId, a alteração reflete em todos
+    if (widget.pedido.isMestre && widget.pedido.pedidosFilhos.isNotEmpty) {
+      final continuar = await _avisarAlteracaoEmParciais(
+        widget.pedido.pedidosFilhos.length,
+      );
+      if (continuar != true) return;
+    }
+
     setState(() => _salvando = true);
     try {
       await pedidoCtrl.onUpdateObraCompleto(
@@ -165,6 +173,40 @@ class _EditarObraDialogState extends State<_EditarObraDialog> {
       if (mounted) setState(() => _salvando = false);
     }
   }
+
+  /// Avisa que a obra é compartilhada com parciais e pede confirmação.
+  Future<bool?> _avisarAlteracaoEmParciais(int qtd) {
+    return showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        icon: Icon(Icons.info_outline, size: 40, color: Colors.orange[700]),
+        title: const Text('Pedido Mestre'),
+        content: Text(
+          'Este pedido possui $qtd parcial${qtd > 1 ? 'is' : ''} que '
+          'compartilham esta obra. Ao alterar a descrição ou o endereço, '
+          'as mudanças serão refletidas em todos eles.\n\nDeseja continuar?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryMain,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Continuar'),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -190,8 +232,7 @@ class _EditarObraDialogState extends State<_EditarObraDialog> {
                 const SizedBox(width: 10),
                 Text(
                   'Editar Obra',
-                  style:
-                      AppCss.mediumBold.setSize(16).setColor(Colors.white),
+                  style: AppCss.mediumBold.setSize(16).setColor(Colors.white),
                 ),
               ],
             ),
@@ -214,10 +255,13 @@ class _EditarObraDialogState extends State<_EditarObraDialog> {
                   controller: _descricaoCtrl,
                   autofocus: true,
                   textCapitalization: TextCapitalization.characters,
-                  style: AppCss.mediumBold.setSize(14).setColor(Colors.grey[900]!),
+                  style:
+                      AppCss.mediumBold.setSize(14).setColor(Colors.grey[900]!),
                   decoration: InputDecoration(
                     hintText: 'Ex: Residencial São José',
-                    hintStyle: AppCss.mediumBold.setSize(14).setColor(Colors.grey[400]!),
+                    hintStyle: AppCss.mediumBold
+                        .setSize(14)
+                        .setColor(Colors.grey[400]!),
                     filled: true,
                     fillColor: Colors.white,
                     contentPadding: const EdgeInsets.symmetric(
@@ -235,7 +279,8 @@ class _EditarObraDialogState extends State<_EditarObraDialog> {
                       borderSide:
                           BorderSide(color: AppColors.primaryMain, width: 2),
                     ),
-                    suffixIcon: Icon(Icons.edit, size: 16, color: AppColors.primaryMain),
+                    suffixIcon: Icon(Icons.edit,
+                        size: 16, color: AppColors.primaryMain),
                   ),
                 ),
 
