@@ -124,6 +124,9 @@ class PedidoModel {
 
   double get pesoTotal => getQtdeTotal();
 
+  /// true quando o pedido está na etapa configurada como "marcar como entregue"
+  bool get isEntregue => step.isMarcarEntregue;
+
   StepModel get step => steps.isNotEmpty ? steps.last.step : StepModel.notFound;
   PedidoStatus get status => statusess.isNotEmpty
       ? statusess.last.status

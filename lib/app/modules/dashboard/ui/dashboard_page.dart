@@ -156,28 +156,30 @@ class DashboardPageState extends State<DashboardPage> {
     final totalKg = pedidos
         .where((p) => p.step.isConsiderarTotalProducao)
         .fold(0.0, (sum, p) => sum + p.getQtdeTotal());
-    final entregasHoje = pedidos
+
+    final pedidosHoje = pedidos
         .where((p) => p.deliveryAt != null && p.deliveryAt!.isSameDay(today))
-        .length;
-    final atrasados = pedidos
+        .toList();
+    final pedidosAtrasados = pedidos
         .where((p) =>
+            !p.isEntregue &&
             p.deliveryAt != null &&
             p.deliveryAt!.isBefore(today) &&
             !p.deliveryAt!.isSameDay(today))
-        .length;
-    final novos24h = pedidos
+        .toList();
+    final pedidosNovos = pedidos
         .where(
             (p) => p.createdAt.isAfter(now.subtract(const Duration(days: 1))))
-        .length;
+        .toList();
 
     return LayoutBuilder(builder: (context, constraints) {
       double cardWidth;
       if (constraints.maxWidth < 700) {
-        cardWidth = constraints.maxWidth; // 1 por linha
+        cardWidth = constraints.maxWidth;
       } else if (constraints.maxWidth < 1100) {
-        cardWidth = (constraints.maxWidth - 24) / 2; // 2 por linha
+        cardWidth = (constraints.maxWidth - 24) / 2;
       } else {
-        cardWidth = (constraints.maxWidth - 72) / 4; // 4 por linha
+        cardWidth = (constraints.maxWidth - 72) / 4;
       }
 
       return Wrap(
@@ -185,27 +187,54 @@ class DashboardPageState extends State<DashboardPage> {
         runSpacing: 24,
         children: [
           _cardKPI('TOTAL EM PRODUÇÃO', totalKg.toKg(), Symbols.factory,
-              AppColors.primaryMain, cardWidth),
-          _cardKPI('ENTREGAS HOJE', entregasHoje.toString(),
-              Symbols.local_shipping, AppColors.success, cardWidth),
-          _cardKPI('PEDIDOS ATRASADOS', atrasados.toString(), Symbols.warning,
-              AppColors.error, cardWidth),
-          _cardKPI('NOVOS (24H)', novos24h.toString(), Symbols.new_releases,
-              AppColors.secondary, cardWidth),
+              AppColors.primaryMain, cardWidth,
+              subtitle:
+                  'Total de pedidos que está sendo processado na planta atualmente'),
+          _cardKPI('ENTREGAS HOJE', pedidosHoje.length.toString(),
+              Symbols.local_shipping, AppColors.success, cardWidth,
+              onTap: () => _showPedidosDialog(
+                  context,
+                  'Entregas Hoje',
+                  '${pedidosHoje.length} pedido(s) com entrega prevista para hoje',
+                  pedidosHoje,
+                  AppColors.success,
+                  Symbols.local_shipping)),
+          _cardKPI('PEDIDOS ATRASADOS', pedidosAtrasados.length.toString(),
+              Symbols.warning, AppColors.error, cardWidth,
+              onTap: () => _showPedidosDialog(
+                  context,
+                  'Pedidos Atrasados',
+                  '${pedidosAtrasados.length} pedido(s) com prazo vencido',
+                  pedidosAtrasados,
+                  AppColors.error,
+                  Symbols.warning)),
+          _cardKPI('NOVOS (24H)', pedidosNovos.length.toString(),
+              Symbols.new_releases, AppColors.secondary, cardWidth,
+              onTap: () => _showPedidosDialog(
+                  context,
+                  'Novos (24h)',
+                  '${pedidosNovos.length} pedido(s) criado(s) nas últimas 24 horas',
+                  pedidosNovos,
+                  AppColors.secondary,
+                  Symbols.new_releases)),
         ],
       );
     });
   }
 
+
   Widget _cardKPI(
-      String label, String value, IconData icon, Color color, double width) {
+      String label, String value, IconData icon, Color color, double width,
+      {String? subtitle, VoidCallback? onTap}) {
     return Container(
       width: width,
-      padding: const EdgeInsets.all(24),
+      height: 155,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[400]!, width: 1.0),
+        border: Border.all(
+            color: onTap != null ? color.withAlpha(80) : Colors.grey[400]!,
+            width: 1.0),
         boxShadow: [
           BoxShadow(
               color: Colors.black.withAlpha(12),
@@ -213,24 +242,279 @@ class DashboardPageState extends State<DashboardPage> {
               offset: const Offset(0, 4)),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          mouseCursor: onTap != null
+              ? SystemMouseCursors.click
+              : SystemMouseCursors.basic,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(label,
+                              style: AppCss.minimumBold
+                                  .setSize(12)
+                                  .setColor(Colors.grey[500]!)),
+                          if (subtitle != null) ...[
+                            const H(3),
+                            Text(
+                              subtitle,
+                              style: AppCss.minimumRegular
+                                  .setSize(10)
+                                  .setColor(Colors.grey[400]!),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const W(8),
+                    Icon(icon, color: color.withAlpha(200), size: 22),
+                  ],
+                ),
+                const Spacer(),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(value,
+                        style: AppCss.largeBold
+                            .setSize(26)
+                            .setColor(AppColors.primaryMain)),
+                    if (onTap != null) ...[
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: color.withAlpha(18),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('ver lista',
+                                style: AppCss.minimumBold
+                                    .setSize(10)
+                                    .setColor(color)),
+                            const W(3),
+                            Icon(Icons.arrow_forward_ios,
+                                size: 9, color: color),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showPedidosDialog(
+    BuildContext context,
+    String titulo,
+    String subtitulo,
+    List<PedidoModel> pedidos,
+    Color cor,
+    IconData icone,
+  ) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          width: 560,
+          constraints: const BoxConstraints(maxHeight: 620),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(label,
-                  style: AppCss.minimumBold
-                      .setSize(12)
-                      .setColor(Colors.grey[500]!)),
-              Icon(icon, color: color.withAlpha(200), size: 24),
+              // ── Header ─────────────────────────────────────────
+              Container(
+                padding: const EdgeInsets.fromLTRB(24, 20, 16, 20),
+                decoration: BoxDecoration(
+                  color: cor.withAlpha(12),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(20)),
+                  border: Border(
+                      bottom: BorderSide(color: Colors.grey[200]!)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: cor.withAlpha(24),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(icone, color: cor, size: 20),
+                    ),
+                    const W(12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(titulo,
+                              style: AppCss.mediumBold.setSize(16)),
+                          const H(2),
+                          Text(subtitulo,
+                              style: AppCss.minimumRegular
+                                  .setSize(12)
+                                  .setColor(Colors.grey[500]!)),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close,
+                          size: 20, color: Colors.grey[400]),
+                      onPressed: () => Navigator.pop(ctx),
+                      splashRadius: 18,
+                    ),
+                  ],
+                ),
+              ),
+              // ── Lista ──────────────────────────────────────────
+              Flexible(
+                child: pedidos.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.all(40),
+                        child: Text(
+                          'Nenhum pedido encontrado.',
+                          style: AppCss.mediumRegular
+                              .setColor(Colors.grey[400]!),
+                        ),
+                      )
+                    : ListView.separated(
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.all(16),
+                        itemCount: pedidos.length,
+                        separatorBuilder: (_, __) => const H(8),
+                        itemBuilder: (_, i) {
+                          final p = pedidos[i];
+                          final d = p.deliveryAt;
+                          final dateStr = d != null
+                              ? '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}'
+                              : '—';
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border:
+                                  Border.all(color: Colors.grey[200]!),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: cor.withAlpha(20),
+                                    borderRadius:
+                                        BorderRadius.circular(8),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '${i + 1}',
+                                      style: AppCss.minimumBold
+                                          .setSize(12)
+                                          .setColor(cor),
+                                    ),
+                                  ),
+                                ),
+                                const W(12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(p.localizador,
+                                          style: AppCss.mediumBold
+                                              .setSize(14)),
+                                      const H(2),
+                                      Text(
+                                        p.cliente.nome,
+                                        style: AppCss.minimumRegular
+                                            .setSize(12)
+                                            .setColor(Colors.grey[500]!),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const W(12),
+                                Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      p.getQtdeTotal().toKg(),
+                                      style: AppCss.mediumBold
+                                          .setSize(13)
+                                          .setColor(
+                                              AppColors.primaryMain),
+                                    ),
+                                    const H(3),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.calendar_today,
+                                            size: 11,
+                                            color: Colors.grey[400]),
+                                        const W(3),
+                                        Text(
+                                          dateStr,
+                                          style: AppCss.minimumRegular
+                                              .setSize(11)
+                                              .setColor(
+                                                  Colors.grey[500]!),
+                                        ),
+                                      ],
+                                    ),
+                                    const H(2),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: p.step.color.withAlpha(25),
+                                        borderRadius:
+                                            BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        p.step.name,
+                                        style: AppCss.minimumBold
+                                            .setSize(10)
+                                            .setColor(p.step.color),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+              ),
             ],
           ),
-          const H(12),
-          Text(value,
-              style:
-                  AppCss.largeBold.setSize(24).setColor(AppColors.primaryMain)),
-        ],
+        ),
       ),
     );
   }
@@ -386,7 +670,7 @@ class DashboardPageState extends State<DashboardPage> {
                   ],
                 ),
                 const H(8),
-                Text('Peso pendente por bitola (Corte e Dobra)',
+                Text('Matéria-prima que ainda será baixada do estoque para concluir os pedidos em aberto',
                     style: AppCss.minimumRegular.setColor(Colors.grey[600]!)),
               ],
             ),

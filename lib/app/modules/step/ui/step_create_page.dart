@@ -64,7 +64,8 @@ class _StepCreatePageState extends State<StepCreatePage> {
       '|${form.isArchivedAvailable}|${form.isPermiteProducao}'
       '|${form.considerarConsumoRelatorioPedidos}'
       '|${form.isExibirArmacao}|${form.isExibirGraficoCDA}'
-      '|${form.isAcceptWithoutElements}|${form.isConsiderarTotalProducao}';
+      '|${form.isAcceptWithoutElements}|${form.isConsiderarTotalProducao}'
+      '|${form.isMarcarEntregue}';
 
   @override
   void initState() {
@@ -541,6 +542,18 @@ class _StepCreatePageState extends State<StepCreatePage> {
             value: form.isConsiderarTotalProducao,
             onChanged: (_) {
               form.isConsiderarTotalProducao = !form.isConsiderarTotalProducao;
+              stepCtrl.formStream.update();
+            },
+          ),
+          const Divider(height: 28),
+          _switchOption(
+            icon: Icons.check_circle_outline,
+            label: 'Marcar pedidos como Entregues',
+            description:
+                'Pedidos que entrarem nesta etapa serão automaticamente marcados como entregues. Ao sair desta etapa, o status de entregue é removido.',
+            value: form.isMarcarEntregue,
+            onChanged: (_) {
+              form.isMarcarEntregue = !form.isMarcarEntregue;
               stepCtrl.formStream.update();
             },
           ),

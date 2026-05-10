@@ -24,6 +24,7 @@ class StepModel {
   bool isExibirGraficoCDA = false;
   bool isAcceptWithoutElements = true;
   bool isConsiderarTotalProducao = true;
+  bool isMarcarEntregue = false;
 
   static StepModel notFound = StepModel(
     createdAt: DateTime.now(),
@@ -43,6 +44,7 @@ class StepModel {
     isExibirGraficoCDA: false,
     isAcceptWithoutElements: true,
     isConsiderarTotalProducao: true,
+    isMarcarEntregue: false,
   );
 
   List<StepModel> get fromSteps => fromStepsIds
@@ -73,6 +75,7 @@ class StepModel {
     required this.isExibirGraficoCDA,
     required this.isAcceptWithoutElements,
     required this.isConsiderarTotalProducao,
+    required this.isMarcarEntregue,
   });
 
   StepModel copyWith({
@@ -94,6 +97,7 @@ class StepModel {
     bool? isExibirGraficoCDA,
     bool? isAcceptWithoutElements,
     bool? isConsiderarTotalProducao,
+    bool? isMarcarEntregue,
   }) {
     return StepModel(
       id: id ?? this.id,
@@ -116,6 +120,7 @@ class StepModel {
           isAcceptWithoutElements ?? this.isAcceptWithoutElements,
       isConsiderarTotalProducao:
           isConsiderarTotalProducao ?? this.isConsiderarTotalProducao,
+      isMarcarEntregue: isMarcarEntregue ?? this.isMarcarEntregue,
     );
   }
 
@@ -138,6 +143,7 @@ class StepModel {
       'isExibirGraficoCDA': isExibirGraficoCDA,
       'isAcceptWithoutElements': isAcceptWithoutElements,
       'isConsiderarTotalProducao': isConsiderarTotalProducao,
+      'isMarcarEntregue': isMarcarEntregue,
     };
   }
 
@@ -176,6 +182,7 @@ class StepModel {
         isExibirGraficoCDA: map['isExibirGraficoCDA'] ?? false,
         isAcceptWithoutElements: map['isAcceptWithoutElements'] ?? true,
         isConsiderarTotalProducao: map['isConsiderarTotalProducao'] ?? true,
+        isMarcarEntregue: map['isMarcarEntregue'] ?? false,
       );
     }
     return StepModel(
@@ -208,6 +215,7 @@ class StepModel {
       isAcceptWithoutElements: map['isAcceptWithoutElements'] ?? 
           !(map['isBlockMoveWithoutElements'] ?? false),
       isConsiderarTotalProducao: map['isConsiderarTotalProducao'] ?? true,
+      isMarcarEntregue: map['isMarcarEntregue'] ?? false,
     );
   }
 
@@ -234,6 +242,7 @@ class StepModel {
       isAcceptWithoutElements: map['aceita_sem_elementos'] ??
           !(map['bloqueia_mover_sem_elementos'] ?? false),
       isConsiderarTotalProducao: map['is_considerar_total_producao'] ?? true,
+      isMarcarEntregue: map['is_marcar_entregue'] ?? false,
     );
   }
 
@@ -285,6 +294,7 @@ class StepModel {
       'exibir_grafico_cda': isExibirGraficoCDA,
       'aceita_sem_elementos': isAcceptWithoutElements,
       'is_considerar_total_producao': isConsiderarTotalProducao,
+      'is_marcar_entregue': isMarcarEntregue,
     };
   }
 
