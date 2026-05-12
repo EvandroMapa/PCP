@@ -19,6 +19,7 @@ import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_pedido_view
 import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_producao_view_model.dart';
 import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/widgets.dart' as pw;
 
@@ -450,6 +451,35 @@ class PedidoController {
         'Verifique o filtro informado',
       );
     }
+  }
+
+  /// Exporta PDF do novo relatório de ordens produzidas
+  Future<void> exportarRelatorioOrdensProduzidas(
+    List<OrdemModel> ordens,
+    RelatorioOrdensPdfExportarTipo tipo, {
+    DateTimeRange? periodo,
+    ProdutoModel? bitola,
+  }) async {
+    final pdf = pw.Document();
+    final imageBytes = await LogoHelper.logoBytesForPdf();
+
+    // Reutiliza RelatorioOrdemPdfStatusPage com um modelo fake de status
+    // contendo as ordens já filtradas externamente
+    final modelo = RelatorioOrdemModel.status(
+      [],
+      ordens,
+      dates: periodo,
+    );
+
+    pdf.addPage(
+      RelatorioOrdemPdfStatusPage(modelo, tipo).build(imageBytes),
+    );
+
+    final sufixo = bitola != null ? '_${bitola.descricao}' : '';
+    final name =
+        'relatorio_ordens_produzidas$sufixo${DateTime.now().toFileName()}.pdf';
+
+    await downloadPDF(name, '/relatorio/ordem/', await pdf.save());
   }
 
   //RELATORIO DE PRODUÇÃO

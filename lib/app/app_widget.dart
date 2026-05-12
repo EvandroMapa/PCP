@@ -7,6 +7,7 @@ import 'package:aco_plus/app/modules/base/base_page.dart';
 import 'package:aco_plus/app/modules/sign/ui/sign_up_page.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_mentions/flutter_mentions.dart';
 import 'package:overlay_support/overlay_support.dart';
 
@@ -37,6 +38,16 @@ class _AppState extends State<App> {
           theme: AppTheme.theme,
           debugShowCheckedModeBanner: false,
           title: 'AçoPlus - Planejamento e controle de Produção',
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('pt', 'BR'),
+            Locale('en', 'US'),
+          ],
+          locale: const Locale('pt', 'BR'),
           routeInformationParser: RouteConfig.config.routeInformationParser,
           routeInformationProvider: RouteConfig.config.routeInformationProvider,
           routerDelegate: RouteConfig.config.routerDelegate,

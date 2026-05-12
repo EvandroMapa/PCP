@@ -1,3 +1,4 @@
+
 import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
@@ -12,10 +13,297 @@ import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/plano_corte/plano_corte_gravado_model.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/plano_corte/plano_corte_page.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+
+// Sanitiza string removendo caracteres nao suportados pelo Helvetica (sem Unicode)
+String _ascii(String s) => s
+    .replaceAll('—', '-')
+    .replaceAll('–', '-')
+    .replaceAll('·', '.')
+    .replaceAll('ç', 'c').replaceAll('Ç', 'C')
+    .replaceAll('ã', 'a').replaceAll('Ã', 'A')
+    .replaceAll('á', 'a').replaceAll('Á', 'A')
+    .replaceAll('à', 'a').replaceAll('À', 'A')
+    .replaceAll('â', 'a').replaceAll('Â', 'A')
+    .replaceAll('é', 'e').replaceAll('É', 'E')
+    .replaceAll('ê', 'e').replaceAll('Ê', 'E')
+    .replaceAll('í', 'i').replaceAll('Í', 'I')
+    .replaceAll('ó', 'o').replaceAll('Ó', 'O')
+    .replaceAll('õ', 'o').replaceAll('Õ', 'O')
+    .replaceAll('ô', 'o').replaceAll('Ô', 'O')
+    .replaceAll('ú', 'u').replaceAll('Ú', 'U')
+    .replaceAll('ü', 'u').replaceAll('Ü', 'U');
+
+// Funcao top-level para rodar em isolate via compute() ────────────────────
+Future<List<int>> _gerarBytesPdfPlano(Map<String, dynamic> args) async {
+  final logoBytes = args['logoBytes'] as Uint8List;
+  final ordemLocalizator = args['ordemLocalizator'] as String;
+  final bitolaDescricao = args['bitolaDescricao'] as String;
+  final createdAt = DateTime.fromMillisecondsSinceEpoch(args['createdAtMs'] as int);
+  final totalBarrasUsadas = args['totalBarrasUsadas'] as int;
+  final percentualAproveitamento = (args['percentualAproveitamento'] as num).toDouble();
+  final totalSobra = (args['totalSobra'] as num).toDouble();
+  final rJson = args['resultadoJson'] as Map<String, dynamic>;
+
+  final barrasUsadas =
+      (rJson['barras_usadas'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+  final pecasNaoAlocadas =
+      (rJson['pecas_nao_alocadas'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+
+  // Agrupar layouts idênticos
+  final List<({Map<String, dynamic> barraJson, String chave, int quantidade})> layouts = [];
+  for (final barra in barrasUsadas) {
+    final cortes =
+        (barra['cortes'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final chave =
+        '${barra['comprimento_total']}_${cortes.map((c) => ((c['compr_corte'] ?? 0) as num).toStringAsFixed(2)).join('|')}';
+    final idx = layouts.indexWhere((l) => l.chave == chave);
+    if (idx >= 0) {
+      final old = layouts[idx];
+      layouts[idx] = (barraJson: old.barraJson, chave: old.chave, quantidade: old.quantidade + 1);
+    } else {
+      layouts.add((barraJson: barra, chave: chave, quantidade: 1));
+    }
+  }
+
+  final pdf = pw.Document();
+  pdf.addPage(pw.MultiPage(
+    pageFormat: PdfPageFormat.a4,
+    margin: const pw.EdgeInsets.all(28),
+    theme: pw.ThemeData.withFont(
+      base: pw.Font.helvetica(),
+      bold: pw.Font.helveticaBold(),
+    ),
+    header: (ctx) => pw.Container(
+      margin: const pw.EdgeInsets.only(bottom: 12),
+      padding: const pw.EdgeInsets.only(bottom: 8),
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(bottom: pw.BorderSide(color: PdfColors.blueGrey800, width: 1)),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Row(children: [
+            pw.Image(pw.MemoryImage(logoBytes), width: 36, height: 36),
+            pw.SizedBox(width: 10),
+            pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text('PLANO DE CORTE',
+                    style: pw.TextStyle(
+                        fontSize: 14,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.blueGrey800)),
+                pw.Text(_ascii('$ordemLocalizator - $bitolaDescricao'),
+                    style: pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
+              ],
+            ),
+          ]),
+          pw.Text(DateFormat('dd/MM/yyyy HH:mm').format(createdAt),
+              style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+        ],
+      ),
+    ),
+    footer: (ctx) => pw.Container(
+      margin: const pw.EdgeInsets.only(top: 10),
+      padding: const pw.EdgeInsets.only(top: 6),
+      decoration: const pw.BoxDecoration(
+        border:
+            pw.Border(top: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text('Documento gerado eletronicamente',
+              style: pw.TextStyle(
+                  fontSize: 6,
+                  color: PdfColors.grey500,
+                  fontStyle: pw.FontStyle.italic)),
+          pw.Text('Pagina ${ctx.pageNumber} de ${ctx.pagesCount}',
+              style: pw.TextStyle(
+                  fontSize: 7,
+                  color: PdfColors.grey600,
+                  fontWeight: pw.FontWeight.bold)),
+        ],
+      ),
+    ),
+    build: (ctx) {
+      final widgets = <pw.Widget>[];
+
+      // KPIs
+      pw.Widget kpi(String label, String valor, {PdfColor cor = PdfColors.blueGrey800}) =>
+          pw.Expanded(
+            child: pw.Column(children: [
+              pw.Text(valor,
+                  style: pw.TextStyle(
+                      fontSize: 10,
+                      fontWeight: pw.FontWeight.bold,
+                      color: cor)),
+              pw.Text(label,
+                  style: pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
+            ]),
+          );
+
+      widgets.add(pw.Container(
+        padding: const pw.EdgeInsets.all(8),
+        decoration: pw.BoxDecoration(
+          color: PdfColors.blueGrey50,
+          border: pw.Border.all(color: PdfColors.blueGrey200),
+          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
+        ),
+        child: pw.Row(children: [
+          kpi('Barras', '$totalBarrasUsadas'),
+          kpi('Aproveit.', '${percentualAproveitamento.toStringAsFixed(1)}%'),
+          kpi('Sobra Total', totalSobra.toStringAsFixed(1)),
+          if (pecasNaoAlocadas.isNotEmpty)
+            kpi('Faltaram', '${pecasNaoAlocadas.length} pç',
+                cor: PdfColors.red700),
+        ]),
+      ));
+      widgets.add(pw.SizedBox(height: 10));
+
+      // Barras
+      for (int i = 0; i < layouts.length; i++) {
+        final layout = layouts[i];
+        final barra = layout.barraJson;
+        final cortes =
+            (barra['cortes'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        final comprTotal = (barra['comprimento_total'] ?? 0).toDouble();
+        final comprUsado = cortes.fold(
+            0.0, (s, c) => s + ((c['compr_corte'] ?? 0) as num).toDouble());
+        final sobra = comprTotal - comprUsado;
+        final pctUso =
+            comprTotal > 0 ? (comprUsado / comprTotal) * 100 : 0.0;
+
+        widgets.add(pw.Container(
+          decoration: pw.BoxDecoration(
+            border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
+            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(3)),
+          ),
+          child: pw.Column(children: [
+            pw.Container(
+              padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              color: PdfColors.blueGrey800,
+              child: pw.Row(
+                children: [
+                  // Esquerda: identificação
+                  pw.Expanded(
+                    child: pw.Text(
+                      'LAYOUT ${(i + 1).toString().padLeft(2, '0')} - ${comprTotal.toStringAsFixed(1)} cm',
+                      style: pw.TextStyle(
+                          fontSize: 8,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.white),
+                    ),
+                  ),
+                  // Centro: badge invertido
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: pw.BoxDecoration(
+                      color: PdfColors.white,
+                      borderRadius:
+                          const pw.BorderRadius.all(pw.Radius.circular(4)),
+                    ),
+                    child: pw.Text(
+                      'USAR ${layout.quantidade} BARRA${layout.quantidade > 1 ? 'S' : ''}',
+                      style: pw.TextStyle(
+                          fontSize: 9,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.blueGrey900),
+                    ),
+                  ),
+                  // Direita: uso e sobra
+                  pw.Expanded(
+                    child: pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.end,
+                      children: [
+                        pw.Text(
+                          'Uso: ${pctUso.toStringAsFixed(1)}%  |  Sobra: ${sobra.toStringAsFixed(1)} cm',
+                          style: pw.TextStyle(
+                              fontSize: 7,
+                              color: PdfColors.blueGrey100),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            pw.TableHelper.fromTextArray(
+              headers: ['Localizador', 'Elemento', 'OS', 'Compr. Corte'],
+              data: cortes
+                  .map((c) => [
+                        _ascii(c['pedido_localizador']?.toString() ?? ''),
+                        _ascii(c['elemento_nome']?.toString() ?? ''),
+                        c['numero_os']?.toString() ?? '',
+                        ((c['compr_corte'] ?? 0) as num)
+                            .toDouble()
+                            .toStringAsFixed(1),
+                      ])
+                  .toList(),
+              headerStyle: pw.TextStyle(
+                  fontSize: 7,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.blueGrey800),
+              headerDecoration:
+                  const pw.BoxDecoration(color: PdfColors.grey200),
+              cellStyle: const pw.TextStyle(fontSize: 7),
+              cellAlignment: pw.Alignment.centerLeft,
+              oddRowDecoration:
+                  const pw.BoxDecoration(color: PdfColors.grey100),
+              cellPadding: const pw.EdgeInsets.symmetric(
+                  horizontal: 6, vertical: 2),
+              columnWidths: {
+                0: const pw.FlexColumnWidth(2),
+                1: const pw.FlexColumnWidth(2),
+                2: const pw.FlexColumnWidth(1),
+                3: const pw.FlexColumnWidth(1.2),
+              },
+            ),
+          ]),
+        ));
+        widgets.add(pw.SizedBox(height: 6));
+      }
+
+      // Peças não alocadas
+      if (pecasNaoAlocadas.isNotEmpty) {
+        widgets.add(pw.Container(
+          padding: const pw.EdgeInsets.all(6),
+          decoration: pw.BoxDecoration(
+            color: PdfColors.red50,
+            border: pw.Border.all(color: PdfColors.red200),
+          ),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                  'PECAS NAO ALOCADAS (${pecasNaoAlocadas.length})',
+                  style: pw.TextStyle(
+                      fontSize: 8,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.red800)),
+              pw.SizedBox(height: 4),
+              ...pecasNaoAlocadas.map((p) => pw.Text(
+                    '${_ascii(p['pedido_localizador']?.toString() ?? '')} . ${_ascii(p['elemento_nome']?.toString() ?? '')} . OS ${p['numero_os']} - ${((p['compr_corte'] ?? 0) as num).toDouble().toStringAsFixed(1)}',
+                    style: const pw.TextStyle(fontSize: 7),
+                  )),
+            ],
+          ),
+        ));
+      }
+
+      return widgets;
+    },
+  ));
+
+  return await pdf.save();
+}
+
 
 class PlanosCortePage extends StatefulWidget {
   const PlanosCortePage({super.key});
@@ -430,215 +718,36 @@ class _PlanosCortePageState extends State<PlanosCortePage> {
   // ─── PDF do plano salvo ───────────────────────────────────────────────────
   Future<void> _exportarPdfSalvo(PlanoCorteGravadoModel plano) async {
     setState(() => _exportandoId = plano.id);
+    // Yield para garantir que o overlay de loading renderize antes do processamento
+    await Future.delayed(const Duration(milliseconds: 80));
     try {
-    final logoBytes = await LogoHelper.logoBytesForPdf();
-    final pdf = pw.Document();
-    final rJson = plano.resultadoJson;
+      final logoBytes = await LogoHelper.logoBytesForPdf();
+      final logoUint8 = logoBytes is Uint8List
+          ? logoBytes
+          : Uint8List.fromList(logoBytes);
 
-    final barrasUsadas = (rJson['barras_usadas'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-    final pecasNaoAlocadas = (rJson['pecas_nao_alocadas'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      // Gera o PDF direto (compute/web worker não funciona com o pacote pdf no Flutter Web)
+      final bytes = await _gerarBytesPdfPlano({
+        'logoBytes': logoUint8,
+        'ordemLocalizator': plano.ordemLocalizator,
+        'bitolaDescricao': plano.bitolaDescricao,
+        'descricao': plano.descricao,
+        'createdAtMs': plano.createdAt.millisecondsSinceEpoch,
+        'totalBarrasUsadas': plano.totalBarrasUsadas,
+        'percentualAproveitamento': plano.percentualAproveitamento,
+        'totalSobra': plano.totalSobra,
+        'resultadoJson': plano.resultadoJson,
+      });
 
-    pdf.addPage(pw.MultiPage(
-      pageFormat: PdfPageFormat.a4,
-      margin: const pw.EdgeInsets.all(28),
-      theme: pw.ThemeData.withFont(
-        base: pw.Font.helvetica(),
-        bold: pw.Font.helveticaBold(),
-      ),
-      header: (ctx) => _pdfHeader(logoBytes, plano),
-      footer: (ctx) => _pdfFooter(ctx),
-      build: (ctx) {
-        final widgets = <pw.Widget>[];
-
-        // KPIs
-        widgets.add(pw.Container(
-          padding: const pw.EdgeInsets.all(8),
-          decoration: pw.BoxDecoration(
-            color: PdfColors.blueGrey50,
-            border: pw.Border.all(color: PdfColors.blueGrey200),
-            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
-          ),
-          child: pw.Row(children: [
-            _pdfKpi('Barras', '${plano.totalBarrasUsadas}'),
-            _pdfKpi('Aproveit.', '${plano.percentualAproveitamento.toStringAsFixed(1)}%'),
-            _pdfKpi('Sobra Total', plano.totalSobra.toStringAsFixed(1)),
-            if (pecasNaoAlocadas.isNotEmpty)
-              _pdfKpi('Faltaram', '${pecasNaoAlocadas.length} pç', cor: PdfColors.red700),
-          ]),
-        ));
-        widgets.add(pw.SizedBox(height: 10));
-
-        // Agrupar layouts idênticos
-        final layouts = _agruparLayoutsSalvo(barrasUsadas);
-        for (int i = 0; i < layouts.length; i++) {
-          widgets.add(_pdfBarraBloco(layouts[i], i + 1));
-          widgets.add(pw.SizedBox(height: 6));
-        }
-
-        // Peças não alocadas
-        if (pecasNaoAlocadas.isNotEmpty) {
-          widgets.add(pw.Container(
-            padding: const pw.EdgeInsets.all(6),
-            decoration: pw.BoxDecoration(
-              color: PdfColors.red50,
-              border: pw.Border.all(color: PdfColors.red200),
-            ),
-            child: pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text('PEÇAS NÃO ALOCADAS (${pecasNaoAlocadas.length})',
-                    style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.red800)),
-                pw.SizedBox(height: 4),
-                ...pecasNaoAlocadas.map((p) => pw.Text(
-                      '${p['pedido_localizador']} · ${p['elemento_nome']} · OS ${p['numero_os']} — ${(p['compr_corte'] ?? 0).toStringAsFixed(1)}',
-                      style: const pw.TextStyle(fontSize: 7),
-                    )),
-              ],
-            ),
-          ));
-        }
-
-        return widgets;
-      },
-    ));
-
-    final bytes = await pdf.save();
-    final nome = 'plano_corte_${plano.ordemLocalizator.toLowerCase()}_${plano.createdAt.toFileName()}.pdf';
-    await downloadPDF(nome, '/relatorio/plano_corte/', bytes);
+      final nome =
+          'plano_corte_${plano.ordemLocalizator.toLowerCase()}_${plano.createdAt.toFileName()}.pdf';
+      await downloadPDF(nome, '/relatorio/plano_corte/', Uint8List.fromList(bytes));
     } finally {
       if (mounted) setState(() => _exportandoId = null);
     }
   }
 
-  // ─── Helpers PDF ──────────────────────────────────────────────────────────
 
-  List<_LayoutSalvo> _agruparLayoutsSalvo(List<Map<String, dynamic>> barras) {
-    final List<_LayoutSalvo> layouts = [];
-    for (final barra in barras) {
-      final cortes = (barra['cortes'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-      final chave = '${barra['comprimento_total']}_${cortes.map((c) => (c['compr_corte'] ?? 0).toStringAsFixed(2)).join('|')}';
-      final existente = layouts.where((l) => l.chave == chave).firstOrNull;
-      if (existente != null) {
-        existente.quantidade++;
-      } else {
-        layouts.add(_LayoutSalvo(barraJson: barra, chave: chave));
-      }
-    }
-    return layouts;
-  }
-
-  pw.Widget _pdfHeader(dynamic logoBytes, PlanoCorteGravadoModel plano) {
-    return pw.Container(
-      margin: const pw.EdgeInsets.only(bottom: 12),
-      padding: const pw.EdgeInsets.only(bottom: 8),
-      decoration: const pw.BoxDecoration(
-        border: pw.Border(bottom: pw.BorderSide(color: PdfColors.blueGrey800, width: 1)),
-      ),
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        children: [
-          pw.Row(children: [
-            pw.Image(pw.MemoryImage(logoBytes), width: 36, height: 36),
-            pw.SizedBox(width: 10),
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Text('PLANO DE CORTE',
-                    style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800)),
-                pw.Text('${plano.ordemLocalizator} — ${plano.bitolaDescricao}',
-                    style: pw.TextStyle(fontSize: 9, color: PdfColors.grey700)),
-              ],
-            ),
-          ]),
-          pw.Text(DateFormat('dd/MM/yyyy HH:mm').format(plano.createdAt),
-              style: pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-        ],
-      ),
-    );
-  }
-
-  pw.Widget _pdfFooter(pw.Context ctx) {
-    return pw.Container(
-      margin: const pw.EdgeInsets.only(top: 10),
-      padding: const pw.EdgeInsets.only(top: 6),
-      decoration: const pw.BoxDecoration(
-        border: pw.Border(top: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
-      ),
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        children: [
-          pw.Text('Documento gerado eletronicamente',
-              style: pw.TextStyle(fontSize: 6, color: PdfColors.grey500, fontStyle: pw.FontStyle.italic)),
-          pw.Text('Página ${ctx.pageNumber} de ${ctx.pagesCount}',
-              style: pw.TextStyle(fontSize: 7, color: PdfColors.grey600, fontWeight: pw.FontWeight.bold)),
-        ],
-      ),
-    );
-  }
-
-  pw.Widget _pdfKpi(String label, String valor, {PdfColor cor = PdfColors.blueGrey800}) {
-    return pw.Expanded(
-      child: pw.Column(children: [
-        pw.Text(valor, style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: cor)),
-        pw.Text(label, style: pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
-      ]),
-    );
-  }
-
-  pw.Widget _pdfBarraBloco(_LayoutSalvo layout, int numero) {
-    final barra = layout.barraJson;
-    final cortes = (barra['cortes'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-    final comprTotal = (barra['comprimento_total'] ?? 0).toDouble();
-    final comprUsado = cortes.fold(0.0, (sum, c) => sum + ((c['compr_corte'] ?? 0) as num).toDouble());
-    final sobra = comprTotal - comprUsado;
-    final pctUso = comprTotal > 0 ? (comprUsado / comprTotal) * 100 : 0.0;
-
-    return pw.Container(
-      decoration: pw.BoxDecoration(
-        border: pw.Border.all(color: PdfColors.grey300, width: 0.5),
-        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(3)),
-      ),
-      child: pw.Column(children: [
-        pw.Container(
-          padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          color: PdfColors.blueGrey800,
-          child: pw.Row(
-            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-            children: [
-              pw.Text('LAYOUT ${numero.toString().padLeft(2, '0')} — Compr. ${comprTotal.toStringAsFixed(1)} — Repetir ${layout.quantidade} vez${layout.quantidade > 1 ? 'es' : ''}',
-                  style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.white)),
-              pw.Text('Uso: ${pctUso.toStringAsFixed(1)}%  |  Sobra: ${sobra.toStringAsFixed(1)}',
-                  style: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold, color: PdfColors.white)),
-            ],
-          ),
-        ),
-        pw.TableHelper.fromTextArray(
-          headers: ['Localizador', 'Elemento', 'OS', 'Compr. Corte'],
-          data: cortes.map((c) => [
-            c['pedido_localizador'] ?? '',
-            c['elemento_nome'] ?? '',
-            c['numero_os'] ?? '',
-            ((c['compr_corte'] ?? 0) as num).toDouble().toStringAsFixed(1),
-          ]).toList(),
-          headerStyle: pw.TextStyle(fontSize: 7, fontWeight: pw.FontWeight.bold, color: PdfColors.blueGrey800),
-          headerDecoration: const pw.BoxDecoration(color: PdfColors.grey200),
-          cellStyle: const pw.TextStyle(fontSize: 7),
-          cellAlignment: pw.Alignment.centerLeft,
-          oddRowDecoration: const pw.BoxDecoration(color: PdfColors.grey100),
-          cellPadding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          columnWidths: {
-            0: const pw.FlexColumnWidth(2),
-            1: const pw.FlexColumnWidth(2),
-            2: const pw.FlexColumnWidth(1),
-            3: const pw.FlexColumnWidth(1.2),
-          },
-        ),
-      ]),
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // UI
   // ═══════════════════════════════════════════════════════════════════════════
 
   @override
@@ -651,6 +760,66 @@ class _PlanosCortePageState extends State<PlanosCortePage> {
       return const Center(child: EmptyData());
     }
 
+    // Overlay de loading durante geração de PDF
+    if (_exportandoId != null) {
+      final planoExportando =
+          _planos.where((p) => p.id == _exportandoId).firstOrNull;
+      return Stack(
+        children: [
+          _buildConteudoPrincipal(),
+          Container(
+            color: Colors.black.withValues(alpha: 0.55),
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 36),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.18),
+                      blurRadius: 32,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 56,
+                      height: 56,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 5,
+                        color: AppColors.primaryMain,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Gerando PDF...',
+                      style: AppCss.mediumBold.setColor(AppColors.neutralDark),
+                    ),
+                    if (planoExportando != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        '${planoExportando.ordemLocalizator} — ${planoExportando.bitolaDescricao}',
+                        style: AppCss.minimumRegular.setColor(Colors.grey[500]!),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return _buildConteudoPrincipal();
+  }
+
+  Widget _buildConteudoPrincipal() {
     final filtrados = _planosFiltrados;
 
     return RefreshIndicator(
@@ -986,17 +1155,3 @@ class _PlanosCortePageState extends State<PlanosCortePage> {
     );
   }
 }
-
-// ─── Classe auxiliar para agrupamento de layouts salvos ──────────────────────
-class _LayoutSalvo {
-  final Map<String, dynamic> barraJson;
-  final String chave;
-  int quantidade;
-
-  _LayoutSalvo({
-    required this.barraJson,
-    required this.chave,
-    this.quantidade = 1,
-  });
-}
-
