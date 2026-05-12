@@ -7,12 +7,14 @@ import 'package:aco_plus/app/modules/materia_prima/ui/materias_primas_page.dart'
 import 'package:aco_plus/app/modules/ordem/ui/ordens_page.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedidos_page.dart';
 import 'package:aco_plus/app/modules/produto/ui/produtos_page.dart';
+import 'package:aco_plus/app/modules/relatorio/ui/estoque/relatorios_estoque_page.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/ordem/relatorios_ordem_page.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/pedido/relatorios_pedido_page.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/plano_corte/planos_corte_page.dart';
 import 'package:aco_plus/app/modules/ponta/ui/pontas_page.dart';
 import 'package:aco_plus/app/modules/step/ui/steps_page.dart';
 import 'package:aco_plus/app/modules/tag/ui/tags_page.dart';
+import 'package:aco_plus/app/modules/estoque/ui/estoque_page.dart';
 
 
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
@@ -26,6 +28,7 @@ enum AppModule {
   ordens,
   pedidoRelatorio,
   ordemRelatorio,
+  estoqueRelatorio,
   planoCorte,
   cliente,
   steps,
@@ -35,6 +38,7 @@ enum AppModule {
   materiaPrima,
   pontas,
   armacao,
+  estoque,
 }
 
 extension AppModuleExt on AppModule {
@@ -52,6 +56,8 @@ extension AppModuleExt on AppModule {
         return const RelatoriosPedidoPage();
       case AppModule.ordemRelatorio:
         return const RelatoriosOrdemPage();
+      case AppModule.estoqueRelatorio:
+        return const RelatoriosEstoquePage();
       case AppModule.planoCorte:
         return const PlanosCortePage();
       case AppModule.steps:
@@ -70,6 +76,8 @@ extension AppModuleExt on AppModule {
         return const PontasPage();
       case AppModule.armacao:
         return const ArmacaoPage();
+      case AppModule.estoque:
+        return const EstoquePage();
     }
   }
 
@@ -99,6 +107,8 @@ extension AppModuleExt on AppModule {
         return Icons.shopping_cart_outlined;
       case AppModule.ordemRelatorio:
         return Icons.work_outline;
+      case AppModule.estoqueRelatorio:
+        return Icons.inventory_2_outlined;
       case AppModule.planoCorte:
         return Icons.content_cut;
       case AppModule.steps:
@@ -117,6 +127,8 @@ extension AppModuleExt on AppModule {
         return Icons.flip_to_back;
       case AppModule.armacao:
         return Icons.iron_rounded;
+      case AppModule.estoque:
+        return Icons.inventory_2_outlined;
     }
   }
 
@@ -134,6 +146,8 @@ extension AppModuleExt on AppModule {
         return 'Ordens de Produção';
       case AppModule.pedidoRelatorio:
         return 'Relatório de Consumo';
+      case AppModule.estoqueRelatorio:
+        return 'Relatório de Estoque';
       case AppModule.planoCorte:
         return 'Plano de Corte';
       case AppModule.steps:
@@ -152,6 +166,8 @@ extension AppModuleExt on AppModule {
         return 'Cadastro de Pontas';
       case AppModule.armacao:
         return 'Armação';
+      case AppModule.estoque:
+        return 'Estoque';
     }
   }
 

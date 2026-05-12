@@ -36,7 +36,7 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
     relatorioCtrl.pedidoViewModelStream.add(RelatorioPedidoViewModel());
     relatorioCtrl.onCreateRelatorioPedido();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      baseCtrl.appBarActionsStream.add([
+      baseCtrl.appBarActionsStream.add(<Widget>[
         StreamOut(
           stream: relatorioCtrl.pedidoViewModelStream.listen,
           builder: (_, model) => IconButton(
@@ -622,3 +622,4 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
     );
   }
 }
+

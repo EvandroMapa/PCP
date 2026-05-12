@@ -28,7 +28,7 @@ class _PontasPageState extends State<PontasPage> {
     super.initState();
     setWebTitle('Cadastro de Pontas');
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      baseCtrl.appBarActionsStream.add([
+      baseCtrl.appBarActionsStream.add(<Widget>[
         Tooltip(
           message: 'Adicionar Bitola',
           child: IconButton(
@@ -837,3 +837,4 @@ class _DialogPontaState extends State<_DialogPonta> {
     }
   }
 }
+

@@ -26,7 +26,7 @@ class _FabricantesPageState extends State<FabricantesPage> {
     setWebTitle('Fabricantes');
     FirestoreClient.fabricantes.fetch();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      baseCtrl.appBarActionsStream.add([
+      baseCtrl.appBarActionsStream.add(<Widget>[
         IconButton(
           onPressed: () => push(context, const FabricanteCreatePage()),
           icon: const Icon(Icons.add, color: Colors.white),
@@ -105,3 +105,4 @@ class _FabricantesPageState extends State<FabricantesPage> {
     );
   }
 }
+

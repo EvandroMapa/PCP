@@ -4,6 +4,7 @@ import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
+import 'package:aco_plus/app/modules/relatorio/ui/estoque/relatorios_estoque_page.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/ordem/relatorios_ordem_page.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/pedido/relatorios_pedido_page.dart';
 import 'package:flutter/material.dart';
@@ -37,28 +38,28 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
         ),
         backgroundColor: AppColors.primaryMain,
       ),
-      body: Column(
+      body: ListView(
         children: [
           ListTile(
             title: const Text('Relatório de Pedidos'),
             onTap: () => push(context, const RelatoriosPedidoPage()),
             leading: const Icon(Icons.shopping_cart_outlined),
-            trailing: Icon(
-              Icons.chevron_right,
-              color: Colors.grey[400],
-              size: 16,
-            ),
+            trailing: Icon(Icons.chevron_right, color: Colors.grey[400], size: 16),
           ),
           const Divisor(),
           ListTile(
             title: const Text('Relatório de Ordens'),
             onTap: () => push(context, const RelatoriosOrdemPage()),
             leading: const Icon(Icons.work_outline),
-            trailing: Icon(
-              Icons.chevron_right,
-              color: Colors.grey[400],
-              size: 16,
-            ),
+            trailing: Icon(Icons.chevron_right, color: Colors.grey[400], size: 16),
+          ),
+          const Divisor(),
+          ListTile(
+            title: const Text('Relatório de Estoque'),
+            subtitle: const Text('Saldo atual vs. consumo previsto'),
+            onTap: () => push(context, const RelatoriosEstoquePage()),
+            leading: const Icon(Icons.inventory_2_outlined),
+            trailing: Icon(Icons.chevron_right, color: Colors.grey[400], size: 16),
           ),
         ],
       ),

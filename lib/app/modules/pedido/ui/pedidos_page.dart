@@ -44,7 +44,7 @@ class _PedidosPageState extends State<PedidosPage> {
     pedidoCtrl.onInit();
     if (!widget.standalone) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        baseCtrl.appBarActionsStream.add([
+        baseCtrl.appBarActionsStream.add(<Widget>[
           IconButton(
             onPressed: () => openInNewTab('/pedidos'),
             icon: const Icon(Icons.open_in_new, color: Colors.white),

@@ -25,7 +25,7 @@ class _ProdutosPageState extends State<ProdutosPage> {
     setWebTitle('Produtos');
     FirestoreClient.produtos.fetch();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      baseCtrl.appBarActionsStream.add([
+      baseCtrl.appBarActionsStream.add(<Widget>[
         IconButton(
           onPressed: () => push(context, const ProdutoCreatePage()),
           icon: const Icon(Icons.add, color: Colors.white),
@@ -115,3 +115,4 @@ class _ProdutosPageState extends State<ProdutosPage> {
     );
   }
 }
+

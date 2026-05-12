@@ -197,6 +197,7 @@ class AppDrawerNotOperatorList extends StatelessWidget {
           items: [
             AppModule.pedidoRelatorio,
             AppModule.ordemRelatorio,
+            AppModule.estoqueRelatorio,
           ],
           module: module,
           notificacoes: notificacoes,
@@ -204,7 +205,7 @@ class AppDrawerNotOperatorList extends StatelessWidget {
         AppDrawerDropdown(
           icon: Icons.add_circle_outline,
           title: 'Cadastros',
-          items: [AppModule.cliente, AppModule.produtos, AppModule.fabricantes],
+          items: [AppModule.cliente, AppModule.produtos, AppModule.fabricantes, AppModule.estoque],
           module: module,
           notificacoes: notificacoes,
         ),

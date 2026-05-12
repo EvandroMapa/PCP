@@ -11,7 +11,7 @@ class AppStream<T> {
   }
 
   late final BehaviorSubject<T> controller;
-  void add(e) => controller.sink.add(e);
+  void add(T e) => controller.sink.add(e);
   Stream<T> get listen => controller.stream;
   T get value => controller.stream.value;
   T? get valueOrNull => controller.valueOrNull;

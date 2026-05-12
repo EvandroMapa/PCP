@@ -19,6 +19,8 @@ import 'package:aco_plus/app/core/client/supabase/collections/elemento/elemento_
 import 'package:aco_plus/app/core/client/supabase/collections/patio/patio_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/box/box_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido_box/pedido_box_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/estoque/estoque_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/estoque/estoque_movimentacao_supabase_collection.dart';
 
 class AppSupabaseClient {
   static OrdemSupabaseCollection ordens = OrdemSupabaseCollection();
@@ -50,6 +52,9 @@ class AppSupabaseClient {
   static BoxSupabaseCollection boxes = BoxSupabaseCollection();
   static PedidoBoxSupabaseCollection pedidoBoxes =
       PedidoBoxSupabaseCollection();
+  static EstoqueSupabaseCollection estoques = EstoqueSupabaseCollection();
+  static EstoqueMovimentacaoSupabaseCollection estoquesMovimentacao =
+      EstoqueMovimentacaoSupabaseCollection();
 
   static Future<void> init() async {
     try {
@@ -74,6 +79,8 @@ class AppSupabaseClient {
       patios.listen();
       boxes.listen();
       pedidoBoxes.listen();
+      estoques.listen();
+      estoquesMovimentacao.listen();
 
       // ── 2. Fetches sequenciais (dados iniciais) ─────────────────────────
       await usuarioTipos
@@ -127,6 +134,12 @@ class AppSupabaseClient {
       await pedidoBoxes
           .start()
           .catchError((e) => log('Error starting pedidoBoxes: $e'));
+      await estoques
+          .start()
+          .catchError((e) => log('Error starting estoques: $e'));
+      await estoquesMovimentacao
+          .start()
+          .catchError((e) => log('Error starting estoquesMovimentacao: $e'));
       await ordens.startOnlyArquivadas();
 
       // Pedidos depende de clientes/steps para mapeamento

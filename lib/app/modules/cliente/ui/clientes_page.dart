@@ -27,7 +27,7 @@ class _ClientesPageState extends State<ClientesPage> {
     setWebTitle('Clientes');
     FirestoreClient.clientes.fetch();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      baseCtrl.appBarActionsStream.add([
+      baseCtrl.appBarActionsStream.add(<Widget>[
         if (usuario.permission.cliente.contains(UserPermissionType.create))
           IconButton(
             onPressed: () => push(context, const ClienteCreatePage()),
@@ -107,3 +107,4 @@ class _ClientesPageState extends State<ClientesPage> {
     );
   }
 }
+

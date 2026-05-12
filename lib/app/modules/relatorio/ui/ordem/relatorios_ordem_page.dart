@@ -34,7 +34,7 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
     relatorioCtrl.ordemViewModelStream.add(RelatorioOrdemViewModel());
     relatorioCtrl.onCreateRelatorioOrdemStatus();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      baseCtrl.appBarActionsStream.add([
+      baseCtrl.appBarActionsStream.add(<Widget>[
         StreamOut(
           stream: relatorioCtrl.ordemViewModelStream.listen,
           builder: (_, model) => IconButton(
@@ -371,3 +371,4 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
     );
   }
 }
+

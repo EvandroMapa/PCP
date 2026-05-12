@@ -85,18 +85,30 @@ class DashboardController {
   }
 
   /// ─── LÓGICA DE CONSUMO ESTIMADO (KPIs DASHBOARD) ──────────────────────────
+  /// Idêntico ao onCreateRelatorioPedido (Relatório de Consumo):
+  ///  - Usa FirestoreClient.steps para considerarConsumoRelatorioPedidos
+  ///  - Não filtra por isArchived
+  ///  - Inclui apenas itens com status em [separado, aguardandoProducao, produzindo]
   Map<String, double> getConsumoEstimado() {
-    final pedidos = FirestoreClient.pedidos.data
-        .where((p) => !p.isArchived)
-        .where((p) => p.step.considerarConsumoRelatorioPedidos)
-        .toList();
+    const statusValidos = [
+      PedidoProdutoStatus.separado,
+      PedidoProdutoStatus.aguardandoProducao,
+      PedidoProdutoStatus.produzindo,
+    ];
 
     final Map<String, double> consumo = {};
 
-    for (var pedido in pedidos) {
+    for (var pedido in FirestoreClient.pedidos.data) {
+      final stepAtual = FirestoreClient.steps.data
+          .where((step) => step.id == pedido.step.id)
+          .firstOrNull;
+      final considerarConsumo =
+          stepAtual?.considerarConsumoRelatorioPedidos ?? true;
+
+      if (!considerarConsumo) continue;
+
       for (var produto in pedido.produtos) {
-        // Apenas o que AINDA NÃO FOI PRODUZIDO (Diferente de 'Pronto')
-        if (produto.statusess.last.status != PedidoProdutoStatus.pronto) {
+        if (statusValidos.contains(produto.statusess.last.status)) {
           final prodId = produto.produto.id;
           consumo[prodId] = (consumo[prodId] ?? 0) + produto.qtde;
         }

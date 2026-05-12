@@ -13,6 +13,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_m
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/ordem/ordem_supabase_collection.dart';
+import 'package:aco_plus/app/modules/estoque/estoque_controller.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
@@ -653,9 +654,30 @@ class OrdemController {
         }
       }
     }
+    final statusAnterior = produto.status.status;
+
     await FirestoreClient.pedidos.updateProdutoStatus(produto, status);
     final pedido = await FirestoreClient.pedidos.updatePedidoStatus(produto);
     if (pedido != null) await updateFeaturesByPedidoStatus(pedido);
+
+    // Baixa automática de estoque quando produto fica pronto
+    if (status == PedidoProdutoStatus.pronto) {
+      await estoqueCtrl.baixarEstoque(
+        produtoId: produto.produto.id,
+        quantidade: produto.qtde,
+        ordem: ordem,
+      );
+    }
+
+    // Estorno quando produto volta de PRONTO para outro status
+    if (statusAnterior == PedidoProdutoStatus.pronto &&
+        status != PedidoProdutoStatus.pronto) {
+      await estoqueCtrl.estornarBaixa(
+        produtoId: produto.produto.id,
+        quantidade: produto.qtde,
+        ordem: ordem,
+      );
+    }
 
     // Sincroniza posições dos elementos quando no modo "por_pedido"
     await _syncPosicoesByPedidoStatus(produto, status);

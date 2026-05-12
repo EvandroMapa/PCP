@@ -31,7 +31,7 @@ class _MateriasPrimasPageState extends State<MateriasPrimasPage> {
     setWebTitle('Matérias Primas');
     FirestoreClient.materiaPrimas.fetch();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      baseCtrl.appBarActionsStream.add([
+      baseCtrl.appBarActionsStream.add(<Widget>[
         IconButton(
           onPressed: () => push(context, const MateriaPrimaCreatePage()),
           icon: const Icon(Icons.add, color: Colors.white),
@@ -162,3 +162,4 @@ class _MateriasPrimasPageState extends State<MateriasPrimasPage> {
     );
   }
 }
+

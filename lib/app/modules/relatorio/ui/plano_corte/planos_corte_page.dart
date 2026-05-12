@@ -60,7 +60,7 @@ class _PlanosCortePageState extends State<PlanosCortePage> {
     super.initState();
     setWebTitle('Planos de Corte');
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      baseCtrl.appBarActionsStream.add([
+      baseCtrl.appBarActionsStream.add(<Widget>[
         Tooltip(
           message: 'Planos Arquivados',
           child: IconButton(
@@ -999,3 +999,4 @@ class _LayoutSalvo {
     this.quantidade = 1,
   });
 }
+
