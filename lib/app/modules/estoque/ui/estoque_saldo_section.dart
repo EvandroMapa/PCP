@@ -41,9 +41,10 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
   }
 
   Widget _header() {
-    final totalSaldo = BackendClient.estoques.data
-        .fold(0.0, (s, e) => s + e.quantidade);
-    final temNegativo = BackendClient.estoques.data.any((e) => e.quantidade < 0);
+    final totalSaldo =
+        BackendClient.estoques.data.fold(0.0, (s, e) => s + e.quantidade);
+    final temNegativo =
+        BackendClient.estoques.data.any((e) => e.quantidade < 0);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -52,7 +53,8 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Icon(Icons.inventory_2_outlined, size: 18, color: AppColors.primaryMain),
+            Icon(Icons.inventory_2_outlined,
+                size: 18, color: AppColors.primaryMain),
             const SizedBox(width: 8),
             Text('Saldos de Estoque', style: AppCss.mediumBold),
             const Spacer(),
@@ -67,7 +69,9 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
               ),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(
-                  temNegativo ? Icons.warning_amber_rounded : Icons.account_balance_outlined,
+                  temNegativo
+                      ? Icons.warning_amber_rounded
+                      : Icons.account_balance_outlined,
                   size: 12,
                   color: temNegativo ? Colors.red[700]! : AppColors.primaryMain,
                 ),
@@ -103,10 +107,12 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
     }
 
     final filtro = _search.text.toLowerCase();
-    final filtrados = produtos.where((p) =>
-        filtro.isEmpty ||
-        p.nome.toLowerCase().contains(filtro) ||
-        p.descricao.toLowerCase().contains(filtro)).toList()
+    final filtrados = produtos
+        .where((p) =>
+            filtro.isEmpty ||
+            p.nome.toLowerCase().contains(filtro) ||
+            p.descricao.toLowerCase().contains(filtro))
+        .toList()
       ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
 
     return ListView.separated(
@@ -119,7 +125,9 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
         return _itemCard(produto, estoque);
       },
     );
-  }  Widget _itemCard(produto, EstoqueModel? estoque) {
+  }
+
+  Widget _itemCard(produto, EstoqueModel? estoque) {
     final saldoFisico = estoque?.quantidade ?? 0.0;
     final itensPendentes =
         BackendClient.pedidosCompra.getPendentesByProdutoId(produto.id);
@@ -128,6 +136,9 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
     final saldoProjetado = saldoFisico + totalEmPedido;
     final negativo = saldoFisico < 0;
     final temPedidos = itensPendentes.isNotEmpty;
+    final estoqueMin = estoque?.estoqueMinimo ?? 0.0;
+    final temMinimo = estoqueMin > 0;
+    final abaixoMinimo = temMinimo && saldoFisico < estoqueMin;
 
     // Agrupa por grupoId para mostrar cada PEDIDO, não cada linha
     final Map<String, List<PedidoCompraModel>> pedidosAgrupados = {};
@@ -172,8 +183,7 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
                 ),
                 title: Text(produto.nome, style: AppCss.minimumBold),
                 subtitle: Text(produto.descricao,
-                    style: AppCss.minimumRegular
-                        .setColor(Colors.grey[500]!)),
+                    style: AppCss.minimumRegular.setColor(Colors.grey[500]!)),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -197,22 +207,55 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
                           ),
                           child: Text(
                             saldoFisico.toKg(),
-                            style: AppCss.minimumBold.setColor(
-                                negativo
-                                    ? Colors.red[700]!
-                                    : AppColors.primaryMain),
+                            style: AppCss.minimumBold.setColor(negativo
+                                ? Colors.red[700]!
+                                : AppColors.primaryMain),
                           ),
                         ),
                       ],
                     ),
+                    if (temMinimo) ...[
+                      const SizedBox(width: 6),
+                      Tooltip(
+                        message: abaixoMinimo
+                            ? 'Abaixo do mínimo (${estoqueMin.toKg()})'
+                            : 'Estoque OK (mín: ${estoqueMin.toKg()})',
+                        preferBelow: false,
+                        waitDuration: const Duration(milliseconds: 300),
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: abaixoMinimo
+                                ? Colors.red.withValues(alpha: 0.10)
+                                : Colors.green.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: abaixoMinimo
+                                  ? Colors.red.withValues(alpha: 0.25)
+                                  : Colors.green.withValues(alpha: 0.15),
+                            ),
+                          ),
+                          child: Icon(
+                            abaixoMinimo
+                                ? Icons.warning_amber_rounded
+                                : Icons.shield_outlined,
+                            size: 14,
+                            color: abaixoMinimo
+                                ? Colors.red[700]
+                                : Colors.green[600],
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(width: 8),
                     Tooltip(
-                      message: 'Editar saldo',
+                      message: 'Editar saldo e estoque mínimo',
                       child: IconButton(
                         icon: Icon(Icons.edit_outlined,
                             size: 18, color: Colors.grey[400]),
                         onPressed: () =>
-                            _showEditDialog(produto, saldoFisico),
+                            _showEditDialog(produto, saldoFisico, estoque?.estoqueMinimo ?? 0.0),
                       ),
                     ),
                   ],
@@ -284,8 +327,8 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
                     children: pedidosAgrupados.entries.map((entry) {
                       final itensDoGrupo = entry.value;
                       // Quantidade deste produto neste grupo
-                      final qtdeGrupo = itensDoGrupo
-                          .fold<double>(0, (s, i) => s + i.quantidade);
+                      final qtdeGrupo = itensDoGrupo.fold<double>(
+                          0, (s, i) => s + i.quantidade);
                       final primeiroItem = itensDoGrupo.first;
                       final isConfirmado =
                           primeiroItem.status == PedidoCompraStatus.confirmado;
@@ -406,15 +449,16 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
     );
   }
 
-  Future<void> _showEditDialog(produto, double saldoAtual) async {
+  Future<void> _showEditDialog(produto, double saldoAtual, double estoqueMinimoAtual) async {
     final form = EstoqueEditarSaldoModel(
       produtoId: produto.id,
       saldoAtual: saldoAtual,
+      estoqueMinimoAtual: estoqueMinimoAtual,
     );
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('Editar Saldo — ${produto.nome}'),
+        title: Text('Editar Estoque — ${produto.nome}'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,6 +469,30 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
             AppField(
               label: 'Novo saldo (kg)',
               controller: form.novoSaldo,
+              type: TextInputType.number,
+              hint: '0,000',
+            ),
+            const SizedBox(height: 16),
+            // Separador visual
+            Row(children: [
+              Icon(Icons.shield_outlined, size: 14, color: Colors.amber[700]),
+              const SizedBox(width: 6),
+              Text('Estoque de Segurança',
+                  style: AppCss.minimumBold
+                      .setColor(Colors.amber[700]!)
+                      .setSize(13)),
+            ]),
+            const SizedBox(height: 4),
+            Text(
+              'Quantidade mínima para o simulador de compra sugerir reposição.',
+              style: AppCss.minimumRegular
+                  .setColor(Colors.grey[500]!)
+                  .setSize(11),
+            ),
+            const SizedBox(height: 8),
+            AppField(
+              label: 'Estoque mínimo (kg)',
+              controller: form.estoqueMinimo,
               type: TextInputType.number,
               hint: '0,000',
             ),

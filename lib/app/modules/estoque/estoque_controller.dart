@@ -33,7 +33,8 @@ class EstoqueController {
       relatorioFiltroStream.value;
 
   void onInit() {
-    baseCtrl.appBarActionsStream.add(<Widget>[]); // limpa botões do módulo anterior
+    baseCtrl.appBarActionsStream
+        .add(<Widget>[]); // limpa botões do módulo anterior
     utilsStream.add(EstoqueUtils());
     compraStream.add(EstoqueCompraCreateModel());
     relatorioFiltroStream.add(EstoqueRelatorioFiltroModel());
@@ -60,8 +61,8 @@ class EstoqueController {
     }
     if (filtro.dataInicio != null) {
       movs = movs
-          .where((e) =>
-              e.dataHora.isAfter(filtro.dataInicio!.subtract(const Duration(days: 1))))
+          .where((e) => e.dataHora
+              .isAfter(filtro.dataInicio!.subtract(const Duration(days: 1))))
           .toList();
     }
     if (filtro.dataFim != null) {
@@ -77,6 +78,7 @@ class EstoqueController {
   Future<void> onEditarSaldo(EstoqueEditarSaldoModel form) async {
     try {
       final novaQtde = form.novoSaldoValue;
+      final novoMinimo = form.estoqueMinimoValue;
 
       // Busca ou cria o registro de estoque
       var estoque = BackendClient.estoques.getByProdutoId(form.produtoId);
@@ -85,27 +87,30 @@ class EstoqueController {
       final saldoAnterior = estoque.quantidade;
       final diff = novaQtde - saldoAnterior;
 
-      // Atualiza saldo
+      // Atualiza saldo + estoque mínimo
       final estoqueAtualizado = estoque.copyWith(
         quantidade: novaQtde,
+        estoqueMinimo: novoMinimo,
         updatedAt: DateTime.now(),
       );
       await BackendClient.estoques.upsert(estoqueAtualizado);
 
-      // Registra movimentação de implantação
-      await BackendClient.estoquesMovimentacao.add(
-        EstoqueMovimentacaoModel.novo(
-          produtoId: form.produtoId,
-          tipo: EstoqueTipoMovimentacao.implantacao,
-          quantidade: diff,
-          observacao: 'Ajuste de implantação: $saldoAnterior kg → $novaQtde kg',
-          usuarioNome: usuarioCtrl.usuario?.nome,
-        ),
-      );
+      // Registra movimentação de implantação (apenas se o saldo mudou)
+      if (diff != 0) {
+        await BackendClient.estoquesMovimentacao.add(
+          EstoqueMovimentacaoModel.novo(
+            produtoId: form.produtoId,
+            tipo: EstoqueTipoMovimentacao.implantacao,
+            quantidade: diff,
+            observacao: 'Ajuste de implantação: $saldoAnterior kg → $novaQtde kg',
+            usuarioNome: usuarioCtrl.usuario?.nome,
+          ),
+        );
+      }
 
       NotificationService.showPositive(
-        'Saldo Atualizado',
-        'Estoque do produto ajustado para ${novaQtde.toStringAsFixed(3)} kg',
+        'Estoque Atualizado',
+        'Saldo: ${novaQtde.toStringAsFixed(3)} kg · Mínimo: ${novoMinimo.toStringAsFixed(3)} kg',
         position: NotificationPosition.bottom,
       );
     } catch (e) {
@@ -132,7 +137,8 @@ class EstoqueController {
       await onRegistrarCompraManual(
         produtoId: form.produtoId!,
         quantidade: qtde,
-        observacao: form.observacao.text.isNotEmpty ? form.observacao.text : null,
+        observacao:
+            form.observacao.text.isNotEmpty ? form.observacao.text : null,
       );
 
       form.clear();
@@ -154,7 +160,8 @@ class EstoqueController {
     String? observacao,
   }) async {
     try {
-      if (quantidade <= 0) throw Exception('Quantidade deve ser maior que zero');
+      if (quantidade <= 0)
+        throw Exception('Quantidade deve ser maior que zero');
 
       var estoque = BackendClient.estoques.getByProdutoId(produtoId);
       estoque ??= EstoqueModel.novo(produtoId);
@@ -198,14 +205,15 @@ class EstoqueController {
     String? observacao,
   }) async {
     try {
-      if (quantidade <= 0) throw Exception('Quantidade deve ser maior que zero');
+      if (quantidade <= 0)
+        throw Exception('Quantidade deve ser maior que zero');
 
       var estoque = BackendClient.estoques.getByProdutoId(produtoId);
       estoque ??= EstoqueModel.novo(produtoId);
 
       final novaQtde = estoque.quantidade - quantidade;
-      await BackendClient.estoques
-          .upsert(estoque.copyWith(quantidade: novaQtde, updatedAt: DateTime.now()));
+      await BackendClient.estoques.upsert(
+          estoque.copyWith(quantidade: novaQtde, updatedAt: DateTime.now()));
 
       await BackendClient.estoquesMovimentacao.add(
         EstoqueMovimentacaoModel.novo(

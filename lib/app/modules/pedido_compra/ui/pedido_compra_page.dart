@@ -10,6 +10,7 @@ import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/pedido_compra/pedido_compra_controller.dart';
 import 'package:aco_plus/app/modules/pedido_compra/pedido_compra_view_model.dart';
 import 'package:aco_plus/app/modules/pedido_compra/ui/pedido_compra_create_page.dart';
+import 'package:aco_plus/app/modules/pedido_compra/ui/simulador_compra_page.dart';
 import 'package:flutter/material.dart';
 
 class PedidoCompraPage extends StatefulWidget {
@@ -170,7 +171,10 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
               ),
             ),
           ),
-          if (!widget.standalone && !showHistorico) _btnNovo(context),
+          if (!widget.standalone && !showHistorico) ...[
+            _btnSimulador(context),
+            _btnNovo(context),
+          ],
         ],
       ),
     );
@@ -185,6 +189,15 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
         child: Text(label,
             style:
                 AppCss.minimumBold.setColor(color).setSize(10)),
+      );
+
+  Widget _btnSimulador(BuildContext context) => Tooltip(
+        message: 'Montar sugestão de compra',
+        preferBelow: false,
+        child: IconButton(
+          onPressed: () => push(context, const SimuladorCompraPage()),
+          icon: const Icon(Icons.auto_graph_rounded, color: Colors.white),
+        ),
       );
 
   Widget _btnNovo(BuildContext context) => Tooltip(

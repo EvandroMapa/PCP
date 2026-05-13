@@ -202,6 +202,7 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
       final consumo = relatorioCtrl.getPedidosTotalPorBitola(p);
       final emPedido =
           BackendClient.pedidosCompra.getTotalPendenteByProdutoId(p.id);
+      final estoqueMin = estoque?.estoqueMinimo ?? 0.0;
       if (saldo == 0 && consumo == 0 && emPedido == 0) continue;
       final disponivel = saldo + emPedido;
       final projetado = disponivel - consumo;
@@ -211,6 +212,7 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
         emPedido: emPedido,
         consumo: consumo,
         projetado: projetado,
+        estoqueMinimo: estoqueMin,
       ));
     }
     final projetadoTotal = totalProjetado;
@@ -255,6 +257,8 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
                     _legItem('Consumo Previsto', const Color(0xFFE65100)),
                     const SizedBox(width: 14),
                     _legItemLine('Saldo Projetado', const Color(0xFF1B5E20)),
+                    const SizedBox(width: 14),
+                    _legItemLine('Estoque Minimo', const Color(0xFFD32F2F)),
                   ],
                 ),
               ),
@@ -333,6 +337,24 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
                         shape: DataMarkerType.circle,
                         borderColor: Colors.white,
                         borderWidth: 1.5,
+                      ),
+                    ),
+                    // Linha: Estoque Minimo
+                    LineSeries<_EstoqueChartData, String>(
+                      dataSource: data,
+                      xValueMapper: (d, __) => d.label,
+                      yValueMapper: (d, __) => d.estoqueMinimo > 0 ? d.estoqueMinimo : null,
+                      name: 'Estoque Minimo',
+                      color: const Color(0xFFD32F2F),
+                      width: 1.5,
+                      dashArray: const [4, 4],
+                      markerSettings: const MarkerSettings(
+                        isVisible: true,
+                        height: 5,
+                        width: 5,
+                        shape: DataMarkerType.diamond,
+                        borderColor: Colors.white,
+                        borderWidth: 1,
                       ),
                     ),
                   ],
@@ -719,6 +741,7 @@ class _EstoqueChartData {
   final double emPedido;
   final double consumo;
   final double projetado;
+  final double estoqueMinimo;
 
   _EstoqueChartData({
     required this.label,
@@ -726,5 +749,6 @@ class _EstoqueChartData {
     required this.emPedido,
     required this.consumo,
     required this.projetado,
+    this.estoqueMinimo = 0,
   });
 }

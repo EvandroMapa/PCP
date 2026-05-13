@@ -145,7 +145,7 @@ extension AppModuleExt on AppModule {
       case AppModule.cliente:
         return 'Clientes';
       case AppModule.pedidos:
-        return 'Pedidos';
+        return 'Listagem';
       case AppModule.ordens:
         return 'Ordens de Produção';
       case AppModule.ordemRelatorio:
@@ -173,7 +173,7 @@ extension AppModuleExt on AppModule {
       case AppModule.armacao:
         return 'Armação';
       case AppModule.estoqueSaldo:
-        return 'Listagem';
+        return 'Painel';
       case AppModule.pedidoCompra:
         return 'Pedidos de Compra';
     }

@@ -64,7 +64,42 @@ class _PedidoCompraCreatePageState extends State<PedidoCompraCreatePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final form = pedidoCompraCtrl.form;
+        if (form.itens.isEmpty) {
+          Navigator.pop(context);
+          return;
+        }
+        final sair = await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Descartar alterações?'),
+            content: const Text(
+                'Você tem itens no pedido que ainda não foram salvos. Deseja sair e perder as alterações?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Sair'),
+              ),
+            ],
+          ),
+        );
+        if (sair == true && context.mounted) {
+          Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: StreamOut<PedidoCompraCreateModel>(
@@ -81,6 +116,7 @@ class _PedidoCompraCreatePageState extends State<PedidoCompraCreatePage> {
         stream: pedidoCompraCtrl.formStream.listen,
         builder: (_, form) => _body(context, form),
       ),
+    ),
     );
   }
 
@@ -256,7 +292,10 @@ class _PedidoCompraCreatePageState extends State<PedidoCompraCreatePage> {
                         Border.all(color: const Color(0xFFE2E8F0)),
                   ),
                   child: Column(
-                    children: form.itens.asMap().entries.map((entry) {
+                    children: (List<PedidoCompraItemForm>.from(form.itens)
+                      ..sort((a, b) => (a.produto?.sortIndex ?? 0)
+                          .compareTo(b.produto?.sortIndex ?? 0)))
+                        .asMap().entries.map((entry) {
                       final idx = entry.key;
                       final item = entry.value;
                       final isLast = idx == form.itens.length - 1;
@@ -313,23 +352,47 @@ class _PedidoCompraCreatePageState extends State<PedidoCompraCreatePage> {
                                     .setColor(AppColors.primaryMain)
                                     .setSize(13),
                               ),
-                              const SizedBox(width: 8),
-                              GestureDetector(
-                                onTap: () {
-                                  form.removerItem(item);
-                                  pedidoCompraCtrl.formStream.update();
-                                },
-                                child: Container(
-                                  width: 28,
-                                  height: 28,
-                                  decoration: BoxDecoration(
-                                    color: Colors.red
-                                        .withValues(alpha: 0.08),
-                                    shape: BoxShape.circle,
+                              const SizedBox(width: 6),
+                              // Editar quantidade
+                              Tooltip(
+                                message: 'Editar quantidade',
+                                child: GestureDetector(
+                                  onTap: () => _editarQuantidade(item),
+                                  child: Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue
+                                          .withValues(alpha: 0.08),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(Icons.edit_outlined,
+                                        size: 14,
+                                        color: Colors.blue[400]),
                                   ),
-                                  child: Icon(Icons.close,
-                                      size: 14,
-                                      color: Colors.red[400]),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              // Excluir item
+                              Tooltip(
+                                message: 'Remover item',
+                                child: GestureDetector(
+                                  onTap: () {
+                                    form.removerItem(item);
+                                    pedidoCompraCtrl.formStream.update();
+                                  },
+                                  child: Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: Colors.red
+                                          .withValues(alpha: 0.08),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(Icons.delete_outline,
+                                        size: 14,
+                                        color: Colors.red[400]),
+                                  ),
                                 ),
                               ),
                             ]),
@@ -428,4 +491,69 @@ class _PedidoCompraCreatePageState extends State<PedidoCompraCreatePage> {
         contentPadding: const EdgeInsets.symmetric(
             horizontal: 12, vertical: 10),
       );
+
+  void _editarQuantidade(PedidoCompraItemForm item) {
+    final editCtrl = TextEditingController(text: item.quantidade.text);
+    editCtrl.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: editCtrl.text.length,
+    );
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Editar Quantidade — ${item.produto?.nome ?? ''}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (item.produto?.descricao != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Text(
+                  item.produto!.descricao,
+                  style: AppCss.minimumRegular
+                      .setColor(Colors.grey[500]!)
+                      .setSize(12),
+                ),
+              ),
+            TextFormField(
+              controller: editCtrl,
+              autofocus: true,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[\d,\.]')),
+              ],
+              decoration: _dec('Quantidade (kg)'),
+              onFieldSubmitted: (_) {
+                final texto = editCtrl.text;
+                Navigator.pop(dialogContext);
+                item.quantidade.text = texto;
+                pedidoCompraCtrl.formStream.update();
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryMain,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              final texto = editCtrl.text;
+              Navigator.pop(dialogContext);
+              item.quantidade.text = texto;
+              pedidoCompraCtrl.formStream.update();
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+  }
 }
