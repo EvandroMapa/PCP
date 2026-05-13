@@ -17,12 +17,15 @@ import 'package:aco_plus/app/modules/ordem/ui/ordem/ordem_page.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/modules/ponta/ponta_model.dart';
 import 'package:aco_plus/app/core/services/preferences_service.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/box/models/box_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/patio/models/patio_model.dart';
+import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
 
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -38,6 +41,7 @@ class DashboardPageState extends State<DashboardPage> {
   double _totalPontasKg = 0.0;
   bool _pontasCarregando = true;
   int _modoDash = 0; // 0 = Gestão a Vista, 1 = Mapa Pátio, 2 = Mapa de Obras
+  bool _mostrarGraficoEstoque = false;
 
   @override
   void initState() {
@@ -651,73 +655,332 @@ class DashboardPageState extends State<DashboardPage> {
               children: [
                 Row(
                   children: [
-                    Icon(Symbols.analytics, color: AppColors.primaryMain),
+                    Icon(
+                      _mostrarGraficoEstoque
+                          ? Icons.bar_chart_rounded
+                          : Symbols.analytics,
+                      color: AppColors.primaryMain,
+                    ),
                     const W(12),
-                    Text('CONSUMO ESTIMADO',
-                        style: AppCss.mediumBold.setSize(18)),
+                    Text(
+                      _mostrarGraficoEstoque
+                          ? 'POSICAO DE ESTOQUE'
+                          : 'CONSUMO ESTIMADO',
+                      style: AppCss.mediumBold.setSize(18),
+                    ),
                     const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryMain.withAlpha(25),
-                        borderRadius: BorderRadius.circular(20),
+                    if (!_mostrarGraficoEstoque)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryMain.withAlpha(25),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          totalGeral.toKg(),
+                          style: AppCss.minimumBold
+                              .setSize(13)
+                              .setColor(AppColors.primaryMain),
+                        ),
                       ),
-                      child: Text(
-                        totalGeral.toKg(),
-                        style: AppCss.minimumBold.setSize(13).setColor(AppColors.primaryMain),
+                    const W(8),
+                    Tooltip(
+                      message: _mostrarGraficoEstoque
+                          ? 'Ver consumo estimado'
+                          : 'Ver grafico de estoque',
+                      preferBelow: false,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () => setState(
+                            () => _mostrarGraficoEstoque = !_mostrarGraficoEstoque),
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: _mostrarGraficoEstoque
+                                ? AppColors.primaryMain.withAlpha(20)
+                                : Colors.grey[100],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: _mostrarGraficoEstoque
+                                  ? AppColors.primaryMain.withAlpha(50)
+                                  : Colors.grey[300]!,
+                            ),
+                          ),
+                          child: Icon(
+                            _mostrarGraficoEstoque
+                                ? Icons.list_alt_rounded
+                                : Icons.bar_chart_rounded,
+                            size: 16,
+                            color: _mostrarGraficoEstoque
+                                ? AppColors.primaryMain
+                                : Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
                   ],
                 ),
                 const H(8),
-                Text('Matéria-prima que ainda será baixada do estoque para concluir os pedidos em aberto',
-                    style: AppCss.minimumRegular.setColor(Colors.grey[600]!)),
+                Text(
+                  _mostrarGraficoEstoque
+                      ? 'Saldo fisico + pedidos em aberto vs. consumo previsto'
+                      : 'Materia-prima que ainda sera baixada do estoque para concluir os pedidos em aberto',
+                  style: AppCss.minimumRegular.setColor(Colors.grey[600]!),
+                ),
               ],
             ),
           ),
           Expanded(
-            child: produtos.isEmpty
-                ? Center(
-                    child: Text('Nenhum consumo pendente.',
-                        style:
-                            AppCss.mediumRegular.setColor(Colors.grey[400]!)))
-                : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                    itemCount: produtos.length,
-                    itemBuilder: (_, i) {
-                      final p = produtos[i];
-                      final peso = consumoMap[p.id] ?? 0.0;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(p.descricao,
-                                    style: AppCss.mediumBold.setSize(13)),
-                                Text(peso.toKg(),
-                                    style: AppCss.mediumBold
-                                        .setSize(13)
-                                        .setColor(AppColors.primaryMain)),
-                              ],
-                            ),
-                            const H(5),
-                            LinearProgressIndicator(
-                              value: 1.0,
-                              backgroundColor: Colors.grey[100],
-                              valueColor: AlwaysStoppedAnimation(
-                                  AppColors.primaryMain.withAlpha(25)),
-                              minHeight: 3,
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _mostrarGraficoEstoque
+                  ? _estoqueChartContent(key: const ValueKey('chart'))
+                  : _consumoListContent(
+                      key: const ValueKey('lista'),
+                      produtos: produtos,
+                      consumoMap: consumoMap,
+                    ),
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _consumoListContent({
+    required Key key,
+    required List produtos,
+    required Map consumoMap,
+  }) {
+    if (produtos.isEmpty) {
+      return Center(
+        key: key,
+        child: Text('Nenhum consumo pendente.',
+            style: AppCss.mediumRegular.setColor(Colors.grey[400]!)),
+      );
+    }
+    return ListView.builder(
+      key: key,
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      itemCount: produtos.length,
+      itemBuilder: (_, i) {
+        final p = produtos[i];
+        final peso = (consumoMap[p.id] ?? 0.0) as double;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(p.descricao,
+                      style: AppCss.mediumBold.setSize(13)),
+                  Text(peso.toKg(),
+                      style: AppCss.mediumBold
+                          .setSize(13)
+                          .setColor(AppColors.primaryMain)),
+                ],
+              ),
+              const H(5),
+              LinearProgressIndicator(
+                value: 1.0,
+                backgroundColor: Colors.grey[100],
+                valueColor: AlwaysStoppedAnimation(
+                    AppColors.primaryMain.withAlpha(25)),
+                minHeight: 3,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _estoqueChartContent({required Key key}) {
+    final todosProdutos = BackendClient.produtos.data.toList()
+      ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
+
+    final List<_DashEstoqueData> data = [];
+    double tSaldo = 0, tPedido = 0, tConsumo = 0;
+
+    for (final p in todosProdutos) {
+      final estoque = BackendClient.estoques.getByProdutoId(p.id);
+      final saldo = estoque?.quantidade ?? 0.0;
+      final consumo = relatorioCtrl.getPedidosTotalPorBitola(p);
+      final emPedido =
+          BackendClient.pedidosCompra.getTotalPendenteByProdutoId(p.id);
+      if (saldo == 0 && consumo == 0 && emPedido == 0) continue;
+      final projetado = saldo + emPedido - consumo;
+      data.add(_DashEstoqueData(
+        label: p.nome,
+        saldo: saldo,
+        emPedido: emPedido,
+        consumo: consumo,
+        projetado: projetado,
+      ));
+      tSaldo += saldo;
+      tPedido += emPedido;
+      tConsumo += consumo;
+    }
+    final tProjetado = tSaldo + tPedido - tConsumo;
+
+    return Column(
+      key: key,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _chartLeg('Saldo', const Color(0xFF1565C0)),
+              const W(10),
+              _chartLeg('Pedido', const Color(0xFF00897B)),
+              const W(10),
+              _chartLeg('Consumo', const Color(0xFFE65100)),
+              const W(10),
+              _chartLegLine('Projetado', const Color(0xFF1B5E20)),
+            ],
+          ),
+        ),
+        Expanded(
+          child: SfCartesianChart(
+            margin: const EdgeInsets.fromLTRB(8, 8, 16, 4),
+            plotAreaBorderWidth: 0,
+            primaryXAxis: const CategoryAxis(
+              labelRotation: -30,
+              majorGridLines: MajorGridLines(width: 0),
+              axisLine: AxisLine(width: 0.5),
+              labelStyle: TextStyle(fontSize: 10),
+            ),
+            primaryYAxis: const NumericAxis(
+              axisLine: AxisLine(width: 0),
+              majorTickLines: MajorTickLines(size: 0),
+              labelStyle: TextStyle(fontSize: 10),
+            ),
+            tooltipBehavior: TooltipBehavior(
+              enable: true,
+              header: '',
+              format: 'series.name: point.y kg',
+            ),
+            series: <CartesianSeries>[
+              StackedColumnSeries<_DashEstoqueData, String>(
+                dataSource: data,
+                xValueMapper: (d, __) => d.label,
+                yValueMapper: (d, __) => d.saldo,
+                name: 'Saldo',
+                color: const Color(0xFF1565C0),
+                groupName: 'disponivel',
+                borderRadius: BorderRadius.zero,
+              ),
+              StackedColumnSeries<_DashEstoqueData, String>(
+                dataSource: data,
+                xValueMapper: (d, __) => d.label,
+                yValueMapper: (d, __) => d.emPedido,
+                name: 'Pedido',
+                color: const Color(0xFF00897B),
+                groupName: 'disponivel',
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(4),
+                  topRight: Radius.circular(4),
+                ),
+              ),
+              StackedColumnSeries<_DashEstoqueData, String>(
+                dataSource: data,
+                xValueMapper: (d, __) => d.label,
+                yValueMapper: (d, __) => d.consumo,
+                name: 'Consumo',
+                color: const Color(0xFFE65100),
+                groupName: 'consumo',
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(4),
+                  topRight: Radius.circular(4),
+                ),
+              ),
+              LineSeries<_DashEstoqueData, String>(
+                dataSource: data,
+                xValueMapper: (d, __) => d.label,
+                yValueMapper: (d, __) => d.projetado,
+                name: 'Projetado',
+                color: const Color(0xFF1B5E20),
+                width: 2.0,
+                dashArray: const [6, 3],
+                markerSettings: const MarkerSettings(
+                  isVisible: true,
+                  height: 6,
+                  width: 6,
+                  borderColor: Colors.white,
+                  borderWidth: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Container(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Row(children: [
+            Icon(Icons.functions_rounded, size: 14, color: Colors.grey[600]),
+            const W(6),
+            Text('TOTAL',
+                style: AppCss.minimumBold.setSize(10).setColor(Colors.grey[700]!)),
+            const Spacer(),
+            _chartTotal('Saldo', tSaldo.toKg(), const Color(0xFF1565C0)),
+            const W(10),
+            _chartTotal('Pedido', tPedido > 0 ? '+${tPedido.toKg()}' : '---',
+                const Color(0xFF00897B)),
+            const W(10),
+            _chartTotal('Consumo', '-${tConsumo.toKg()}', const Color(0xFFE65100)),
+            const W(10),
+            _chartTotal('Projetado', tProjetado.toKg(),
+                tProjetado < 0 ? Colors.red[700]! : const Color(0xFF1B5E20)),
+          ]),
+        ),
+      ],
+    );
+  }
+
+  Widget _chartLeg(String label, Color cor) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Container(
+        width: 10, height: 10,
+        decoration: BoxDecoration(
+            color: cor, borderRadius: BorderRadius.circular(2)),
+      ),
+      const W(3),
+      Text(label,
+          style: AppCss.minimumRegular.setColor(Colors.grey[600]!).setSize(10)),
+    ]);
+  }
+
+  Widget _chartLegLine(String label, Color cor) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Container(width: 14, height: 2, color: cor),
+      const W(2),
+      Container(
+        width: 5, height: 5,
+        decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
+      ),
+      const W(3),
+      Text(label,
+          style: AppCss.minimumRegular.setColor(Colors.grey[600]!).setSize(10)),
+    ]);
+  }
+
+  Widget _chartTotal(String label, String valor, Color cor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(label,
+            style: AppCss.minimumRegular.setColor(Colors.grey[500]!).setSize(8)),
+        Text(valor,
+            style: AppCss.minimumBold.setColor(cor).setSize(11)),
+      ],
     );
   }
 
@@ -1431,4 +1694,19 @@ class _DashParqueGridPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+class _DashEstoqueData {
+  final String label;
+  final double saldo;
+  final double emPedido;
+  final double consumo;
+  final double projetado;
+
+  _DashEstoqueData({
+    required this.label,
+    required this.saldo,
+    required this.emPedido,
+    required this.consumo,
+    required this.projetado,
+  });
 }

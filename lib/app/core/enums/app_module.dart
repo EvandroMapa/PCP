@@ -14,7 +14,8 @@ import 'package:aco_plus/app/modules/relatorio/ui/plano_corte/planos_corte_page.
 import 'package:aco_plus/app/modules/ponta/ui/pontas_page.dart';
 import 'package:aco_plus/app/modules/step/ui/steps_page.dart';
 import 'package:aco_plus/app/modules/tag/ui/tags_page.dart';
-import 'package:aco_plus/app/modules/estoque/ui/estoque_page.dart';
+import 'package:aco_plus/app/modules/estoque/ui/estoque_saldo_page.dart';
+import 'package:aco_plus/app/modules/pedido_compra/ui/pedido_compra_page.dart';
 
 
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
@@ -38,7 +39,8 @@ enum AppModule {
   materiaPrima,
   pontas,
   armacao,
-  estoque,
+  estoqueSaldo,
+  pedidoCompra,
 }
 
 extension AppModuleExt on AppModule {
@@ -76,8 +78,10 @@ extension AppModuleExt on AppModule {
         return const PontasPage();
       case AppModule.armacao:
         return const ArmacaoPage();
-      case AppModule.estoque:
-        return const EstoquePage();
+      case AppModule.estoqueSaldo:
+        return const EstoqueSaldoPage();
+      case AppModule.pedidoCompra:
+        return const PedidoCompraPage();
     }
   }
 
@@ -127,8 +131,10 @@ extension AppModuleExt on AppModule {
         return Icons.flip_to_back;
       case AppModule.armacao:
         return Icons.iron_rounded;
-      case AppModule.estoque:
+      case AppModule.estoqueSaldo:
         return Icons.inventory_2_outlined;
+      case AppModule.pedidoCompra:
+        return Icons.shopping_cart_outlined;
     }
   }
 
@@ -145,9 +151,9 @@ extension AppModuleExt on AppModule {
       case AppModule.ordemRelatorio:
         return 'Ordens de Produção';
       case AppModule.pedidoRelatorio:
-        return 'Relatório de Consumo';
+        return 'Consumo';
       case AppModule.estoqueRelatorio:
-        return 'Relatório de Estoque';
+        return 'Posição de Estoque';
       case AppModule.planoCorte:
         return 'Plano de Corte';
       case AppModule.steps:
@@ -161,13 +167,15 @@ extension AppModuleExt on AppModule {
       case AppModule.produtos:
         return 'Produtos';
       case AppModule.materiaPrima:
-        return 'Materia Prima';
+        return 'Matéria Prima';
       case AppModule.pontas:
         return 'Cadastro de Pontas';
       case AppModule.armacao:
         return 'Armação';
-      case AppModule.estoque:
-        return 'Estoque';
+      case AppModule.estoqueSaldo:
+        return 'Listagem';
+      case AppModule.pedidoCompra:
+        return 'Pedidos de Compra';
     }
   }
 

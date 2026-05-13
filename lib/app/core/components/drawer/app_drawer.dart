@@ -134,7 +134,7 @@ class AppDrawerOperatorList extends StatelessWidget {
   }
 }
 
-class AppDrawerNotOperatorList extends StatelessWidget {
+class AppDrawerNotOperatorList extends StatefulWidget {
   final AppModule module;
   final List<NotificacaoModel> notificacoes;
 
@@ -145,9 +145,66 @@ class AppDrawerNotOperatorList extends StatelessWidget {
   });
 
   @override
+  State<AppDrawerNotOperatorList> createState() =>
+      _AppDrawerNotOperatorListState();
+}
+
+class _AppDrawerNotOperatorListState extends State<AppDrawerNotOperatorList> {
+  static const _pedidos = 'Pedidos';
+  static const _producao = 'Produção';
+  static const _estoque = 'Estoque';
+  static const _cadastros = 'Cadastros';
+
+  static const _grupos = {
+    _pedidos: [AppModule.kanban, AppModule.pedidos],
+    _producao: [
+      AppModule.ordens,
+      AppModule.planoCorte,
+      AppModule.pontas,
+      AppModule.materiaPrima,
+    ],
+    _estoque: [
+      AppModule.estoqueSaldo,
+      AppModule.pedidoCompra,
+      AppModule.pedidoRelatorio,
+      AppModule.estoqueRelatorio,
+    ],
+    _cadastros: [AppModule.cliente, AppModule.produtos, AppModule.fabricantes],
+  };
+
+  String? _expandedTitle;
+
+  String? _grupoAtivo(AppModule m) {
+    for (final e in _grupos.entries) {
+      if (e.value.contains(m)) return e.key;
+    }
+    return null;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _expandedTitle = _grupoAtivo(widget.module);
+  }
+
+  @override
+  void didUpdateWidget(AppDrawerNotOperatorList old) {
+    super.didUpdateWidget(old);
+    if (old.module != widget.module) {
+      final grupo = _grupoAtivo(widget.module);
+      if (grupo != null) setState(() => _expandedTitle = grupo);
+    }
+  }
+
+  void _onExpand(String title, bool expanded) {
+    setState(() => _expandedTitle = expanded ? title : null);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       children: [
+        // 1. Gestão a Vista
         Container(
           decoration: BoxDecoration(
             border: Border(
@@ -156,60 +213,54 @@ class AppDrawerNotOperatorList extends StatelessWidget {
           ),
           child: AppDrawerItem(
             item: AppModule.dashboard,
-            module: module,
-            notificacoes: notificacoes,
+            module: widget.module,
+            notificacoes: widget.notificacoes,
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: AppColors.black.withValues(alpha: 0.1)),
-            ),
-          ),
-          child: AppDrawerItem(
-            item: AppModule.kanban,
-            module: module,
-            notificacoes: notificacoes,
-          ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(color: AppColors.black.withValues(alpha: 0.1)),
-            ),
-          ),
-          child: AppDrawerItem(
-            item: AppModule.pedidos,
-            module: module,
-            notificacoes: notificacoes,
-          ),
-        ),
+        // 2. Pedidos (Kanban + Listagem)
         AppDrawerDropdown(
+          key: ValueKey('$_pedidos-${_expandedTitle == _pedidos}'),
+          icon: Icons.shopping_cart_outlined,
+          title: _pedidos,
+          items: _grupos[_pedidos]!,
+          module: widget.module,
+          notificacoes: widget.notificacoes,
+          isExpanded: _expandedTitle == _pedidos,
+          onExpansionChanged: (v) => _onExpand(_pedidos, v),
+        ),
+        // 3. Produção
+        AppDrawerDropdown(
+          key: ValueKey('$_producao-${_expandedTitle == _producao}'),
           icon: Icons.work_outline,
-          title: 'Produção',
-          items: [AppModule.ordens, AppModule.planoCorte, AppModule.pontas, AppModule.materiaPrima],
-          module: module,
-          notificacoes: notificacoes,
+          title: _producao,
+          items: _grupos[_producao]!,
+          module: widget.module,
+          notificacoes: widget.notificacoes,
+          isExpanded: _expandedTitle == _producao,
+          onExpansionChanged: (v) => _onExpand(_producao, v),
         ),
+        // 4. Estoque
         AppDrawerDropdown(
-          icon: Icons.analytics_outlined,
-          title: 'Relatórios',
-          items: [
-            AppModule.pedidoRelatorio,
-            AppModule.ordemRelatorio,
-            AppModule.estoqueRelatorio,
-          ],
-          module: module,
-          notificacoes: notificacoes,
+          key: ValueKey('$_estoque-${_expandedTitle == _estoque}'),
+          icon: Icons.inventory_2_outlined,
+          title: _estoque,
+          items: _grupos[_estoque]!,
+          module: widget.module,
+          notificacoes: widget.notificacoes,
+          isExpanded: _expandedTitle == _estoque,
+          onExpansionChanged: (v) => _onExpand(_estoque, v),
         ),
+        // 5. Cadastros
         AppDrawerDropdown(
+          key: ValueKey('$_cadastros-${_expandedTitle == _cadastros}'),
           icon: Icons.add_circle_outline,
-          title: 'Cadastros',
-          items: [AppModule.cliente, AppModule.produtos, AppModule.fabricantes, AppModule.estoque],
-          module: module,
-          notificacoes: notificacoes,
+          title: _cadastros,
+          items: _grupos[_cadastros]!,
+          module: widget.module,
+          notificacoes: widget.notificacoes,
+          isExpanded: _expandedTitle == _cadastros,
+          onExpansionChanged: (v) => _onExpand(_cadastros, v),
         ),
-
       ],
     );
   }
@@ -333,6 +384,8 @@ class AppDrawerDropdown extends StatelessWidget {
   final List<AppModule> items;
   final AppModule module;
   final List<NotificacaoModel> notificacoes;
+  final bool isExpanded;
+  final ValueChanged<bool> onExpansionChanged;
 
   const AppDrawerDropdown({
     super.key,
@@ -341,10 +394,13 @@ class AppDrawerDropdown extends StatelessWidget {
     required this.items,
     required this.module,
     required this.notificacoes,
+    required this.isExpanded,
+    required this.onExpansionChanged,
   });
 
   @override
   Widget build(BuildContext context) {
+    final ativo = items.contains(module);
     return Container(
       decoration: BoxDecoration(
         border: Border(
@@ -352,26 +408,19 @@ class AppDrawerDropdown extends StatelessWidget {
         ),
       ),
       child: ExpansionTile(
-        key: ValueKey('$title-${items.contains(module)}'),
-        initiallyExpanded: items.contains(module),
-        leading: Icon(
-          icon,
-          color: items.contains(module) ? AppColors.primaryMain : null,
-        ),
+        initiallyExpanded: isExpanded,
+        onExpansionChanged: onExpansionChanged,
+        leading: Icon(icon, color: ativo ? AppColors.primaryMain : null),
         title: Text(
           title,
-          style: TextStyle(
-            color: items.contains(module) ? AppColors.primaryMain : null,
-          ),
+          style: TextStyle(color: ativo ? AppColors.primaryMain : null),
         ),
         children: items
-            .map(
-              (e) => AppDrawerItem(
-                item: e,
-                module: module,
-                notificacoes: notificacoes,
-              ),
-            )
+            .map((e) => AppDrawerItem(
+                  item: e,
+                  module: module,
+                  notificacoes: notificacoes,
+                ))
             .toList(),
       ),
     );

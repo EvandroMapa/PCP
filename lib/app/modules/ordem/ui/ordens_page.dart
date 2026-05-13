@@ -11,7 +11,6 @@ import 'package:aco_plus/app/core/components/app_drop_down_list.dart';
 import 'package:aco_plus/app/core/components/app_field.dart';
 import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/components/h.dart';
-import 'package:aco_plus/app/core/components/fullscreen_button.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
@@ -19,6 +18,7 @@ import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
+import 'package:aco_plus/app/core/enums/app_module.dart';
 import 'package:aco_plus/app/modules/ordem/ordem_controller.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem/ordem_page.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem_create_page.dart';
@@ -45,9 +45,8 @@ class _OrdensPageState extends State<OrdensPage> {
     if (!widget.standalone) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         baseCtrl.appBarActionsStream.add(usuario.isOperador
-            ? [FullscreenButton()]
+            ? []
             : [
-                FullscreenButton(),
                 IconButton(
                   onPressed: () => openInNewTab('/ordens'),
                   icon: const Icon(Icons.open_in_new, color: Colors.white),
@@ -98,7 +97,6 @@ class _OrdensPageState extends State<OrdensPage> {
               style: TextStyle(color: Colors.white)),
           backgroundColor: AppColors.primaryMain,
           actions: [
-            if (usuario.isOperador) FullscreenButton(),
             if (!usuario.isOperador) ...[
               IconButton(
                 onPressed: () => push(context, const OrdensArquivadasPage()),
@@ -288,45 +286,45 @@ class _OrdensPageState extends State<OrdensPage> {
     return Padding(
       key: ValueKey(ordem.id),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: InkWell(
-        onTap: () => push(context, OrdemPage(ordem.id, ordem: ordem)),
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          decoration: BoxDecoration(
-            color: isFreezed ? Colors.grey[100] : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: statusColor.withValues(alpha: 0.25)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: IntrinsicHeight(
-            child: Row(
-              children: [
-                // Borda lateral colorida pelo status
-                Container(width: 5, color: statusColor),
-                if (usuario.isNotOperador && !isFreezed)
-                  ReorderableDragStartListener(
-                    index: index,
-                    child: Container(
-                      width: 40,
-                      color: AppColors.black.withValues(alpha: 0.02),
-                      child: Center(
-                        child: Icon(
-                          Icons.drag_handle,
-                          color: Colors.grey[400],
-                          size: 26,
-                        ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isFreezed ? Colors.grey[100] : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: statusColor.withValues(alpha: 0.25)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: IntrinsicHeight(
+          child: Row(
+            children: [
+              // Borda lateral colorida pelo status
+              Container(width: 5, color: statusColor),
+              if (usuario.isNotOperador && !isFreezed)
+                ReorderableDragStartListener(
+                  index: index,
+                  child: Container(
+                    width: 40,
+                    color: AppColors.black.withValues(alpha: 0.02),
+                    child: Center(
+                      child: Icon(
+                        Icons.drag_handle,
+                        color: Colors.grey[400],
+                        size: 26,
                       ),
                     ),
                   ),
-                // Conteúdo principal
-                Expanded(
+                ),
+              // Conteúdo principal (tocável)
+              Expanded(
+                child: InkWell(
+                  onTap: () =>
+                      push(context, OrdemPage(ordem.id, ordem: ordem)),
                   child: Padding(
                     padding: const EdgeInsets.all(14),
                     child: Column(
@@ -421,7 +419,6 @@ class _OrdensPageState extends State<OrdensPage> {
                         // Footer: peso total + data + gráficos
                         Row(
                           children: [
-                            // Peso total
                             Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 4),
@@ -447,7 +444,6 @@ class _OrdensPageState extends State<OrdensPage> {
                                   .setColor(Colors.grey[400]!),
                             ),
                             const Spacer(),
-                            // Gráficos de progresso
                             if (ordem.produtos.isNotEmpty)
                               Row(
                                 children: [
@@ -484,9 +480,73 @@ class _OrdensPageState extends State<OrdensPage> {
                     ),
                   ),
                 ),
-              ],
+              ),
+              // Tarja de ações (somente não-operadores)
+              if (usuario.isNotOperador)
+                _tarjaAcoes(context, ordem),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _tarjaAcoes(BuildContext context, OrdemModel ordem) {
+    return Container(
+      width: 52,
+      decoration: const BoxDecoration(
+        color: Color(0xFFE2E8F0),
+        border: Border(
+          left: BorderSide(color: Color(0xFFCBD5E1)),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _tarjaBtn(
+            icon: Icons.delete_outline,
+            color: Colors.red[400]!,
+            tooltip: 'Excluir ordem',
+            onTap: () => ordemCtrl.onDelete(context, ordem),
+          ),
+          const SizedBox(height: 6),
+          _tarjaBtn(
+            icon: Icons.analytics_outlined,
+            color: Colors.blueGrey[400]!,
+            tooltip: 'Relatório de Ordens',
+            onTap: () =>
+                baseCtrl.moduleStream.add(AppModule.ordemRelatorio),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tarjaBtn({
+    required IconData icon,
+    required Color color,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      preferBelow: false,
+      waitDuration: const Duration(milliseconds: 300),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: color.withValues(alpha: 0.30),
+              width: 1,
             ),
           ),
+          child: Icon(icon, size: 18, color: color),
         ),
       ),
     );

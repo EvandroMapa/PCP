@@ -118,7 +118,7 @@ class EstoqueController {
     }
   }
 
-  /// Registra uma entrada de compra
+  /// Registra uma entrada de compra (via form interno)
   Future<void> onRegistrarCompra() async {
     try {
       final form = compraForm;
@@ -129,41 +129,96 @@ class EstoqueController {
       final qtde = form.quantidadeValue;
       if (qtde <= 0) throw Exception('Quantidade deve ser maior que zero');
 
-      // Busca ou cria estoque
-      var estoque = BackendClient.estoques.getByProdutoId(form.produtoId!);
-      estoque ??= EstoqueModel.novo(form.produtoId!);
+      await onRegistrarCompraManual(
+        produtoId: form.produtoId!,
+        quantidade: qtde,
+        observacao: form.observacao.text.isNotEmpty ? form.observacao.text : null,
+      );
 
-      final novaQtde = estoque.quantidade + qtde;
+      form.clear();
+      compraStream.update();
+    } catch (e) {
+      NotificationService.showNegative(
+        'Erro ao registrar compra',
+        e.toString(),
+        position: NotificationPosition.bottom,
+      );
+      rethrow;
+    }
+  }
+
+  /// Registra uma entrada de compra com parâmetros diretos (usado pelo PedidoCompraController)
+  Future<void> onRegistrarCompraManual({
+    required String produtoId,
+    required double quantidade,
+    String? observacao,
+  }) async {
+    try {
+      if (quantidade <= 0) throw Exception('Quantidade deve ser maior que zero');
+
+      var estoque = BackendClient.estoques.getByProdutoId(produtoId);
+      estoque ??= EstoqueModel.novo(produtoId);
+
+      final novaQtde = estoque.quantidade + quantidade;
       final estoqueAtualizado = estoque.copyWith(
         quantidade: novaQtde,
         updatedAt: DateTime.now(),
       );
       await BackendClient.estoques.upsert(estoqueAtualizado);
 
-      // Registra movimentação
       await BackendClient.estoquesMovimentacao.add(
         EstoqueMovimentacaoModel.novo(
-          produtoId: form.produtoId!,
+          produtoId: produtoId,
           tipo: EstoqueTipoMovimentacao.compra,
-          quantidade: qtde,
-          observacao: form.observacao.text.isNotEmpty
-              ? form.observacao.text
-              : null,
+          quantidade: quantidade,
+          observacao: observacao,
           usuarioNome: usuarioCtrl.usuario?.nome,
         ),
       );
 
-      form.clear();
-      compraStream.update();
-
       NotificationService.showPositive(
         'Compra Registrada',
-        '${qtde.toStringAsFixed(3)} kg adicionados ao estoque',
+        '${quantidade.toStringAsFixed(3)} kg adicionados ao estoque',
         position: NotificationPosition.bottom,
       );
     } catch (e) {
       NotificationService.showNegative(
         'Erro ao registrar compra',
+        e.toString(),
+        position: NotificationPosition.bottom,
+      );
+      rethrow;
+    }
+  }
+
+  /// Estorna uma entrada de compra (usado pelo PedidoCompraController ao desefetivar)
+  Future<void> onEstornarCompraManual({
+    required String produtoId,
+    required double quantidade,
+    String? observacao,
+  }) async {
+    try {
+      if (quantidade <= 0) throw Exception('Quantidade deve ser maior que zero');
+
+      var estoque = BackendClient.estoques.getByProdutoId(produtoId);
+      estoque ??= EstoqueModel.novo(produtoId);
+
+      final novaQtde = estoque.quantidade - quantidade;
+      await BackendClient.estoques
+          .upsert(estoque.copyWith(quantidade: novaQtde, updatedAt: DateTime.now()));
+
+      await BackendClient.estoquesMovimentacao.add(
+        EstoqueMovimentacaoModel.novo(
+          produtoId: produtoId,
+          tipo: EstoqueTipoMovimentacao.estorno,
+          quantidade: -quantidade,
+          observacao: observacao ?? 'Estorno de compra',
+          usuarioNome: usuarioCtrl.usuario?.nome,
+        ),
+      );
+    } catch (e) {
+      NotificationService.showNegative(
+        'Erro ao estornar compra',
         e.toString(),
         position: NotificationPosition.bottom,
       );

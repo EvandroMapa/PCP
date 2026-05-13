@@ -21,6 +21,7 @@ import 'package:aco_plus/app/core/client/supabase/collections/box/box_supabase_c
 import 'package:aco_plus/app/core/client/supabase/collections/pedido_box/pedido_box_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/estoque/estoque_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/estoque/estoque_movimentacao_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/pedido_compra/pedido_compra_supabase_collection.dart';
 
 class AppSupabaseClient {
   static OrdemSupabaseCollection ordens = OrdemSupabaseCollection();
@@ -55,6 +56,8 @@ class AppSupabaseClient {
   static EstoqueSupabaseCollection estoques = EstoqueSupabaseCollection();
   static EstoqueMovimentacaoSupabaseCollection estoquesMovimentacao =
       EstoqueMovimentacaoSupabaseCollection();
+  static PedidoCompraSupabaseCollection pedidosCompra =
+      PedidoCompraSupabaseCollection();
 
   static Future<void> init() async {
     try {
@@ -81,6 +84,7 @@ class AppSupabaseClient {
       pedidoBoxes.listen();
       estoques.listen();
       estoquesMovimentacao.listen();
+      pedidosCompra.listen();
 
       // ── 2. Fetches sequenciais (dados iniciais) ─────────────────────────
       await usuarioTipos
@@ -140,6 +144,9 @@ class AppSupabaseClient {
       await estoquesMovimentacao
           .start()
           .catchError((e) => log('Error starting estoquesMovimentacao: $e'));
+      await pedidosCompra
+          .start()
+          .catchError((e) => log('Error starting pedidosCompra: $e'));
       await ordens.startOnlyArquivadas();
 
       // Pedidos depende de clientes/steps para mapeamento

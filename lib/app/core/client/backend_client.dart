@@ -3,6 +3,7 @@ import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_prod
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/estoque/estoque_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/estoque/estoque_movimentacao_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/pedido_compra/pedido_compra_supabase_collection.dart';
 
 // Original Firestore collection imports to avoid recursion via FirestoreClient.
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_collection.dart';
@@ -97,4 +98,7 @@ class BackendClient {
 
   static EstoqueMovimentacaoSupabaseCollection get estoquesMovimentacao =>
       AppSupabaseClient.estoquesMovimentacao;
+
+  static PedidoCompraSupabaseCollection get pedidosCompra =>
+      AppSupabaseClient.pedidosCompra;
 }

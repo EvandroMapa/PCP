@@ -1,0 +1,567 @@
+import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/pedido_compra/pedido_compra_model.dart';
+import 'package:aco_plus/app/core/components/empty_data.dart';
+import 'package:aco_plus/app/core/components/stream_out.dart';
+import 'package:aco_plus/app/core/extensions/date_ext.dart';
+import 'package:aco_plus/app/core/extensions/double_ext.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
+import 'package:aco_plus/app/core/utils/app_css.dart';
+import 'package:aco_plus/app/core/utils/global_resource.dart';
+import 'package:aco_plus/app/modules/pedido_compra/pedido_compra_controller.dart';
+import 'package:aco_plus/app/modules/pedido_compra/pedido_compra_view_model.dart';
+import 'package:aco_plus/app/modules/pedido_compra/ui/pedido_compra_create_page.dart';
+import 'package:flutter/material.dart';
+
+class PedidoCompraPage extends StatefulWidget {
+  final bool standalone;
+  const PedidoCompraPage({super.key, this.standalone = false});
+
+  @override
+  State<PedidoCompraPage> createState() => _PedidoCompraPageState();
+}
+
+class _PedidoCompraPageState extends State<PedidoCompraPage> {
+  @override
+  void initState() {
+    setWebTitle('Pedidos de Compra');
+    pedidoCompraCtrl.onInit();
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.standalone) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Pedidos de Compra',
+              style: TextStyle(color: Colors.white)),
+          backgroundColor: AppColors.primaryMain,
+          actions: [_btnNovo(context)],
+        ),
+        body: _body(context),
+      );
+    }
+    return _body(context);
+  }
+
+  Widget _body(BuildContext context) {
+    return StreamOut<List<PedidoCompraModel>>(
+      stream: BackendClient.pedidosCompra.dataStream.listen,
+      builder: (_, __) => _lista(context),
+    );
+  }
+
+  Widget _lista(BuildContext context) {
+    return StreamOut<bool>(
+      stream: pedidoCompraCtrl.showEfetivadosStream.listen,
+      builder: (_, showHistorico) {
+        final ativos = BackendClient.pedidosCompra.ativosAgrupados;
+        final efetivados = BackendClient.pedidosCompra.efetivadosAgrupados;
+        final totalPendentes = BackendClient.pedidosCompra.pendentes.length;
+        final totalConfirmados =
+            BackendClient.pedidosCompra.confirmados.length;
+
+        return Column(
+          children: [
+            _header(context, totalPendentes, totalConfirmados, showHistorico),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                child: showHistorico
+                    ? _viewEfetivados(efetivados)
+                    : _viewAtivos(context, ativos),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _viewAtivos(
+      BuildContext context,
+      Map<String, List<PedidoCompraModel>> ativos) {
+    if (ativos.isEmpty) {
+      return const Padding(
+        key: ValueKey('ativos-empty'),
+        padding: EdgeInsets.only(top: 60),
+        child: EmptyData(message: 'Nenhum pedido de compra ativo'),
+      );
+    }
+    return ListView(
+      key: const ValueKey('ativos-list'),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      children: [
+        ...ativos.entries.map((e) => _cardGrupoAtivo(context, e.value)),
+      ],
+    );
+  }
+
+  Widget _viewEfetivados(
+      Map<String, List<PedidoCompraModel>> efetivados) {
+    if (efetivados.isEmpty) {
+      return const Padding(
+        key: ValueKey('efetivados-empty'),
+        padding: EdgeInsets.only(top: 60),
+        child: EmptyData(message: 'Nenhum pedido efetivado ainda'),
+      );
+    }
+    return ListView(
+      key: const ValueKey('efetivados-list'),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      children: [
+        ...efetivados.entries.map((e) => _cardGrupoEfetivado(e.value)),
+      ],
+    );
+  }
+
+  // ── Header ────────────────────────────────────────────────────────────────
+
+  Widget _header(BuildContext context, int totalPendentes,
+      int totalConfirmados, bool showHistorico) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 8, 10),
+      color: Colors.white,
+      child: Row(
+        children: [
+          Icon(
+            showHistorico
+                ? Icons.history
+                : Icons.shopping_cart_outlined,
+            size: 18,
+            color: showHistorico ? Colors.green[700] : AppColors.primaryMain,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            showHistorico ? 'Histórico de Compras' : 'Pedidos de Compra',
+            style: AppCss.mediumBold,
+          ),
+          const SizedBox(width: 8),
+          if (!showHistorico) ...[
+            if (totalPendentes > 0)
+              _miniChip(
+                  '$totalPendentes orçamento${totalPendentes > 1 ? 's' : ''}',
+                  Colors.orange[700]!),
+            if (totalConfirmados > 0) ...[
+              const SizedBox(width: 4),
+              _miniChip(
+                  '$totalConfirmados confirmado${totalConfirmados > 1 ? 's' : ''}',
+                  Colors.blue[700]!),
+            ],
+          ],
+          const Spacer(),
+          // Toggle histórico / ativos
+          Tooltip(
+            message: showHistorico
+                ? 'Ver pedidos ativos'
+                : 'Ver pedidos efetivados',
+            preferBelow: false,
+            child: IconButton(
+              onPressed: () => pedidoCompraCtrl.showEfetivadosStream
+                  .add(!showHistorico),
+              icon: Icon(
+                showHistorico
+                    ? Icons.shopping_cart_outlined
+                    : Icons.history,
+                size: 20,
+                color: showHistorico
+                    ? Colors.green[700]
+                    : Colors.grey[400],
+              ),
+            ),
+          ),
+          if (!widget.standalone && !showHistorico) _btnNovo(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _miniChip(String label, Color color) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(label,
+            style:
+                AppCss.minimumBold.setColor(color).setSize(10)),
+      );
+
+  Widget _btnNovo(BuildContext context) => Tooltip(
+        message: 'Novo pedido de compra',
+        child: IconButton(
+          onPressed: () {
+            pedidoCompraCtrl.formStream.add(PedidoCompraCreateModel());
+            push(context, const PedidoCompraCreatePage());
+          },
+          icon: const Icon(Icons.add, color: Colors.white),
+        ),
+      );
+
+  // ── Card de grupo ativo (pendente ou confirmado) ──────────────────────────
+
+  Widget _cardGrupoAtivo(
+      BuildContext context, List<PedidoCompraModel> itens) {
+    final status = itens.first.status;
+    final isPendente = status == PedidoCompraStatus.pendente;
+    final accentColor = isPendente ? Colors.orange[700]! : Colors.blue[700]!;
+    final fabricante = itens.first.fabricante.nome;
+    final totalKg = itens.fold<double>(0, (s, i) => s + i.quantidade);
+    final dataPrevista = itens.first.dataPrevista;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border:
+            Border.all(color: accentColor.withValues(alpha: 0.30)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2)),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Column(
+          children: [
+            // ── Cabeçalho ────────────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: accentColor.withValues(alpha: 0.06),
+                border: Border(
+                    bottom: BorderSide(
+                        color: accentColor.withValues(alpha: 0.15))),
+              ),
+              child: Row(children: [
+                Icon(Icons.factory_outlined,
+                    size: 16, color: accentColor),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(fabricante,
+                          style: AppCss.minimumBold.setSize(14)),
+                      if (!isPendente && dataPrevista != null)
+                        Row(children: [
+                          Icon(Icons.calendar_today_outlined,
+                              size: 11,
+                              color: Colors.blue[400]),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Previsto: ${dataPrevista.day.toString().padLeft(2, '0')}/'
+                            '${dataPrevista.month.toString().padLeft(2, '0')}/'
+                            '${dataPrevista.year}',
+                            style: AppCss.minimumRegular
+                                .setColor(Colors.blue[400]!)
+                                .setSize(11),
+                          ),
+                        ]),
+                    ],
+                  ),
+                ),
+                _badgeStatus(status),
+              ]),
+            ),
+
+            // ── Itens (ordenados pelo index do produto) ───────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 6),
+              child: Column(
+                children: [
+                  ...([...itens]..sort((a, b) =>
+                          a.produto.sortIndex.compareTo(b.produto.sortIndex)))
+                      .map((item) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                margin: const EdgeInsets.only(right: 8),
+                                decoration: BoxDecoration(
+                                  color: accentColor.withValues(alpha: 0.50),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  '${item.produto.nome} · ${item.produto.descricao}',
+                                  style: AppCss.minimumRegular.setSize(12),
+                                ),
+                              ),
+                              Text(
+                                item.quantidade.toKg(),
+                                style: AppCss.minimumBold
+                                    .setColor(AppColors.primaryMain)
+                                    .setSize(12),
+                              ),
+                            ]),
+                          )),
+                  const Divider(height: 14),
+                  Row(children: [
+                    Icon(Icons.scale_outlined,
+                        size: 13, color: Colors.grey[400]),
+                    const SizedBox(width: 4),
+                    Text('Total: ',
+                        style: AppCss.minimumRegular
+                            .setColor(Colors.grey[500]!)
+                            .setSize(11)),
+                    Text(totalKg.toKg(),
+                        style: AppCss.minimumBold.setSize(12)),
+                    const Spacer(),
+                    Icon(Icons.calendar_today_outlined,
+                        size: 11, color: Colors.grey[400]),
+                    const SizedBox(width: 3),
+                    Text(
+                      itens.first.createdAt.ddMMyyyy(),
+                      style: AppCss.minimumRegular
+                          .setColor(Colors.grey[400]!)
+                          .setSize(11),
+                    ),
+                  ]),
+                ],
+              ),
+            ),
+
+            // ── Ações por status ──────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 4, 14, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (isPendente) ...[
+                    // Pendente: Excluir + Editar + Confirmar
+                    Tooltip(
+                      message: 'Excluir pedido',
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red[400],
+                          side: BorderSide(
+                              color: Colors.red.withValues(alpha: 0.40)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          minimumSize: Size.zero,
+                        ),
+                        onPressed: () =>
+                            pedidoCompraCtrl.onExcluirGrupo(context, itens),
+                        child: const Icon(Icons.delete_outline, size: 16),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.grey[700],
+                        side: BorderSide(color: Colors.grey.withValues(alpha: 0.40)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                      ),
+                      onPressed: () =>
+                          pedidoCompraCtrl.onIniciarEdicao(context, itens),
+                      icon: const Icon(Icons.edit_outlined, size: 15),
+                      label: const Text('Editar',
+                          style: TextStyle(fontSize: 12)),
+                    ),
+                    const SizedBox(width: 6),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[700],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                      ),
+                      onPressed: () => pedidoCompraCtrl
+                          .onConfirmarGrupo(context, itens),
+                      icon: const Icon(Icons.thumb_up_outlined, size: 15),
+                      label: const Text('Confirmar',
+                          style: TextStyle(fontSize: 12)),
+                    ),
+                  ] else ...[
+                    // Confirmado: Voltar para Pendente + Efetivar
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.orange[700],
+                        side: BorderSide(
+                            color: Colors.orange.withValues(alpha: 0.40)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                      ),
+                      onPressed: () => pedidoCompraCtrl
+                          .onVoltarParaPendente(context, itens),
+                      icon: const Icon(Icons.undo, size: 15),
+                      label: const Text('Voltar para Pendente',
+                          style: TextStyle(fontSize: 12)),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green[700],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                      ),
+                      onPressed: () =>
+                          pedidoCompraCtrl.onEfetivarGrupo(context, itens),
+                      icon: const Icon(Icons.check, size: 15),
+                      label: const Text('Efetivar',
+                          style: TextStyle(fontSize: 12)),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Card de grupo efetivado ───────────────────────────────────────────────
+
+  Widget _cardGrupoEfetivado(List<PedidoCompraModel> itens) {
+    final fabricante = itens.first.fabricante.nome;
+    final totalPedido =
+        itens.fold<double>(0, (s, i) => s + i.quantidade);
+    final totalRecebido =
+        itens.fold<double>(0, (s, i) => s + (i.quantidadeRecebida ?? 0));
+
+    return Opacity(
+      opacity: 0.65,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.06),
+                  border: Border(
+                      bottom: BorderSide(
+                          color: Colors.green.withValues(alpha: 0.15))),
+                ),
+                child: Row(children: [
+                  Icon(Icons.factory_outlined,
+                      size: 14, color: Colors.grey[500]),
+                  const SizedBox(width: 8),
+                  Expanded(
+                      child: Text(fabricante,
+                          style: AppCss.minimumBold.setSize(13))),
+                  _badgeStatus(PedidoCompraStatus.convertido),
+                ]),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 8),
+                child: Column(
+                  children: [
+                    ...([...itens]..sort((a, b) =>
+                            a.produto.sortIndex
+                                .compareTo(b.produto.sortIndex)))
+                        .map((item) => Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 3),
+                              child: Row(children: [
+                                Expanded(
+                                  child: Text(
+                                    '${item.produto.nome} · ${item.produto.descricao}',
+                                    style: AppCss.minimumRegular
+                                        .setColor(Colors.grey[600]!)
+                                        .setSize(11),
+                                  ),
+                                ),
+                                Text(item.quantidade.toKg(),
+                                    style: AppCss.minimumRegular
+                                        .setColor(Colors.grey[500]!)
+                                        .setSize(11)),
+                                if (item.quantidadeRecebida != null)
+                                  Text(
+                                    ' → ${item.quantidadeRecebida!.toKg()}',
+                                    style: AppCss.minimumBold
+                                        .setColor(Colors.green[700]!)
+                                        .setSize(11),
+                                  ),
+                              ]),
+                            )),
+                    const Divider(height: 12),
+                    Row(children: [
+                      Text('Total pedido: ${totalPedido.toKg()}',
+                          style: AppCss.minimumRegular
+                              .setColor(Colors.grey[500]!)
+                              .setSize(11)),
+                      const SizedBox(width: 8),
+                      Text('→ Recebido: ${totalRecebido.toKg()}',
+                          style: AppCss.minimumBold
+                              .setColor(Colors.green[700]!)
+                              .setSize(11)),
+                      const Spacer(),
+                      Text(itens.first.updatedAt.ddMMyyyy(),
+                          style: AppCss.minimumRegular
+                              .setColor(Colors.grey[400]!)
+                              .setSize(10)),
+                    ]),
+                    const SizedBox(height: 8),
+                    // Botão estornar
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.orange[700],
+                          side: BorderSide(
+                              color: Colors.orange.withValues(alpha: 0.40)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 5),
+                        ),
+                        onPressed: () =>
+                            pedidoCompraCtrl.onEstornarGrupo(context, itens),
+                        icon: const Icon(Icons.undo, size: 14),
+                        label: const Text('Estornar Compra',
+                            style: TextStyle(fontSize: 11)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  Widget _badgeStatus(PedidoCompraStatus status) {
+    final color = switch (status) {
+      PedidoCompraStatus.pendente => Colors.orange[700]!,
+      PedidoCompraStatus.confirmado => Colors.blue[700]!,
+      PedidoCompraStatus.convertido => Colors.green[700]!,
+      PedidoCompraStatus.descartado => Colors.grey[500]!,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.30)),
+      ),
+      child: Text(
+        status.label.toUpperCase(),
+        style: AppCss.minimumBold.setColor(color).setSize(10),
+      ),
+    );
+  }
+
+  Widget _toggleEfetivados(int count) => const SizedBox.shrink();
+}
