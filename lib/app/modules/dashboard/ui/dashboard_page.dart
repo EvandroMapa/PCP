@@ -23,7 +23,7 @@ import 'package:aco_plus/app/modules/ponta/ponta_model.dart';
 import 'package:aco_plus/app/core/services/preferences_service.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/box/models/box_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/patio/models/patio_model.dart';
-import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
+
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
@@ -801,13 +801,14 @@ class DashboardPageState extends State<DashboardPage> {
     final todosProdutos = BackendClient.produtos.data.toList()
       ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
 
+    final consumoMap = dashCtrl.getConsumoEstimado();
     final List<_DashEstoqueData> data = [];
     double tSaldo = 0, tPedido = 0, tConsumo = 0;
 
     for (final p in todosProdutos) {
       final estoque = BackendClient.estoques.getByProdutoId(p.id);
       final saldo = estoque?.quantidade ?? 0.0;
-      final consumo = relatorioCtrl.getPedidosTotalPorBitola(p);
+      final consumo = consumoMap[p.id] ?? 0.0;
       final emPedido =
           BackendClient.pedidosCompra.getTotalPendenteByProdutoId(p.id);
       if (saldo == 0 && consumo == 0 && emPedido == 0) continue;
