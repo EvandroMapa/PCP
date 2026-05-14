@@ -1,13 +1,14 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/pedido_compra/pedido_compra_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
+import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
-import 'package:aco_plus/app/core/utils/global_resource.dart';
-import 'package:aco_plus/app/modules/pedido_compra/pedido_compra_controller.dart';
-import 'package:aco_plus/app/modules/pedido_compra/pedido_compra_view_model.dart';
+
 import 'package:aco_plus/app/modules/pedido_compra/simulador_compra_view_model.dart';
-import 'package:aco_plus/app/modules/pedido_compra/ui/pedido_compra_create_page.dart';
 import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_pedido_view_model.dart';
+import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:overlay_support/overlay_support.dart';
 
@@ -74,7 +75,30 @@ class SimuladorCompraController {
       ));
     }
 
-    modelStream.add(SimuladorCompraModel(itens: itens));
+    // Preserva config de carga do model anterior
+    final oldModel = model;
+    final newModel = SimuladorCompraModel(itens: itens);
+    if (oldModel != null) {
+      // Preserva config de múltiplo e peso-alvo, mas formatarCarga começa OFF
+      newModel.pesoAlvoCarga.text = oldModel.pesoAlvoCarga.text;
+      newModel.multiploArredondamento.text =
+          oldModel.multiploArredondamento.text;
+    }
+
+    // sugestaoBase = déficit bruto (nunca muda)
+    // quantidadeSugerida = arredondado pelo múltiplo (editável)
+    final multiplo = newModel.multiploValue;
+    for (final item in itens) {
+      final base = item.necessidade;
+      item.sugestaoBase = base; // sempre o valor original
+      final arredondado = multiplo > 0 && base > 0
+          ? _arredondar(base, multiplo)
+          : base;
+      item.quantidadeSugerida.text =
+          arredondado > 0 ? arredondado.toStringAsFixed(0) : '';
+    }
+
+    modelStream.add(newModel);
   }
 
   /// Toggle incluir/excluir item
@@ -113,7 +137,17 @@ class SimuladorCompraController {
     if (valor) {
       aplicarFormatacaoCarga();
     } else {
-      // Recalcula sem formatação
+      // Recalcula sem formatação (mantém arredondamento)
+      calcularNecessidades();
+    }
+  }
+
+  /// Aplica arredondamento quando o usuário altera o campo múltiplo
+  void onMultiploAlterado() {
+    if (model == null) return;
+    if (model!.formatarCarga) {
+      aplicarFormatacaoCarga();
+    } else {
       calcularNecessidades();
     }
   }
@@ -139,7 +173,7 @@ class SimuladorCompraController {
       for (int i = 0; i < itens.length; i++) {
         final qty = _arredondar(necessidades[i], multiplo);
         itens[i].quantidadeSugerida.text =
-            qty > 0 ? qty.toStringAsFixed(3) : '';
+            qty > 0 ? qty.toStringAsFixed(0) : '';
         itens[i].incluir = qty > 0;
       }
       modelStream.update();
@@ -163,7 +197,7 @@ class SimuladorCompraController {
     for (int i = 0; i < itens.length; i++) {
       final qty = _arredondar(quantidades[i], multiplo);
       itens[i].quantidadeSugerida.text =
-          qty > 0 ? qty.toStringAsFixed(3) : '';
+          qty > 0 ? qty.toStringAsFixed(0) : '';
       itens[i].incluir = qty > 0;
     }
 
@@ -177,7 +211,7 @@ class SimuladorCompraController {
   }
 
   /// Gera o pedido de compra a partir da sugestão
-  void onGerarPedido(BuildContext context) {
+  Future<void> onGerarPedido(BuildContext context) async {
     if (model == null) return;
 
     final selecionados = model!.itensSelecionados;
@@ -190,26 +224,111 @@ class SimuladorCompraController {
       return;
     }
 
-    // Monta o form do PedidoCompraCreateModel com os itens sugeridos
-    final createModel = PedidoCompraCreateModel();
+    // Pede o fabricante via dialog
+    final fabricantes = [...BackendClient.fabricantes.data]
+      ..sort((a, b) => a.nome.compareTo(b.nome));
 
-    for (final item in selecionados) {
-      final itemForm = PedidoCompraItemForm()
-        ..produto = item.produto
-        ..quantidade.text = item.quantidadeDigitada.toStringAsFixed(3);
-      createModel.itens.add(itemForm);
+    if (fabricantes.isEmpty) {
+      NotificationService.showNegative(
+        'Sem fabricantes',
+        'Cadastre ao menos um fabricante antes de gerar o pedido',
+        position: NotificationPosition.bottom,
+      );
+      return;
     }
 
-    // Envia para o controller de pedido de compra
-    pedidoCompraCtrl.formStream.add(createModel);
-
-    // Navega para a página de criação de pedido (já preenchida, sem fabricante)
-    push(context, const PedidoCompraCreatePage());
-
-    NotificationService.showPositive(
-      'Sugestão aplicada',
-      '${selecionados.length} item${selecionados.length > 1 ? 's' : ''} · ${model!.totalSugerido.toStringAsFixed(3)} kg',
-      position: NotificationPosition.bottom,
+    final fabricante = await showDialog<FabricanteModel>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Selecionar Fabricante'),
+        content: SizedBox(
+          width: 320,
+          child: ListView.separated(
+            shrinkWrap: true,
+            itemCount: fabricantes.length,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (_, i) {
+              final fab = fabricantes[i];
+              return ListTile(
+                dense: true,
+                title: Text(fab.nome,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                onTap: () => Navigator.pop(ctx, fab),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, null),
+            child: const Text('Cancelar'),
+          ),
+        ],
+      ),
     );
+
+    if (fabricante == null) return;
+
+    // Confirmação
+    if (!context.mounted) return;
+    final confirma = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Confirmar Pedido'),
+        content: Text(
+          'Gerar pedido para ${fabricante.nome} com '
+          '${selecionados.length} item${selecionados.length > 1 ? 's' : ''} · '
+          '${model!.totalSugerido.toStringAsFixed(0)} kg?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green[700],
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Gerar Pedido'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirma != true) return;
+
+    try {
+      final usuarioNome = usuarioCtrl.usuario?.nome;
+      final grupoId = HashService.get;
+
+      for (final item in selecionados) {
+        final pedido = PedidoCompraModel.novo(
+          grupoId: grupoId,
+          produtoId: item.produto.id,
+          fabricanteId: fabricante.id,
+          quantidade: item.quantidadeDigitada,
+          usuarioNome: usuarioNome,
+        );
+        await BackendClient.pedidosCompra.add(pedido);
+      }
+
+      NotificationService.showPositive(
+        'Pedido gerado',
+        '${selecionados.length} item${selecionados.length > 1 ? 's' : ''} · '
+            '${fabricante.nome} · ${model!.totalSugerido.toStringAsFixed(0)} kg',
+        position: NotificationPosition.bottom,
+      );
+
+      // Volta para a lista de pedidos
+      if (context.mounted) Navigator.pop(context);
+    } catch (e) {
+      NotificationService.showNegative(
+        'Erro ao gerar pedido',
+        e.toString(),
+        position: NotificationPosition.bottom,
+      );
+    }
   }
 }

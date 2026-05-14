@@ -14,6 +14,9 @@ class SimuladorCompraItem {
   final TextController quantidadeSugerida = TextController();
   bool incluir;
 
+  /// Sugestão base (déficit arredondado, antes do ajuste de carga)
+  double sugestaoBase = 0;
+
   SimuladorCompraItem({
     required this.produto,
     required this.saldoFisico,
@@ -24,8 +27,9 @@ class SimuladorCompraItem {
     required double sugestaoInicial,
     required this.incluir,
   }) {
+    sugestaoBase = sugestaoInicial;
     quantidadeSugerida.text =
-        sugestaoInicial > 0 ? sugestaoInicial.toStringAsFixed(3) : '';
+        sugestaoInicial > 0 ? sugestaoInicial.toStringAsFixed(0) : '';
   }
 
   /// Nível alvo para sugestão: usa estoqueIdeal se > 0, senão estoqueMinimo
@@ -58,7 +62,7 @@ class SimuladorCompraModel {
   /// Configuração de formatação de carga
   bool formatarCarga = false;
   final TextController pesoAlvoCarga = TextController(text: '30000');
-  final TextController multiploArredondamento = TextController(text: '0');
+  final TextController multiploArredondamento = TextController(text: '1000');
 
   SimuladorCompraModel({required this.itens});
 
@@ -80,6 +84,10 @@ class SimuladorCompraModel {
   /// Total de kg sugerido (todos os selecionados)
   double get totalSugerido =>
       itensSelecionados.fold(0.0, (s, i) => s + i.quantidadeDigitada);
+
+  /// Total sugestão base (antes do ajuste de carga)
+  double get totalSugestaoBase =>
+      itens.fold(0.0, (s, i) => s + i.sugestaoBase);
 
   /// Quantidade de itens com déficit
   int get totalComDeficit => itens.where((i) => i.temDeficit).length;

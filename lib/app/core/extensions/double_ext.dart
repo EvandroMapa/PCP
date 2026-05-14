@@ -25,5 +25,9 @@ extension DoubleExt on double {
   String toKg() =>
       '${NumberFormat.currency(locale: 'pt_BR', symbol: '', decimalDigits: 3).format(this).trim()}Kg';
 
+  /// Formata em kg sem casas decimais (ex: 4.000Kg)
+  String toKgInt() =>
+      '${NumberFormat.currency(locale: 'pt_BR', symbol: '', decimalDigits: 0).format(this).trim()}Kg';
+
   double get precision => double.parse(toStringAsFixed(3));
 }
