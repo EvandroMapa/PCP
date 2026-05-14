@@ -6,7 +6,6 @@ import 'package:aco_plus/app/modules/pedido_compra/simulador_compra_controller.d
 import 'package:aco_plus/app/modules/pedido_compra/simulador_compra_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
 
 class SimuladorCompraPage extends StatefulWidget {
   const SimuladorCompraPage({super.key});
@@ -64,8 +63,9 @@ class _SimuladorCompraPageState extends State<SimuladorCompraPage> {
           child: ListView(
             padding: const EdgeInsets.all(12),
             children: [
-              // Gráfico
-              _graficoCard(model),
+
+              // Formatar Carga
+              _formatarCargaCard(model),
               const SizedBox(height: 12),
               // Ações em massa
               _acoesMassa(model),
@@ -108,7 +108,7 @@ class _SimuladorCompraPageState extends State<SimuladorCompraPage> {
           ]),
           const SizedBox(height: 4),
           Text(
-            'Necessidade = Consumo + Estoque Mínimo − Saldo Físico − Em Pedido',
+            'Necessidade = Consumo + Nível Alvo (Ideal ou Mínimo) − Saldo − Em Pedido',
             style: AppCss.minimumRegular
                 .setColor(Colors.grey[500]!)
                 .setSize(11),
@@ -198,170 +198,7 @@ class _SimuladorCompraPageState extends State<SimuladorCompraPage> {
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Gráfico
-  // ─────────────────────────────────────────────────────────────────────────
 
-  Widget _graficoCard(SimuladorCompraModel model) {
-    // Filtra apenas os que têm dados relevantes
-    final data = model.itens
-        .where(
-            (i) => i.saldoFisico != 0 || i.consumoPrevisto != 0 || i.emPedido != 0)
-        .toList();
-
-    if (data.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-        ),
-        child: const Center(child: Text('Nenhum dado para exibir no gráfico')),
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Título
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Row(children: [
-              Icon(Icons.bar_chart_rounded,
-                  size: 16, color: AppColors.primaryMain),
-              const SizedBox(width: 6),
-              Text('Visão Geral por Produto',
-                  style: AppCss.minimumBold.setSize(13)),
-            ]),
-          ),
-          // Legenda
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _legItem('Saldo', const Color(0xFF1565C0)),
-                const SizedBox(width: 10),
-                _legItem('Em Pedido', const Color(0xFF00897B)),
-                const SizedBox(width: 10),
-                _legItem('Consumo', const Color(0xFFE65100)),
-                const SizedBox(width: 10),
-                _legItem('Sugestão', const Color(0xFF2E7D32)),
-              ],
-            ),
-          ),
-          // Gráfico
-          SizedBox(
-            height: 260,
-            child: SfCartesianChart(
-              margin: const EdgeInsets.fromLTRB(8, 0, 16, 8),
-              plotAreaBorderWidth: 0,
-              primaryXAxis: const CategoryAxis(
-                labelRotation: -30,
-                majorGridLines: MajorGridLines(width: 0),
-                axisLine: AxisLine(width: 0.5),
-                labelStyle: TextStyle(fontSize: 10),
-              ),
-              primaryYAxis: const NumericAxis(
-                axisLine: AxisLine(width: 0),
-                majorTickLines: MajorTickLines(size: 0),
-                labelStyle: TextStyle(fontSize: 10),
-              ),
-              tooltipBehavior: TooltipBehavior(
-                enable: true,
-                header: '',
-                canShowMarker: true,
-                format: 'series.name: point.y kg',
-              ),
-              series: <CartesianSeries>[
-                // Disponível: Saldo Físico
-                StackedColumnSeries<SimuladorCompraItem, String>(
-                  dataSource: data,
-                  xValueMapper: (d, __) => d.produto.nome,
-                  yValueMapper: (d, __) => d.saldoFisico,
-                  name: 'Saldo',
-                  color: const Color(0xFF1565C0),
-                  groupName: 'disponivel',
-                  borderRadius: BorderRadius.zero,
-                ),
-                // Disponível: Em Pedido
-                StackedColumnSeries<SimuladorCompraItem, String>(
-                  dataSource: data,
-                  xValueMapper: (d, __) => d.produto.nome,
-                  yValueMapper: (d, __) => d.emPedido,
-                  name: 'Em Pedido',
-                  color: const Color(0xFF00897B),
-                  groupName: 'disponivel',
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(3),
-                    topRight: Radius.circular(3),
-                  ),
-                ),
-                // Consumo Previsto
-                ColumnSeries<SimuladorCompraItem, String>(
-                  dataSource: data,
-                  xValueMapper: (d, __) => d.produto.nome,
-                  yValueMapper: (d, __) => d.consumoPrevisto,
-                  name: 'Consumo',
-                  color: const Color(0xFFE65100),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(3),
-                    topRight: Radius.circular(3),
-                  ),
-                ),
-                // Sugestão de compra
-                ColumnSeries<SimuladorCompraItem, String>(
-                  dataSource: data,
-                  xValueMapper: (d, __) => d.produto.nome,
-                  yValueMapper: (d, __) =>
-                      d.incluir ? d.quantidadeDigitada : 0,
-                  name: 'Sugestão',
-                  color: const Color(0xFF2E7D32).withValues(alpha: 0.60),
-                  borderColor: const Color(0xFF2E7D32),
-                  borderWidth: 1.5,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(3),
-                    topRight: Radius.circular(3),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _legItem(String label, Color cor) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(
-        width: 10,
-        height: 10,
-        decoration:
-            BoxDecoration(color: cor, borderRadius: BorderRadius.circular(2)),
-      ),
-      const SizedBox(width: 4),
-      Text(label,
-          style:
-              AppCss.minimumRegular.setColor(Colors.grey[700]!).setSize(10)),
-    ]);
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Ações em massa
-  // ─────────────────────────────────────────────────────────────────────────
 
   Widget _acoesMassa(SimuladorCompraModel model) {
     final selecionados = model.itensSelecionados.length;
@@ -400,6 +237,275 @@ class _SimuladorCompraPageState extends State<SimuladorCompraPage> {
           ),
         ),
       ],
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Formatar Carga
+  // ─────────────────────────────────────────────────────────────────────────
+
+  Widget _formatarCargaCard(SimuladorCompraModel model) {
+    final ativo = model.formatarCarga;
+    final delta = model.deltaCarga;
+    final totalSugerido = model.totalSugerido;
+    final pesoAlvo = model.pesoAlvoValue;
+    final deltaPct = pesoAlvo > 0 ? (delta / pesoAlvo * 100) : 0.0;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        color: ativo ? const Color(0xFFF0F9FF) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: ativo
+              ? const Color(0xFF93C5FD)
+              : const Color(0xFFE2E8F0),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // ── Header com switch ──────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 8, 0),
+            child: Row(children: [
+              Container(
+                width: 32, height: 32,
+                decoration: BoxDecoration(
+                  color: ativo
+                      ? const Color(0xFF2563EB).withValues(alpha: 0.12)
+                      : Colors.grey.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.local_shipping_outlined,
+                  size: 16,
+                  color: ativo ? const Color(0xFF2563EB) : Colors.grey[400],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Formatar Carga',
+                        style: AppCss.minimumBold.setSize(13)),
+                    Text(
+                      'Distribui proporcionalmente para montar a carga',
+                      style: AppCss.minimumRegular
+                          .setColor(Colors.grey[500]!)
+                          .setSize(10),
+                    ),
+                  ],
+                ),
+              ),
+              Switch(
+                value: ativo,
+                activeThumbColor: const Color(0xFF2563EB),
+                onChanged: (v) {
+                  simuladorCompraCtrl.onToggleFormatarCarga(v);
+                  setState(() {});
+                },
+              ),
+            ]),
+          ),
+
+          // ── Campos (só visíveis quando ativo) ──────────────────
+          if (ativo) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+              child: Row(children: [
+                // Peso-alvo
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Peso-alvo (kg)',
+                          style: AppCss.minimumBold
+                              .setColor(Colors.grey[600]!)
+                              .setSize(11)),
+                      const SizedBox(height: 4),
+                      TextFormField(
+                        controller: model.pesoAlvoCarga.controller,
+                        keyboardType:
+                            const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                              RegExp(r'[\d,\.]')),
+                        ],
+                        style: AppCss.minimumBold.setSize(13),
+                        decoration: InputDecoration(
+                          hintText: '30000',
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 8),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                                color: Colors.grey.withValues(alpha: 0.30)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                                color: Colors.grey.withValues(alpha: 0.30)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide:
+                                const BorderSide(color: Color(0xFF2563EB)),
+                          ),
+                          suffixText: 'kg',
+                          suffixStyle: AppCss.minimumRegular
+                              .setColor(Colors.grey[400]!)
+                              .setSize(11),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Múltiplo
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Múltiplo (kg)',
+                          style: AppCss.minimumBold
+                              .setColor(Colors.grey[600]!)
+                              .setSize(11)),
+                      const SizedBox(height: 4),
+                      TextFormField(
+                        controller:
+                            model.multiploArredondamento.controller,
+                        keyboardType:
+                            const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                              RegExp(r'[\d,\.]')),
+                        ],
+                        style: AppCss.minimumBold.setSize(13),
+                        decoration: InputDecoration(
+                          hintText: '0',
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 8),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                                color: Colors.grey.withValues(alpha: 0.30)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                                color: Colors.grey.withValues(alpha: 0.30)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide:
+                                const BorderSide(color: Color(0xFF2563EB)),
+                          ),
+                          suffixText: 'kg',
+                          suffixStyle: AppCss.minimumRegular
+                              .setColor(Colors.grey[400]!)
+                              .setSize(11),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                // Botão Aplicar
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: () {
+                      simuladorCompraCtrl.aplicarFormatacaoCarga();
+                      setState(() {});
+                    },
+                    icon: const Icon(Icons.refresh_rounded, size: 16),
+                    label: Text('Aplicar',
+                        style: AppCss.minimumBold
+                            .setColor(Colors.white)
+                            .setSize(12)),
+                  ),
+                ),
+              ]),
+            ),
+
+            // ── Badge de resultado ──────────────────────────────
+            if (totalSugerido > 0)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: deltaPct.abs() <= 5
+                        ? Colors.green.withValues(alpha: 0.06)
+                        : Colors.amber.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: deltaPct.abs() <= 5
+                          ? Colors.green.withValues(alpha: 0.25)
+                          : Colors.amber.withValues(alpha: 0.30),
+                    ),
+                  ),
+                  child: Row(children: [
+                    Icon(
+                      deltaPct.abs() <= 5
+                          ? Icons.check_circle_outline
+                          : Icons.info_outline,
+                      size: 15,
+                      color: deltaPct.abs() <= 5
+                          ? Colors.green[700]
+                          : Colors.amber[800],
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Total: ${(totalSugerido / 1000).toStringAsFixed(2)} t',
+                      style: AppCss.minimumBold.setSize(12),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      delta >= 0
+                          ? '(+${(delta / 1000).toStringAsFixed(2)} t do alvo)'
+                          : '(${(delta / 1000).toStringAsFixed(2)} t do alvo)',
+                      style: AppCss.minimumRegular
+                          .setColor(deltaPct.abs() <= 5
+                              ? Colors.green[700]!
+                              : Colors.amber[800]!)
+                          .setSize(11),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${deltaPct >= 0 ? '+' : ''}${deltaPct.toStringAsFixed(1)}%',
+                      style: AppCss.minimumBold
+                          .setColor(deltaPct.abs() <= 5
+                              ? Colors.green[700]!
+                              : Colors.amber[800]!)
+                          .setSize(12),
+                    ),
+                  ]),
+                ),
+              ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -547,20 +653,64 @@ class _SimuladorCompraPageState extends State<SimuladorCompraPage> {
               ),
             ]),
           ),
-          // ── Estoque Mínimo (se configurado) ─────────────────────────
-          if (item.estoqueMinimo > 0)
+          // ── Estoque Mínimo e Ideal (se configurados) ─────────────────────
+          if (item.estoqueMinimo > 0 || item.estoqueIdeal > 0)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 12, 4),
               child: Row(children: [
-                Icon(Icons.shield_outlined,
-                    size: 12, color: Colors.amber[700]),
-                const SizedBox(width: 4),
-                Text(
-                  'Estoque mínimo: ${item.estoqueMinimo.toKg()}',
-                  style: AppCss.minimumRegular
-                      .setColor(Colors.amber[700]!)
-                      .setSize(11),
-                ),
+                if (item.estoqueMinimo > 0) ...[
+                  Icon(Icons.shield_outlined,
+                      size: 12, color: Colors.amber[700]),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Mínimo: ${item.estoqueMinimo.toKg()}',
+                    style: AppCss.minimumRegular
+                        .setColor(Colors.amber[700]!)
+                        .setSize(11),
+                  ),
+                ],
+                if (item.estoqueMinimo > 0 && item.estoqueIdeal > 0)
+                  const SizedBox(width: 12),
+                if (item.estoqueIdeal > 0) ...[
+                  Icon(Icons.star_outline_rounded,
+                      size: 12, color: Colors.blue[700]),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Ideal: ${item.estoqueIdeal.toKg()}',
+                    style: AppCss.minimumBold
+                        .setColor(Colors.blue[700]!)
+                        .setSize(11),
+                  ),
+                  const SizedBox(width: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'ALVO',
+                      style: AppCss.minimumBold
+                          .setColor(Colors.blue[600]!)
+                          .setSize(8),
+                    ),
+                  ),
+                ] else if (item.estoqueMinimo > 0) ...[
+                  const SizedBox(width: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'ALVO',
+                      style: AppCss.minimumBold
+                          .setColor(Colors.amber[700]!)
+                          .setSize(8),
+                    ),
+                  ),
+                ],
               ]),
             ),
           // ── Input de sugestão ───────────────────────────────────────

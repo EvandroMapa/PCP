@@ -79,6 +79,7 @@ class EstoqueController {
     try {
       final novaQtde = form.novoSaldoValue;
       final novoMinimo = form.estoqueMinimoValue;
+      final novoIdeal = form.estoqueIdealValue;
 
       // Busca ou cria o registro de estoque
       var estoque = BackendClient.estoques.getByProdutoId(form.produtoId);
@@ -87,10 +88,11 @@ class EstoqueController {
       final saldoAnterior = estoque.quantidade;
       final diff = novaQtde - saldoAnterior;
 
-      // Atualiza saldo + estoque mínimo
+      // Atualiza saldo + estoque mínimo + estoque ideal
       final estoqueAtualizado = estoque.copyWith(
         quantidade: novaQtde,
         estoqueMinimo: novoMinimo,
+        estoqueIdeal: novoIdeal,
         updatedAt: DateTime.now(),
       );
       await BackendClient.estoques.upsert(estoqueAtualizado);
@@ -110,7 +112,7 @@ class EstoqueController {
 
       NotificationService.showPositive(
         'Estoque Atualizado',
-        'Saldo: ${novaQtde.toStringAsFixed(3)} kg · Mínimo: ${novoMinimo.toStringAsFixed(3)} kg',
+        'Saldo: ${novaQtde.toStringAsFixed(3)} kg · Mínimo: ${novoMinimo.toStringAsFixed(3)} kg · Ideal: ${novoIdeal.toStringAsFixed(3)} kg',
         position: NotificationPosition.bottom,
       );
     } catch (e) {

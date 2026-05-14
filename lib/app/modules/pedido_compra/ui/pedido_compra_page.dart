@@ -157,22 +157,41 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
                 ? 'Ver pedidos ativos'
                 : 'Ver pedidos efetivados',
             preferBelow: false,
-            child: IconButton(
-              onPressed: () => pedidoCompraCtrl.showEfetivadosStream
+            waitDuration: const Duration(milliseconds: 300),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => pedidoCompraCtrl.showEfetivadosStream
                   .add(!showHistorico),
-              icon: Icon(
-                showHistorico
-                    ? Icons.shopping_cart_outlined
-                    : Icons.history,
-                size: 20,
-                color: showHistorico
-                    ? Colors.green[700]
-                    : Colors.grey[400],
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: showHistorico
+                      ? Colors.green.withValues(alpha: 0.10)
+                      : Colors.grey.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: showHistorico
+                        ? Colors.green.withValues(alpha: 0.20)
+                        : Colors.grey.withValues(alpha: 0.15),
+                  ),
+                ),
+                child: Icon(
+                  showHistorico
+                      ? Icons.shopping_cart_outlined
+                      : Icons.history,
+                  size: 18,
+                  color: showHistorico
+                      ? Colors.green[700]
+                      : Colors.grey[400],
+                ),
               ),
             ),
           ),
           if (!widget.standalone && !showHistorico) ...[
+            const SizedBox(width: 8),
             _btnSimulador(context),
+            const SizedBox(width: 8),
             _btnNovo(context),
           ],
         ],
@@ -194,20 +213,46 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
   Widget _btnSimulador(BuildContext context) => Tooltip(
         message: 'Montar sugestão de compra',
         preferBelow: false,
-        child: IconButton(
-          onPressed: () => push(context, const SimuladorCompraPage()),
-          icon: const Icon(Icons.auto_graph_rounded, color: Colors.white),
+        waitDuration: const Duration(milliseconds: 300),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () => push(context, const SimuladorCompraPage()),
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.primaryMain.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                  color: AppColors.primaryMain.withValues(alpha: 0.20)),
+            ),
+            child: Icon(Icons.auto_graph_rounded,
+                size: 18, color: AppColors.primaryMain),
+          ),
         ),
       );
 
   Widget _btnNovo(BuildContext context) => Tooltip(
         message: 'Novo pedido de compra',
-        child: IconButton(
-          onPressed: () {
+        preferBelow: false,
+        waitDuration: const Duration(milliseconds: 300),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: () {
             pedidoCompraCtrl.formStream.add(PedidoCompraCreateModel());
             push(context, const PedidoCompraCreatePage());
           },
-          icon: const Icon(Icons.add, color: Colors.white),
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.primaryMain.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                  color: AppColors.primaryMain.withValues(alpha: 0.20)),
+            ),
+            child: Icon(Icons.add, size: 18, color: AppColors.primaryMain),
+          ),
         ),
       );
 
@@ -575,6 +620,4 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
       ),
     );
   }
-
-  Widget _toggleEfetivados(int count) => const SizedBox.shrink();
 }

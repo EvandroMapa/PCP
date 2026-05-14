@@ -7,6 +7,7 @@ class EstoqueModel {
   final String produtoId;
   double quantidade;
   final double estoqueMinimo;
+  final double estoqueIdeal;
   final String unidade;
   final DateTime updatedAt;
 
@@ -15,6 +16,7 @@ class EstoqueModel {
     required this.produtoId,
     required this.quantidade,
     this.estoqueMinimo = 0,
+    this.estoqueIdeal = 0,
     this.unidade = 'kg',
     required this.updatedAt,
   });
@@ -32,6 +34,7 @@ class EstoqueModel {
         produtoId: produtoId,
         quantidade: 0,
         estoqueMinimo: 0,
+        estoqueIdeal: 0,
         unidade: 'kg',
         updatedAt: DateTime.now(),
       );
@@ -41,6 +44,7 @@ class EstoqueModel {
         'produto_id': produtoId,
         'quantidade': quantidade,
         'estoque_minimo': estoqueMinimo,
+        'estoque_ideal': estoqueIdeal,
         'unidade': unidade,
         'updated_at': updatedAt.toIso8601String(),
       };
@@ -52,6 +56,8 @@ class EstoqueModel {
             double.tryParse((map['quantidade'] ?? 0).toString()) ?? 0.0,
         estoqueMinimo:
             double.tryParse((map['estoque_minimo'] ?? 0).toString()) ?? 0.0,
+        estoqueIdeal:
+            double.tryParse((map['estoque_ideal'] ?? 0).toString()) ?? 0.0,
         unidade: map['unidade'] ?? 'kg',
         updatedAt: map['updated_at'] != null
             ? DateTime.parse(map['updated_at'])
@@ -63,6 +69,7 @@ class EstoqueModel {
     String? produtoId,
     double? quantidade,
     double? estoqueMinimo,
+    double? estoqueIdeal,
     String? unidade,
     DateTime? updatedAt,
   }) =>
@@ -71,6 +78,7 @@ class EstoqueModel {
         produtoId: produtoId ?? this.produtoId,
         quantidade: quantidade ?? this.quantidade,
         estoqueMinimo: estoqueMinimo ?? this.estoqueMinimo,
+        estoqueIdeal: estoqueIdeal ?? this.estoqueIdeal,
         unidade: unidade ?? this.unidade,
         updatedAt: updatedAt ?? this.updatedAt,
       );

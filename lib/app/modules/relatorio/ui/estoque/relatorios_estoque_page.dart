@@ -203,6 +203,7 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
       final emPedido =
           BackendClient.pedidosCompra.getTotalPendenteByProdutoId(p.id);
       final estoqueMin = estoque?.estoqueMinimo ?? 0.0;
+      final estoqueIdeal = estoque?.estoqueIdeal ?? 0.0;
       if (saldo == 0 && consumo == 0 && emPedido == 0) continue;
       final disponivel = saldo + emPedido;
       final projetado = disponivel - consumo;
@@ -213,6 +214,7 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
         consumo: consumo,
         projetado: projetado,
         estoqueMinimo: estoqueMin,
+        estoqueIdeal: estoqueIdeal,
       ));
     }
     final projetadoTotal = totalProjetado;
@@ -244,21 +246,17 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
                 ]),
               ),
               const Divider(),
-              // Legenda
+              // Legenda fixa (colunas)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _legItem('Saldo Fisico', const Color(0xFF1565C0)),
+                    _legItem('Saldo Físico', const Color(0xFF2563EB)),
                     const SizedBox(width: 14),
-                    _legItem('Em Pedido', const Color(0xFF00897B)),
+                    _legItem('Em Pedido', const Color(0xFF0D9488)),
                     const SizedBox(width: 14),
-                    _legItem('Consumo Previsto', const Color(0xFFE65100)),
-                    const SizedBox(width: 14),
-                    _legItemLine('Saldo Projetado', const Color(0xFF1B5E20)),
-                    const SizedBox(width: 14),
-                    _legItemLine('Estoque Minimo', const Color(0xFFD32F2F)),
+                    _legItem('Consumo Previsto', const Color(0xFFF97316)),
                   ],
                 ),
               ),
@@ -268,6 +266,13 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
                 child: SfCartesianChart(
                   margin: const EdgeInsets.fromLTRB(8, 4, 16, 8),
                   plotAreaBorderWidth: 0,
+                  legend: Legend(
+                    isVisible: true,
+                    position: LegendPosition.top,
+                    overflowMode: LegendItemOverflowMode.wrap,
+                    toggleSeriesVisibility: true,
+                    textStyle: TextStyle(fontSize: 11, color: Colors.grey[700]),
+                  ),
                   primaryXAxis: const CategoryAxis(
                     labelRotation: -30,
                     majorGridLines: MajorGridLines(width: 0),
@@ -290,71 +295,136 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
                       dataSource: data,
                       xValueMapper: (d, __) => d.label,
                       yValueMapper: (d, __) => d.saldo,
-                      name: 'Saldo Fisico',
-                      color: const Color(0xFF1565C0),
+                      name: 'Saldo Físico',
+                      color: const Color(0xFF2563EB),
                       groupName: 'disponivel',
+                      isVisibleInLegend: false,
                       borderRadius: BorderRadius.zero,
                     ),
-                    // Empilhada 2: Em Pedido (sobre saldo)
+                    // Empilhada 2: Em Pedido (topo do grupo disponivel) — label do total
                     StackedColumnSeries<_EstoqueChartData, String>(
                       dataSource: data,
                       xValueMapper: (d, __) => d.label,
                       yValueMapper: (d, __) => d.emPedido,
                       name: 'Em Pedido',
-                      color: const Color(0xFF00897B),
+                      color: const Color(0xFF0D9488),
                       groupName: 'disponivel',
+                      isVisibleInLegend: false,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(4),
                         topRight: Radius.circular(4),
                       ),
+                      dataLabelSettings: DataLabelSettings(
+                        isVisible: true,
+                        builder: (dynamic data, dynamic point, dynamic series,
+                            int pointIndex, int seriesIndex) {
+                          final d = data as _EstoqueChartData;
+                          final total = d.saldo + d.emPedido;
+                          if (total <= 0) return const SizedBox.shrink();
+                          return Transform.translate(
+                            offset: const Offset(0, -16),
+                            child: Text(
+                              '${(total / 1000).toStringAsFixed(2)} t',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                    // Barra separada: Consumo Previsto
+                    // Barra separada: Consumo Previsto — label do volume
                     StackedColumnSeries<_EstoqueChartData, String>(
                       dataSource: data,
                       xValueMapper: (d, __) => d.label,
                       yValueMapper: (d, __) => d.consumo,
                       name: 'Consumo Previsto',
-                      color: const Color(0xFFE65100),
+                      color: const Color(0xFFF97316),
                       groupName: 'consumo',
+                      isVisibleInLegend: false,
                       borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(4),
                         topRight: Radius.circular(4),
                       ),
+                      dataLabelSettings: DataLabelSettings(
+                        isVisible: true,
+                        builder: (dynamic data, dynamic point, dynamic series,
+                            int pointIndex, int seriesIndex) {
+                          final d = data as _EstoqueChartData;
+                          if (d.consumo <= 0) return const SizedBox.shrink();
+                          return Transform.translate(
+                            offset: const Offset(0, -16),
+                            child: Text(
+                              '${(d.consumo / 1000).toStringAsFixed(2)} t',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                    // Linha: Saldo Projetado (pode ser negativo)
+                    // Linha: Saldo Projetado — cor viva
                     LineSeries<_EstoqueChartData, String>(
                       dataSource: data,
                       xValueMapper: (d, __) => d.label,
                       yValueMapper: (d, __) => d.projetado,
                       name: 'Saldo Projetado',
-                      color: const Color(0xFF1B5E20),
-                      width: 2.0,
+                      color: const Color(0xFF16A34A),
+                      width: 2.5,
                       dashArray: const [6, 3],
                       markerSettings: const MarkerSettings(
                         isVisible: true,
-                        height: 7,
-                        width: 7,
+                        height: 8,
+                        width: 8,
                         shape: DataMarkerType.circle,
+                        color: Color(0xFF16A34A),
                         borderColor: Colors.white,
-                        borderWidth: 1.5,
+                        borderWidth: 2,
                       ),
                     ),
-                    // Linha: Estoque Minimo
+                    // Linha: Estoque Minimo — vermelho vivo
                     LineSeries<_EstoqueChartData, String>(
                       dataSource: data,
                       xValueMapper: (d, __) => d.label,
                       yValueMapper: (d, __) => d.estoqueMinimo > 0 ? d.estoqueMinimo : null,
-                      name: 'Estoque Minimo',
-                      color: const Color(0xFFD32F2F),
-                      width: 1.5,
-                      dashArray: const [4, 4],
+                      name: 'Estoque Mínimo',
+                      initialIsVisible: false,
+                      color: const Color(0xFFEF4444),
+                      width: 2.0,
+                      dashArray: const [5, 4],
                       markerSettings: const MarkerSettings(
                         isVisible: true,
-                        height: 5,
-                        width: 5,
+                        height: 7,
+                        width: 7,
                         shape: DataMarkerType.diamond,
+                        color: Color(0xFFEF4444),
                         borderColor: Colors.white,
-                        borderWidth: 1,
+                        borderWidth: 1.5,
+                      ),
+                    ),
+                    // Linha: Estoque Ideal — roxo vivo
+                    LineSeries<_EstoqueChartData, String>(
+                      dataSource: data,
+                      xValueMapper: (d, __) => d.label,
+                      yValueMapper: (d, __) => d.estoqueIdeal > 0 ? d.estoqueIdeal : null,
+                      name: 'Estoque Ideal',
+                      initialIsVisible: false,
+                      color: const Color(0xFF8B5CF6),
+                      width: 2.0,
+                      dashArray: const [5, 4],
+                      markerSettings: const MarkerSettings(
+                        isVisible: true,
+                        height: 7,
+                        width: 7,
+                        shape: DataMarkerType.diamond,
+                        color: Color(0xFF8B5CF6),
+                        borderColor: Colors.white,
+                        borderWidth: 1.5,
                       ),
                     ),
                   ],
@@ -374,16 +444,16 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
                   const SizedBox(width: 8),
                   Text('TOTAL', style: AppCss.minimumBold.setColor(Colors.grey[700]!)),
                   const Spacer(),
-                  _totalItem('Saldo', totalSaldo.toKg(), const Color(0xFF1565C0)),
+                  _totalItem('Saldo', '${(totalSaldo / 1000).toStringAsFixed(2)} t', const Color(0xFF2563EB)),
                   const SizedBox(width: 12),
-                  _totalItem('Pedido', totalEmPedido > 0 ? '+${totalEmPedido.toKg()}' : '—', const Color(0xFF00897B)),
+                  _totalItem('Pedido', totalEmPedido > 0 ? '+${(totalEmPedido / 1000).toStringAsFixed(2)} t' : '—', const Color(0xFF0D9488)),
                   const SizedBox(width: 12),
-                  _totalItem('Consumo', '-${totalConsumo.toKg()}', const Color(0xFFE65100)),
+                  _totalItem('Consumo', '-${(totalConsumo / 1000).toStringAsFixed(2)} t', const Color(0xFFF97316)),
                   const SizedBox(width: 12),
                   _totalItem(
                     'Projetado',
-                    projetadoTotal.toKg(),
-                    projetadoTotal < 0 ? Colors.red[700]! : const Color(0xFF1B5E20),
+                    '${(projetadoTotal / 1000).toStringAsFixed(2)} t',
+                    projetadoTotal < 0 ? Colors.red[700]! : const Color(0xFF16A34A),
                   ),
                 ]),
               ),
@@ -407,19 +477,7 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
     ]);
   }
 
-  Widget _legItemLine(String label, Color cor) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(width: 18, height: 2.5, color: cor),
-      const SizedBox(width: 2),
-      Container(
-        width: 7, height: 7,
-        decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
-      ),
-      const SizedBox(width: 4),
-      Text(label,
-          style: AppCss.minimumRegular.setColor(Colors.grey[700]!).setSize(11)),
-    ]);
-  }
+
 
   Widget _totalItem(String label, String valor, Color cor) {
     return Column(
@@ -742,6 +800,7 @@ class _EstoqueChartData {
   final double consumo;
   final double projetado;
   final double estoqueMinimo;
+  final double estoqueIdeal;
 
   _EstoqueChartData({
     required this.label,
@@ -750,5 +809,6 @@ class _EstoqueChartData {
     required this.consumo,
     required this.projetado,
     this.estoqueMinimo = 0,
+    this.estoqueIdeal = 0,
   });
 }

@@ -29,11 +29,13 @@ class EstoqueEditarSaldoModel {
   final String produtoId;
   final TextController novoSaldo = TextController();
   final TextController estoqueMinimo = TextController();
+  final TextController estoqueIdeal = TextController();
 
   EstoqueEditarSaldoModel({
     required this.produtoId,
     double saldoAtual = 0,
     double estoqueMinimoAtual = 0,
+    double estoqueIdealAtual = 0,
   }) {
     novoSaldo.text = saldoAtual == 0
         ? ''
@@ -41,6 +43,9 @@ class EstoqueEditarSaldoModel {
     estoqueMinimo.text = estoqueMinimoAtual == 0
         ? ''
         : estoqueMinimoAtual.toStringAsFixed(3).replaceAll('.000', '');
+    estoqueIdeal.text = estoqueIdealAtual == 0
+        ? ''
+        : estoqueIdealAtual.toStringAsFixed(3).replaceAll('.000', '');
   }
 
   double get novoSaldoValue =>
@@ -48,6 +53,9 @@ class EstoqueEditarSaldoModel {
 
   double get estoqueMinimoValue =>
       double.tryParse(estoqueMinimo.text.replaceAll(',', '.')) ?? 0.0;
+
+  double get estoqueIdealValue =>
+      double.tryParse(estoqueIdeal.text.replaceAll(',', '.')) ?? 0.0;
 }
 
 class EstoqueRelatorioFiltroModel {
