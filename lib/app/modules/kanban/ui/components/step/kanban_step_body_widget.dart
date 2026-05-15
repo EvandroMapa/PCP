@@ -43,29 +43,29 @@ class KanbanStepBodyWidget extends StatelessWidget {
           controller: step.scrollController,
           cacheExtent: 200,
           children: () {
-            int lastVisibleIndex = -1;
+            // Pré-calcula pedidos visíveis uma única vez
+            final visibleIndices = <int>[];
             for (int i = 0; i < pedidos.length; i++) {
               if (utils.isPedidoVisibleFiltered(pedidos[i])) {
-                lastVisibleIndex = i;
+                visibleIndices.add(i);
               }
             }
 
             return [
-              _dragTargetWidget(step, pedidos, 0, isLast: lastVisibleIndex == -1),
+              _dragTargetWidget(step, pedidos, 0, isLast: visibleIndices.isEmpty),
               const SizedBox(height: 8),
-              for (int i = 0; i < pedidos.length; i++)
-                if (utils.isPedidoVisibleFiltered(pedidos[i])) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: KanbanCardDraggableWidget(pedidos[i]),
-                  ),
-                  _dragTargetWidget(
-                    step,
-                    pedidos,
-                    i + 1,
-                    isLast: i == lastVisibleIndex,
-                  ),
-                ],
+              for (int j = 0; j < visibleIndices.length; j++) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: KanbanCardDraggableWidget(pedidos[visibleIndices[j]]),
+                ),
+                _dragTargetWidget(
+                  step,
+                  pedidos,
+                  visibleIndices[j] + 1,
+                  isLast: j == visibleIndices.length - 1,
+                ),
+              ],
               const SizedBox(height: 8),
             ];
           }(),

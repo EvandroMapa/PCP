@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/models/automatizacao_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/notificacao/notificacao_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
@@ -23,11 +24,13 @@ class KanbanPage extends StatefulWidget {
 class _KanbanPageState extends State<KanbanPage> {
   late StreamSubscription<List<PedidoModel>> pedidoStream;
   late StreamSubscription<List<StepModel>> stepStream;
+  late StreamSubscription<List<NotificacaoModel>> notificacaoStream;
 
   @override
   void dispose() {
     pedidoStream.cancel();
     stepStream.cancel();
+    notificacaoStream.cancel();
     super.dispose();
   }
 
@@ -36,6 +39,11 @@ class _KanbanPageState extends State<KanbanPage> {
     setWebTitle(widget.standalone
         ? 'AçoPlus - Kanban'
         : 'AçoPlus - Planejamento e controle de Produção');
+    // Listener de notificações — único para toda a tela
+    notificacaoStream =
+        FirestoreClient.notificacoes.dataStream.listen.listen((_) {
+      kanbanCtrl.onMount();
+    });
     kanbanCtrl.onInit().then((_) {
       pedidoStream =
           FirestoreClient.pedidos.pedidosUnarchivedsStream.listen.listen((e) {

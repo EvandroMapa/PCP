@@ -42,6 +42,7 @@ class StepController {
   bool _pendingDrop = false;
   bool get isDropLocked => isDragging || _pendingDrop;
   StreamSubscription? _pedidosSubscription;
+  Timer? _mountDebounce;
 
   void startDrag() => isDragging = true;
   void endDrag() {
@@ -82,12 +83,16 @@ class StepController {
     }
   }
 
-  void onMount() async {
-    final kanban = mountKanban();
-    final calendar = _mountCalendar();
-    utils.calendar = calendar;
-    utils.kanban = kanban;
-    utilsStream.update();
+  void onMount() {
+    // Debounce: coalesce múltiplas chamadas em 200ms
+    _mountDebounce?.cancel();
+    _mountDebounce = Timer(const Duration(milliseconds: 200), () {
+      final kanban = mountKanban();
+      final calendar = _mountCalendar();
+      utils.calendar = calendar;
+      utils.kanban = kanban;
+      utilsStream.update();
+    });
   }
 
   Map<StepModel, List<PedidoModel>> mountKanban() {

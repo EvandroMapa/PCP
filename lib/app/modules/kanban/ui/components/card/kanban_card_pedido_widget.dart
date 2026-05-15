@@ -1,8 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/notificacao/notificacao_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/h.dart';
-import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/enums/widget_view_mode.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
@@ -33,148 +31,142 @@ class KanbanCardPedidoWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final notificacoes = notificacaoCtrl.getNotificaoByUsuarioPedido(
+      FirestoreClient.notificacoes.data,
+      usuarioCtrl.usuario!,
+      pedido,
+    );
+    final stripeColor = _getStripeColor(pedido);
     return InkWell(
       onTap: () => kanbanCtrl.setPedido(pedido),
-      child: StreamOut<List<NotificacaoModel>>(
-        stream: FirestoreClient.notificacoes.dataStream.listen,
-        loading: const SizedBox.shrink(),
-        builder: (context, value) {
-          final notificacoes = notificacaoCtrl.getNotificaoByUsuarioPedido(
-            value,
-            usuarioCtrl.usuario!,
-            pedido,
-          );
-          final stripeColor = _getStripeColor(pedido);
-          return Container(
-            width: double.maxFinite,
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: _getColor(pedido),
-              borderRadius: const BorderRadius.all(Radius.circular(6)),
-              border: stripeColor != null
-                  ? Border(
-                      left: BorderSide(color: stripeColor, width: 4),
-                    )
-                  : null,
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF000000).withValues(alpha: 0.1),
-                  spreadRadius: 1,
-                  blurRadius: 1,
-                  offset: const Offset(0, 0),
-                ),
-              ],
+      child: Container(
+        width: double.maxFinite,
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: _getColor(pedido),
+          borderRadius: const BorderRadius.all(Radius.circular(6)),
+          border: stripeColor != null
+              ? Border(
+                  left: BorderSide(color: stripeColor, width: 4),
+                )
+              : null,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF000000).withValues(alpha: 0.1),
+              spreadRadius: 1,
+              blurRadius: 1,
+              offset: const Offset(0, 0),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Row(
-                  children: [
-                    if (pedido.comments.any((e) => e.isFixed)) ...[
-                      Icon(Icons.warning, color: Colors.orange, size: 16),
-                      const W(4),
-                    ],
-                    if (pedido.tags.isNotEmpty) ...[
-                      Expanded(
-                        child: KanbanCardTagsWidget(
-                          pedido: pedido,
-                          viewMode: viewMode,
-                        ),
-                      ),
-                    ] else
-                      const Spacer(),
-                    const W(8),
-                    if (pedido.pedidosVinculados.isNotEmpty) ...[
-                      Icon(Icons.link, color: Colors.grey[700], size: 16),
-                      const W(8),
-                    ],
-                    Text(
-                      pedido.getQtdeTotal().toKg(),
-                      style: AppCss.minimumBold.setSize(14),
+                if (pedido.comments.any((e) => e.isFixed)) ...[
+                  Icon(Icons.warning, color: Colors.orange, size: 16),
+                  const W(4),
+                ],
+                if (pedido.tags.isNotEmpty) ...[
+                  Expanded(
+                    child: KanbanCardTagsWidget(
+                      pedido: pedido,
+                      viewMode: viewMode,
                     ),
-                    if (notificacoes.isNotEmpty) ...[
-                      const W(8),
-                      KanbanCardNotificacaoWidget(),
-                    ],
-                  ],
-                ),
-                const H(8),
-                // ── Localizador + badge ──
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        pedido.localizador,
-                        style: AppCss.mediumBold.setSize(13.5),
-                      ),
-                    ),
-                    if (pedido.isMestre) ...[
-                      const W(6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFEF3C7),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                              color: const Color(0xFFF59E0B), width: 0.5),
-                        ),
-                        child: Text(
-                          'MESTRE',
-                          style: AppCss.minimumBold.copyWith(
-                              fontSize: 8, color: const Color(0xFF92400E)),
-                        ),
-                      ),
-                    ],
-                    if (pedido.isParcial) ...[
-                      const W(6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFDBEAFE),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                              color: const Color(0xFF3B82F6), width: 0.5),
-                        ),
-                        child: Text(
-                          'PARCIAL',
-                          style: AppCss.minimumBold.copyWith(
-                              fontSize: 8, color: const Color(0xFF1E40AF)),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const H(8),
-                Row(
-                  children: [
-                    Expanded(child: KanbanCardDetailsWidget(pedido)),
-                    KanbanCardUsersWidget(pedido, viewMode: viewMode),
-                  ],
-                ),
-                // ── Barra de Produção CD ──
-                KanbanCardCDWidget(pedido: pedido),
-                // ── Barra de Armação CDA ──
-                KanbanCardElementosWidget(pedido: pedido),
-                if (viewMode == WidgetViewMode.expanded) ...[
-                  KanbanCardProductsWidget(pedido: pedido),
-                  Builder(
-                    builder: (context) {
-                      final comments =
-                          pedido.comments.where((e) => e.isFixed).toList();
-                      if (comments.isEmpty) return const SizedBox();
-                      return KanbanCardCommentsWidget(comments: comments);
-                    },
                   ),
-                  KanbanCardVinculadosWidget(pedido: pedido),
-                  KanbanCardPatioWidget(pedido: pedido),
+                ] else
+                  const Spacer(),
+                const W(8),
+                if (pedido.pedidosVinculados.isNotEmpty) ...[
+                  Icon(Icons.link, color: Colors.grey[700], size: 16),
+                  const W(8),
+                ],
+                Text(
+                  pedido.getQtdeTotal().toKg(),
+                  style: AppCss.minimumBold.setSize(14),
+                ),
+                if (notificacoes.isNotEmpty) ...[
+                  const W(8),
+                  KanbanCardNotificacaoWidget(),
                 ],
               ],
             ),
-          );
-        },
+            const H(8),
+            // ── Localizador + badge ──
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Text(
+                    pedido.localizador,
+                    style: AppCss.mediumBold.setSize(13.5),
+                  ),
+                ),
+                if (pedido.isMestre) ...[
+                  const W(6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 5, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                          color: const Color(0xFFF59E0B), width: 0.5),
+                    ),
+                    child: Text(
+                      'MESTRE',
+                      style: AppCss.minimumBold.copyWith(
+                          fontSize: 8, color: const Color(0xFF92400E)),
+                    ),
+                  ),
+                ],
+                if (pedido.isParcial) ...[
+                  const W(6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 5, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDBEAFE),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                          color: const Color(0xFF3B82F6), width: 0.5),
+                    ),
+                    child: Text(
+                      'PARCIAL',
+                      style: AppCss.minimumBold.copyWith(
+                          fontSize: 8, color: const Color(0xFF1E40AF)),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const H(8),
+            Row(
+              children: [
+                Expanded(child: KanbanCardDetailsWidget(pedido)),
+                KanbanCardUsersWidget(pedido, viewMode: viewMode),
+              ],
+            ),
+            // ── Barra de Produção CD ──
+            KanbanCardCDWidget(pedido: pedido),
+            // ── Barra de Armação CDA ──
+            KanbanCardElementosWidget(pedido: pedido),
+            if (viewMode == WidgetViewMode.expanded) ...[
+              KanbanCardProductsWidget(pedido: pedido),
+              Builder(
+                builder: (context) {
+                  final comments =
+                      pedido.comments.where((e) => e.isFixed).toList();
+                  if (comments.isEmpty) return const SizedBox();
+                  return KanbanCardCommentsWidget(comments: comments);
+                },
+              ),
+              KanbanCardVinculadosWidget(pedido: pedido),
+              KanbanCardPatioWidget(pedido: pedido),
+            ],
+          ],
+        ),
       ),
     );
   }
