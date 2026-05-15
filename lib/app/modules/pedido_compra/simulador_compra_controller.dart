@@ -1,6 +1,7 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido_compra/pedido_compra_model.dart';
+import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
@@ -85,15 +86,15 @@ class SimuladorCompraController {
           oldModel.multiploArredondamento.text;
     }
 
-    // sugestaoBase = déficit bruto (nunca muda)
-    // quantidadeSugerida = arredondado pelo múltiplo (editável)
+    // sugestaoBase = déficit arredondado pelo múltiplo (read-only, sempre)
+    // quantidadeSugerida = inicia igual à sugestaoBase (editável)
     final multiplo = newModel.multiploValue;
     for (final item in itens) {
       final base = item.necessidade;
-      item.sugestaoBase = base; // sempre o valor original
       final arredondado = multiplo > 0 && base > 0
           ? _arredondar(base, multiplo)
           : base;
+      item.sugestaoBase = arredondado; // déficit arredondado pelo múltiplo
       item.quantidadeSugerida.text =
           arredondado > 0 ? arredondado.toStringAsFixed(0) : '';
     }
@@ -104,6 +105,11 @@ class SimuladorCompraController {
   /// Toggle incluir/excluir item
   void onToggleItem(SimuladorCompraItem item) {
     item.incluir = !item.incluir;
+    if (!item.incluir) {
+      item.quantidadeSugerida.text = '';
+    } else if (item.quantidadeSugerida.text.isEmpty && item.sugestaoBase > 0) {
+      item.quantidadeSugerida.text = item.sugestaoBase.toStringAsFixed(0);
+    }
     modelStream.update();
   }
 
@@ -153,52 +159,55 @@ class SimuladorCompraController {
   }
 
   /// Aplica formatação de carga redistribuindo quantidades
+  /// Recalcula do zero a partir da sugestaoBase de cada item marcado
   void aplicarFormatacaoCarga() {
     if (model == null) return;
-    final pesoAlvo = model!.pesoAlvoValue;
+    final pedidoMinimo = model!.pesoAlvoValue;
     final multiplo = model!.multiploValue;
-    final itens = model!.itens;
 
-    if (pesoAlvo <= 0) return;
+    if (pedidoMinimo <= 0) return;
 
-    // 1. Necessidades base de cada produto
-    final necessidades = <double>[];
-    for (final item in itens) {
-      necessidades.add(item.necessidade);
+    // 1. Pega os itens selecionados
+    final selecionados = model!.itens.where((i) => i.incluir).toList();
+    if (selecionados.isEmpty) {
+      NotificationService.showNegative(
+        'Nenhum item selecionado',
+        'Marque ao menos um produto para formatar a carga',
+        position: NotificationPosition.bottom,
+      );
+      return;
     }
-    final totalNecessidade = necessidades.fold(0.0, (s, n) => s + n);
 
-    // 2. Se a necessidade já supera o peso-alvo, apenas arredondar
-    if (totalNecessidade >= pesoAlvo) {
-      for (int i = 0; i < itens.length; i++) {
-        final qty = _arredondar(necessidades[i], multiplo);
-        itens[i].quantidadeSugerida.text =
-            qty > 0 ? qty.toStringAsFixed(0) : '';
-        itens[i].incluir = qty > 0;
+    // 2. Soma das sugestões base dos itens marcados
+    final totalBase = selecionados.fold(0.0, (s, i) => s + i.sugestaoBase);
+
+    // 3. Se a sugestão base já atinge o pedido mínimo, apenas arredondar
+    if (totalBase >= pedidoMinimo) {
+      for (final item in selecionados) {
+        final arredondado = multiplo > 0 && item.sugestaoBase > 0
+            ? _arredondar(item.sugestaoBase, multiplo)
+            : item.sugestaoBase;
+        item.quantidadeSugerida.text =
+            arredondado > 0 ? arredondado.toStringAsFixed(0) : '';
       }
       modelStream.update();
       return;
     }
 
-    // 3. Distribuir a sobra proporcionalmente pelo nivelAlvo
-    final sobra = pesoAlvo - totalNecessidade;
-    final somaNiveis = itens.fold(
+    // 4. Distribuir a diferença (pedidoMinimo - totalBase) proporcionalmente
+    final falta = pedidoMinimo - totalBase;
+    final somaNiveis = selecionados.fold(
         0.0, (s, i) => s + (i.nivelAlvo > 0 ? i.nivelAlvo : 1.0));
 
-    final quantidades = <double>[];
-    for (int i = 0; i < itens.length; i++) {
-      final peso =
-          itens[i].nivelAlvo > 0 ? itens[i].nivelAlvo : 1.0;
-      final proporcional = sobra * (peso / somaNiveis);
-      quantidades.add(necessidades[i] + proporcional);
-    }
-
-    // 4. Arredondar cada quantidade
-    for (int i = 0; i < itens.length; i++) {
-      final qty = _arredondar(quantidades[i], multiplo);
-      itens[i].quantidadeSugerida.text =
-          qty > 0 ? qty.toStringAsFixed(0) : '';
-      itens[i].incluir = qty > 0;
+    for (final item in selecionados) {
+      final peso = item.nivelAlvo > 0 ? item.nivelAlvo : 1.0;
+      final adicional = falta * (peso / somaNiveis);
+      final novaQtd = item.sugestaoBase + adicional;
+      final arredondado = multiplo > 0
+          ? _arredondar(novaQtd, multiplo)
+          : novaQtd;
+      item.quantidadeSugerida.text =
+          arredondado > 0 ? arredondado.toStringAsFixed(0) : '';
     }
 
     modelStream.update();
@@ -299,6 +308,9 @@ class SimuladorCompraController {
 
     if (confirma != true) return;
 
+    // Exibe loading
+    showLoadingDialog();
+
     try {
       final usuarioNome = usuarioCtrl.usuario?.nome;
       final grupoId = HashService.get;
@@ -314,6 +326,9 @@ class SimuladorCompraController {
         await BackendClient.pedidosCompra.add(pedido);
       }
 
+      // Fecha loading
+      if (context.mounted) Navigator.pop(context);
+
       NotificationService.showPositive(
         'Pedido gerado',
         '${selecionados.length} item${selecionados.length > 1 ? 's' : ''} · '
@@ -324,6 +339,9 @@ class SimuladorCompraController {
       // Volta para a lista de pedidos
       if (context.mounted) Navigator.pop(context);
     } catch (e) {
+      // Fecha loading em caso de erro
+      if (context.mounted) Navigator.pop(context);
+
       NotificationService.showNegative(
         'Erro ao gerar pedido',
         e.toString(),

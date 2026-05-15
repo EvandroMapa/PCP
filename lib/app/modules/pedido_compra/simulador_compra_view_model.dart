@@ -14,7 +14,7 @@ class SimuladorCompraItem {
   final TextController quantidadeSugerida = TextController();
   bool incluir;
 
-  /// Sugestão base (déficit arredondado, antes do ajuste de carga)
+  /// Sugestão base (déficit arredondado pelo múltiplo padrão, read-only)
   double sugestaoBase = 0;
 
   SimuladorCompraItem({

@@ -30,15 +30,6 @@ class _SimuladorCompraPageState extends State<SimuladorCompraPage> {
             style: TextStyle(color: Colors.white)),
         backgroundColor: AppColors.primaryMain,
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          Tooltip(
-            message: 'Recalcular',
-            child: IconButton(
-              onPressed: () => simuladorCompraCtrl.calcularNecessidades(),
-              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-            ),
-          ),
-        ],
       ),
       body: StreamOut<SimuladorCompraModel?>(
         stream: simuladorCompraCtrl.modelStream.listen,
@@ -90,77 +81,136 @@ class _SimuladorCompraPageState extends State<SimuladorCompraPage> {
   Widget _formatarCargaBar(SimuladorCompraModel model) {
     final ativo = model.formatarCarga;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      color: ativo ? const Color(0xFFF0F9FF) : Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Column(
-        children: [
-          Row(children: [
-            Icon(Icons.local_shipping_outlined,
-                size: 16,
-                color: ativo ? const Color(0xFF2563EB) : Colors.grey[400]),
-            const SizedBox(width: 8),
-            Text('Formatar Carga', style: AppCss.minimumBold.setSize(12)),
-            const Spacer(),
-            // Múltiplo (sempre visível)
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      child: Row(children: [
+        // ─── 1. Fornecido em pacotes de ──────────────────────────
+        _headerSection(
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.inventory_2_outlined, size: 15, color: Colors.grey[500]),
+            const SizedBox(width: 6),
             _compactField(
-              label: 'Múltiplo',
+              label: 'Fornecido em pacotes de',
               controller: model.multiploArredondamento.controller,
-              hint: '0',
+              hint: '1000',
               width: 80,
               onEditingComplete: () => simuladorCompraCtrl.onMultiploAlterado(),
             ),
-            const SizedBox(width: 8),
-            if (ativo && model.totalSugerido > 0) ...[
-              _badgeDelta(model),
-              const SizedBox(width: 8),
-            ],
-            Switch(
-              value: ativo,
-              activeThumbColor: const Color(0xFF2563EB),
-              onChanged: (v) {
-                simuladorCompraCtrl.onToggleFormatarCarga(v);
-                setState(() {});
-              },
-            ),
           ]),
-          if (ativo)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(children: [
-                _compactField(
-                  label: 'Peso-alvo',
-                  controller: model.pesoAlvoCarga.controller,
-                  hint: '30000',
-                  width: 110,
-                ),
-                const SizedBox(width: 10),
-                SizedBox(
-                  height: 32,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6)),
-                    ),
-                    onPressed: () {
-                      simuladorCompraCtrl.aplicarFormatacaoCarga();
-                      setState(() {});
-                    },
-                    icon: const Icon(Icons.refresh_rounded, size: 14),
-                    label: Text('Aplicar',
-                        style: AppCss.minimumBold
-                            .setColor(Colors.white)
-                            .setSize(11)),
+        ),
+
+        const SizedBox(width: 8),
+
+        // ─── 2. Formatar Carga ───────────────────────────────────
+        _headerSection(
+          destaque: ativo,
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.local_shipping_outlined,
+                size: 15,
+                color: ativo ? const Color(0xFF2563EB) : Colors.grey[400]),
+            const SizedBox(width: 6),
+            Text('Formatar Carga',
+                style: AppCss.minimumBold
+                    .setColor(ativo ? const Color(0xFF2563EB) : Colors.grey[500]!)
+                    .setSize(11)),
+            SizedBox(
+              height: 28,
+              child: Switch(
+                value: ativo,
+                activeThumbColor: const Color(0xFF2563EB),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                onChanged: (v) {
+                  simuladorCompraCtrl.onToggleFormatarCarga(v);
+                  setState(() {});
+                },
+              ),
+            ),
+            if (ativo) ...[
+              _compactField(
+                label: 'Pedido Mín.',
+                controller: model.pesoAlvoCarga.controller,
+                hint: '30000',
+                width: 90,
+              ),
+              const SizedBox(width: 6),
+              SizedBox(
+                height: 28,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2563EB),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6)),
                   ),
+                  onPressed: () {
+                    simuladorCompraCtrl.aplicarFormatacaoCarga();
+                    setState(() {});
+                  },
+                  icon: const Icon(Icons.refresh_rounded, size: 13),
+                  label: Text('Aplicar',
+                      style: AppCss.minimumBold
+                          .setColor(Colors.white)
+                          .setSize(10)),
                 ),
+              ),
+            ],
+          ]),
+        ),
+
+        const Spacer(),
+
+        // ─── 3. Resumo do pedido ─────────────────────────────────
+        if (model.totalSugerido > 0) _badgeResumoPedido(model),
+
+        const SizedBox(width: 8),
+
+        // ─── 4. Recalcular sugestão ──────────────────────────────
+        Tooltip(
+          message: 'Restaurar sugestão original',
+          preferBelow: false,
+          waitDuration: const Duration(milliseconds: 300),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () => simuladorCompraCtrl.calcularNecessidades(),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.20)),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.refresh_rounded, size: 15, color: Colors.grey[600]),
+                const SizedBox(width: 5),
+                Text('Restaurar Sugestão',
+                    style: AppCss.minimumBold
+                        .setColor(Colors.grey[600]!)
+                        .setSize(11)),
               ]),
             ),
-        ],
+          ),
+        ),
+      ]),
+    );
+  }
+
+  Widget _headerSection({required Widget child, bool destaque = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: destaque
+            ? const Color(0xFF2563EB).withValues(alpha: 0.06)
+            : Colors.grey.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: destaque
+              ? const Color(0xFF2563EB).withValues(alpha: 0.20)
+              : Colors.grey.withValues(alpha: 0.15),
+        ),
       ),
+      child: child,
     );
   }
 
@@ -214,31 +264,44 @@ class _SimuladorCompraPageState extends State<SimuladorCompraPage> {
     ]);
   }
 
-  Widget _badgeDelta(SimuladorCompraModel model) {
-    final delta = model.deltaCarga;
-    final pesoAlvo = model.pesoAlvoValue;
-    final deltaPct = pesoAlvo > 0 ? (delta / pesoAlvo * 100) : 0.0;
-    final bom = deltaPct.abs() <= 5;
+  Widget _badgeResumoPedido(SimuladorCompraModel model) {
+    final totalPedido = model.totalSugerido;
+    final totalSugestao = model.totalSugestaoBase;
+    final pct = totalSugestao > 0 ? (totalPedido / totalSugestao * 100) : 0.0;
+    final acima = pct > 105;
+    final cor = acima ? Colors.amber[800]! : Colors.green[700]!;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: bom
-            ? Colors.green.withValues(alpha: 0.10)
-            : Colors.amber.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(6),
+        color: acima
+            ? Colors.amber.withValues(alpha: 0.12)
+            : Colors.green.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: acima
+              ? Colors.amber.withValues(alpha: 0.30)
+              : Colors.green.withValues(alpha: 0.25),
+        ),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(bom ? Icons.check_circle : Icons.info_outline,
-            size: 12,
-            color: bom ? Colors.green[700] : Colors.amber[800]),
-        const SizedBox(width: 4),
+        Icon(Icons.shopping_cart_outlined, size: 13, color: cor),
+        const SizedBox(width: 6),
         Text(
-          '${(model.totalSugerido / 1000).toStringAsFixed(2)} t '
-          '(${deltaPct >= 0 ? '+' : ''}${deltaPct.toStringAsFixed(1)}%)',
-          style: AppCss.minimumBold
-              .setColor(bom ? Colors.green[700]! : Colors.amber[800]!)
-              .setSize(10),
+          '${(totalPedido / 1000).toStringAsFixed(1)} t',
+          style: AppCss.minimumBold.setColor(cor).setSize(12),
+        ),
+        const SizedBox(width: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+          decoration: BoxDecoration(
+            color: cor.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            '${pct.toStringAsFixed(0)}% da sugestão',
+            style: AppCss.minimumBold.setColor(cor).setSize(10),
+          ),
         ),
       ]),
     );
@@ -345,9 +408,9 @@ class _SimuladorCompraPageState extends State<SimuladorCompraPage> {
 
     Color bgColor;
     if (item.incluir) {
-      bgColor = Colors.green.withValues(alpha: 0.04);
+      bgColor = Colors.green.withValues(alpha: 0.18);
     } else if (temDeficit) {
-      bgColor = Colors.red.withValues(alpha: 0.03);
+      bgColor = Colors.red.withValues(alpha: 0.14);
     } else {
       bgColor = isEven ? Colors.white : const Color(0xFFFAFBFC);
     }
@@ -357,7 +420,7 @@ class _SimuladorCompraPageState extends State<SimuladorCompraPage> {
       child: Container(
         color: bgColor,
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-        child: Row(children: [
+        child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
           // ☐ Checkbox
           Expanded(
             flex: _f[0],
@@ -477,31 +540,37 @@ class _SimuladorCompraPageState extends State<SimuladorCompraPage> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: SizedBox(
-                height: 36,
+                height: 28,
                 child: TextFormField(
                   controller: item.quantidadeSugerida.controller,
+                  enabled: item.incluir,
+                  onTap: () {
+                    item.quantidadeSugerida.controller.selection =
+                        TextSelection(
+                      baseOffset: 0,
+                      extentOffset:
+                          item.quantidadeSugerida.controller.text.length,
+                    );
+                  },
                   keyboardType: TextInputType.number,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
                   ],
                   textAlign: TextAlign.right,
+                  textAlignVertical: TextAlignVertical.center,
                   style: AppCss.minimumBold
-                      .setColor(item.incluir
-                          ? Colors.green[700]!
-                          : Colors.grey[600]!)
+                      .setColor(item.incluir ? Colors.black87 : Colors.grey[400]!)
                       .setSize(13),
                   decoration: InputDecoration(
                     hintText: '0',
                     hintStyle: AppCss.minimumRegular
                         .setColor(Colors.grey[300]!)
                         .setSize(13),
-                    isDense: true,
+                    isCollapsed: true,
                     contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        const EdgeInsets.fromLTRB(8, 8, 8, 4),
                     filled: true,
-                    fillColor: item.incluir
-                        ? Colors.green.withValues(alpha: 0.06)
-                        : Colors.grey.withValues(alpha: 0.04),
+                    fillColor: Colors.white,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(6),
                       borderSide: BorderSide(
