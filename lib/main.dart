@@ -21,7 +21,7 @@ void main() async {
     // Sobe o app imediatamente — sem esperar queries ...lentas
     runApp(const App());
 
-    // Carrega dados do banco em background e inicia o controller após
+    // Carrega dados do banco em background e inicia o controller após teste
     Service.initAplicationServices()
         .then((_) => appCtrl.onInit())
         .catchError((e) => debugPrint('Init background error: $e'));
