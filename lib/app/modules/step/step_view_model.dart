@@ -30,6 +30,7 @@ class StepCreateModel {
   bool isExibirArmacao = false;
   bool isExibirGraficoCDA = false;
   bool isAcceptWithoutElements = true;
+  bool isAcceptSemEndereco = true;
   bool isConsiderarTotalProducao = true;
   bool isMarcarEntregue = false;
 
@@ -61,6 +62,7 @@ class StepCreateModel {
     isExibirArmacao = etapa.isExibirArmacao;
     isExibirGraficoCDA = etapa.isExibirGraficoCDA;
     isAcceptWithoutElements = etapa.isAcceptWithoutElements;
+    isAcceptSemEndereco = etapa.isAcceptSemEndereco;
     isConsiderarTotalProducao = etapa.isConsiderarTotalProducao;
     isMarcarEntregue = etapa.isMarcarEntregue;
   }
@@ -82,6 +84,7 @@ class StepCreateModel {
         isExibirArmacao: isExibirArmacao,
         isExibirGraficoCDA: isExibirGraficoCDA,
         isAcceptWithoutElements: isAcceptWithoutElements,
+        isAcceptSemEndereco: isAcceptSemEndereco,
         isConsiderarTotalProducao: isConsiderarTotalProducao,
         isMarcarEntregue: isMarcarEntregue,
       );

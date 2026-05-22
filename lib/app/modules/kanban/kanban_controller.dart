@@ -236,6 +236,23 @@ class StepController {
         return false;
       }
 
+      // Regra de Aceite sem Endereço (todos os tipos de pedido)
+      if (!step.isAcceptSemEndereco) {
+        final endereco = pedido.obra.endereco;
+        final temCoordenadas =
+            endereco != null && (endereco.lat != 0 || endereco.lon != 0);
+        final temEnderecoValidado =
+            endereco != null && endereco.localidade.isNotEmpty;
+
+        if (!temCoordenadas && !temEnderecoValidado) {
+          NotificationService.showNegative(
+            'Endereço obrigatório',
+            'Esta etapa exige endereço ou coordenadas na obra do pedido.',
+          );
+          return false;
+        }
+      }
+
       final isStepAvailable =
           step.fromSteps.map((e) => e.id).contains(pedido.step.id);
       if (!isStepAvailable) {

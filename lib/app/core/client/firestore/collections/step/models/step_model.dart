@@ -23,6 +23,7 @@ class StepModel {
   bool isExibirArmacao = false;
   bool isExibirGraficoCDA = false;
   bool isAcceptWithoutElements = true;
+  bool isAcceptSemEndereco = true;
   bool isConsiderarTotalProducao = true;
   bool isMarcarEntregue = false;
 
@@ -43,6 +44,7 @@ class StepModel {
     isExibirArmacao: false,
     isExibirGraficoCDA: false,
     isAcceptWithoutElements: true,
+    isAcceptSemEndereco: true,
     isConsiderarTotalProducao: true,
     isMarcarEntregue: false,
   );
@@ -74,6 +76,7 @@ class StepModel {
     required this.isExibirArmacao,
     required this.isExibirGraficoCDA,
     required this.isAcceptWithoutElements,
+    required this.isAcceptSemEndereco,
     required this.isConsiderarTotalProducao,
     required this.isMarcarEntregue,
   });
@@ -96,6 +99,7 @@ class StepModel {
     bool? isExibirArmacao,
     bool? isExibirGraficoCDA,
     bool? isAcceptWithoutElements,
+    bool? isAcceptSemEndereco,
     bool? isConsiderarTotalProducao,
     bool? isMarcarEntregue,
   }) {
@@ -118,6 +122,8 @@ class StepModel {
       isExibirGraficoCDA: isExibirGraficoCDA ?? this.isExibirGraficoCDA,
       isAcceptWithoutElements:
           isAcceptWithoutElements ?? this.isAcceptWithoutElements,
+      isAcceptSemEndereco:
+          isAcceptSemEndereco ?? this.isAcceptSemEndereco,
       isConsiderarTotalProducao:
           isConsiderarTotalProducao ?? this.isConsiderarTotalProducao,
       isMarcarEntregue: isMarcarEntregue ?? this.isMarcarEntregue,
@@ -142,6 +148,7 @@ class StepModel {
       'isExibirArmacao': isExibirArmacao,
       'isExibirGraficoCDA': isExibirGraficoCDA,
       'isAcceptWithoutElements': isAcceptWithoutElements,
+      'isAcceptSemEndereco': isAcceptSemEndereco,
       'isConsiderarTotalProducao': isConsiderarTotalProducao,
       'isMarcarEntregue': isMarcarEntregue,
     };
@@ -181,6 +188,7 @@ class StepModel {
         isExibirArmacao: map['isExibirArmacao'] ?? false,
         isExibirGraficoCDA: map['isExibirGraficoCDA'] ?? false,
         isAcceptWithoutElements: map['isAcceptWithoutElements'] ?? true,
+        isAcceptSemEndereco: map['isAcceptSemEndereco'] ?? true,
         isConsiderarTotalProducao: map['isConsiderarTotalProducao'] ?? true,
         isMarcarEntregue: map['isMarcarEntregue'] ?? false,
       );
@@ -214,6 +222,7 @@ class StepModel {
       isExibirGraficoCDA: map['isExibirGraficoCDA'] ?? false,
       isAcceptWithoutElements: map['isAcceptWithoutElements'] ?? 
           !(map['isBlockMoveWithoutElements'] ?? false),
+      isAcceptSemEndereco: map['isAcceptSemEndereco'] ?? true,
       isConsiderarTotalProducao: map['isConsiderarTotalProducao'] ?? true,
       isMarcarEntregue: map['isMarcarEntregue'] ?? false,
     );
@@ -241,6 +250,7 @@ class StepModel {
       isExibirGraficoCDA: map['exibir_grafico_cda'] ?? false,
       isAcceptWithoutElements: map['aceita_sem_elementos'] ??
           !(map['bloqueia_mover_sem_elementos'] ?? false),
+      isAcceptSemEndereco: map['aceita_sem_endereco'] ?? true,
       isConsiderarTotalProducao: map['is_considerar_total_producao'] ?? true,
       isMarcarEntregue: map['is_marcar_entregue'] ?? false,
     );
@@ -293,6 +303,7 @@ class StepModel {
       'exibir_armacao': isExibirArmacao,
       'exibir_grafico_cda': isExibirGraficoCDA,
       'aceita_sem_elementos': isAcceptWithoutElements,
+      'aceita_sem_endereco': isAcceptSemEndereco,
       'is_considerar_total_producao': isConsiderarTotalProducao,
       'is_marcar_entregue': isMarcarEntregue,
     };

@@ -64,7 +64,7 @@ class _StepCreatePageState extends State<StepCreatePage> {
       '|${form.isArchivedAvailable}|${form.isPermiteProducao}'
       '|${form.considerarConsumoRelatorioPedidos}'
       '|${form.isExibirArmacao}|${form.isExibirGraficoCDA}'
-      '|${form.isAcceptWithoutElements}|${form.isConsiderarTotalProducao}'
+      '|${form.isAcceptWithoutElements}|${form.isAcceptSemEndereco}|${form.isConsiderarTotalProducao}'
       '|${form.isMarcarEntregue}';
 
   @override
@@ -531,6 +531,18 @@ class _StepCreatePageState extends State<StepCreatePage> {
             value: form.isAcceptWithoutElements,
             onChanged: (_) {
               form.isAcceptWithoutElements = !form.isAcceptWithoutElements;
+              stepCtrl.formStream.update();
+            },
+          ),
+          const Divider(height: 28),
+          _switchOption(
+            icon: Icons.location_off_outlined,
+            label: 'Aceitar pedidos sem endereço na obra',
+            description:
+                'Pedidos cuja obra não tenha endereço ou coordenadas cadastrados só podem ENTRAR nesta etapa se esta opção estiver ativa.',
+            value: form.isAcceptSemEndereco,
+            onChanged: (_) {
+              form.isAcceptSemEndereco = !form.isAcceptSemEndereco;
               stepCtrl.formStream.update();
             },
           ),
