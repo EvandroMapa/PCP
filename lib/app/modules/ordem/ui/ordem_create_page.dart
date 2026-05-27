@@ -373,13 +373,25 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(children: [
-                      Text(produto.pedido.localizador, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.grey[800])),
+                      Text(produto.pedido.localizador, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.grey[800])),
                       const SizedBox(width: 6),
                       _tipoBadge(produto),
                     ]),
+                    if (produto.pedido.deliveryAt != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Row(children: [
+                          Icon(Icons.event_outlined, size: 13, color: Colors.orange[600]),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Entrega: ${produto.pedido.deliveryAt.text()}',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.orange[700]),
+                          ),
+                        ]),
+                      ),
                     Text(
                       '${produto.cliente.nome} · ${produto.obra.descricao}',
-                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                      style: TextStyle(fontSize: 12.5, color: Colors.grey[500]),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
@@ -393,7 +405,7 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
                   color: AppColors.primaryMain.withValues(alpha: 0.07),
                   borderRadius: BorderRadius.circular(5),
                 ),
-                child: Text(produto.qtde.toKg(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primaryMain)),
+                child: Text(produto.qtde.toKg(), style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.primaryMain)),
               ),
               const SizedBox(width: 6),
               // Botão remover
@@ -457,11 +469,11 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
           Padding(
             padding: const EdgeInsets.fromLTRB(10, 6, 8, 4),
             child: Row(children: [
-              Icon(Icons.search_rounded, size: 16, color: Colors.grey[350]),
-              const SizedBox(width: 6),
+              Icon(Icons.search_rounded, size: 20, color: AppColors.primaryMain.withValues(alpha: 0.5)),
+              const SizedBox(width: 8),
               Expanded(
                 child: SizedBox(
-                  height: 32,
+                  height: 38,
                   child: TextField(
                     controller: form.localizador.controller,
                     onChanged: (_) => ordemCtrl.formStream.update(),
@@ -471,12 +483,12 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
                         extentOffset: form.localizador.controller.value.text.length,
                       );
                     }),
-                    style: const TextStyle(fontSize: 12),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.grey[800]),
                     decoration: InputDecoration(
                       hintText: 'Buscar por localizador...',
-                      hintStyle: TextStyle(fontSize: 12, color: Colors.grey[350]),
+                      hintStyle: TextStyle(fontSize: 15, fontWeight: FontWeight.w400, color: Colors.grey[350]),
                       border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
                       isDense: true,
                     ),
                   ),
@@ -590,31 +602,37 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(children: [
-                        Text(produto.pedido.localizador, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey[700])),
+                        Text(produto.pedido.localizador, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.grey[700])),
                         const SizedBox(width: 6),
                         _tipoBadge(produto),
                       ]),
+                      if (produto.pedido.deliveryAt != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Row(children: [
+                            Icon(Icons.event_outlined, size: 13, color: Colors.orange[600]),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Entrega: ${produto.pedido.deliveryAt.text()}',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.orange[700]),
+                            ),
+                          ]),
+                        ),
                       Row(children: [
                         Expanded(
                           child: Text(
                             '${produto.cliente.nome} · ${produto.obra.descricao}',
-                            style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+                            style: TextStyle(fontSize: 12.5, color: Colors.grey[400]),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (produto.pedido.deliveryAt != null) ...[
-                          const SizedBox(width: 4),
-                          Icon(Icons.event_outlined, size: 10, color: Colors.grey[350]),
-                          const SizedBox(width: 2),
-                          Text(produto.pedido.deliveryAt.text(), style: TextStyle(fontSize: 9, color: Colors.grey[400])),
-                        ],
                       ]),
                     ],
                   ),
                 ),
                 const SizedBox(width: 6),
                 // Peso
-                Text(produto.qtde.toKg(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.grey[500])),
+                Text(produto.qtde.toKg(), style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Colors.grey[500])),
                 const SizedBox(width: 6),
                 // Ícone adicionar
                 Icon(Icons.add_circle_outline_rounded, size: 18, color: AppColors.primaryMain.withValues(alpha: 0.5)),
