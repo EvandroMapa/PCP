@@ -44,6 +44,7 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
   bool _exportandoEtiqueta = false;
   bool _executando = false;
   bool _modificado = false;
+  bool _inicializando = false;
   List<ElementoModel>? _elementosOrdem;
   final TextEditingController _descricaoCtrl = TextEditingController();
 
@@ -96,6 +97,7 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
 
     // Encontrar e selecionar a ordem
     setState(() => _carregando = true);
+    _inicializando = true;
     try {
       final ordens = FirestoreClient.ordens.ordensNaoArquivadas
           .where((o) => o.id == plano.ordemId)
@@ -103,11 +105,13 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
       if (ordens.isNotEmpty) {
         _ordemSelecionada = ordens.first;
         await _carregarElementosOrdem(_ordemSelecionada!);
-        // Auto-gerar resultado para edição (fire-and-forget: _gerando controla o estado)
-        _gerarPlanoCorte(); // ignore: discarded_futures
+        // Auto-gerar resultado para edição — aguarda para garantir que
+        // _modificado não seja marcado true durante a restauração
+        await _gerarPlanoCorte();
       }
     } finally {
       setState(() => _carregando = false);
+      _inicializando = false;
     }
     _modificado = false;
   }
@@ -1479,7 +1483,7 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
         demandas: demandas,
         estoque: estoque,
       ));
-      if (mounted) setState(() { _resultado = resultado; _modificado = true; });
+      if (mounted) setState(() { _resultado = resultado; if (!_inicializando) _modificado = true; });
     } finally {
       if (mounted) setState(() => _gerando = false);
     }

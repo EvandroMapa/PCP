@@ -72,3 +72,62 @@ class EstoqueRelatorioFiltroModel {
     produtoId = null;
   }
 }
+
+/// Filtro para a seção de Movimentação de Estoque (multi-bitola + período)
+class EstoqueMovimentacaoFiltroModel {
+  /// IDs dos produtos (bitolas) selecionados. Lista vazia = nenhum filtrado.
+  List<String> produtoIds = [];
+
+  /// Padrão: primeiro dia do mês corrente
+  DateTime dataInicio = DateTime(DateTime.now().year, DateTime.now().month, 1);
+  DateTime? dataFim;
+
+  bool get temFiltro =>
+      produtoIds.isNotEmpty || dataFim != null;
+
+  void limpar() {
+    produtoIds.clear();
+    dataInicio = DateTime(DateTime.now().year, DateTime.now().month, 1);
+    dataFim = null;
+  }
+
+  bool contemProduto(String id) => produtoIds.contains(id);
+
+  void toggleProduto(String id) {
+    if (produtoIds.contains(id)) {
+      produtoIds.remove(id);
+    } else {
+      produtoIds.add(id);
+    }
+  }
+}
+
+/// Linha de movimentação com saldo acumulado — usada na seção de extrato
+class EstoqueLinhaMovimentacao {
+  final String produtoId;
+  final DateTime dataHora;
+  final String tipoLabel;
+  final String tipoValue;
+  final double quantidade;
+  final double saldoAcumulado;
+  final String? observacao;
+  final String? ordemId;
+  final String? usuarioNome;
+
+  /// true = entrada (compra, implantação, estorno positivo)
+  /// false = saída (baixa produção, estorno negativo)
+  final bool isEntrada;
+
+  const EstoqueLinhaMovimentacao({
+    required this.produtoId,
+    required this.dataHora,
+    required this.tipoLabel,
+    required this.tipoValue,
+    required this.quantidade,
+    required this.saldoAcumulado,
+    this.observacao,
+    this.ordemId,
+    this.usuarioNome,
+    required this.isEntrada,
+  });
+}

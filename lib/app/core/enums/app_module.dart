@@ -14,6 +14,7 @@ import 'package:aco_plus/app/modules/relatorio/ui/plano_corte/planos_corte_page.
 import 'package:aco_plus/app/modules/ponta/ui/pontas_page.dart';
 import 'package:aco_plus/app/modules/step/ui/steps_page.dart';
 import 'package:aco_plus/app/modules/tag/ui/tags_page.dart';
+import 'package:aco_plus/app/modules/estoque/ui/estoque_movimentacao_page.dart';
 import 'package:aco_plus/app/modules/estoque/ui/estoque_saldo_page.dart';
 import 'package:aco_plus/app/modules/pedido_compra/ui/pedido_compra_page.dart';
 
@@ -40,6 +41,7 @@ enum AppModule {
   pontas,
   armacao,
   estoqueSaldo,
+  estoqueMovimentacao,
   pedidoCompra,
 }
 
@@ -80,6 +82,8 @@ extension AppModuleExt on AppModule {
         return const ArmacaoPage();
       case AppModule.estoqueSaldo:
         return const EstoqueSaldoPage();
+      case AppModule.estoqueMovimentacao:
+        return const EstoqueMovimentacaoPage();
       case AppModule.pedidoCompra:
         return const PedidoCompraPage();
     }
@@ -133,6 +137,8 @@ extension AppModuleExt on AppModule {
         return Icons.iron_rounded;
       case AppModule.estoqueSaldo:
         return Icons.inventory_2_outlined;
+      case AppModule.estoqueMovimentacao:
+        return Icons.swap_vert_outlined;
       case AppModule.pedidoCompra:
         return Icons.shopping_cart_outlined;
     }
@@ -174,6 +180,8 @@ extension AppModuleExt on AppModule {
         return 'Armação';
       case AppModule.estoqueSaldo:
         return 'Painel';
+      case AppModule.estoqueMovimentacao:
+        return 'Movimentação de Estoque';
       case AppModule.pedidoCompra:
         return 'Pedidos de Compra';
     }

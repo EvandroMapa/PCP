@@ -7,6 +7,7 @@ import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:aco_plus/app/modules/estoque/estoque_view_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:overlay_support/overlay_support.dart';
@@ -32,12 +33,19 @@ class EstoqueController {
   EstoqueRelatorioFiltroModel get relatorioFiltro =>
       relatorioFiltroStream.value;
 
+  final AppStream<EstoqueMovimentacaoFiltroModel> movimentacaoFiltroStream =
+      AppStream<EstoqueMovimentacaoFiltroModel>.seed(
+          EstoqueMovimentacaoFiltroModel());
+  EstoqueMovimentacaoFiltroModel get movimentacaoFiltro =>
+      movimentacaoFiltroStream.value;
+
   void onInit() {
     baseCtrl.appBarActionsStream
         .add(<Widget>[]); // limpa botões do módulo anterior
     utilsStream.add(EstoqueUtils());
     compraStream.add(EstoqueCompraCreateModel());
     relatorioFiltroStream.add(EstoqueRelatorioFiltroModel());
+    movimentacaoFiltroStream.add(EstoqueMovimentacaoFiltroModel());
     BackendClient.estoques.fetch();
     BackendClient.estoquesMovimentacao.fetch();
   }
@@ -50,6 +58,58 @@ class EstoqueController {
             e.produto.nome.toCompare.contains(search.toCompare) ||
             e.produto.descricao.toCompare.contains(search.toCompare))
         .toList();
+  }
+
+  /// Retorna o extrato cronológico de um produto no período do filtro de movimentação.
+  /// Inclui o saldo inicial calculado a partir das movimentações anteriores ao período.
+  (double saldoInicial, List<EstoqueLinhaMovimentacao> linhas)
+      getExtratoPorProduto(ProdutoModel produto) {
+    final filtro = movimentacaoFiltro;
+    final todasMovs = BackendClient.estoquesMovimentacao.data
+        .where((e) => e.produtoId == produto.id)
+        .toList()
+      ..sort((a, b) => a.dataHora.compareTo(b.dataHora));
+
+    // Saldo inicial = soma das movimentações anteriores ao período
+    final anteriores = todasMovs.where(
+      (e) => e.dataHora
+          .isBefore(filtro.dataInicio.copyWith(hour: 0, minute: 0, second: 0)),
+    );
+    final double saldoInicial =
+        anteriores.fold(0.0, (s, e) => s + e.quantidade);
+
+    // Movimentações dentro do período
+    var movsPeriodo = todasMovs
+        .where((e) => !e.dataHora.isBefore(
+            filtro.dataInicio.copyWith(hour: 0, minute: 0, second: 0)))
+        .toList();
+    if (filtro.dataFim != null) {
+      movsPeriodo = movsPeriodo
+          .where((e) => e.dataHora.isBefore(
+              filtro.dataFim!.copyWith(hour: 23, minute: 59, second: 59)))
+          .toList();
+    }
+
+    // Monta linhas com saldo acumulado
+    double saldo = saldoInicial;
+    final linhas = <EstoqueLinhaMovimentacao>[];
+    for (final mov in movsPeriodo) {
+      saldo += mov.quantidade;
+      linhas.add(EstoqueLinhaMovimentacao(
+        produtoId: mov.produtoId,
+        dataHora: mov.dataHora,
+        tipoLabel: mov.tipo.label,
+        tipoValue: mov.tipo.value,
+        quantidade: mov.quantidade,
+        saldoAcumulado: saldo,
+        observacao: mov.observacao,
+        ordemId: mov.ordemId,
+        usuarioNome: mov.usuarioNome,
+        isEntrada: mov.tipo.isEntrada,
+      ));
+    }
+
+    return (saldoInicial, linhas);
   }
 
   List<EstoqueMovimentacaoModel> getMovimentacoesFiltradas() {
