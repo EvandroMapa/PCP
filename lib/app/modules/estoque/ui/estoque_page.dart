@@ -3,8 +3,10 @@ import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/estoque/estoque_controller.dart';
 import 'package:aco_plus/app/modules/estoque/estoque_view_model.dart';
-import 'package:aco_plus/app/modules/estoque/ui/estoque_compra_section.dart';
+import 'package:aco_plus/app/modules/estoque/ui/estoque_grafico_section.dart';
+import 'package:aco_plus/app/modules/estoque/ui/estoque_movimentacao_section.dart';
 import 'package:aco_plus/app/modules/estoque/ui/estoque_saldo_section.dart';
+import 'package:aco_plus/app/modules/relatorio/ui/estoque/relatorios_estoque_page.dart';
 import 'package:flutter/material.dart';
 
 class EstoquePage extends StatefulWidget {
@@ -25,8 +27,10 @@ class _EstoquePageState extends State<EstoquePage> {
   }
 
   final _menuItems = const [
-    (Icons.inventory_2_outlined, 'Saldos'),
-    (Icons.add_shopping_cart_outlined, 'Compras'),
+    (Icons.inventory_2_outlined, 'Saldo'),
+    (Icons.analytics_outlined, 'Posição'),
+    (Icons.swap_vert_outlined, 'Movimentação'),
+    (Icons.bar_chart_rounded, 'Gráfico'),
   ];
 
   @override
@@ -108,7 +112,11 @@ class _EstoquePageState extends State<EstoquePage> {
       case 0:
         return const EstoqueSaldoSection();
       case 1:
-        return const EstoqueCompraSection();
+        return const RelatoriosEstoquePage();
+      case 2:
+        return const EstoqueMovimentacaoSection();
+      case 3:
+        return const EstoqueGraficoSection();
       default:
         return const EstoqueSaldoSection();
     }

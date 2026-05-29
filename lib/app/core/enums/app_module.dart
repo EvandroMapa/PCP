@@ -15,7 +15,7 @@ import 'package:aco_plus/app/modules/ponta/ui/pontas_page.dart';
 import 'package:aco_plus/app/modules/step/ui/steps_page.dart';
 import 'package:aco_plus/app/modules/tag/ui/tags_page.dart';
 import 'package:aco_plus/app/modules/estoque/ui/estoque_movimentacao_page.dart';
-import 'package:aco_plus/app/modules/estoque/ui/estoque_saldo_page.dart';
+import 'package:aco_plus/app/modules/estoque/ui/estoque_page.dart';
 import 'package:aco_plus/app/modules/pedido_compra/ui/pedido_compra_page.dart';
 
 
@@ -81,7 +81,7 @@ extension AppModuleExt on AppModule {
       case AppModule.armacao:
         return const ArmacaoPage();
       case AppModule.estoqueSaldo:
-        return const EstoqueSaldoPage();
+        return const EstoquePage();
       case AppModule.estoqueMovimentacao:
         return const EstoqueMovimentacaoPage();
       case AppModule.pedidoCompra:
@@ -157,7 +157,7 @@ extension AppModuleExt on AppModule {
       case AppModule.ordemRelatorio:
         return 'Ordens de Produção';
       case AppModule.pedidoRelatorio:
-        return 'Consumo';
+        return 'Consumo Previsto';
       case AppModule.estoqueRelatorio:
         return 'Posição de Estoque';
       case AppModule.planoCorte:

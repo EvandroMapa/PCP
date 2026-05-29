@@ -20,6 +20,17 @@ class EstoqueMovimentacaoSection extends StatefulWidget {
 
 class _EstoqueMovimentacaoSectionState
     extends State<EstoqueMovimentacaoSection> {
+  /// Estado local para feedback visual imediato — não depende do stream
+  String? _chipId;
+  bool _carregando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Restaura a bitola selecionada ao voltar para a aba
+    final ids = estoqueCtrl.movimentacaoFiltro.produtoIds;
+    if (ids.isNotEmpty) _chipId = ids.first;
+  }
   @override
   Widget build(BuildContext context) {
     return StreamOut<EstoqueMovimentacaoFiltroModel>(
@@ -72,6 +83,7 @@ class _EstoqueMovimentacaoSectionState
             TextButton.icon(
               onPressed: () {
                 filtro.limpar();
+                setState(() => _chipId = null);
                 estoqueCtrl.movimentacaoFiltroStream.update();
               },
               icon: const Icon(Icons.clear, size: 14),
@@ -91,9 +103,6 @@ class _EstoqueMovimentacaoSectionState
     final produtos = BackendClient.produtos.data
       ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
 
-    final todosSelected =
-        filtro.produtoIds.length == produtos.length && produtos.isNotEmpty;
-
     return Container(
       color: const Color(0xFFFAFBFC),
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
@@ -105,45 +114,10 @@ class _EstoqueMovimentacaoSectionState
               Icon(Icons.straighten_outlined,
                   size: 14, color: Colors.grey[500]),
               const SizedBox(width: 6),
-              Text('Bitolas',
+              Text('Selecione a bitola',
                   style: AppCss.minimumBold
                       .setColor(Colors.grey[600]!)
                       .setSize(12)),
-              const Spacer(),
-              GestureDetector(
-                onTap: () {
-                  if (todosSelected) {
-                    filtro.produtoIds.clear();
-                  } else {
-                    filtro.produtoIds =
-                        produtos.map((p) => p.id).toList();
-                  }
-                  estoqueCtrl.movimentacaoFiltroStream.update();
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: todosSelected
-                        ? AppColors.primaryMain.withValues(alpha: 0.10)
-                        : Colors.grey.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: todosSelected
-                          ? AppColors.primaryMain.withValues(alpha: 0.30)
-                          : Colors.grey.withValues(alpha: 0.20),
-                    ),
-                  ),
-                  child: Text(
-                    todosSelected ? 'Desmarcar todas' : 'Selecionar todas',
-                    style: AppCss.minimumBold
-                        .setColor(todosSelected
-                            ? AppColors.primaryMain
-                            : Colors.grey[600]!)
-                        .setSize(11),
-                  ),
-                ),
-              ),
             ],
           ),
           const SizedBox(height: 8),
@@ -151,11 +125,28 @@ class _EstoqueMovimentacaoSectionState
             spacing: 6,
             runSpacing: 6,
             children: produtos.map((p) {
-              final selecionado = filtro.contemProduto(p.id);
+              final selecionado = _chipId == p.id;
               return GestureDetector(
                 onTap: () {
-                  filtro.toggleProduto(p.id);
-                  estoqueCtrl.movimentacaoFiltroStream.update();
+                  final novoId = selecionado ? null : p.id;
+                  // Frame 1: chip visual imediato (sem computação pesada)
+                  setState(() {
+                    _chipId = novoId;
+                    _carregando = novoId != null;
+                  });
+                  // Frame 2: atualiza filtro + dispara cálculo do extrato
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+                    if (novoId != null) {
+                      filtro.produtoIds = [novoId];
+                    } else {
+                      filtro.produtoIds.clear();
+                    }
+                    estoqueCtrl.movimentacaoFiltroStream.update();
+                  });
+                  Future.delayed(const Duration(milliseconds: 500), () {
+                    if (mounted) setState(() => _carregando = false);
+                  });
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
@@ -182,7 +173,7 @@ class _EstoqueMovimentacaoSectionState
                         const SizedBox(width: 4),
                       ],
                       Text(
-                        '${p.nome} ${p.descricaoReplaced}mm',
+                        p.nome,
                         style: AppCss.minimumBold
                             .setSize(11)
                             .setColor(selecionado
@@ -207,7 +198,7 @@ class _EstoqueMovimentacaoSectionState
   Widget _filtrosPeriodo(EstoqueMovimentacaoFiltroModel filtro) {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Row(
         children: [
           Icon(Icons.date_range_outlined, size: 14, color: Colors.grey[500]),
@@ -216,74 +207,89 @@ class _EstoqueMovimentacaoSectionState
               style: AppCss.minimumBold
                   .setColor(Colors.grey[600]!)
                   .setSize(12)),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _botaoData(
-              label: filtro.dataInicio.text(),
-              selecionado: true,
-              onTap: () async {
-                final d = await showDatePicker(
-                  context: context,
-                  initialDate: filtro.dataInicio,
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime.now(),
-                );
-                if (d != null) {
-                  filtro.dataInicio = d;
-                  estoqueCtrl.movimentacaoFiltroStream.update();
-                }
-              },
-            ),
-          ),
           const SizedBox(width: 8),
-          Expanded(
-            child: _botaoData(
-              label: filtro.dataFim != null
-                  ? filtro.dataFim!.text()
-                  : 'Data fim',
-              selecionado: filtro.dataFim != null,
-              onTap: () async {
-                final d = await showDatePicker(
-                  context: context,
-                  initialDate: filtro.dataFim ?? DateTime.now(),
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime.now(),
-                );
-                if (d != null) {
-                  filtro.dataFim = d;
-                  estoqueCtrl.movimentacaoFiltroStream.update();
-                }
-              },
-            ),
+          _chipData(
+            label: filtro.dataInicio.text(),
+            onTap: () async {
+              final d = await showDatePicker(
+                context: context,
+                initialDate: filtro.dataInicio,
+                firstDate: DateTime(2020),
+                lastDate: DateTime.now(),
+              );
+              if (d != null) {
+                filtro.dataInicio = d;
+                estoqueCtrl.movimentacaoFiltroStream.update();
+              }
+            },
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Text('→',
+                style: AppCss.minimumRegular
+                    .setColor(Colors.grey[400]!)
+                    .setSize(12)),
+          ),
+          _chipData(
+            label: filtro.dataFim != null ? filtro.dataFim!.text() : 'hoje',
+            faded: filtro.dataFim == null,
+            onTap: () async {
+              final d = await showDatePicker(
+                context: context,
+                initialDate: filtro.dataFim ?? DateTime.now(),
+                firstDate: DateTime(2020),
+                lastDate: DateTime.now(),
+              );
+              if (d != null) {
+                filtro.dataFim = d;
+                estoqueCtrl.movimentacaoFiltroStream.update();
+              }
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _botaoData({
+  Widget _chipData({
     required String label,
     required VoidCallback onTap,
-    bool selecionado = false,
+    bool faded = false,
   }) {
-    return OutlinedButton.icon(
-      onPressed: onTap,
-      icon: Icon(Icons.calendar_today_outlined,
-          size: 13,
-          color: selecionado ? AppColors.primaryMain : Colors.grey[500]),
-      label: Text(label,
-          style: TextStyle(
-              fontSize: 12,
-              color: selecionado ? AppColors.primaryMain : Colors.grey[600])),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        side: BorderSide(
-          color: selecionado
-              ? AppColors.primaryMain.withValues(alpha: 0.40)
-              : const Color(0xFFE2E8F0),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: faded
+              ? Colors.grey.withValues(alpha: 0.06)
+              : AppColors.primaryMain.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: faded
+                ? Colors.grey.withValues(alpha: 0.20)
+                : AppColors.primaryMain.withValues(alpha: 0.25),
+          ),
         ),
-        backgroundColor:
-            selecionado ? AppColors.primaryMain.withValues(alpha: 0.05) : null,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.calendar_today_outlined,
+              size: 11,
+              color: faded ? Colors.grey[400] : AppColors.primaryMain,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: AppCss.minimumBold
+                  .setSize(11)
+                  .setColor(faded
+                      ? Colors.grey[500]!
+                      : AppColors.primaryMain),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -293,14 +299,41 @@ class _EstoqueMovimentacaoSectionState
   // ─────────────────────────────────────────────────────────────────────────
 
   Widget _corpo(EstoqueMovimentacaoFiltroModel filtro) {
-    if (filtro.produtoIds.isEmpty) {
+    // Usa _chipId (estado local) para resposta imediata ao clique
+    if (_chipId == null) {
       return _estadoVazio(
         icon: Icons.touch_app_outlined,
-        titulo: 'Selecione ao menos uma bitola',
-        subtitulo: 'Escolha uma ou mais bitolas acima para visualizar o extrato',
+        titulo: 'Selecione uma bitola',
+        subtitulo: 'Escolha uma bitola acima para visualizar o extrato',
       );
     }
 
+    // filtro.produtoIds pode estar vazio por 1 frame (atualização diferida)
+    if (filtro.produtoIds.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+
+    return Column(
+      children: [
+        // Barra de carregamento visível enquanto o extrato processa
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          height: _carregando ? 2 : 0,
+          child: _carregando
+              ? LinearProgressIndicator(
+                  backgroundColor: Colors.transparent,
+                  color: AppColors.primaryMain,
+                )
+              : const SizedBox.shrink(),
+        ),
+        Expanded(child: _listaMovimentacoes(filtro)),
+      ],
+    );
+  }
+
+  Widget _listaMovimentacoes(EstoqueMovimentacaoFiltroModel filtro) {
     final produtos = BackendClient.produtos.data
         .where((p) => filtro.produtoIds.contains(p.id))
         .toList()
@@ -347,54 +380,7 @@ class _EstoqueMovimentacaoSectionState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Header do produto ──────────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-            decoration: BoxDecoration(
-              color: AppColors.primaryMain.withValues(alpha: 0.04),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
-              border: Border(
-                bottom: BorderSide(
-                    color: AppColors.primaryMain.withValues(alpha: 0.12)),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryMain.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.straighten_outlined,
-                      size: 17, color: AppColors.primaryMain),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(produto.nome,
-                          style:
-                              AppCss.minimumBold.setSize(13)),
-                      Text(
-                        '${produto.descricaoReplaced}mm · ${produto.massaFinal} kg/m',
-                        style: AppCss.minimumRegular
-                            .setColor(Colors.grey[500]!)
-                            .setSize(11),
-                      ),
-                    ],
-                  ),
-                ),
-                Text('${linhas.length} evento${linhas.length != 1 ? 's' : ''}',
-                    style: AppCss.minimumRegular
-                        .setColor(Colors.grey[400]!)
-                        .setSize(11)),
-              ],
-            ),
-          ),
+
 
           // ── KPIs resumo ────────────────────────────────────────────────
           Padding(
