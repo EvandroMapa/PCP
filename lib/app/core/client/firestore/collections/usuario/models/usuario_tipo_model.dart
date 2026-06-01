@@ -3,6 +3,7 @@ class UsuarioTipoModel {
   final String nome;
   final bool isPermitirElementos;
   final bool isPermitirEditarElementos;
+  final bool isPermitirExcluirPedido;
   final bool isOperador;
   final bool isArmador;
   final DateTime createdAt;
@@ -12,6 +13,7 @@ class UsuarioTipoModel {
     required this.nome,
     required this.isPermitirElementos,
     required this.isPermitirEditarElementos,
+    required this.isPermitirExcluirPedido,
     required this.isOperador,
     required this.isArmador,
     required this.createdAt,
@@ -22,6 +24,7 @@ class UsuarioTipoModel {
         nome: '',
         isPermitirElementos: false,
         isPermitirEditarElementos: false,
+        isPermitirExcluirPedido: false,
         isOperador: false,
         isArmador: false,
         createdAt: DateTime.now(),
@@ -33,6 +36,7 @@ class UsuarioTipoModel {
       nome: map['nome'] ?? '',
       isPermitirElementos: map['permitir_elementos'] ?? false,
       isPermitirEditarElementos: map['permitir_editar_elementos'] ?? false,
+      isPermitirExcluirPedido: map['permitir_excluir_pedido'] ?? false,
       isOperador: map['is_operador'] ?? false,
       isArmador: map['is_armador'] ?? false,
       createdAt: map['created_at'] != null
@@ -46,6 +50,7 @@ class UsuarioTipoModel {
       'nome': nome,
       'permitir_elementos': isPermitirElementos,
       'permitir_editar_elementos': isPermitirEditarElementos,
+      'permitir_excluir_pedido': isPermitirExcluirPedido,
       'is_operador': isOperador,
       'is_armador': isArmador,
     };
@@ -57,7 +62,7 @@ class UsuarioTipoModel {
 
   @override
   String toString() {
-    return 'UsuarioTipoModel(id: $id, nome: $nome, isPermitirElementos: $isPermitirElementos, isPermitirEditarElementos: $isPermitirEditarElementos, isOperador: $isOperador, isArmador: $isArmador)';
+    return 'UsuarioTipoModel(id: $id, nome: $nome, isPermitirElementos: $isPermitirElementos, isPermitirEditarElementos: $isPermitirEditarElementos, isPermitirExcluirPedido: $isPermitirExcluirPedido, isOperador: $isOperador, isArmador: $isArmador)';
   }
 
   @override

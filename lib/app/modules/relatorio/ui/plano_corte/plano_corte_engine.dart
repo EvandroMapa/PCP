@@ -4,6 +4,9 @@ import 'package:aco_plus/app/modules/relatorio/ui/plano_corte/plano_corte_model.
 ///
 /// Utiliza o algoritmo First Fit Decreasing (FFD) adaptado para
 /// priorizar barras com quantidade limitada antes das ilimitadas.
+/// A ordem de prioridade dentro de cada grupo (limitadas / ilimitadas)
+/// é a mesma em que o estoque é fornecido — ou seja, o usuário controla
+/// a prioridade via reordenação na tela.
 class PlanoCorteEngine {
   /// Gera o plano de corte.
   ///
@@ -22,20 +25,17 @@ class PlanoCorteEngine {
     }
     cortesIndividuais.sort((a, b) => b.comprCorte.compareTo(a.comprCorte));
 
-    // 2. Separar estoque: limitadas primeiro, ilimitadas depois
+    // 2. Separar estoque: limitadas primeiro, ilimitadas depois.
+    // A ordem dentro de cada grupo é preservada conforme fornecida (definida pelo usuário).
     final limitadas = estoque
         .where((e) => !e.isIlimitado)
         .map((e) => e.copyWith(quantidadeUsada: 0))
         .toList();
-    // Ordenar limitadas por comprimento decrescente (prioriza barras maiores)
-    limitadas.sort((a, b) => b.comprimento.compareTo(a.comprimento));
 
     final ilimitadas = estoque
         .where((e) => e.isIlimitado)
         .map((e) => e.copyWith(quantidadeUsada: 0))
         .toList();
-    // Ordenar ilimitadas por comprimento decrescente
-    ilimitadas.sort((a, b) => b.comprimento.compareTo(a.comprimento));
 
     // 3. Lista de barras já abertas (em uso)
     final List<BarraUsadaModel> barrasAbertas = [];
@@ -115,7 +115,17 @@ class PlanoCorteEngine {
       }
     }
 
-    // 5. Montar resultado
+    // 5. Ordenar resultado pela prioridade da matéria prima:
+    //    menor indiceBarra (= posição mais alta na lista do usuário) vem primeiro;
+    //    ilimitadas (indiceBarra == -1) ficam sempre por último.
+    barrasAbertas.sort((a, b) {
+      if (a.indiceBarra == -1 && b.indiceBarra == -1) return 0;
+      if (a.indiceBarra == -1) return 1;
+      if (b.indiceBarra == -1) return -1;
+      return a.indiceBarra.compareTo(b.indiceBarra);
+    });
+
+    // 6. Montar resultado
     final totalUsado =
         barrasAbertas.fold(0.0, (sum, b) => sum + b.comprimentoUsado);
     final totalSobra = barrasAbertas.fold(0.0, (sum, b) => sum + b.sobra);

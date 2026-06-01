@@ -31,6 +31,8 @@ class UsuarioModel {
       isAdmin || (tipo?.isPermitirElementos ?? false);
   bool get podeEditarElementos =>
       isAdmin || (tipo?.isPermitirEditarElementos ?? false);
+  bool get podeExcluirPedido =>
+      isAdmin || (tipo?.isPermitirExcluirPedido ?? false);
 
   static UsuarioModel get system => UsuarioModel(
         id: 'system',

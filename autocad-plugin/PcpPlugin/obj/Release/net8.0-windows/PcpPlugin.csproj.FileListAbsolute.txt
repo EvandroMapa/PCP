@@ -1,0 +1,12 @@
+D:\DESENVOLVIMENTO\pcp\autocad-plugin\PcpPlugin\obj\Release\net8.0-windows\PcpPlugin.csproj.AssemblyReference.cache
+D:\DESENVOLVIMENTO\pcp\autocad-plugin\PcpPlugin\obj\Release\net8.0-windows\PcpPlugin.GeneratedMSBuildEditorConfig.editorconfig
+D:\DESENVOLVIMENTO\pcp\autocad-plugin\PcpPlugin\obj\Release\net8.0-windows\PcpPlugin.AssemblyInfoInputs.cache
+D:\DESENVOLVIMENTO\pcp\autocad-plugin\PcpPlugin\obj\Release\net8.0-windows\PcpPlugin.AssemblyInfo.cs
+D:\DESENVOLVIMENTO\pcp\autocad-plugin\PcpPlugin\obj\Release\net8.0-windows\PcpPlugin.csproj.CoreCompileInputs.cache
+D:\DESENVOLVIMENTO\pcp\autocad-plugin\PcpPlugin\obj\Release\net8.0-windows\PcpPlugin.sourcelink.json
+D:\DESENVOLVIMENTO\pcp\autocad-plugin\PcpPlugin\bin\Release\net8.0-windows\PcpPlugin.dll
+D:\DESENVOLVIMENTO\pcp\autocad-plugin\PcpPlugin\bin\Release\net8.0-windows\PcpPlugin.pdb
+D:\DESENVOLVIMENTO\pcp\autocad-plugin\PcpPlugin\obj\Release\net8.0-windows\PcpPlugin.dll
+D:\DESENVOLVIMENTO\pcp\autocad-plugin\PcpPlugin\obj\Release\net8.0-windows\refint\PcpPlugin.dll
+D:\DESENVOLVIMENTO\pcp\autocad-plugin\PcpPlugin\obj\Release\net8.0-windows\PcpPlugin.pdb
+D:\DESENVOLVIMENTO\pcp\autocad-plugin\PcpPlugin\obj\Release\net8.0-windows\ref\PcpPlugin.dll

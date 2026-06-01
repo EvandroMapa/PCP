@@ -706,128 +706,194 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
   // ── Matéria Prima ──
   Widget _buildMateriaPrima() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ..._materiaPrima.asMap().entries.map((entry) {
-          final idx = entry.key;
-          final item = entry.value;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+        // ── Dica de prioridade (só exibe quando há mais de 1 item e não executado) ──
+        if (_materiaPrima.length > 1 && !_planoExecutado) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            margin: const EdgeInsets.only(bottom: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0F9FF),
+              borderRadius: BorderRadius.circular(7),
+              border: Border.all(color: const Color(0xFFBAE6FD)),
+            ),
             child: Row(
               children: [
-                // Badge ponta
-                if (item.isPonta)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: Tooltip(
-                      message: 'Importada do Cadastro de Pontas',
-                      child: Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          color: Colors.amber[50],
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: Colors.amber[300]!),
-                        ),
-                        child: Icon(Icons.recycling, size: 16, color: Colors.amber[800]),
-                      ),
-                    ),
-                  ),
-                // Comprimento
+                Icon(Icons.swap_vert_rounded, size: 15, color: AppColors.primaryMain),
+                const SizedBox(width: 6),
                 Expanded(
-                  flex: 3,
-                  child: TextFormField(
-                    controller: item.comprimentoCtrl,
-                    readOnly: _planoExecutado || item.isPonta,
-                    enabled: !_planoExecutado && !item.isPonta,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                          RegExp(r'[\d.,]')),
-                    ],
-                    style: AppCss.minimumRegular,
-                    decoration: InputDecoration(
-                      labelText: item.isPonta ? 'Ponta (cm)' : 'Comprimento',
-                      labelStyle: AppCss.minimumRegular.setColor(
-                          item.isPonta ? Colors.amber[800]! : Colors.grey),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 12),
-                    ),
+                  child: Text(
+                    'Arraste  ⠿  para definir a prioridade — a barra mais acima é usada primeiro.',
+                    style: AppCss.minimumRegular.setColor(AppColors.primaryMain).setSize(11),
                   ),
                 ),
-                const SizedBox(width: 8),
-                // Quantidade
-                Expanded(
-                  flex: 2,
-                  child: item.isIlimitado
-                      ? Container(
-                          height: 48,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF0FDF4),
-                            borderRadius: BorderRadius.circular(8),
-                            border:
-                                Border.all(color: const Color(0xFF86EFAC)),
-                          ),
-                          child: Text('ILIMITADO',
-                              style: AppCss.minimumBold
-                                  .setColor(Colors.green[700]!)),
-                        )
-                      : TextFormField(
-                          controller: item.quantidadeCtrl,
-                          readOnly: _planoExecutado || item.isPonta,
-                          enabled: !_planoExecutado && !item.isPonta,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
-                          style: AppCss.minimumRegular,
-                          decoration: InputDecoration(
-                            labelText: 'Qtde',
-                            labelStyle:
-                                AppCss.minimumRegular.setColor(Colors.grey),
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8)),
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 12),
-                          ),
-                        ),
-                ),
-                const SizedBox(width: 4),
-                // Toggle ilimitado — oculto para pontas
-                if (!_planoExecutado && !item.isPonta)
-                  Tooltip(
-                    message:
-                        item.isIlimitado ? 'Definir quantidade' : 'Ilimitado',
-                    child: IconButton(
-                      onPressed: () {
-                        setState(() { item.isIlimitado = !item.isIlimitado; _modificado = true; });
-                      },
-                      icon: Icon(
-                        item.isIlimitado ? Icons.all_inclusive : Icons.pin,
-                        size: 20,
-                        color: item.isIlimitado
-                            ? Colors.green[600]
-                            : Colors.grey[500],
-                      ),
-                    ),
-                  ),
-                // Espaçador para pontas (manter alinhamento)
-                if (!_planoExecutado && item.isPonta)
-                  const SizedBox(width: 48),
-                // Remover
-                if (!_planoExecutado)
-                  IconButton(
-                    onPressed: () =>
-                        setState(() { _materiaPrima.removeAt(idx); _modificado = true; }),
-                    icon: Icon(Icons.close, size: 18, color: Colors.red[400]),
-                  ),
               ],
             ),
-          );
-        }),
+          ),
+        ],
+        // ── Lista reordenável ──
+        ReorderableListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          buildDefaultDragHandles: false,
+          proxyDecorator: (child, index, animation) => Material(
+            color: Colors.transparent,
+            elevation: 6,
+            borderRadius: BorderRadius.circular(8),
+            child: child,
+          ),
+          itemCount: _materiaPrima.length,
+          itemBuilder: (context, idx) {
+            final item = _materiaPrima[idx];
+            return Padding(
+              key: ValueKey('mp_$idx'),
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  // ── Handle de drag (oculto quando executado) ──
+                  if (!_planoExecutado)
+                    ReorderableDragStartListener(
+                      index: idx,
+                      child: Tooltip(
+                        message: 'Arrastar para reordenar',
+                        waitDuration: const Duration(milliseconds: 300),
+                        preferBelow: false,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: Icon(
+                            Icons.drag_handle_rounded,
+                            size: 20,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    const SizedBox(width: 26),
+                  // Badge ponta
+                  if (item.isPonta)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: Tooltip(
+                        message: 'Importada do Cadastro de Pontas',
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: Colors.amber[50],
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.amber[300]!),
+                          ),
+                          child: Icon(Icons.recycling, size: 16, color: Colors.amber[800]),
+                        ),
+                      ),
+                    ),
+                  // Comprimento
+                  Expanded(
+                    flex: 3,
+                    child: TextFormField(
+                      controller: item.comprimentoCtrl,
+                      readOnly: _planoExecutado || item.isPonta,
+                      enabled: !_planoExecutado && !item.isPonta,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'[\d.,]')),
+                      ],
+                      style: AppCss.minimumRegular,
+                      decoration: InputDecoration(
+                        labelText: item.isPonta ? 'Ponta (cm)' : 'Comprimento',
+                        labelStyle: AppCss.minimumRegular.setColor(
+                            item.isPonta ? Colors.amber[800]! : Colors.grey),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Quantidade
+                  Expanded(
+                    flex: 2,
+                    child: item.isIlimitado
+                        ? Container(
+                            height: 48,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF0FDF4),
+                              borderRadius: BorderRadius.circular(8),
+                              border:
+                                  Border.all(color: const Color(0xFF86EFAC)),
+                            ),
+                            child: Text('ILIMITADO',
+                                style: AppCss.minimumBold
+                                    .setColor(Colors.green[700]!)),
+                          )
+                        : TextFormField(
+                            controller: item.quantidadeCtrl,
+                            readOnly: _planoExecutado || item.isPonta,
+                            enabled: !_planoExecutado && !item.isPonta,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            style: AppCss.minimumRegular,
+                            decoration: InputDecoration(
+                              labelText: 'Qtde',
+                              labelStyle:
+                                  AppCss.minimumRegular.setColor(Colors.grey),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8)),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 12),
+                            ),
+                          ),
+                  ),
+                  const SizedBox(width: 4),
+                  // Toggle ilimitado — oculto para pontas
+                  if (!_planoExecutado && !item.isPonta)
+                    Tooltip(
+                      message:
+                          item.isIlimitado ? 'Definir quantidade' : 'Ilimitado',
+                      child: IconButton(
+                        onPressed: () {
+                          setState(() { item.isIlimitado = !item.isIlimitado; _modificado = true; });
+                        },
+                        icon: Icon(
+                          item.isIlimitado ? Icons.all_inclusive : Icons.pin,
+                          size: 20,
+                          color: item.isIlimitado
+                              ? Colors.green[600]
+                              : Colors.grey[500],
+                        ),
+                      ),
+                    ),
+                  // Espaçador para pontas (manter alinhamento)
+                  if (!_planoExecutado && item.isPonta)
+                    const SizedBox(width: 48),
+                  // Remover
+                  if (!_planoExecutado)
+                    IconButton(
+                      onPressed: () =>
+                          setState(() { _materiaPrima.removeAt(idx); _modificado = true; }),
+                      icon: Icon(Icons.close, size: 18, color: Colors.red[400]),
+                    ),
+                ],
+              ),
+            );
+          },
+          onReorder: (oldIndex, newIndex) {
+            setState(() {
+              if (newIndex > oldIndex) newIndex--;
+              final item = _materiaPrima.removeAt(oldIndex);
+              _materiaPrima.insert(newIndex, item);
+              _modificado = true;
+            });
+          },
+        ),
         const H(8),
         if (!_planoExecutado)
           Row(
@@ -1313,7 +1379,9 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
 
   String _chaveLayout(BarraUsadaModel barra) {
     final cortes = barra.cortes.map((c) => c.comprCorte.toStringAsFixed(2)).join('|');
-    return '${barra.comprimentoTotal.toStringAsFixed(2)}_$cortes';
+    // indiceBarra faz parte da chave para que barras de matérias primas diferentes
+    // nunca se mesclem num mesmo grupo, preservando a ordem de prioridade no resultado.
+    return '${barra.indiceBarra}_${barra.comprimentoTotal.toStringAsFixed(2)}_$cortes';
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

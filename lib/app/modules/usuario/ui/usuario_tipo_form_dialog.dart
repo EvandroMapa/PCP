@@ -59,6 +59,14 @@ class _UsuarioTipoFormDialogState extends State<UsuarioTipoFormDialog> {
                 contentPadding: EdgeInsets.zero,
               ),
               CheckboxListTile(
+                title: const Text('Permite excluir pedidos'),
+                value: form.isPermitirExcluirPedido,
+                onChanged: (v) =>
+                    setState(() => form.isPermitirExcluirPedido = v ?? false),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+              ),
+              CheckboxListTile(
                 title: const Text('Acessa como operador'),
                 value: form.isOperador,
                 onChanged: (v) => setState(() {

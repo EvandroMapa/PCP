@@ -3,7 +3,9 @@ import 'dart:developer';
 
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/cliente/cliente_supabase_collection.dart';
+import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
+import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 
 
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
@@ -501,6 +503,15 @@ class PedidoController {
   Future<bool> _isDeleteUnavailable(
     PedidoModel pedido,
   ) async {
+    // Regra 0: Usuário sem permissão de excluir pedidos
+    if (!usuario.podeExcluirPedido) {
+      await showInfoDialog(
+        'Seu perfil não possui permissão para excluir pedidos. '
+        'Solicite ao administrador a liberação.',
+      );
+      return true;
+    }
+
     // Regra 1: Pedido Mestre não pode ser excluído se tiver parciais
     if (pedido.isMestre) {
       NotificationService.showNegative(
@@ -517,7 +528,7 @@ class PedidoController {
       deleteMessage: 'Todos seus dados do pedido apagados do sistema',
       infoMessage:
           'Não é possível excluir o pedido, pois ele está vinculado a uma ordem de produção.',
-      conditional: FirestoreClient.ordens.data
+      conditional: [...FirestoreClient.ordens.data, ...FirestoreClient.ordens.ordensArquivadas]
           .expand((e) => e.produtos.map((e) => e.pedidoId))
           .any((e) => e == pedido.id),
     );

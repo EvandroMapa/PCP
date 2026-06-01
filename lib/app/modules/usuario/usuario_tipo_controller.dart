@@ -88,6 +88,7 @@ class UsuarioTipoCreateModel {
   final TextEditingController nome = TextEditingController();
   bool isPermitirElementos = false;
   bool isPermitirEditarElementos = false;
+  bool isPermitirExcluirPedido = false;
   bool isOperador = false;
   bool isArmador = false;
   bool isEdit = false;
@@ -102,6 +103,7 @@ class UsuarioTipoCreateModel {
     nome.text = m.nome;
     isPermitirElementos = m.isPermitirElementos;
     isPermitirEditarElementos = m.isPermitirEditarElementos;
+    isPermitirExcluirPedido = m.isPermitirExcluirPedido;
     isOperador = m.isOperador;
     isArmador = m.isArmador;
   }
@@ -111,6 +113,7 @@ class UsuarioTipoCreateModel {
         nome: nome.text.trim(),
         isPermitirElementos: isPermitirElementos,
         isPermitirEditarElementos: isPermitirEditarElementos,
+        isPermitirExcluirPedido: isPermitirExcluirPedido,
         isOperador: isOperador,
         isArmador: isArmador,
         createdAt: DateTime.now(),
