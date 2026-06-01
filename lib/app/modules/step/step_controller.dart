@@ -4,6 +4,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
+import 'package:aco_plus/app/core/services/audit_service.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/step/step_view_model.dart';
@@ -89,6 +90,14 @@ class StepController {
       'Step Excluido',
       'Operação realizada com sucesso',
       position: NotificationPosition.bottom,
+    );
+
+    // Audit
+    AuditService.registrar(
+      acao: 'excluir_etapa',
+      modulo: 'etapa',
+      entidadeId: step.id,
+      entidadeLabel: step.name,
     );
     await FirestoreClient.steps.fetch();
   }

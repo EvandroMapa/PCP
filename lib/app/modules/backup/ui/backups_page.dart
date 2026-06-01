@@ -1,15 +1,21 @@
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
+import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
+import 'package:aco_plus/app/core/services/supabase_service.dart';
+import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/backup/backup_controller.dart';
+import 'package:aco_plus/app/modules/backup/backup_explorer_controller.dart';
 import 'package:aco_plus/app/modules/backup/backup_scheduler_service.dart';
 import 'package:aco_plus/app/modules/backup/backup_view_model.dart';
+import 'package:aco_plus/app/modules/backup/ui/backup_explorer_page.dart';
 import 'package:aco_plus/app/modules/backup/ui/backup_schedule_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:overlay_support/overlay_support.dart';
 
 class BackupsPage extends StatefulWidget {
   const BackupsPage({super.key});
@@ -104,9 +110,8 @@ class _BackupsPageState extends State<BackupsPage> {
     );
   }
 
-  ListTile _itemWidget(BackupModel backup) {
+  Widget _itemWidget(BackupModel backup) {
     return ListTile(
-      onTap: () => backupCtrl.onDownloadBackup(backup),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       leading: Icon(Icons.description_outlined, color: AppColors.primaryMain),
       title: Text(backup.nome, style: AppCss.mediumRegular),
@@ -114,11 +119,53 @@ class _BackupsPageState extends State<BackupsPage> {
         'Criado em ${DateFormat('dd/MM/yyyy HH:mm').format(backup.createdAt)}',
         style: AppCss.smallRegular.copyWith(color: Colors.grey[600]),
       ),
-      trailing: Icon(
-        Icons.file_download_outlined,
-        size: 24,
-        color: AppColors.neutralDark,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            icon: const Icon(Icons.manage_search, size: 20),
+            onPressed: () => _onExplorar(backup),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
+            icon: const Icon(Icons.file_download_outlined, size: 20),
+            onPressed: () => backupCtrl.onDownloadBackup(backup),
+          ),
+        ],
       ),
     );
   }
+
+  Future<void> _onExplorar(BackupModel backup) async {
+    showLoadingDialog();
+    try {
+      final bytes = await SupabaseService.client.storage
+          .from('backups')
+          .download(backup.nome);
+
+      backupExplorerCtrl.carregarJson(bytes);
+
+      if (mounted) Navigator.pop(context); // fecha loading
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BackupExplorerPage(nomeBackup: backup.nome),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context); // fecha loading
+      NotificationService.showNegative(
+        'Erro ao carregar backup',
+        e.toString(),
+        position: NotificationPosition.bottom,
+      );
+    }
+  }
 }
+

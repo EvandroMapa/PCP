@@ -11,6 +11,7 @@ import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/enums/sort_step_type.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
+import 'package:aco_plus/app/core/services/audit_service.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_view_model.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
@@ -208,6 +209,9 @@ class StepController {
     bool auto = false,
   }) async {
     if (!onWillAccept(pedido, step, auto: auto)) return;
+
+    final stepAnterior = pedido.step;
+
     _onMovePedido(pedido, step, index);
     utilsStream.update();
 
@@ -220,6 +224,20 @@ class StepController {
         utilsStream.update();
       }
     });
+
+    // Audit — só registra se mudou de etapa (não apenas reordenou)
+    if (stepAnterior.id != step.id && !auto) {
+      AuditService.registrar(
+        acao: 'mover_etapa',
+        modulo: 'pedido',
+        entidadeId: pedido.id,
+        entidadeLabel: pedido.localizador,
+        detalhes: {
+          'de': stepAnterior.name,
+          'para': step.name,
+        },
+      );
+    }
   }
 
   bool onWillAccept(PedidoModel pedido, StepModel step, {bool auto = false}) {

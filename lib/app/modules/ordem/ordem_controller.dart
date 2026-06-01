@@ -17,6 +17,7 @@ import 'package:aco_plus/app/modules/estoque/estoque_controller.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
+import 'package:aco_plus/app/core/services/audit_service.dart';
 import 'package:aco_plus/app/core/services/preferences_service.dart';
 import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
@@ -267,6 +268,15 @@ class OrdemController {
       'Operação realizada com sucesso',
       position: NotificationPosition.bottom,
     );
+
+    // Audit
+    AuditService.registrar(
+      acao: 'criar_ordem',
+      modulo: 'ordem',
+      entidadeId: ordemCriada.id,
+      entidadeLabel: ordemCriada.localizator,
+      detalhes: {'produtos': ordemCriada.produtos.length},
+    );
   }
 
   Future<void> onEdit(value, OrdemModel ordem) async {
@@ -363,6 +373,14 @@ class OrdemController {
       'Operação realizada com sucesso',
       position: NotificationPosition.bottom,
     );
+
+    // Audit
+    AuditService.registrar(
+      acao: 'editar_ordem',
+      modulo: 'ordem',
+      entidadeId: ordemEditada.id,
+      entidadeLabel: ordemEditada.localizator,
+    );
   }
 
   void onValid() {
@@ -425,6 +443,14 @@ class OrdemController {
       'Ordem Excluida',
       'Operação realizada com sucesso',
       position: NotificationPosition.bottom,
+    );
+
+    // Audit
+    AuditService.registrar(
+      acao: 'excluir_ordem',
+      modulo: 'ordem',
+      entidadeId: ordem.id,
+      entidadeLabel: ordem.localizator,
     );
   }
 
@@ -798,6 +824,14 @@ class OrdemController {
         'Ordem foi adicionada na ultima posição esteira de produção',
       );
     }
+
+    // Audit
+    AuditService.registrar(
+      acao: ordem.freezed.isFreezed ? 'congelar_ordem' : 'descongelar_ordem',
+      modulo: 'ordem',
+      entidadeId: ordem.id,
+      entidadeLabel: ordem.localizator,
+    );
   }
 
   void onReorder(List<OrdemModel> ordensNaoConcluidas) {
@@ -876,6 +910,14 @@ class OrdemController {
       'Ordem Arquivada!',
       'Acesse a lista de ordens arquivadas para visualizar a ordem',
     );
+
+    // Audit
+    AuditService.registrar(
+      acao: 'arquivar_ordem',
+      modulo: 'ordem',
+      entidadeId: ordem.id,
+      entidadeLabel: ordem.localizator,
+    );
   }
 
   Future<bool> _isArchiveUnavailable(
@@ -907,6 +949,14 @@ class OrdemController {
     NotificationService.showPositive(
       'Ordem Desarquivada!',
       'Acesse a lista de ordens para visualizar a ordem',
+    );
+
+    // Audit
+    AuditService.registrar(
+      acao: 'desarquivar_ordem',
+      modulo: 'ordem',
+      entidadeId: ordem.id,
+      entidadeLabel: ordem.localizator,
     );
   }
 

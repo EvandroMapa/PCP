@@ -5,6 +5,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/aut
 import 'package:aco_plus/app/core/client/supabase/collections/cliente/cliente_supabase_collection.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
+import 'package:aco_plus/app/core/services/audit_service.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 
 
@@ -433,6 +434,15 @@ class PedidoController {
         'Operação realizada com sucesso',
         position: NotificationPosition.bottom,
       );
+
+      // Audit
+      final pedidoFinal = form.isEdit ? pedido : null;
+      AuditService.registrar(
+        acao: form.isEdit ? 'editar_pedido' : 'criar_pedido',
+        modulo: 'pedido',
+        entidadeId: pedidoFinal?.id ?? form.localizador.text,
+        entidadeLabel: form.localizador.text,
+      );
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
       NotificationService.showNegative(
@@ -497,6 +507,19 @@ class PedidoController {
       'Operação realizada com sucesso',
       position: NotificationPosition.bottom,
     );
+
+    // Audit
+    AuditService.registrar(
+      acao: 'excluir_pedido',
+      modulo: 'pedido',
+      entidadeId: pedido.id,
+      entidadeLabel: pedido.localizador,
+      detalhes: {
+        'cliente': pedido.cliente.nome,
+        'produtos': pedido.produtos.length,
+      },
+    );
+
     return true;
   }
 
@@ -774,6 +797,15 @@ class PedidoController {
       'Acesse a lista de arquivados para visualizar o pedido',
       position: NotificationPosition.bottom,
     );
+
+    // Audit
+    AuditService.registrar(
+      acao: 'arquivar_pedido',
+      modulo: 'pedido',
+      entidadeId: pedido.id,
+      entidadeLabel: pedido.localizador,
+    );
+
     return true;
   }
 
@@ -793,6 +825,14 @@ class PedidoController {
       NotificationService.showPositive(
         'Pedido Desarquivado!',
         'Acesse a lista de pedidos para visualizar o pedido',
+      );
+
+      // Audit
+      AuditService.registrar(
+        acao: 'desarquivar_pedido',
+        modulo: 'pedido',
+        entidadeId: pedido.id,
+        entidadeLabel: pedido.localizador,
       );
     }
   }

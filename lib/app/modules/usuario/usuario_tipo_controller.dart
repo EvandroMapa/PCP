@@ -1,6 +1,7 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_tipo_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
+import 'package:aco_plus/app/core/services/audit_service.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:flutter/material.dart';
@@ -72,6 +73,14 @@ class UsuarioTipoController {
         'Perfil Excluído',
         'Operação realizada com sucesso',
         position: NotificationPosition.bottom,
+      );
+
+      // Audit
+      AuditService.registrar(
+        acao: 'excluir_perfil',
+        modulo: 'usuario',
+        entidadeId: tipo.id,
+        entidadeLabel: tipo.nome,
       );
     } catch (e) {
       NotificationService.showNegative(

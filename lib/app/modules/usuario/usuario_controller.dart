@@ -4,6 +4,7 @@ import 'package:aco_plus/app/app_repository.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/http/fcm/fcm_provider.dart';
+import 'package:aco_plus/app/core/services/audit_service.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
@@ -173,6 +174,12 @@ class UsuarioController {
   }
 
   Future<void> clearCurrentUser() async {
+    // Registra logout ANTES de limpar o user
+    await AuditService.registrar(
+      acao: 'logout',
+      modulo: 'sessao',
+    );
+
     try {
       usuario?.deviceTokens.removeWhere((e) => e == deviceToken);
       // Update cirúrgico — só atualiza deviceTokens

@@ -1,6 +1,7 @@
 import 'package:aco_plus/app/app_repository.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
+import 'package:aco_plus/app/core/services/audit_service.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:collection/collection.dart';
@@ -34,6 +35,12 @@ class SignController {
       }
 
       usuarioCtrl.setCurrentUser(user, rememberMe);
+
+      // Registra login no audit
+      AuditService.registrarLogin(
+        usuarioId: user.id,
+        usuarioNome: user.nome,
+      );
     } catch (value) {
       NotificationService.showNegative('Erro', value.toString());
     }

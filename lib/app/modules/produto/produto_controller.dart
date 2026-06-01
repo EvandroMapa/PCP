@@ -2,6 +2,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_m
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
+import 'package:aco_plus/app/core/services/audit_service.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/produto/produto_view_model.dart';
@@ -89,6 +90,14 @@ class ProdutoController {
       'Produto Excluido',
       'Operação realizada com sucesso',
       position: NotificationPosition.bottom,
+    );
+
+    // Audit
+    AuditService.registrar(
+      acao: 'excluir_produto',
+      modulo: 'produto',
+      entidadeId: produto.id,
+      entidadeLabel: produto.descricao,
     );
   }
 
