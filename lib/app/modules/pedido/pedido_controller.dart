@@ -442,6 +442,11 @@ class PedidoController {
         modulo: 'pedido',
         entidadeId: pedidoFinal?.id ?? form.localizador.text,
         entidadeLabel: form.localizador.text,
+        detalhes: {
+          'cliente': form.cliente?.nome ?? '',
+          'tipo': form.tipo?.name ?? '',
+          'produtos': form.produtos.length,
+        },
       );
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
@@ -804,6 +809,9 @@ class PedidoController {
       modulo: 'pedido',
       entidadeId: pedido.id,
       entidadeLabel: pedido.localizador,
+      detalhes: {
+        'cliente': pedido.cliente.nome,
+      },
     );
 
     return true;
@@ -833,6 +841,9 @@ class PedidoController {
         modulo: 'pedido',
         entidadeId: pedido.id,
         entidadeLabel: pedido.localizador,
+        detalhes: {
+          'cliente': pedido.cliente.nome,
+        },
       );
     }
   }

@@ -263,46 +263,27 @@ class _AuditLogPageState extends State<AuditLogPage> {
 
                 return Column(
                   children: [
-                    // Cabeçalho
+                    // Info de resultados
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
+                          horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+                        color: Colors.grey.shade50,
                         border: Border(
                             bottom: BorderSide(color: Colors.grey.shade300)),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          SizedBox(
-                              width: 130,
-                              child: Text('Data',
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700))),
-                          SizedBox(
-                              width: 130,
-                              child: Text('Usuário',
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700))),
-                          SizedBox(
-                              width: 180,
-                              child: Text('Ação',
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700))),
-                          Expanded(
-                              child: Text('Entidade',
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700))),
-                          SizedBox(
-                              width: 130,
-                              child: Text('Dispositivo',
-                                  style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700))),
+                          Icon(Icons.history, size: 14,
+                              color: Colors.grey[500]),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${logs.length} registro(s)${auditLogCtrl.temMais ? '+' : ''}',
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                                fontWeight: FontWeight.w500),
+                          ),
                         ],
                       ),
                     ),
@@ -375,72 +356,224 @@ class _LogRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final corAcao = _corPorAcao(entry.acao);
+    final descricao = _descricao();
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Data
-          SizedBox(
-            width: 130,
-            child: Text(
-              DateFormat('dd/MM/yy HH:mm').format(entry.createdAt),
-              style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-            ),
-          ),
-
-          // Usuário
-          SizedBox(
-            width: 130,
-            child: Text(
-              entry.usuarioNome,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-
-          // Ação
-          SizedBox(
-            width: 180,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: corAcao.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(6),
+          // ── Linha 1: Data | Usuário | Ação | Dispositivo ──
+          Row(
+            children: [
+              // Data
+              SizedBox(
+                width: 120,
+                child: Text(
+                  DateFormat('dd/MM/yy HH:mm').format(entry.createdAt),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
               ),
+
+              // Usuário
+              SizedBox(
+                width: 120,
+                child: Text(
+                  entry.usuarioNome,
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w600),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
+              // Ação (badge)
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: corAcao.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  entry.acaoFormatada,
+                  style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: corAcao),
+                ),
+              ),
+
+              const Spacer(),
+
+              // Dispositivo
+              Text(
+                entry.dispositivo ?? '',
+                style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+              ),
+            ],
+          ),
+
+          // ── Linha 2: Descrição rica ──
+          if (descricao.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 2),
               child: Text(
-                entry.acaoFormatada,
-                style: TextStyle(
-                    fontSize: 11, fontWeight: FontWeight.w600, color: corAcao),
+                descricao,
+                style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-          ),
-
-          // Entidade
-          Expanded(
-            child: Text(
-              entry.entidadeLabel ?? entry.entidadeId ?? '—',
-              style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-
-          // Dispositivo
-          SizedBox(
-            width: 130,
-            child: Text(
-              entry.dispositivo ?? '—',
-              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
         ],
       ),
     );
+  }
+
+  /// Monta uma frase descritiva do que aconteceu a partir da ação,
+  /// entidade e detalhes JSON.
+  String _descricao() {
+    final label = entry.entidadeLabel ?? '';
+    final det = entry.detalhes;
+
+    switch (entry.acao) {
+      case 'login':
+        return 'Entrou no sistema';
+      case 'logout':
+        return 'Saiu do sistema';
+
+      case 'excluir_pedido':
+        final cliente = det['cliente']?.toString() ?? '';
+        final produtos = det['produtos']?.toString() ?? '';
+        final partes = <String>[];
+        if (label.isNotEmpty) partes.add('Pedido "$label"');
+        if (cliente.isNotEmpty) partes.add('cliente: $cliente');
+        if (produtos.isNotEmpty) partes.add('$produtos produto(s)');
+        return partes.isNotEmpty ? partes.join(' — ') : 'Pedido excluído';
+
+      case 'criar_pedido':
+        final cliente = det['cliente']?.toString() ?? '';
+        final tipo = det['tipo']?.toString() ?? '';
+        final produtos = det['produtos']?.toString() ?? '';
+        final partes = <String>[];
+        if (label.isNotEmpty) partes.add('Pedido "$label" criado');
+        if (cliente.isNotEmpty) partes.add('cliente: $cliente');
+        if (tipo.isNotEmpty) partes.add('tipo: $tipo');
+        if (produtos.isNotEmpty) partes.add('$produtos produto(s)');
+        return partes.isNotEmpty ? partes.join(' — ') : 'Novo pedido criado';
+
+      case 'editar_pedido':
+        final clienteEdit = det['cliente']?.toString() ?? '';
+        final parteEdit = <String>[];
+        if (label.isNotEmpty) parteEdit.add('Pedido "$label" editado');
+        if (clienteEdit.isNotEmpty) parteEdit.add('cliente: $clienteEdit');
+        return parteEdit.isNotEmpty ? parteEdit.join(' — ') : 'Pedido editado';
+
+      case 'arquivar_pedido':
+        final clienteArq = det['cliente']?.toString() ?? '';
+        final parteArq = <String>[];
+        if (label.isNotEmpty) parteArq.add('Pedido "$label" arquivado');
+        if (clienteArq.isNotEmpty) parteArq.add('cliente: $clienteArq');
+        return parteArq.isNotEmpty ? parteArq.join(' — ') : 'Pedido arquivado';
+
+      case 'desarquivar_pedido':
+        final clienteDes = det['cliente']?.toString() ?? '';
+        final parteDes = <String>[];
+        if (label.isNotEmpty) parteDes.add('Pedido "$label" desarquivado');
+        if (clienteDes.isNotEmpty) parteDes.add('cliente: $clienteDes');
+        return parteDes.isNotEmpty ? parteDes.join(' — ') : 'Pedido desarquivado';
+
+      case 'mover_etapa':
+        final de = det['de']?.toString() ?? '?';
+        final para = det['para']?.toString() ?? '?';
+        return label.isNotEmpty
+            ? 'Pedido "$label" movido de "$de" → "$para"'
+            : 'Movido de "$de" → "$para"';
+
+      case 'excluir_ordem':
+        return label.isNotEmpty
+            ? 'Ordem "$label" excluída'
+            : 'Ordem excluída';
+
+      case 'criar_ordem':
+        final produtos = det['produtos']?.toString() ?? '';
+        return label.isNotEmpty
+            ? 'Ordem "$label" criada${produtos.isNotEmpty ? ' com $produtos produto(s)' : ''}'
+            : 'Nova ordem criada';
+
+      case 'editar_ordem':
+        return label.isNotEmpty
+            ? 'Ordem "$label" editada'
+            : 'Ordem editada';
+
+      case 'arquivar_ordem':
+        return label.isNotEmpty
+            ? 'Ordem "$label" arquivada'
+            : 'Ordem arquivada';
+
+      case 'desarquivar_ordem':
+        return label.isNotEmpty
+            ? 'Ordem "$label" desarquivada'
+            : 'Ordem desarquivada';
+
+      case 'congelar_ordem':
+        return label.isNotEmpty
+            ? 'Ordem "$label" congelada (removida da esteira)'
+            : 'Ordem congelada';
+
+      case 'descongelar_ordem':
+        return label.isNotEmpty
+            ? 'Ordem "$label" descongelada (voltou à esteira)'
+            : 'Ordem descongelada';
+
+      case 'excluir_cliente':
+        return label.isNotEmpty
+            ? 'Cliente "$label" excluído'
+            : 'Cliente excluído';
+
+      case 'excluir_produto':
+        return label.isNotEmpty
+            ? 'Produto "$label" excluído'
+            : 'Produto excluído';
+
+      case 'excluir_etapa':
+        return label.isNotEmpty
+            ? 'Etapa "$label" excluída'
+            : 'Etapa excluída';
+
+      case 'excluir_obra':
+        return label.isNotEmpty
+            ? 'Obra "$label" excluída'
+            : 'Obra excluída';
+
+      case 'excluir_perfil':
+        return label.isNotEmpty
+            ? 'Perfil "$label" excluído'
+            : 'Perfil de acesso excluído';
+
+      case 'restaurar_pedido':
+        final produtos = det['produtos']?.toString() ?? '';
+        final elementos = det['elementos']?.toString() ?? '';
+        final partes = <String>[];
+        if (label.isNotEmpty) partes.add('Pedido "$label" restaurado do backup');
+        if (produtos.isNotEmpty) partes.add('$produtos produto(s)');
+        if (elementos.isNotEmpty) partes.add('$elementos elemento(s)');
+        return partes.isNotEmpty
+            ? partes.join(' — ')
+            : 'Pedido restaurado do backup';
+
+      case 'restaurar_backup_completo':
+        return 'Backup completo restaurado';
+
+      default:
+        // Fallback genérico
+        if (label.isNotEmpty) return label;
+        return '';
+    }
   }
 
   Color _corPorAcao(String acao) {

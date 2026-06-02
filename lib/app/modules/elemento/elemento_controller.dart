@@ -865,7 +865,11 @@ class ElementoController {
             final pos = ElementoPosicaoCreateModel();
             pos.nome.text = posNome;
             pos.numeroOs.text = osNumber;
-            pos.pesoKg.text = pesoLido.toStringAsFixed(3);
+            // O peso do CSV já vem multiplicado pela QTDE ELEM (peso total de todos os elementos).
+            // Divide pela qtde de elementos para obter o peso de 1 elemento.
+            final qtdeElem = int.tryParse(elQtdeStr) ?? 1;
+            final pesoUnitario = qtdeElem > 1 ? pesoLido / qtdeElem : pesoLido;
+            pos.pesoKg.text = pesoUnitario.toStringAsFixed(3);
             pos.qtde.text = totalQtdePosicao.toString();
             pos.produto = produtoEncontrado;
 
