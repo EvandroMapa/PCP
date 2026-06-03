@@ -1,8 +1,12 @@
+import 'dart:developer';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
+import 'package:aco_plus/app/core/services/notification_service.dart';
+import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
+import 'package:aco_plus/app/modules/modulo_importacao/ui/spe/spe_importar_dialog.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_create_page.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_page.dart';
@@ -115,6 +119,11 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
   // ── Lista de botões de ação (mesma lógica nos dois modos) ────────────────
   List<Widget> _acoes(BuildContext context, {required bool isKanban}) {
     return [
+      _botaoAcao(
+        icon: Icons.cloud_download_rounded,
+        tooltip: 'Importar dados',
+        onTap: () => _mostrarModulosImportacao(context),
+      ),
       if (pedido.podeGerarParcial)
         _botaoAcao(
           icon: Icons.add,
@@ -213,4 +222,93 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ],
       );
+
+  // ── Importar dados de módulos habilitados ──────────────────────────────
+  Future<void> _mostrarModulosImportacao(BuildContext context) async {
+    try {
+      // Buscar módulos habilitados
+      final response = await SupabaseService.client
+          .from('modulos_importacao')
+          .select()
+          .eq('habilitado', true);
+
+      final modulos = List<Map<String, dynamic>>.from(response);
+
+      if (modulos.isEmpty) {
+        NotificationService.showNeutral(
+          'Sem módulos',
+          'Nenhum módulo de importação habilitado. Habilite em Configurações → Módulos de Importação.',
+        );
+        return;
+      }
+
+      // Se apenas 1 módulo habilitado, abre direto
+      if (modulos.length == 1) {
+        final moduloId = modulos.first['id'];
+        await _abrirModulo(moduloId);
+        return;
+      }
+
+      // Se múltiplos, mostra bottom sheet
+      if (!context.mounted) return;
+      showModalBottomSheet(
+        context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (ctx) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Selecione o módulo de importação',
+                  style: AppCss.smallBold,
+                ),
+              ),
+              const Divider(height: 1),
+              ...modulos.map((m) => ListTile(
+                    leading: const Icon(Icons.cloud_download_rounded),
+                    title: Text(
+                      _nomeModulo(m['id']),
+                      style: AppCss.minimumBold.setSize(13),
+                    ),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _abrirModulo(m['id']);
+                    },
+                  )),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      log('PedidoTopBar._mostrarModulosImportacao erro: $e');
+      NotificationService.showNegative('Erro', 'Falha ao verificar módulos: $e');
+    }
+  }
+
+  Future<void> _abrirModulo(String moduloId) async {
+    switch (moduloId) {
+      case 'spe':
+        await showSpeImportarDialog(pedido);
+        break;
+      default:
+        NotificationService.showNeutral(
+          'Módulo indisponível',
+          'O módulo "$moduloId" ainda não foi implementado.',
+        );
+    }
+  }
+
+  String _nomeModulo(String id) {
+    switch (id) {
+      case 'spe':
+        return 'SPE — Pedido Técnico';
+      default:
+        return id.toUpperCase();
+    }
+  }
 }

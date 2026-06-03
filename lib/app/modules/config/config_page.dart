@@ -4,6 +4,7 @@ import 'package:aco_plus/app/core/utils/global_resource.dart';
 
 import 'package:aco_plus/app/modules/audit/ui/audit_log_page.dart';
 import 'package:aco_plus/app/modules/backup/ui/backups_page.dart';
+import 'package:aco_plus/app/modules/modulo_importacao/ui/modulos_importacao_page.dart';
 import 'package:aco_plus/app/modules/checklist/ui/checklists_page.dart';
 import 'package:aco_plus/app/modules/step/ui/steps_page.dart';
 import 'package:aco_plus/app/modules/tag/ui/tags_page.dart';
@@ -132,6 +133,16 @@ class _ConfigPageState extends State<ConfigPage> {
           ListTile(
             onTap: () => push(context, const AuditLogPage()),
             title: const Text('Logs de Auditoria'),
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Colors.grey[400]!,
+            ),
+          ),
+          const Divisor(),
+          ListTile(
+            onTap: () => push(context, const ModulosImportacaoPage()),
+            title: const Text('Módulos de Importação'),
             trailing: Icon(
               Icons.arrow_forward_ios,
               size: 16,
