@@ -1,4 +1,4 @@
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:flutter/material.dart';
@@ -106,11 +106,11 @@ class EstoqueMovimentacaoModel {
     required this.createdAt,
   });
 
-  ProdutoModel get produto {
+  BitolaModel get produto {
     try {
-      return BackendClient.produtos.getById(produtoId);
+      return BackendClient.bitolas.getById(produtoId);
     } catch (_) {
-      return ProdutoModel.empty();
+      return BitolaModel.empty();
     }
   }
 
@@ -136,7 +136,7 @@ class EstoqueMovimentacaoModel {
 
   Map<String, dynamic> toSupabaseMap() => {
         'id': id,
-        'produto_id': produtoId,
+        'bitola_id': produtoId,
         'tipo': tipo.value,
         'quantidade': quantidade,
         'observacao': observacao,
@@ -150,7 +150,7 @@ class EstoqueMovimentacaoModel {
           Map<String, dynamic> map) =>
       EstoqueMovimentacaoModel(
         id: map['id'] ?? '',
-        produtoId: map['produto_id'] ?? '',
+        produtoId: map['bitola_id'] ?? '',
         tipo: EstoqueTipoMovimentacaoExt.fromValue(map['tipo'] ?? ''),
         quantidade:
             double.tryParse((map['quantidade'] ?? 0).toString()) ?? 0.0,

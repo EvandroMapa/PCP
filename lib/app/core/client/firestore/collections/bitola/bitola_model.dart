@@ -1,0 +1,113 @@
+import 'dart:convert';
+
+import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
+import 'package:aco_plus/app/core/services/hash_service.dart';
+
+class BitolaModel {
+  final String id;
+  final String nome;
+  final String descricao;
+  final double massaFinal;
+  final String codigoFinanceiro;
+  final int sortIndex;
+  bool isImportado;
+
+  factory BitolaModel.empty() => BitolaModel(
+        id: HashService.get,
+        nome: 'Bitola não encontrada',
+        descricao: 'Esta bitola não foi encontrada no sistema',
+        massaFinal: 0.0,
+        codigoFinanceiro: '',
+        sortIndex: 999,
+        isImportado: false,
+      );
+
+  String get descricaoReplaced =>
+      descricao.replaceAll('mm', '').replaceAll('.0', '');
+
+  double get number =>
+      double.tryParse(descricao.substring(0, descricao.length - 2)) ?? 0.0;
+
+  BitolaModel({
+    required this.id,
+    required this.nome,
+    required this.descricao,
+    required this.massaFinal,
+    this.codigoFinanceiro = '',
+    this.sortIndex = 999,
+    this.isImportado = false,
+  });
+
+  String get label => '$nome - $descricao - $massaFinal';
+
+  String get labelMinified => '$nome - $descricao';
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'nome': nome,
+      'descricao': descricao,
+      'massaFinal': massaFinal,
+      'codigoFinanceiro': codigoFinanceiro,
+      'sortIndex': sortIndex,
+      'is_importado': isImportado,
+    };
+  }
+
+  Map<String, dynamic> toSupabaseMap() {
+    return {
+      'id': id,
+      'nome': nome,
+      'descricao': descricao,
+      'massa_final': massaFinal,
+      'codigo_financeiro': codigoFinanceiro,
+      'sort_index': sortIndex,
+      'is_importado': isImportado,
+    };
+  }
+
+  factory BitolaModel.fromMap(Map<String, dynamic> map) {
+    return BitolaModel(
+      id: map['id'] ?? '',
+      nome: map['nome'] ?? '',
+      descricao: map['descricao'] ?? '',
+      massaFinal: double.tryParse(
+              (map['massaFinal'] ?? map['massa_final'] ?? '0').toString()) ??
+          0.0,
+      codigoFinanceiro:
+          (map['codigoFinanceiro'] ?? map['codigo_financeiro'] ?? '')
+              .toString(),
+      sortIndex: (map['sortIndex'] ?? map['sort_index'] ?? 999) as int,
+      isImportado: map['is_importado'] ?? false,
+    );
+  }
+
+  factory BitolaModel.fromSupabaseMap(Map<String, dynamic> map) =>
+      BitolaModel.fromMap(map);
+
+  String toJson() => json.encode(toMap());
+
+  factory BitolaModel.fromJson(String source) =>
+      BitolaModel.fromMap(json.decode(source));
+
+  BitolaModel copyWith({
+    String? id,
+    String? nome,
+    String? descricao,
+    FabricanteModel? fabricante,
+    double? massaFinal,
+    String? codigoFinanceiro,
+    int? sortIndex,
+    bool? isImportado,
+  }) {
+    return BitolaModel(
+      id: id ?? this.id,
+      nome: nome ?? this.nome,
+      descricao: descricao ?? this.descricao,
+      massaFinal: massaFinal ?? this.massaFinal,
+      codigoFinanceiro: codigoFinanceiro ?? this.codigoFinanceiro,
+      sortIndex: sortIndex ?? this.sortIndex,
+      isImportado: isImportado ?? this.isImportado,
+    );
+  }
+}

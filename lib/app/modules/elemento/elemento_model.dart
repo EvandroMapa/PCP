@@ -1,4 +1,4 @@
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
@@ -121,7 +121,7 @@ class ElementoPosicaoModel {
   final String nome; // nome da posição (ex: "Pilar P1")
   final String numeroOs; // número da OS (ex: "OS 1", "001")
   final String produtoId;
-  ProdutoModel? produto; // bitola do catálogo
+  BitolaModel? produto; // bitola do catálogo
   final double pesoKg;
   final int qtde; // quantidade total de peças/barras na posição
   final double comprUnit; // comprimento unitário (fixo ou 0 se variável)
@@ -153,7 +153,7 @@ class ElementoPosicaoModel {
     Map<String, dynamic> map, {
     List<Map<String, dynamic>>? medidasRaw,
   }) {
-    final produtoId = (map['produto_id'] ?? '').toString();
+    final produtoId = (map['bitola_id'] ?? '').toString();
     return ElementoPosicaoModel(
       id: (map['id'] ?? '').toString(),
       elementoId: (map['elemento_id'] ?? '').toString(),
@@ -170,7 +170,7 @@ class ElementoPosicaoModel {
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
-      produto: FirestoreClient.produtos.data
+      produto: FirestoreClient.bitolas.data
           .where((p) => p.id == produtoId)
           .firstOrNull,
       medidas: (medidasRaw ?? [])
@@ -184,7 +184,7 @@ class ElementoPosicaoModel {
         'elemento_id': elementoId,
         'nome': nome,
         'numero_os': numeroOs,
-        'produto_id': produtoId,
+        'bitola_id': produtoId,
         'peso_kg': pesoKg,
         'qtde': qtde,
         'compr_unit': comprUnit,
@@ -338,7 +338,7 @@ class ElementoPosicaoCreateModel {
   final TextController qtde = TextController(text: '0');
   final TextController comprUnit = TextController(text: '0');
   final TextController comprCorte = TextController(text: '0');
-  ProdutoModel? produto;
+  BitolaModel? produto;
   bool isEdit;
   List<PosicaoMedidaCreateModel> medidas = [];
 

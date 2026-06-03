@@ -1,7 +1,7 @@
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/enums/sort_type.dart';
 
@@ -28,12 +28,12 @@ extension RelatorioTipoStatusExtension on RelatorioPedidoTipo {
 
 class RelatorioPedidoViewModel {
   ClienteModel? cliente;
-  List<PedidoProdutoStatus> status = [
-    PedidoProdutoStatus.separado,
-    PedidoProdutoStatus.aguardandoProducao,
-    PedidoProdutoStatus.produzindo,
+  List<PedidoBitolaStatus> status = [
+    PedidoBitolaStatus.separado,
+    PedidoBitolaStatus.aguardandoProducao,
+    PedidoBitolaStatus.produzindo,
   ].toList();
-  List<ProdutoModel> produtos = FirestoreClient.produtos.data.toList();
+  List<BitolaModel> produtos = FirestoreClient.bitolas.data.toList();
   RelatorioPedidoModel? relatorio;
   late SortType sortType;
   SortOrder sortOrder = SortOrder.asc;
@@ -55,8 +55,8 @@ class RelatorioPedidoViewModel {
 
 class RelatorioPedidoModel {
   final ClienteModel? cliente;
-  final List<PedidoProdutoStatus> status;
-  final List<ProdutoModel> produtos;
+  final List<PedidoBitolaStatus> status;
+  final List<BitolaModel> produtos;
   final List<PedidoModel> pedidos;
   final DateTime createdAt = DateTime.now();
   final RelatorioPedidoTipo tipo;

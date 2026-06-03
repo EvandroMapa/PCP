@@ -4,12 +4,12 @@ import 'dart:developer';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/enums/materia_prima_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/models/materia_prima_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_status_produtos.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_status_bitolas.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/ordem/ordem_supabase_collection.dart';
@@ -34,10 +34,10 @@ import 'package:aco_plus/app/core/services/pdf_download_service/pdf_download_ser
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/automatizacao/automatizacao_controller.dart';
 import 'package:aco_plus/app/modules/ordem/ordem_timeline_register.dart';
-import 'package:aco_plus/app/modules/ordem/ui/ordem/components/produto/ordem_pedido_produto_pause_motivo_bottom.dart';
+import 'package:aco_plus/app/modules/ordem/ui/ordem/components/bitola/ordem_pedido_bitola_pause_motivo_bottom.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem_etiquetas_pdf_page.dart';
-import 'package:aco_plus/app/modules/ordem/ui/ordem_produto_status_bottom.dart';
-import 'package:aco_plus/app/modules/ordem/ui/ordem_produtos_status_bottom.dart';
+import 'package:aco_plus/app/modules/ordem/ui/ordem_bitola_status_bottom.dart';
+import 'package:aco_plus/app/modules/ordem/ui/ordem_bitolas_status_bottom.dart';
 import 'package:aco_plus/app/modules/ordem/view_models/ordem_view_model.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
@@ -95,11 +95,11 @@ class OrdemController {
     }
   }
 
-  List<PedidoProdutoModel> getPedidosPorProduto(
-    ProdutoModel produto, {
+  List<PedidoBitolaModel> getPedidosPorProduto(
+    BitolaModel produto, {
     OrdemModel? ordem,
   }) {
-    List<PedidoProdutoModel> pedidos = [
+    List<PedidoBitolaModel> pedidos = [
       ..._getPedidosProdutosAtual(ordem: ordem),
       ..._getPedidosProdutosSeparados(produto),
     ];
@@ -109,7 +109,7 @@ class OrdemController {
     return pedidos;
   }
 
-  List<PedidoProdutoModel> _getPedidosProdutosAtual({OrdemModel? ordem}) =>
+  List<PedidoBitolaModel> _getPedidosProdutosAtual({OrdemModel? ordem}) =>
       ordem != null
           ? ordem.produtos
               .map(
@@ -121,8 +121,8 @@ class OrdemController {
               .toList()
           : [];
 
-  List<PedidoProdutoModel> _getPedidosProdutosSeparados(ProdutoModel produto) {
-    List<PedidoProdutoModel> pedidos = [];
+  List<PedidoBitolaModel> _getPedidosProdutosSeparados(BitolaModel produto) {
+    List<PedidoBitolaModel> pedidos = [];
     for (final pedido in FirestoreClient.pedidos.data
         .where(
           (e) => e.pedidosFilhos.isEmpty && e.step.isPermiteProducao,
@@ -131,7 +131,7 @@ class OrdemController {
       final pedidoProdutos = pedido.produtos
           .where(
             (e) =>
-                e.status.status == PedidoProdutoStatus.separado &&
+                e.status.status == PedidoBitolaStatus.separado &&
                 e.produto.id == produto.id,
           )
           .toList();
@@ -148,7 +148,7 @@ class OrdemController {
     return pedidos;
   }
 
-  List<PedidoProdutoModel> getPedidosPorProdutoEdit(OrdemModel ordem) {
+  List<PedidoBitolaModel> getPedidosPorProdutoEdit(OrdemModel ordem) {
     final pedidos = ordem.produtos
         .where(
           (e) =>
@@ -203,12 +203,12 @@ class OrdemController {
         return;
       }
     }
-    final List<(PedidoProdutoModel, PedidoProdutoStatus)> statusUpdates = [];
-    final List<(PedidoProdutoModel, MateriaPrimaModel?)> mpUpdates = [];
+    final List<(PedidoBitolaModel, PedidoBitolaStatus)> statusUpdates = [];
+    final List<(PedidoBitolaModel, MateriaPrimaModel?)> mpUpdates = [];
     final Set<String> pedidosAfetados = {};
 
-    for (PedidoProdutoModel produto in ordemCriada.produtos) {
-      statusUpdates.add((produto, PedidoProdutoStatus.aguardandoProducao));
+    for (PedidoBitolaModel produto in ordemCriada.produtos) {
+      statusUpdates.add((produto, PedidoBitolaStatus.aguardandoProducao));
       pedidosAfetados.add(produto.pedidoId);
 
       if (ordemCriada.materiaPrima != null) {
@@ -218,9 +218,9 @@ class OrdemController {
 
       if (produto.statusess.isEmpty ||
           produto.statusess.last.status !=
-              PedidoProdutoStatus.aguardandoProducao) {
-        produto.statusess.add(PedidoProdutoStatusModel.create(
-            PedidoProdutoStatus.aguardandoProducao));
+              PedidoBitolaStatus.aguardandoProducao) {
+        produto.statusess.add(PedidoBitolaStatusModel.create(
+            PedidoBitolaStatus.aguardandoProducao));
       }
     }
 
@@ -289,15 +289,15 @@ class OrdemController {
       }
     }
 
-    final List<(PedidoProdutoModel, PedidoProdutoStatus)> statusUpdates = [];
-    final List<(PedidoProdutoModel, MateriaPrimaModel?)> mpUpdates = [];
+    final List<(PedidoBitolaModel, PedidoBitolaStatus)> statusUpdates = [];
+    final List<(PedidoBitolaModel, MateriaPrimaModel?)> mpUpdates = [];
     final Set<String> pedidosAfetados = {};
 
     // Produtos removidos da ordem
-    for (PedidoProdutoModel produto in ordem.produtos) {
+    for (PedidoBitolaModel produto in ordem.produtos) {
       if (!ordemEditada.produtos.any((e) => e.id == produto.id)) {
         // Se o item foi removido da Ordem, ele volta a ficar 'separado'
-        statusUpdates.add((produto, PedidoProdutoStatus.separado));
+        statusUpdates.add((produto, PedidoBitolaStatus.separado));
         pedidosAfetados.add(produto.pedidoId);
         // Limpa a matéria-prima vinculada ao produto removido
         if (produto.materiaPrima != null) {
@@ -307,21 +307,21 @@ class OrdemController {
     }
 
     // Produtos na ordem editada
-    for (PedidoProdutoModel produto in ordemEditada.produtos) {
+    for (PedidoBitolaModel produto in ordemEditada.produtos) {
       pedidosAfetados.add(produto.pedidoId);
 
       // Atualizar Matéria-Prima se necessário
-      if (produto.status.status != PedidoProdutoStatus.pronto) {
+      if (produto.status.status != PedidoBitolaStatus.pronto) {
         if (ordemEditada.materiaPrima?.id != produto.materiaPrima?.id) {
           mpUpdates.add((produto, ordemEditada.materiaPrima!));
         }
       }
 
       // Atualizar Status
-      PedidoProdutoStatus newStatus = produto.status.status;
-      if (newStatus == PedidoProdutoStatus.separado) {
-        newStatus = PedidoProdutoStatus.aguardandoProducao;
-        produto.statusess.add(PedidoProdutoStatusModel.create(
+      PedidoBitolaStatus newStatus = produto.status.status;
+      if (newStatus == PedidoBitolaStatus.separado) {
+        newStatus = PedidoBitolaStatus.aguardandoProducao;
+        produto.statusess.add(PedidoBitolaStatusModel.create(
             newStatus)); // Atualiza na memória pra UI não piscar
       }
       statusUpdates.add((produto, newStatus));
@@ -412,7 +412,7 @@ class OrdemController {
 
     if (await _isDeleteUnavailable(ordem)) return;
     for (var pedidoProduto in ordem.produtos
-        .map<PedidoProdutoModel>(
+        .map<PedidoBitolaModel>(
           (e) => FirestoreClient.pedidos.getProdutoByPedidoId(
             e.pedidoId,
             e.id,
@@ -421,9 +421,9 @@ class OrdemController {
         .toList()) {
       pedidoProduto.statusess.clear();
       pedidoProduto.statusess.add(
-        PedidoProdutoStatusModel(
+        PedidoBitolaStatusModel(
           id: HashService.get,
-          status: PedidoProdutoStatus.separado,
+          status: PedidoBitolaStatus.separado,
           createdAt: DateTime.now(),
         ),
       );
@@ -462,7 +462,7 @@ class OrdemController {
         conditional: ordem.produtos.isNotEmpty,
       );
 
-  void onSortPedidos(List<PedidoProdutoModel> pedidos) {
+  void onSortPedidos(List<PedidoBitolaModel> pedidos) {
     bool isAsc = form.sortOrder == SortOrder.asc;
     switch (form.sortType) {
       case SortType.localizator:
@@ -573,7 +573,7 @@ class OrdemController {
     ordemStream.add(ordem);
   }
 
-  void showBottomChangeProdutosStatus(List<PedidoProdutoModel> produtos) async {
+  void showBottomChangeProdutosStatus(List<PedidoBitolaModel> produtos) async {
     final status = await showOrdemProdutosStatusBottom();
     if (status == null) return;
     if (!await showConfirmDialog(
@@ -602,7 +602,7 @@ class OrdemController {
 
   void showBottomChangeProdutoStatus(
     OrdemModel ordem,
-    PedidoProdutoModel produto,
+    PedidoBitolaModel produto,
   ) async {
     final produtoStatus = produto.statusess.last.status;
     final status = await showOrdemProdutoStatusBottom(produtoStatus);
@@ -612,8 +612,8 @@ class OrdemController {
         .getProdutoByPedidoId(produto.pedidoId, produto.id);
     final materiaPrimaEfetiva =
         produtoAtualizado.materiaPrima ?? produto.materiaPrima;
-    if ((status == PedidoProdutoStatus.pronto ||
-            status == PedidoProdutoStatus.produzindo) &&
+    if ((status == PedidoBitolaStatus.pronto ||
+            status == PedidoBitolaStatus.produzindo) &&
         materiaPrimaEfetiva == null) {
       showInfoDialog(
         'Para finalizar a ordem, é necessário selecionar uma matéria prima para o produto.',
@@ -628,25 +628,25 @@ class OrdemController {
 
   Future<void> onSelectProdutoStatus(
     OrdemModel ordem,
-    PedidoProdutoModel produto,
-    PedidoProdutoStatus status,
+    PedidoBitolaModel produto,
+    PedidoBitolaStatus status,
   ) async {
     // Busca o produto atualizado no cache para garantir que a matéria prima está populada
     final produtoAtualizado = FirestoreClient.pedidos
         .getProdutoByPedidoId(produto.pedidoId, produto.id);
     final materiaPrimaEfetiva =
         produtoAtualizado.materiaPrima ?? produto.materiaPrima;
-    if ((status == PedidoProdutoStatus.pronto ||
-            status == PedidoProdutoStatus.produzindo) &&
+    if ((status == PedidoBitolaStatus.pronto ||
+            status == PedidoBitolaStatus.produzindo) &&
         materiaPrimaEfetiva == null) {
       showInfoDialog(
         'Para finalizar a ordem, é necessário selecionar uma matéria prima para o produto.',
       );
       return;
     }
-    if (status == PedidoProdutoStatus.produzindo) {
+    if (status == PedidoBitolaStatus.produzindo) {
       if (ordem.produtos.any(
-        (e) => e.status.status == PedidoProdutoStatus.produzindo && !e.isPaused,
+        (e) => e.status.status == PedidoBitolaStatus.produzindo && !e.isPaused,
       )) {
         showInfoDialog(
           'Não é possível produzir mais de um produto ao mesmo tempo.',
@@ -662,11 +662,11 @@ class OrdemController {
   }
 
   Future<void> onChangeProdutoStatus(
-    PedidoProdutoModel produto,
-    PedidoProdutoStatus status,
+    PedidoBitolaModel produto,
+    PedidoBitolaStatus status,
     bool isAll,
   ) async {
-    if (status == PedidoProdutoStatus.aguardandoProducao) {
+    if (status == PedidoBitolaStatus.aguardandoProducao) {
       final materiaPrima = FirestoreClient.materiaPrimas.data.firstWhereOrNull(
         (e) => e.id == produto.materiaPrima?.id,
       );
@@ -687,7 +687,7 @@ class OrdemController {
     if (pedido != null) await updateFeaturesByPedidoStatus(pedido);
 
     // Baixa automática de estoque quando produto fica pronto
-    if (status == PedidoProdutoStatus.pronto) {
+    if (status == PedidoBitolaStatus.pronto) {
       await estoqueCtrl.baixarEstoque(
         produtoId: produto.produto.id,
         quantidade: produto.qtde,
@@ -696,8 +696,8 @@ class OrdemController {
     }
 
     // Estorno quando produto volta de PRONTO para outro status
-    if (statusAnterior == PedidoProdutoStatus.pronto &&
-        status != PedidoProdutoStatus.pronto) {
+    if (statusAnterior == PedidoBitolaStatus.pronto &&
+        status != PedidoBitolaStatus.pronto) {
       await estoqueCtrl.estornarBaixa(
         produtoId: produto.produto.id,
         quantidade: produto.qtde,
@@ -725,19 +725,19 @@ class OrdemController {
   /// Sincroniza todas as posições de um pedido com o status do card.
   /// Chamado quando o operador muda status no modo "por_pedido".
   Future<void> _syncPosicoesByPedidoStatus(
-    PedidoProdutoModel produto,
-    PedidoProdutoStatus pedidoStatus,
+    PedidoBitolaModel produto,
+    PedidoBitolaStatus pedidoStatus,
   ) async {
-    // Converte PedidoProdutoStatus para PosicaoStatus
+    // Converte PedidoBitolaStatus para PosicaoStatus
     final PosicaoStatus? posicaoStatus;
     switch (pedidoStatus) {
-      case PedidoProdutoStatus.aguardandoProducao:
+      case PedidoBitolaStatus.aguardandoProducao:
         posicaoStatus = PosicaoStatus.aguardando;
         break;
-      case PedidoProdutoStatus.produzindo:
+      case PedidoBitolaStatus.produzindo:
         posicaoStatus = PosicaoStatus.produzindo;
         break;
-      case PedidoProdutoStatus.pronto:
+      case PedidoBitolaStatus.pronto:
         posicaoStatus = PosicaoStatus.pronto;
         break;
       default:
@@ -928,7 +928,7 @@ class OrdemController {
         deleteMessage: 'A ordem será movida para a lista de ordens arquivadas.',
         infoMessage:
             'A ordem só pode ser arquivada se todos os produtos estiverem prontos.',
-        conditional: ordem.status != PedidoProdutoStatus.pronto,
+        conditional: ordem.status != PedidoBitolaStatus.pronto,
       );
 
   Future<void> onUnarchive(
@@ -967,7 +967,7 @@ class OrdemController {
 
   MateriaPrimaModel? getMateriaPrimaByPedidoProduto(
     List<PedidoModel> pedidos,
-    PedidoProdutoModel produto,
+    PedidoBitolaModel produto,
   ) {
     MateriaPrimaModel? materiaPrima;
     for (var pedido in pedidos) {
@@ -982,7 +982,7 @@ class OrdemController {
 
   Future<void> onPauseProduto(
     OrdemModel ordem,
-    PedidoProdutoModel produto,
+    PedidoBitolaModel produto,
   ) async {
     final motivo = await showOrdemPedidoProdutoPauseMotivoBottom();
     if (motivo == null) return;
@@ -997,7 +997,7 @@ class OrdemController {
 
   Future<void> onUnpauseProduto(
     OrdemModel ordem,
-    PedidoProdutoModel produto,
+    PedidoBitolaModel produto,
   ) async {
     showLoadingDialog();
     produto.isPaused = false;

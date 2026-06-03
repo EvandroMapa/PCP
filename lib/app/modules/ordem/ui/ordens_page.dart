@@ -1,6 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/ordem/view_models/ordem_view_model.dart';
@@ -149,9 +149,9 @@ class _OrdensPageState extends State<OrdensPage> {
               ordens = ordens
                   .where(
                     (e) => [
-                      PedidoProdutoStatus.aguardandoProducao,
-                      PedidoProdutoStatus.produzindo,
-                      PedidoProdutoStatus.pronto,
+                      PedidoBitolaStatus.aguardandoProducao,
+                      PedidoBitolaStatus.produzindo,
+                      PedidoBitolaStatus.pronto,
                     ].contains(e.status),
                   )
                   .toList();
@@ -173,10 +173,10 @@ class _OrdensPageState extends State<OrdensPage> {
                             onChanged: (_) => ordemCtrl.utilsStream.update(),
                           ),
                           const H(16),
-                          AppDropDown<ProdutoModel?>(
+                          AppDropDown<BitolaModel?>(
                             label: 'Bitola',
                             item: utils.produto,
-                            itens: FirestoreClient.produtos.data.toList()
+                            itens: FirestoreClient.bitolas.data.toList()
                               ..sort((a, b) {
                                 final cmp = a.sortIndex.compareTo(b.sortIndex);
                                 if (cmp != 0) return cmp;
@@ -191,13 +191,13 @@ class _OrdensPageState extends State<OrdensPage> {
                             },
                           ),
                           const H(16),
-                          AppDropDownList<PedidoProdutoStatus>(
+                          AppDropDownList<PedidoBitolaStatus>(
                             label: 'Ordernar por',
                             addeds: utils.status,
                             itens: const [
-                              PedidoProdutoStatus.aguardandoProducao,
-                              PedidoProdutoStatus.produzindo,
-                              PedidoProdutoStatus.pronto,
+                              PedidoBitolaStatus.aguardandoProducao,
+                              PedidoBitolaStatus.produzindo,
+                              PedidoBitolaStatus.pronto,
                             ],
                             itemLabel: (e) => e.label,
                             itemColor: (e) => e.color,
@@ -448,17 +448,17 @@ class _OrdensPageState extends State<OrdensPage> {
                               Row(
                                 children: [
                                   _progressChartWidget(
-                                      PedidoProdutoStatus.aguardandoProducao,
+                                      PedidoBitolaStatus.aguardandoProducao,
                                       ordem.getPrcntgAguardando(),
                                       isFreezed),
                                   const SizedBox(width: 12),
                                   _progressChartWidget(
-                                      PedidoProdutoStatus.produzindo,
+                                      PedidoBitolaStatus.produzindo,
                                       ordem.getPrcntgProduzindo(),
                                       isFreezed),
                                   const SizedBox(width: 12),
                                   _progressChartWidget(
-                                      PedidoProdutoStatus.pronto,
+                                      PedidoBitolaStatus.pronto,
                                       ordem.getPrcntgPronto(),
                                       isFreezed),
                                 ],
@@ -553,7 +553,7 @@ class _OrdensPageState extends State<OrdensPage> {
   }
 
   Widget _progressChartWidget(
-    PedidoProdutoStatus status,
+    PedidoBitolaStatus status,
     double porcentagem,
     bool isFreezed,
   ) {
@@ -582,9 +582,9 @@ class _OrdensPageState extends State<OrdensPage> {
         ),
         const SizedBox(height: 3),
         Text(
-          status == PedidoProdutoStatus.aguardandoProducao
+          status == PedidoBitolaStatus.aguardandoProducao
               ? 'Ag.'
-              : status == PedidoProdutoStatus.produzindo
+              : status == PedidoBitolaStatus.produzindo
                   ? 'Prod.'
                   : 'Pronto',
           style: AppCss.minimumRegular.setSize(9).setColor(Colors.grey[500]!),

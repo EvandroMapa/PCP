@@ -1,5 +1,5 @@
 import 'package:aco_plus/app/core/client/supabase/collections/usuario/usuario_tipo_supabase_collection.dart';
-import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_produto_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_bitola_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/estoque/estoque_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/estoque/estoque_movimentacao_supabase_collection.dart';
@@ -14,7 +14,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/tag/tag_collectio
 import 'package:aco_plus/app/core/client/firestore/collections/patio/patio_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/box/box_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido_box/pedido_box_collection.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_collection.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/ordem_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/notificacao/notificacao_collection.dart';
@@ -46,8 +46,8 @@ class BackendClient {
       ? PedidoCollection()
       : AppSupabaseClient.pedidos;
 
-  static PedidoProdutoSupabaseCollection get pedidoProdutos =>
-      AppSupabaseClient.pedidoProdutos;
+  static PedidoBitolaSupabaseCollection get pedidoBitolas =>
+      AppSupabaseClient.pedidoBitolas;
 
   static TagCollection get tags =>
       type == BackendType.firestore ? TagCollection() : AppSupabaseClient.tags;
@@ -63,9 +63,9 @@ class BackendClient {
           ? PedidoBoxCollection()
           : AppSupabaseClient.pedidoBoxes;
 
-  static ProdutoCollection get produtos => type == BackendType.firestore
-      ? ProdutoCollection()
-      : AppSupabaseClient.produtos;
+  static BitolaCollection get bitolas => type == BackendType.firestore
+      ? BitolaCollection()
+      : AppSupabaseClient.bitolas;
 
   static FabricanteCollection get fabricantes => type == BackendType.firestore
       ? FabricanteCollection()

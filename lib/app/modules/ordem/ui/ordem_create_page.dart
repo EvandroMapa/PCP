@@ -2,8 +2,8 @@ import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/enu
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/models/materia_prima_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/user_permission_type.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/app_drop_down.dart';
@@ -89,7 +89,7 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
     // Monta as duas listas
     final todosDisponiveis = form.produto != null
         ? ordemCtrl.getPedidosPorProduto(form.produto!, ordem: widget.ordem)
-        : <PedidoProdutoModel>[];
+        : <PedidoBitolaModel>[];
     final idsNaOrdem = form.produtos.map((e) => e.id).toSet();
     final naOrdem = todosDisponiveis.where((p) => idsNaOrdem.contains(p.id)).toList();
     final disponiveis = todosDisponiveis.where((p) => !idsNaOrdem.contains(p.id)).toList();
@@ -204,11 +204,11 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
                 children: [
                   Divider(height: 1, thickness: 1, color: const Color(0xFFEEF1F5)),
                   const SizedBox(height: 12),
-                  AppDropDown<ProdutoModel?>(
+                  AppDropDown<BitolaModel?>(
                     disable: form.isEdit && form.produtos.isNotEmpty,
-                    label: 'Produto',
+                    label: 'Bitola',
                     item: form.produto,
-                    itens: FirestoreClient.produtos.data.toList()
+                    itens: FirestoreClient.bitolas.data.toList()
                       ..sort((a, b) {
                         final cmp = a.sortIndex.compareTo(b.sortIndex);
                         return cmp != 0 ? cmp : a.number.compareTo(b.number);
@@ -257,7 +257,7 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
   // SEÇÃO: NA ORDEM (selecionados)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _secaoNaOrdem(OrdemCreateModel form, List<PedidoProdutoModel> naOrdem, double peso) {
+  Widget _secaoNaOrdem(OrdemCreateModel form, List<PedidoBitolaModel> naOrdem, double peso) {
     if (naOrdem.isEmpty) return const SizedBox.shrink();
 
     return Container(
@@ -338,7 +338,7 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
     );
   }
 
-  Widget _itemSelecionado(OrdemCreateModel form, PedidoProdutoModel produto) {
+  Widget _itemSelecionado(OrdemCreateModel form, PedidoBitolaModel produto) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       child: Material(
@@ -421,7 +421,7 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
   // SEÇÃO: DISPONÍVEIS (não selecionados)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _secaoDisponiveis(OrdemCreateModel form, List<PedidoProdutoModel> disponiveis, bool mpSelecionada) {
+  Widget _secaoDisponiveis(OrdemCreateModel form, List<PedidoBitolaModel> disponiveis, bool mpSelecionada) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       decoration: BoxDecoration(
@@ -563,7 +563,7 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
 
 
 
-  Widget _itemDisponivel(OrdemCreateModel form, PedidoProdutoModel produto, bool mpSelecionada) {
+  Widget _itemDisponivel(OrdemCreateModel form, PedidoBitolaModel produto, bool mpSelecionada) {
     final habilitado = produto.isAvailable && mpSelecionada;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
@@ -648,7 +648,7 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
   // BOTTOM BAR (resumo compacto)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _bottomBar(List<PedidoProdutoModel> naOrdem, double peso, OrdemCreateModel form) {
+  Widget _bottomBar(List<PedidoBitolaModel> naOrdem, double peso, OrdemCreateModel form) {
     if (form.produto == null) return const SizedBox.shrink();
 
     return Container(
@@ -692,7 +692,7 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
   // HELPERS
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _tipoBadge(PedidoProdutoModel produto) {
+  Widget _tipoBadge(PedidoBitolaModel produto) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
       decoration: BoxDecoration(

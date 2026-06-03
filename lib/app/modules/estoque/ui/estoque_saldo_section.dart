@@ -151,7 +151,7 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
   }
 
   Widget _lista() {
-    final produtos = BackendClient.produtos.data;
+    final produtos = BackendClient.bitolas.data;
     if (produtos.isEmpty) {
       return const Center(child: Text('Nenhum produto cadastrado'));
     }

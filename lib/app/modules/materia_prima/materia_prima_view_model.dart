@@ -1,7 +1,7 @@
 import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/enums/materia_prima_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/models/materia_prima_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/archive/archive_model.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
@@ -15,7 +15,7 @@ class MateriaPrimaUtils {
 class MateriaPrimaCreateModel {
   final String id;
   FabricanteModel? fabricanteModel;
-  ProdutoModel? produtoModel;
+  BitolaModel? produtoModel;
   TextController corridaLote = TextController();
   List<ArchiveModel> anexos = [];
   MateriaPrimaStatus status = MateriaPrimaStatus.disponivel;
@@ -32,7 +32,7 @@ class MateriaPrimaCreateModel {
     fabricanteModel = FirestoreClient.fabricantes.getById(
       materiaPrima.fabricanteModel.id,
     );
-    produtoModel = FirestoreClient.produtos.getById(materiaPrima.produto.id);
+    produtoModel = FirestoreClient.bitolas.getById(materiaPrima.produto.id);
     corridaLote.text = materiaPrima.corridaLote;
     anexos = materiaPrima.anexos;
     status = materiaPrima.status;

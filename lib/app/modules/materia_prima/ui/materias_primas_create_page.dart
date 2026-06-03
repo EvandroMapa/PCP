@@ -1,7 +1,7 @@
 import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/enums/materia_prima_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/models/materia_prima_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/app_barcode_scanner_page.dart';
 import 'package:aco_plus/app/core/components/app_drop_down.dart';
@@ -103,8 +103,8 @@ class _MateriaPrimaCreatePageState extends State<MateriaPrimaCreatePage> {
             final produtos = widget.materiaPrima != null
                 ? [widget.materiaPrima!.produto]
                 : materiaPrimaCtrl.getProdutosAvailable(form.fabricanteModel);
-            return AppDropDown<ProdutoModel?>(
-              label: 'Produto',
+            return AppDropDown<BitolaModel?>(
+              label: 'Bitola',
               item: widget.materiaPrima != null
                   ? produtos.first
                   : produtos.firstWhereOrNull(

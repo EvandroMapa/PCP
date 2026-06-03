@@ -7,7 +7,7 @@ import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:aco_plus/app/modules/estoque/estoque_view_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:overlay_support/overlay_support.dart';
@@ -63,7 +63,7 @@ class EstoqueController {
   /// Retorna o extrato cronológico de um produto no período do filtro de movimentação.
   /// Inclui o saldo inicial calculado a partir das movimentações anteriores ao período.
   (double saldoInicial, List<EstoqueLinhaMovimentacao> linhas)
-      getExtratoPorProduto(ProdutoModel produto) {
+      getExtratoPorProduto(BitolaModel produto) {
     final filtro = movimentacaoFiltro;
     final todasMovs = BackendClient.estoquesMovimentacao.data
         .where((e) => e.produtoId == produto.id)

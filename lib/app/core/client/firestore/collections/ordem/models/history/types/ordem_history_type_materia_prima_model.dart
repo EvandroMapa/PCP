@@ -1,5 +1,5 @@
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/ordem_history_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_materia_prima_produtos.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_materia_prima_bitolas.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
 
 class OrdemHistoryTypeMateriaPrimaModel extends OrdemHistoryDataModel {

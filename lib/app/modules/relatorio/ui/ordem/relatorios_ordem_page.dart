@@ -1,7 +1,7 @@
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/app_drop_down.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -17,25 +17,25 @@ import 'package:intl/intl.dart';
 
 // ─── Helpers de tempo ────────────────────────────────────────────────────────
 
-DateTime? _inicioProducao(PedidoProdutoModel p) {
+DateTime? _inicioProducao(PedidoBitolaModel p) {
   // Primeiro: busca o status 'produzindo'
   final produzindo = p.statusess
-      .where((s) => s.status == PedidoProdutoStatus.produzindo)
+      .where((s) => s.status == PedidoBitolaStatus.produzindo)
       .toList()
     ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
   if (produzindo.isNotEmpty) return produzindo.first.createdAt;
 
   // Fallback: produto foi marcado direto como 'pronto' — usa essa data como início
   final pronto = p.statusess
-      .where((s) => s.status == PedidoProdutoStatus.pronto)
+      .where((s) => s.status == PedidoBitolaStatus.pronto)
       .toList()
     ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
   return pronto.isEmpty ? null : pronto.first.createdAt;
 }
 
-DateTime? _fimProducao(PedidoProdutoModel p) {
+DateTime? _fimProducao(PedidoBitolaModel p) {
   final s = p.statusess
-      .where((s) => s.status == PedidoProdutoStatus.pronto)
+      .where((s) => s.status == PedidoBitolaStatus.pronto)
       .toList()
     ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
   return s.isEmpty ? null : s.last.createdAt;
@@ -88,7 +88,7 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
     start: DateTime.now().subtract(const Duration(days: 7)),
     end: DateTime.now(),
   );
-  ProdutoModel? _bitola;
+  BitolaModel? _bitola;
   String? _expandidoId;
 
   List<OrdemModel> _filtrarOrdens(List<OrdemModel> todas) {
@@ -97,7 +97,7 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
       if (o.isArchived) return true;
       final prods = o.produtos;
       return prods.isNotEmpty &&
-          prods.every((p) => p.status.status == PedidoProdutoStatus.pronto);
+          prods.every((p) => p.status.status == PedidoBitolaStatus.pronto);
     }).toList();
 
     // Filtro bitola
@@ -233,7 +233,7 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
   // ─── Filtros ───────────────────────────────────────────────────────────────
 
   Widget _filtros(BuildContext context) {
-    final bitolas = FirestoreClient.produtos.data.toList()
+    final bitolas = FirestoreClient.bitolas.data.toList()
       ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
 
     return Container(
@@ -243,7 +243,7 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
         children: [
           // Bitola
           Expanded(
-            child: AppDropDown<ProdutoModel?>(
+            child: AppDropDown<BitolaModel?>(
               label: 'Bitola',
               itens: [null, ...bitolas],
               item: _bitola,
@@ -552,7 +552,7 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
 
   // ─── Item de Pedido ───────────────────────────────────────────────────────
 
-  Widget _itemPedido(PedidoProdutoModel produto, OrdemModel ordem) {
+  Widget _itemPedido(PedidoBitolaModel produto, OrdemModel ordem) {
     final inicio = _inicioProducao(produto);
     final fim = _fimProducao(produto);
     final dur = _duracao(inicio, fim);
@@ -560,9 +560,9 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
 
     Color statusCor() {
       switch (status) {
-        case PedidoProdutoStatus.pronto:
+        case PedidoBitolaStatus.pronto:
           return Colors.green[700]!;
-        case PedidoProdutoStatus.produzindo:
+        case PedidoBitolaStatus.produzindo:
           return Colors.orange[700]!;
         default:
           return Colors.grey[400]!;

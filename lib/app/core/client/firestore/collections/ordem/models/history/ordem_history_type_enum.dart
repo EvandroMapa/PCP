@@ -1,6 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/ordem_history_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/types/ordem_history_type_concluida_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:flutter/material.dart';
 
 enum OrdemHistoryTypeEnum {
@@ -34,10 +34,10 @@ extension OrdemHistoryTypeEnumExtension on OrdemHistoryTypeEnum {
         return Icons.change_circle;
       case OrdemHistoryTypeEnum.statusOrdem:
         if (data is OrdemHistoryTypeStatusOrdemModel) {
-          if (data.status == PedidoProdutoStatus.pronto) {
+          if (data.status == PedidoBitolaStatus.pronto) {
             return Icons.check_circle;
           }
-          if (data.status == PedidoProdutoStatus.produzindo) {
+          if (data.status == PedidoBitolaStatus.produzindo) {
             return Icons.production_quantity_limits;
           }
         }

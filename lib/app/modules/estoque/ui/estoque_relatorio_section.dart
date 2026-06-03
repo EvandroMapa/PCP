@@ -1,5 +1,5 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/estoque/estoque_movimentacao_model.dart';
 import 'package:aco_plus/app/core/components/app_drop_down.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -61,15 +61,15 @@ class _EstoqueRelatorioSectionState extends State<EstoqueRelatorioSection> {
               ),
           ]),
           const SizedBox(height: 10),
-          AppDropDown<ProdutoModel?>(
+          AppDropDown<BitolaModel?>(
             label: 'Produto (todos)',
             item: filtro.produtoId != null
-                ? BackendClient.produtos.data.cast<ProdutoModel?>().firstWhere(
+                ? BackendClient.bitolas.data.cast<BitolaModel?>().firstWhere(
                       (e) => e?.id == filtro.produtoId,
                       orElse: () => null,
                     )
                 : null,
-            itens: [null, ...BackendClient.produtos.data],
+            itens: [null, ...BackendClient.bitolas.data],
             itemLabel: (e) => e == null ? 'Todos os produtos' : '${e.nome} — ${e.descricao}',
             onSelect: (e) {
               filtro.produtoId = e?.id;
@@ -142,7 +142,7 @@ class _EstoqueRelatorioSectionState extends State<EstoqueRelatorioSection> {
     final entradas = movs.where((e) => e.tipo.isEntrada).fold(0.0, (s, e) => s + e.quantidade);
     final saidas = movs.where((e) => !e.tipo.isEntrada).fold(0.0, (s, e) => s + e.quantidade.abs());
 
-    // Saldo atual do produto selecionado (ou soma total)
+    // Saldo atual do bitola selecionada (ou soma total)
     final saldoAtual = filtro.produtoId != null
         ? (BackendClient.estoques.getByProdutoId(filtro.produtoId!)?.quantidade ?? 0.0)
         : BackendClient.estoques.data.fold(0.0, (s, e) => s + e.quantidade);

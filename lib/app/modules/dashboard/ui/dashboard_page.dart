@@ -1,6 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -621,7 +621,7 @@ class DashboardPageState extends State<DashboardPage> {
   }
   Widget _consumoBitolaWidget() {
     final consumoMap = dashCtrl.getConsumoEstimado();
-    final produtos = FirestoreClient.produtos.data
+    final produtos = FirestoreClient.bitolas.data
         .where((p) => consumoMap.containsKey(p.id))
         .toList();
 
@@ -798,7 +798,7 @@ class DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _estoqueChartContent({required Key key}) {
-    final todosProdutos = BackendClient.produtos.data.toList()
+    final todosProdutos = BackendClient.bitolas.data.toList()
       ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
 
     final consumoMap = dashCtrl.getConsumoEstimado();
@@ -991,7 +991,7 @@ class DashboardPageState extends State<DashboardPage> {
           List<OrdemModel> ordensFiltradas = ordens.toList();
           ordensFiltradas.removeWhere((element) => element.freezed.isFreezed);
           ordensFiltradas = ordensFiltradas
-              .where((element) => element.status != PedidoProdutoStatus.pronto)
+              .where((element) => element.status != PedidoBitolaStatus.pronto)
               .toList();
 
           return Container(
@@ -1118,13 +1118,13 @@ class DashboardPageState extends State<DashboardPage> {
                 return Row(
                   children: [
                     const W(16),
-                    _progressChartWidget(PedidoProdutoStatus.aguardandoProducao,
+                    _progressChartWidget(PedidoBitolaStatus.aguardandoProducao,
                         ordem.getPrcntgAguardando(), ordem.freezed.isFreezed),
                     const W(8),
-                    _progressChartWidget(PedidoProdutoStatus.produzindo,
+                    _progressChartWidget(PedidoBitolaStatus.produzindo,
                         ordem.getPrcntgProduzindo(), ordem.freezed.isFreezed),
                     const W(8),
-                    _progressChartWidget(PedidoProdutoStatus.pronto,
+                    _progressChartWidget(PedidoBitolaStatus.pronto,
                         ordem.getPrcntgPronto(), ordem.freezed.isFreezed),
                   ],
                 );
@@ -1135,7 +1135,7 @@ class DashboardPageState extends State<DashboardPage> {
       );
 
   Widget _progressChartWidget(
-    PedidoProdutoStatus status,
+    PedidoBitolaStatus status,
     double porcentagem,
     bool isFreezed,
   ) {

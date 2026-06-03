@@ -1,6 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -27,7 +27,7 @@ class KanbanCardProductsWidget extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Nenhum produto',
+                    'Nenhuma bitola',
                     style: AppCss.mediumRegular.copyWith(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -73,7 +73,7 @@ class KanbanCardProductsWidget extends StatelessWidget {
     );
   }
 
-  Widget _produtoWidget(PedidoProdutoModel produto) {
+  Widget _produtoWidget(PedidoBitolaModel produto) {
     return Container(
       margin: const EdgeInsets.only(bottom: 2),
       decoration: BoxDecoration(

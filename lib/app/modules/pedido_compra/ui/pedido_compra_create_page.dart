@@ -1,5 +1,5 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
@@ -20,7 +20,7 @@ class PedidoCompraCreatePage extends StatefulWidget {
 
 class _PedidoCompraCreatePageState extends State<PedidoCompraCreatePage> {
   // Estado local do item sendo digitado
-  ProdutoModel? _produtoSelecionado;
+  BitolaModel? _produtoSelecionado;
   final _qtdeCtrl = TextEditingController();
   final _qtdeFocus = FocusNode();
 
@@ -127,7 +127,7 @@ class _PedidoCompraCreatePageState extends State<PedidoCompraCreatePage> {
     // Produtos já adicionados não aparecem como opção
     final produtosAdicionados =
         form.itens.map((i) => i.produto?.id).whereType<String>().toSet();
-    final produtos = [...BackendClient.produtos.data]
+    final produtos = [...BackendClient.bitolas.data]
       ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
     final produtosDisponiveis =
         produtos.where((p) => !produtosAdicionados.contains(p.id)).toList();
@@ -187,9 +187,9 @@ class _PedidoCompraCreatePageState extends State<PedidoCompraCreatePage> {
                 child: Column(
                   children: [
                     // Produto — exclui os já adicionados
-                    DropdownButtonFormField<ProdutoModel>(
+                    DropdownButtonFormField<BitolaModel>(
                       value: _produtoSelecionado,
-                      decoration: _dec('Produto / bitola'),
+                      decoration: _dec('Bitola'),
                       items: produtosDisponiveis
                           .map((p) => DropdownMenuItem(
                                 value: p,

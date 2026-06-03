@@ -1,6 +1,6 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 
 enum PedidoCompraStatus {
@@ -54,11 +54,11 @@ class PedidoCompraModel {
   /// Pendente ou confirmado — ainda não chegou ao estoque
   bool get isAtivo => isPendente || isConfirmado;
 
-  ProdutoModel get produto {
+  BitolaModel get produto {
     try {
-      return BackendClient.produtos.getById(produtoId);
+      return BackendClient.bitolas.getById(produtoId);
     } catch (_) {
-      return ProdutoModel.empty();
+      return BitolaModel.empty();
     }
   }
 
@@ -94,7 +94,7 @@ class PedidoCompraModel {
   Map<String, dynamic> toSupabaseMap() => {
         'id': id,
         'grupo_id': grupoId,
-        'produto_id': produtoId,
+        'bitola_id': produtoId,
         'fabricante_id': fabricanteId,
         'quantidade': quantidade,
         'quantidade_recebida': quantidadeRecebida,
@@ -110,7 +110,7 @@ class PedidoCompraModel {
       PedidoCompraModel(
         id: map['id'] ?? '',
         grupoId: map['grupo_id'] ?? map['id'] ?? '',
-        produtoId: map['produto_id'] ?? '',
+        produtoId: map['bitola_id'] ?? '',
         fabricanteId: map['fabricante_id'] ?? '',
         quantidade:
             double.tryParse((map['quantidade'] ?? 0).toString()) ?? 0.0,

@@ -1,8 +1,8 @@
 import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/enums/materia_prima_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/models/materia_prima_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
@@ -102,7 +102,7 @@ class MateriaPrimaController {
         await FirestoreClient.materiaPrimas.add(materiaPrimaCreate);
         for (var ordem in FirestoreClient.ordens.data.where(
           (ordem) =>
-              ordem.status != PedidoProdutoStatus.pronto &&
+              ordem.status != PedidoBitolaStatus.pronto &&
               ordem.materiaPrima == null &&
               materiaPrimaCreate.produto.id == ordem.produto.id,
         )) {
@@ -112,7 +112,7 @@ class MateriaPrimaController {
               .where(
                 (e) =>
                     e.materiaPrima == null &&
-                    e.status.status == PedidoProdutoStatus.aguardandoProducao,
+                    e.status.status == PedidoBitolaStatus.aguardandoProducao,
               )
               .toList();
           for (var produto in produtosAlterarMateriaPrima) {
@@ -185,9 +185,9 @@ class MateriaPrimaController {
     }
   }
 
-  List<ProdutoModel> getProdutosAvailable(FabricanteModel? fabricante) {
+  List<BitolaModel> getProdutosAvailable(FabricanteModel? fabricante) {
     if (fabricante == null) return [];
-    final produtos = FirestoreClient.produtos.data;
+    final produtos = FirestoreClient.bitolas.data;
     final materiaPrimas = FirestoreClient.materiaPrimas.data.where(
       (e) =>
           e.status == MateriaPrimaStatus.disponivel &&
@@ -215,15 +215,15 @@ class MateriaPrimaController {
       if (result == true) {
         for (final ordem in FirestoreClient.ordens.data.where(
           (e) =>
-              e.status != PedidoProdutoStatus.pronto &&
-              e.status != PedidoProdutoStatus.separado,
+              e.status != PedidoBitolaStatus.pronto &&
+              e.status != PedidoBitolaStatus.separado,
         )) {
           if (ordem.materiaPrima?.id == materiaPrima.id) {
             ordem.materiaPrima = null;
             await FirestoreClient.ordens.update(ordem);
           }
           for (final produto in ordem.produtos.where(
-            (e) => e.status.status == PedidoProdutoStatus.aguardandoProducao,
+            (e) => e.status.status == PedidoBitolaStatus.aguardandoProducao,
           )) {
             if (produto.materiaPrima?.id == materiaPrima.id) {
               await FirestoreClient.pedidos.updateProdutoMateriaPrima(

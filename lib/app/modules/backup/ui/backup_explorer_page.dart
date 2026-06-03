@@ -285,12 +285,12 @@ class _PedidoCardState extends State<_PedidoCard> {
           // ── Produtos ──────────────────────────────────────────────
           _buildSecao(
             icone: Icons.inventory_2_outlined,
-            titulo: 'Produtos',
+            titulo: 'Bitolas',
             cor: Colors.blue,
             items: p.produtosRaw,
             builder: (item) {
               final produtoNome =
-                  p.produtosDefMap[item['produto_id']] ?? item['produto_id'];
+                  p.produtosDefMap[item['bitola_id']] ?? item['bitola_id'];
               final qtde = item['qtde'] ?? item['quantidade'] ?? '?';
               return '$produtoNome — ${qtde}kg';
             },

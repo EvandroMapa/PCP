@@ -33,7 +33,7 @@ class SimuladorCompraController {
     }
     relatorioCtrl.onCreateRelatorioPedido();
 
-    final produtos = BackendClient.produtos.data.toList()
+    final produtos = BackendClient.bitolas.data.toList()
       ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
 
     final itens = <SimuladorCompraItem>[];

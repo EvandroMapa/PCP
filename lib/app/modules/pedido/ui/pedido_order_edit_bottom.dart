@@ -1,4 +1,4 @@
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/components/app_drop_down.dart';
 import 'package:aco_plus/app/core/components/app_field.dart';
 import 'package:aco_plus/app/core/components/app_text_button.dart';
@@ -9,11 +9,11 @@ import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
-import 'package:aco_plus/app/modules/pedido/view_models/pedido_produto_view_model.dart';
+import 'package:aco_plus/app/modules/pedido/view_models/pedido_bitola_view_model.dart';
 import 'package:flutter/material.dart';
 
 Future<double?> showPedidoOrderEditBottom(
-  PedidoProdutoCreateModel produto,
+  PedidoBitolaCreateModel produto,
   double? qtdeDisponivel,
 ) async =>
     showModalBottomSheet(
@@ -25,7 +25,7 @@ Future<double?> showPedidoOrderEditBottom(
     );
 
 class PedidoOrderEditBottom extends StatefulWidget {
-  final PedidoProdutoCreateModel produto;
+  final PedidoBitolaCreateModel produto;
   final double? qtdeDisponivel;
   const PedidoOrderEditBottom(this.produto, this.qtdeDisponivel, {super.key});
 
@@ -90,10 +90,10 @@ class _PedidoOrderEditBottomState extends State<PedidoOrderEditBottom> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Editar Produto', style: AppCss.largeBold),
+                    Text('Editar Bitola', style: AppCss.largeBold),
                     const H(16),
-                    AppDropDown<ProdutoModel>(
-                      label: 'Produto',
+                    AppDropDown<BitolaModel>(
+                      label: 'Bitola',
                       disable: true,
                       controller: widget.produto.produtoEC,
                       nextFocus: widget.produto.qtde.focus,

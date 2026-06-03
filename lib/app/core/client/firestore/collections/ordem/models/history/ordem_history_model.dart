@@ -9,7 +9,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/hist
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/types/ordem_history_type_editada_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/types/ordem_history_type_materia_prima_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/types/ordem_history_type_pausada_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/types/ordem_history_type_status_produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/types/ordem_history_type_status_bitola_model.dart';
 
 class OrdemHistoryModel {
   final OrdemHistoryTypeEnum type;
@@ -44,7 +44,7 @@ class OrdemHistoryModel {
         data = OrdemHistoryTypeDescongeladaModel.fromJson(json['data']);
         break;
       case OrdemHistoryTypeEnum.statusProdutoAlterada:
-        data = OrdemHistoryTypeStatusProdutoModel.fromJson(json['data']);
+        data = OrdemHistoryTypeStatusBitolaModel.fromJson(json['data']);
         break;
       case OrdemHistoryTypeEnum.materiaPrimaEditada:
         data = OrdemHistoryTypeMateriaPrimaModel.fromJson(json['data']);

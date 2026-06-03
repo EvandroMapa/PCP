@@ -89,7 +89,7 @@ class _MateriaPrimaBottomState extends State<MateriaPrimaBottom> {
 
                       // Informações do produto
                       _buildInfoSection(
-                        'Produto',
+                        'Bitola',
                         widget.materiaPrima.produto.labelMinified,
                         Icons.inventory,
                       ),

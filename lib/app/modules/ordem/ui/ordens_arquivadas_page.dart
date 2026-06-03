@@ -1,6 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/app_drop_down.dart';
 import 'package:aco_plus/app/core/components/app_field.dart';
@@ -97,10 +97,10 @@ class _OrdensArquivadasPageState extends State<OrdensArquivadasPage> {
                                 ordemCtrl.utilsArquivadasStream.update(),
                           ),
                           const H(16),
-                          AppDropDown<ProdutoModel?>(
+                          AppDropDown<BitolaModel?>(
                             label: 'Bitola',
                             item: utilsArquivadas.produto,
-                            itens: FirestoreClient.produtos.data.toList(),
+                            itens: FirestoreClient.bitolas.data.toList(),
                             itemLabel: (e) => e != null
                                 ? e.descricao
                                 : 'Selecione um produto',
@@ -173,19 +173,19 @@ class _OrdensArquivadasPageState extends State<OrdensArquivadasPage> {
                 Row(
                   children: [
                     _progressChartWidget(
-                      PedidoProdutoStatus.aguardandoProducao,
+                      PedidoBitolaStatus.aguardandoProducao,
                       ordem.getPrcntgAguardando(),
                       ordem.freezed.isFreezed,
                     ),
                     const W(16),
                     _progressChartWidget(
-                      PedidoProdutoStatus.produzindo,
+                      PedidoBitolaStatus.produzindo,
                       ordem.getPrcntgProduzindo(),
                       ordem.freezed.isFreezed,
                     ),
                     const W(16),
                     _progressChartWidget(
-                      PedidoProdutoStatus.pronto,
+                      PedidoBitolaStatus.pronto,
                       ordem.getPrcntgPronto(),
                       ordem.freezed.isFreezed,
                     ),
@@ -213,7 +213,7 @@ class _OrdensArquivadasPageState extends State<OrdensArquivadasPage> {
   }
 
   Widget _progressChartWidget(
-    PedidoProdutoStatus status,
+    PedidoBitolaStatus status,
     double porcentagem,
     bool isFreezed,
   ) {

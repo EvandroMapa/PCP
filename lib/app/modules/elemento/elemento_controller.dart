@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/core/services/preferences_service.dart';
@@ -357,7 +357,7 @@ class ElementoController {
           'elemento_id': form.id,
           'nome': posicao.nome.controller.text,
           'numero_os': posicao.numeroOs.controller.text,
-          'produto_id': posicao.produto!.id,
+          'bitola_id': posicao.produto!.id,
           'peso_kg': posicao.pesoDouble,
           'qtde': posicao.qtdeInt,
           'compr_unit': posicao.comprUnitDouble,
@@ -818,7 +818,7 @@ class ElementoController {
         final pesoLido = double.tryParse(pesoStr);
 
         if (bitola != null && pesoLido != null) {
-          final produtoEncontrado = BackendClient.produtos.data.where((p) {
+          final produtoEncontrado = BackendClient.bitolas.data.where((p) {
             final textToSearch =
                 '${p.nome} ${p.labelMinified}'.replaceAll(',', '.');
             final extractedNumbers =
@@ -977,7 +977,7 @@ class ElementoController {
             'elemento_id': el.id,
             'nome': posicao.nome.controller.text,
             'numero_os': posicao.numeroOs.controller.text,
-            'produto_id': posicao.produto!.id,
+            'bitola_id': posicao.produto!.id,
             'peso_kg': posicao.pesoDouble,
             'qtde': posicao.qtdeInt,
             'compr_unit': posicao.comprUnitDouble,
@@ -1085,7 +1085,7 @@ class ElementoValidacaoResult {
 }
 
 class ElementoDivergenciaBitola {
-  final PedidoProdutoModel produto;
+  final PedidoBitolaModel produto;
   final double esperadoKg;
   final double calculadoKg;
   double get diferencaKg => (esperadoKg - calculadoKg).abs();

@@ -2,8 +2,8 @@ import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/mod
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_status_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
@@ -133,9 +133,9 @@ class PedidoCollection {
 
   Future<PedidoModel?> getByIdSupabase(String id) async => null;
 
-  PedidoProdutoModel getProdutoByPedidoId(String pedidoId, String produtoId) =>
+  PedidoBitolaModel getProdutoByPedidoId(String pedidoId, String produtoId) =>
       getById(pedidoId).produtos.firstWhereOrNull((e) => e.id == produtoId) ??
-      PedidoProdutoModel.empty(getById(pedidoId));
+      PedidoBitolaModel.empty(getById(pedidoId));
 
   Future<PedidoModel?> add(PedidoModel model) async {
     await collection.doc(model.id).set(model.toMap());
@@ -161,7 +161,7 @@ class PedidoCollection {
   }
 
   Future<void> updateProdutoMateriaPrima(
-    PedidoProdutoModel produto,
+    PedidoBitolaModel produto,
     MateriaPrimaModel? materiaPrima,
   ) async {
     final pedido = getById(produto.pedidoId);
@@ -176,7 +176,7 @@ class PedidoCollection {
   }
 
   Future<void> updateProdutoPause(
-    PedidoProdutoModel produto,
+    PedidoBitolaModel produto,
     bool isPaused,
   ) async {
     final pedido = getById(produto.pedidoId);
@@ -191,8 +191,8 @@ class PedidoCollection {
   }
 
   Future<void> updateProdutoStatus(
-    PedidoProdutoModel produto,
-    PedidoProdutoStatus status, {
+    PedidoBitolaModel produto,
+    PedidoBitolaStatus status, {
     bool clear = false,
   }) async {
     final pedido = getById(produto.pedidoId);
@@ -208,13 +208,13 @@ class PedidoCollection {
 
     if (pedidoProduto.statusess.isEmpty ||
         pedidoProduto.statusess.last.status != status) {
-      pedidoProduto.statusess.add(PedidoProdutoStatusModel.create(status));
+      pedidoProduto.statusess.add(PedidoBitolaStatusModel.create(status));
     }
 
     return await collection.doc(pedido.id).update(pedido.toMap());
   }
 
-  Future<PedidoModel?> updatePedidoStatus(PedidoProdutoModel produto) async {
+  Future<PedidoModel?> updatePedidoStatus(PedidoBitolaModel produto) async {
     final pedido = getById(produto.pedidoId);
     final status = PedidoStatusModel.create(getPedidoStatusByProduto(pedido));
     if (status.status == pedido.status) return null;
@@ -225,7 +225,7 @@ class PedidoCollection {
 
   PedidoStatus getPedidoStatusByProduto(PedidoModel pedido) {
     bool isAllDone = pedido.produtos.every(
-      (e) => e.status.status == PedidoProdutoStatus.pronto,
+      (e) => e.status.status == PedidoBitolaStatus.pronto,
     );
     if (isAllDone) {
       return pedido.tipo == PedidoTipo.cd
@@ -233,8 +233,8 @@ class PedidoCollection {
           : PedidoStatus.aguardandoProducaoCDA;
     } else {
       bool isAnyInProduction = pedido.produtos.any((e) =>
-          e.status.status == PedidoProdutoStatus.produzindo ||
-          e.status.status == PedidoProdutoStatus.aguardandoProducao);
+          e.status.status == PedidoBitolaStatus.produzindo ||
+          e.status.status == PedidoBitolaStatus.aguardandoProducao);
 
       return isAnyInProduction
           ? PedidoStatus.produzindoCD

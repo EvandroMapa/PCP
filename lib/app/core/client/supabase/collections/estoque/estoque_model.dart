@@ -1,4 +1,4 @@
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 
@@ -21,11 +21,11 @@ class EstoqueModel {
     required this.updatedAt,
   });
 
-  ProdutoModel get produto {
+  BitolaModel get produto {
     try {
-      return BackendClient.produtos.getById(produtoId);
+      return BackendClient.bitolas.getById(produtoId);
     } catch (_) {
-      return ProdutoModel.empty();
+      return BitolaModel.empty();
     }
   }
 
@@ -41,7 +41,7 @@ class EstoqueModel {
 
   Map<String, dynamic> toSupabaseMap() => {
         'id': id,
-        'produto_id': produtoId,
+        'bitola_id': produtoId,
         'quantidade': quantidade,
         'estoque_minimo': estoqueMinimo,
         'estoque_ideal': estoqueIdeal,
@@ -51,7 +51,7 @@ class EstoqueModel {
 
   factory EstoqueModel.fromSupabaseMap(Map<String, dynamic> map) => EstoqueModel(
         id: map['id'] ?? '',
-        produtoId: map['produto_id'] ?? '',
+        produtoId: map['bitola_id'] ?? '',
         quantidade:
             double.tryParse((map['quantidade'] ?? 0).toString()) ?? 0.0,
         estoqueMinimo:

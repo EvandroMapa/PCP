@@ -46,7 +46,7 @@ class AppController {
       if (_isFirstLoad) return; // Ignora carga inicial
       _triggerFullCascade();
     });
-    BackendClient.produtos.dataStream.listen.listen((_) {
+    BackendClient.bitolas.dataStream.listen.listen((_) {
       if (_isFirstLoad) return;
       _triggerFullCascade();
     });

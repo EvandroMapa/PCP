@@ -4,9 +4,9 @@ import 'package:aco_plus/app/core/client/supabase/collections/fabricante/fabrica
 import 'package:aco_plus/app/core/client/supabase/collections/materia_prima/materia_prima_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/ordem/ordem_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_supabase_collection.dart';
-import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_produto_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_bitola_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido/pedido_arquivo_supabase_collection.dart';
-import 'package:aco_plus/app/core/client/supabase/collections/produto/produto_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/bitola/bitola_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/step/step_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/usuario/usuario_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/usuario/usuario_tipo_supabase_collection.dart';
@@ -26,8 +26,8 @@ import 'package:aco_plus/app/core/client/supabase/collections/pedido_compra/pedi
 class AppSupabaseClient {
   static OrdemSupabaseCollection ordens = OrdemSupabaseCollection();
   static PedidoSupabaseCollection pedidos = PedidoSupabaseCollection();
-  static PedidoProdutoSupabaseCollection pedidoProdutos =
-      PedidoProdutoSupabaseCollection();
+  static PedidoBitolaSupabaseCollection pedidoBitolas =
+      PedidoBitolaSupabaseCollection();
   static PedidoArquivoSupabaseCollection pedidoArquivos =
       PedidoArquivoSupabaseCollection();
   static UsuarioSupabaseCollection usuarios = UsuarioSupabaseCollection();
@@ -35,7 +35,7 @@ class AppSupabaseClient {
       UsuarioTipoSupabaseCollection();
   static ClienteSupabaseCollection clientes = ClienteSupabaseCollection();
   static StepSupabaseCollection steps = StepSupabaseCollection();
-  static ProdutoSupabaseCollection produtos = ProdutoSupabaseCollection();
+  static BitolaSupabaseCollection bitolas = BitolaSupabaseCollection();
   static FabricanteSupabaseCollection fabricantes =
       FabricanteSupabaseCollection();
   static MateriaPrimaSupabaseCollection materiaPrima =
@@ -72,7 +72,7 @@ class AppSupabaseClient {
       ordens.listen();
       materiaPrima.listen();
       pedidoArquivos.listen();
-      pedidoProdutos.listen();
+      pedidoBitolas.listen();
       tags.listen();
       checklists.listen();
       automatizacao.listen();
@@ -98,9 +98,9 @@ class AppSupabaseClient {
           .catchError((e) => log('Error starting clientes: $e'));
       await steps.start().catchError((e) => log('Error starting steps: $e'));
       await ordens.start().catchError((e) => log('Error starting ordens: $e'));
-      await produtos
+      await bitolas
           .start()
-          .catchError((e) => log('Error starting produtos: $e'));
+          .catchError((e) => log('Error starting bitolas: $e'));
       await fabricantes
           .start()
           .catchError((e) => log('Error starting fabricantes: $e'));
@@ -110,9 +110,9 @@ class AppSupabaseClient {
       await pedidoArquivos
           .start()
           .catchError((e) => log('Error starting pedidoArquivos: $e'));
-      await pedidoProdutos
+      await pedidoBitolas
           .start()
-          .catchError((e) => log('Error starting pedidoProdutos: $e'));
+          .catchError((e) => log('Error starting pedidoBitolas: $e'));
       await tags.start().catchError((e) => log('Error starting tags: $e'));
       await checklists
           .start()

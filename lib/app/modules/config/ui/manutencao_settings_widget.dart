@@ -1,6 +1,6 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
@@ -366,7 +366,7 @@ class _ManutencaoSettingsWidgetState extends State<ManutencaoSettingsWidget> {
                 cor: Colors.orange,
                 campos: {
                   'Peso Total': pedido.pesoTotal.toKg(),
-                  'Produtos': '${pedido.produtos.length} bitolas',
+                  'Bitolas': '${pedido.produtos.length} bitolas',
                   'Elementos': '${pedido.elementos.length} elementos',
                 },
               ),
@@ -506,7 +506,7 @@ class _ManutencaoSettingsWidgetState extends State<ManutencaoSettingsWidget> {
     );
   }
 
-  Widget _produtoNode(PedidoProdutoModel p) {
+  Widget _produtoNode(PedidoBitolaModel p) {
     final produto = p.produto;
     final statusAtual = p.status;
     final campos = <String, String>{
@@ -557,7 +557,7 @@ class _ManutencaoSettingsWidgetState extends State<ManutencaoSettingsWidget> {
     );
   }
 
-  Widget _historicoStatusProduto(PedidoProdutoModel p) {
+  Widget _historicoStatusProduto(PedidoBitolaModel p) {
     return Container(
       width: double.maxFinite,
       padding: const EdgeInsets.all(10),

@@ -1,8 +1,8 @@
 import 'dart:developer';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
@@ -31,7 +31,7 @@ class SpeExtracao {
 class SpeBitolaExtraida {
   final String bitolaNome; // ex: "CA-50 8.0mm"
   final double pesoTotalKg;
-  final ProdutoModel? produtoPcp; // null se não encontrou match
+  final BitolaModel? produtoPcp; // null se não encontrou match
 
   SpeBitolaExtraida({
     required this.bitolaNome,
@@ -61,7 +61,7 @@ class SpePosicaoExtraida {
   final double pesoKg;
   final int qtde;
   final double comprCorte;
-  final ProdutoModel? produtoPcp;
+  final BitolaModel? produtoPcp;
 
   SpePosicaoExtraida({
     required this.nome,
@@ -109,12 +109,12 @@ class SpeImportacaoService {
     }
 
     // Produtos do PCP para match
-    final produtosPcp = FirestoreClient.produtos.data;
+    final produtosPcp = FirestoreClient.bitolas.data;
 
     // ── Processar cada elemento do pedido técnico ──────────────────────────
     final elementosExtraidos = <SpeElementoExtraido>[];
     final bitolaAcumulado = <String, double>{}; // bitolaNome → peso total
-    final bitolaMatch = <String, ProdutoModel?>{}; // cache de match
+    final bitolaMatch = <String, BitolaModel?>{}; // cache de match
 
     for (final elemPt in elementos) {
       final elementoId = elemPt['elemento_id']?.toString() ?? '';
@@ -149,12 +149,12 @@ class SpeImportacaoService {
                 0.0)
             : 0.0;
 
-        // peso = qtde × multiplicador × comprimentoDeCorte(m) × massaFinal(kg/m)
-        // comprimentoDeCorte já está em metros no SPE
+        // peso = qtde × multiplicador × comprimentoDeCorte(cm→m) × massaFinal(kg/m)
+        // comprimentoDeCorte está em centímetros no SPE
         final pesoPos =
-            qtdePos * multiplicador * (comprCorte / 1000) * massaFinal;
+            qtdePos * multiplicador * (comprCorte / 100) * massaFinal;
 
-        // Match com ProdutoModel do PCP
+        // Match com BitolaModel do PCP
         if (!bitolaMatch.containsKey(bitolaNome)) {
           bitolaMatch[bitolaNome] = _encontrarProdutoPcp(
             produtosPcp,
@@ -221,7 +221,7 @@ class SpeImportacaoService {
       if (modo == 'substituir') {
         // Remover produtos existentes do pedido
         await SupabaseService.client
-            .from('pedido_produtos')
+            .from('pedido_bitolas')
             .delete()
             .eq('pedido_id', pedido.id);
       }
@@ -231,13 +231,13 @@ class SpeImportacaoService {
         if (bitola.produtoPcp == null) continue; // pular bitolas sem match
 
         final produtoId = HashService.get;
-        await SupabaseService.client.from('pedido_produtos').insert({
+        await SupabaseService.client.from('pedido_bitolas').insert({
           'id': produtoId,
           'pedido_id': pedido.id,
-          'produto_id': bitola.produtoPcp!.id,
-          'produto_nome': bitola.produtoPcp!.nome,
-          'produto_descricao': bitola.produtoPcp!.descricao,
-          'produto_massa_final': bitola.produtoPcp!.massaFinal,
+          'bitola_id': bitola.produtoPcp!.id,
+          'bitola_nome': bitola.produtoPcp!.nome,
+          'bitola_descricao': bitola.produtoPcp!.descricao,
+          'bitola_massa_final': bitola.produtoPcp!.massaFinal,
           'qtde': bitola.pesoTotalKg,
           'qtde_original': bitola.pesoTotalKg,
           'cliente_id': pedido.cliente.id,
@@ -292,7 +292,7 @@ class SpeImportacaoService {
             'elemento_id': elementoId,
             'nome': pos.nome,
             'numero_os': osCounter.toString().padLeft(3, '0'),
-            'produto_id': pos.produtoPcp!.id,
+            'bitola_id': pos.produtoPcp!.id,
             'peso_kg': pos.pesoKg,
             'qtde': pos.qtde,
             'compr_unit': 0,
@@ -314,42 +314,32 @@ class SpeImportacaoService {
 
   // ── Helpers privados ──────────────────────────────────────────────────────
 
-  /// Tenta encontrar um ProdutoModel do PCP correspondente à bitola do SPE.
-  ProdutoModel? _encontrarProdutoPcp(
-    List<ProdutoModel> produtos,
+  /// Tenta encontrar um BitolaModel do PCP correspondente à bitola do SPE.
+  /// Match principal: codigoFinanceiro (campo obrigatório para importação).
+  BitolaModel? _encontrarProdutoPcp(
+    List<BitolaModel> bitolas,
     String bitolaNome,
     Map<String, dynamic>? bitolaData,
   ) {
-    // 1. Match por codigoFinanceiro (se a bitola do SPE tem um)
-    if (bitolaData != null) {
-      final codigoFin =
-          (bitolaData['codigo_financeiro'] ?? '').toString().trim();
-      if (codigoFin.isNotEmpty) {
-        final match =
-            produtos.firstWhereOrNull((p) => p.codigoFinanceiro == codigoFin);
-        if (match != null) return match;
-      }
+    if (bitolaData == null) return null;
+
+    // 1. Match por codigoFinanceiro (chave principal)
+    final codigoFin =
+        (bitolaData['codigo_financeiro'] ?? '').toString().trim();
+    if (codigoFin.isNotEmpty) {
+      final match = bitolas.firstWhereOrNull(
+          (b) => b.codigoFinanceiro.trim() == codigoFin);
+      if (match != null) return match;
     }
 
-    // 2. Match por nome + descricao (ex: "CA-50" + "8.0mm")
-    if (bitolaData != null) {
-      final nomeB = (bitolaData['nome'] ?? '').toString().trim();
-      final descB = (bitolaData['descricao'] ?? '').toString().trim();
-      if (nomeB.isNotEmpty) {
-        final match = produtos.firstWhereOrNull(
-            (p) => p.nome == nomeB && p.descricao == descB);
-        if (match != null) return match;
-
-        // 2b. Match apenas por nome
-        final matchNome = produtos.firstWhereOrNull((p) => p.nome == nomeB);
-        if (matchNome != null) return matchNome;
-      }
+    // 2. Fallback: Match por nome + descricao (ex: "CA-50" + "8.0mm")
+    final nomeB = (bitolaData['nome'] ?? '').toString().trim();
+    final descB = (bitolaData['descricao'] ?? '').toString().trim();
+    if (nomeB.isNotEmpty && descB.isNotEmpty) {
+      final match = bitolas.firstWhereOrNull(
+          (b) => b.nome.trim() == nomeB && b.descricao.trim() == descB);
+      if (match != null) return match;
     }
-
-    // 3. Match por bitolaNome diretamente (ex: "CA-50 8.0mm" contém "CA-50")
-    final matchParcial = produtos.firstWhereOrNull(
-        (p) => bitolaNome.contains(p.nome) && bitolaNome.contains(p.descricao));
-    if (matchParcial != null) return matchParcial;
 
     return null;
   }

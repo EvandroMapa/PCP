@@ -1,11 +1,11 @@
 import 'dart:math';
 
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 
 /// Item individual do simulador de compra
 class SimuladorCompraItem {
-  final ProdutoModel produto;
+  final BitolaModel produto;
   final double saldoFisico;
   final double consumoPrevisto;
   final double emPedido;

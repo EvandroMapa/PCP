@@ -1,11 +1,11 @@
 import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido_compra/pedido_compra_model.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 
 /// Item individual do carrinho de criação
 class PedidoCompraItemForm {
-  ProdutoModel? produto;
+  BitolaModel? produto;
   final TextController quantidade = TextController();
 
   bool get isValid => produto != null && quantidadeValue > 0;

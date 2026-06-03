@@ -6,8 +6,8 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedi
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
 
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
@@ -31,7 +31,7 @@ class PedidoModel {
   DateTime? deliveryAt;
   final ClienteModel cliente;
   ObraModel obra;
-  final List<PedidoProdutoModel> produtos;
+  final List<PedidoBitolaModel> produtos;
   final PedidoTipo tipo;
   List<PedidoStatusModel> statusess;
   List<PedidoStepModel> steps;
@@ -72,7 +72,7 @@ class PedidoModel {
   bool get podeGerarParcial =>
       !isParcial &&
       elementos.isEmpty &&
-      (isMestre || produtos.every((p) => p.status.status == PedidoProdutoStatus.separado));
+      (isMestre || produtos.every((p) => p.status.status == PedidoBitolaStatus.separado));
 
   // New financial fields
   final double valorSubtotal;
@@ -221,7 +221,7 @@ class PedidoModel {
     Map<String, dynamic>? armacaoResumo,
   }) : armacaoResumo = armacaoResumo ?? {};
 
-  double getQtdeDirecionada(PedidoProdutoModel produto) {
+  double getQtdeDirecionada(PedidoBitolaModel produto) {
     double qtde = 0.0;
     for (final filho in getPedidosFilhos()) {
       for (final prodFilho in filho.produtos) {
@@ -233,25 +233,25 @@ class PedidoModel {
     return qtde;
   }
 
-  PedidoProdutoStatus getPedidoProdutoStatus(PedidoProdutoModel produto) {
-    PedidoProdutoStatus status = PedidoProdutoStatus.aguardandoProducao;
+  PedidoBitolaStatus getPedidoBitolaStatus(PedidoBitolaModel produto) {
+    PedidoBitolaStatus status = PedidoBitolaStatus.aguardandoProducao;
     final produtos = getProdutos().where(
       (e) => e.produto.id == produto.produto.id,
     );
     if (produtos.every(
-      (e) => e.status.status == PedidoProdutoStatus.aguardandoProducao,
+      (e) => e.status.status == PedidoBitolaStatus.aguardandoProducao,
     )) {
-      status = PedidoProdutoStatus.aguardandoProducao;
+      status = PedidoBitolaStatus.aguardandoProducao;
     }
     if (produtos.any(
-      (e) => e.status.status == PedidoProdutoStatus.produzindo,
+      (e) => e.status.status == PedidoBitolaStatus.produzindo,
     )) {
-      status = PedidoProdutoStatus.produzindo;
+      status = PedidoBitolaStatus.produzindo;
     }
     return status;
   }
 
-  List<PedidoProdutoModel> getProdutos() {
+  List<PedidoBitolaModel> getProdutos() {
     return produtos;
   }
 
@@ -269,8 +269,8 @@ class PedidoModel {
         .toList();
   }
 
-  List<PedidoProdutoStatus> get getStatusess {
-    List<PedidoProdutoStatus> statusess = [];
+  List<PedidoBitolaStatus> get getStatusess {
+    List<PedidoBitolaStatus> statusess = [];
     for (var element in produtos) {
       statusess.add(element.status.status);
     }
@@ -288,21 +288,21 @@ class PedidoModel {
     return getProdutos()
         .where(
           (e) =>
-              e.status.status == PedidoProdutoStatus.aguardandoProducao ||
-              e.status.status == PedidoProdutoStatus.separado,
+              e.status.status == PedidoBitolaStatus.aguardandoProducao ||
+              e.status.status == PedidoBitolaStatus.separado,
         )
         .fold(0, (previousValue, element) => previousValue + element.qtde);
   }
 
   double getQtdeProduzindo() {
     return getProdutos()
-        .where((e) => e.status.status == PedidoProdutoStatus.produzindo)
+        .where((e) => e.status.status == PedidoBitolaStatus.produzindo)
         .fold(0, (previousValue, element) => previousValue + element.qtde);
   }
 
   double getQtdePronto() {
     return getProdutos()
-        .where((e) => e.status.status == PedidoProdutoStatus.pronto)
+        .where((e) => e.status.status == PedidoBitolaStatus.pronto)
         .fold(0, (previousValue, element) => previousValue + element.qtde);
   }
 
@@ -384,11 +384,11 @@ class PedidoModel {
       statusess: List<PedidoStatusModel>.from(
         map['status']?.map((x) => PedidoStatusModel.fromMap(x)) ?? [],
       ),
-      produtos: List<PedidoProdutoModel>.from(
-        (map['produtos']?.map((x) => PedidoProdutoModel.fromMap(x)) ?? [])
-            .cast<PedidoProdutoModel>()
+      produtos: List<PedidoBitolaModel>.from(
+        (map['produtos']?.map((x) => PedidoBitolaModel.fromMap(x)) ?? [])
+            .cast<PedidoBitolaModel>()
             .toList()
-          ..sort((PedidoProdutoModel a, PedidoProdutoModel b) =>
+          ..sort((PedidoBitolaModel a, PedidoBitolaModel b) =>
               a.produto.sortIndex.compareTo(b.produto.sortIndex)),
       ),
       archives: List<ArchiveModel>.from(
@@ -504,9 +504,9 @@ class PedidoModel {
     }
 
     final produtos = produtosRaw != null
-        ? (produtosRaw.map((p) => PedidoProdutoModel.fromSupabaseMap(p)).toList()
+        ? (produtosRaw.map((p) => PedidoBitolaModel.fromSupabaseMap(p)).toList()
           ..sort((a, b) => a.produto.sortIndex.compareTo(b.produto.sortIndex)))
-        : <PedidoProdutoModel>[];
+        : <PedidoBitolaModel>[];
 
     final elementos = elementosRaw != null
         ? elementosRaw
@@ -670,7 +670,7 @@ class PedidoModel {
     DateTime? createdAt,
     ClienteModel? cliente,
     ObraModel? obra,
-    List<PedidoProdutoModel>? produtos,
+    List<PedidoBitolaModel>? produtos,
     PedidoTipo? tipo,
     List<PedidoStatusModel>? statusess,
     DateTime? deliveryAt,

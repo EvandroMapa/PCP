@@ -1,5 +1,5 @@
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
@@ -90,10 +90,10 @@ class OrdemStatusWidget extends StatelessWidget {
                 const H(8),
                 LinearProgressIndicator(
                   value: ordem.getPrcntgAguardando(),
-                  backgroundColor: PedidoProdutoStatus.aguardandoProducao.color
+                  backgroundColor: PedidoBitolaStatus.aguardandoProducao.color
                       .withValues(alpha: 0.3),
                   valueColor: AlwaysStoppedAnimation(
-                    PedidoProdutoStatus.aguardandoProducao.color,
+                    PedidoBitolaStatus.aguardandoProducao.color,
                   ),
                 ),
               ],
@@ -114,10 +114,10 @@ class OrdemStatusWidget extends StatelessWidget {
                 const H(8),
                 LinearProgressIndicator(
                   value: ordem.getPrcntgProduzindo(),
-                  backgroundColor: PedidoProdutoStatus.produzindo.color
+                  backgroundColor: PedidoBitolaStatus.produzindo.color
                       .withValues(alpha: 0.3),
                   valueColor: AlwaysStoppedAnimation(
-                    PedidoProdutoStatus.produzindo.color,
+                    PedidoBitolaStatus.produzindo.color,
                   ),
                 ),
               ],
@@ -138,11 +138,11 @@ class OrdemStatusWidget extends StatelessWidget {
                 const H(8),
                 LinearProgressIndicator(
                   value: ordem.getPrcntgPronto(),
-                  backgroundColor: PedidoProdutoStatus.pronto.color.withValues(
+                  backgroundColor: PedidoBitolaStatus.pronto.color.withValues(
                     alpha: 0.3,
                   ),
                   valueColor: AlwaysStoppedAnimation(
-                    PedidoProdutoStatus.pronto.color,
+                    PedidoBitolaStatus.pronto.color,
                   ),
                 ),
               ],

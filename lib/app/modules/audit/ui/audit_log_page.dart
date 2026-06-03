@@ -535,7 +535,7 @@ class _LogRow extends StatelessWidget {
             ? 'Cliente "$label" excluído'
             : 'Cliente excluído';
 
-      case 'excluir_produto':
+      case 'excluir_bitola':
         return label.isNotEmpty
             ? 'Produto "$label" excluído'
             : 'Produto excluído';

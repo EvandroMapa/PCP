@@ -80,7 +80,7 @@ class AutomatizacaoModel {
   Map<String, dynamic> toSupabaseMap() {
     return {
       'criacao_pedido': criacaoPedido.toMap(),
-      'produto_pedido_separado': produtoPedidoSeparado.toMap(),
+      'bitola_pedido_separado': produtoPedidoSeparado.toMap(),
       'produzindo_cd_pedido': produzindoCDPedido.toMap(),
       'pronto_cd_pedido': prontoCDPedido.toMap(),
       'aguardando_armacao_pedido': aguardandoArmacaoPedido.toMap(),
@@ -101,11 +101,11 @@ class AutomatizacaoModel {
               ? json.decode(map['criacao_pedido'])
               : map['criacao_pedido'])
           : empty.criacaoPedido,
-      produtoPedidoSeparado: map['produto_pedido_separado'] != null
+      produtoPedidoSeparado: map['bitola_pedido_separado'] != null
           ? AutomatizacaoItemModel.fromMap(
-              map['produto_pedido_separado'] is String
-                  ? json.decode(map['produto_pedido_separado'])
-                  : map['produto_pedido_separado'])
+              map['bitola_pedido_separado'] is String
+                  ? json.decode(map['bitola_pedido_separado'])
+                  : map['bitola_pedido_separado'])
           : empty.produtoPedidoSeparado,
       produzindoCDPedido: map['produzindo_cd_pedido'] != null
           ? AutomatizacaoItemModel.fromMap(map['produzindo_cd_pedido'] is String

@@ -4,7 +4,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_m
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/tag/models/tag_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/user_permission_type.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
@@ -28,7 +28,7 @@ import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/cliente/ui/cliente_create_simplify_bottom.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_order_edit_bottom.dart';
-import 'package:aco_plus/app/modules/pedido/view_models/pedido_produto_view_model.dart';
+import 'package:aco_plus/app/modules/pedido/view_models/pedido_bitola_view_model.dart';
 import 'package:aco_plus/app/core/extensions/text_controller_ext.dart';
 import 'package:aco_plus/app/modules/pedido/view_models/pedido_view_model.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
@@ -177,7 +177,7 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
           const SizedBox(height: 24),
           _sidebarItem(0, Icons.info_outline, 'Dados Gerais'),
           if (form.tipo != PedidoTipo.outros)
-            _sidebarItem(1, Icons.inventory_2_outlined, 'Produtos'),
+            _sidebarItem(1, Icons.inventory_2_outlined, 'Bitolas'),
           const Spacer(),
           if (widget.pedido != null &&
               usuario.permission.pedido.contains(UserPermissionType.delete))
@@ -618,7 +618,7 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
   }
 
   Widget _parcialProdutoRow(
-      PedidoCreateModel form, PedidoProdutoCreateModel produto) {
+      PedidoCreateModel form, PedidoBitolaCreateModel produto) {
     final double disponivel = (produto.qtdeDisponivel ?? 0).precision;
     final double valor = produto.qtde.doubleValue.precision;
     final double saldoRestante = (disponivel - valor).precision;
@@ -833,12 +833,12 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
             children: [
               Expanded(
                 flex: 3,
-                child: AppDropDown<ProdutoModel?>(
-                  label: 'Produto',
+                child: AppDropDown<BitolaModel?>(
+                  label: 'Bitola',
                   controller: form.produto.produtoEC,
                   nextFocus: form.produto.qtde.focus,
                   item: form.produto.produtoModel,
-                  itens: FirestoreClient.produtos.data
+                  itens: FirestoreClient.bitolas.data
                       .where((e) => !form.produtos
                           .map((e) => e.produtoModel?.id)
                           .contains(e.id))
@@ -863,7 +863,7 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
                   onEditingComplete: () {
                     if (form.produto.isEnable) {
                       form.produtos.add(form.produto);
-                      form.produto = PedidoProdutoCreateModel();
+                      form.produto = PedidoBitolaCreateModel();
                       form.produto.produtoEC.focus.requestFocus();
                       pedidoCtrl.formStream.update();
                     }
@@ -876,7 +876,7 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
                     ? null
                     : () {
                         form.produtos.add(form.produto);
-                        form.produto = PedidoProdutoCreateModel();
+                        form.produto = PedidoBitolaCreateModel();
                         pedidoCtrl.formStream.update();
                       },
                 style: ButtonStyle(
@@ -897,7 +897,7 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
   }
 
   Widget _produtoItemCard(
-      PedidoCreateModel form, PedidoProdutoCreateModel produto, int index) {
+      PedidoCreateModel form, PedidoBitolaCreateModel produto, int index) {
     bool isDisabled = !produto.isEnabled ||
         (form.isEdit &&
             FirestoreClient.ordens.data
@@ -935,7 +935,7 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
               Text(
                 !produto.isEnabled
                     ? 'Quantidade já direcionada'
-                    : 'Produto vinculado a Ordem',
+                    : 'Bitola vinculada a Ordem',
                 style: AppCss.minimumBold.setColor(AppColors.error).setSize(11),
               ),
           ],
@@ -980,7 +980,7 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
                   if (foiUsadoEmParcial) return const SizedBox.shrink();
                   return IconButton(
                     onPressed: () async {
-                      if (await showConfirmDialog('Remover Produto',
+                      if (await showConfirmDialog('Remover Bitola',
                           'Deseja remover ${produto.produtoModel?.descricao}?')) {
                         form.produtos.remove(produto);
                         pedidoCtrl.formStream.update();

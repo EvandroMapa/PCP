@@ -33,7 +33,7 @@ class PosicaoProgressoResult {
 /// Calcula o progresso de produção baseado nas posições (elemento_posicoes)
 /// para um determinado pedido e bitola.
 ///
-/// [pedidoId] - ID do pedido (PedidoProdutoModel.pedidoId)
+/// [pedidoId] - ID do pedido (PedidoBitolaModel.pedidoId)
 /// [bitolaId] - ID do produto/bitola da ordem (OrdemModel.produto.id)
 PosicaoProgressoResult calcularProgressoPosicoes(
     String pedidoId, String bitolaId) {

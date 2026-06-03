@@ -1,6 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
@@ -91,9 +91,9 @@ class DashboardController {
   ///  - Inclui apenas itens com status em [separado, aguardandoProducao, produzindo]
   Map<String, double> getConsumoEstimado() {
     const statusValidos = [
-      PedidoProdutoStatus.separado,
-      PedidoProdutoStatus.aguardandoProducao,
-      PedidoProdutoStatus.produzindo,
+      PedidoBitolaStatus.separado,
+      PedidoBitolaStatus.aguardandoProducao,
+      PedidoBitolaStatus.produzindo,
     ];
 
     final Map<String, double> consumo = {};

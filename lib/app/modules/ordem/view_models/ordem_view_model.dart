@@ -5,9 +5,9 @@ import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/hist
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/types/ordem_history_type_criada_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/enums/sort_type.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
@@ -41,29 +41,29 @@ extension OrdemExportarPdfTipoExtension on OrdemExportarPdfTipo {
 class OrdemUtils {
   bool showFilter = false;
   final TextController search = TextController();
-  List<PedidoProdutoStatus> status = [
-    PedidoProdutoStatus.aguardandoProducao,
-    PedidoProdutoStatus.produzindo,
-    PedidoProdutoStatus.pronto,
+  List<PedidoBitolaStatus> status = [
+    PedidoBitolaStatus.aguardandoProducao,
+    PedidoBitolaStatus.produzindo,
+    PedidoBitolaStatus.pronto,
   ];
-  ProdutoModel? produto;
+  BitolaModel? produto;
 }
 
 class OrdemArquivadasUtils {
   bool showFilter = false;
   final TextController search = TextController();
-  List<PedidoProdutoStatus> status = [
-    PedidoProdutoStatus.aguardandoProducao,
-    PedidoProdutoStatus.produzindo,
+  List<PedidoBitolaStatus> status = [
+    PedidoBitolaStatus.aguardandoProducao,
+    PedidoBitolaStatus.produzindo,
   ];
-  ProdutoModel? produto;
+  BitolaModel? produto;
 }
 
 class OrdemCreateModel {
   String id;
-  ProdutoModel? produto;
+  BitolaModel? produto;
   TextController localizador = TextController();
-  List<PedidoProdutoModel> produtos = [];
+  List<PedidoBitolaModel> produtos = [];
   SortType sortType = SortType.deliveryAt;
   SortOrder sortOrder = SortOrder.asc;
   bool isCreate = true;
@@ -87,10 +87,10 @@ class OrdemCreateModel {
         isEdit = true {
     isCreate = false;
     createdAt = ordem.createdAt;
-    produto = FirestoreClient.produtos.data.firstWhereOrNull(
+    produto = FirestoreClient.bitolas.data.firstWhereOrNull(
           (e) => e.id == ordem.produto.id,
         ) ??
-        ProdutoModel.empty();
+        BitolaModel.empty();
 
     produtos = ordem.produtos
         .map(
@@ -118,10 +118,10 @@ class OrdemCreateModel {
               statusess: [
                 ...e.statusess,
                 if (e.statusess.last.status !=
-                    PedidoProdutoStatus.aguardandoProducao)
+                    PedidoBitolaStatus.aguardandoProducao)
                   if (e.isSelected && e.isAvailableToChanges)
-                    PedidoProdutoStatusModel.create(
-                      PedidoProdutoStatus.aguardandoProducao,
+                    PedidoBitolaStatusModel.create(
+                      PedidoBitolaStatus.aguardandoProducao,
                     ),
               ],
             ),
@@ -160,10 +160,10 @@ class OrdemCreateModel {
               statusess: [
                 ...e.statusess,
                 if (e.statusess.last.status !=
-                    PedidoProdutoStatus.aguardandoProducao)
+                    PedidoBitolaStatus.aguardandoProducao)
                   if (e.isSelected && e.isAvailableToChanges)
-                    PedidoProdutoStatusModel.create(
-                      PedidoProdutoStatus.aguardandoProducao,
+                    PedidoBitolaStatusModel.create(
+                      PedidoBitolaStatus.aguardandoProducao,
                     ),
               ],
             ),
@@ -211,7 +211,7 @@ class OrdemEtiquetaModel {
   final PedidoModel pedido;
   final OrdemModel ordem;
   final DateTime createdAt;
-  final PedidoProdutoModel produto;
+  final PedidoBitolaModel produto;
 
   OrdemEtiquetaModel({
     required this.cliente,

@@ -44,7 +44,7 @@ class _EstoqueGraficoSectionState extends State<EstoqueGraficoSection> {
   }
 
   Widget _body(RelatorioPedidoViewModel model) {
-    final produtos = BackendClient.produtos.data.toList()
+    final produtos = BackendClient.bitolas.data.toList()
       ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
 
     final Map<String, double> consumoMap = {};

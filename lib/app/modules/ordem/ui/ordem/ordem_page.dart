@@ -1,7 +1,7 @@
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/models/materia_prima_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/app_field.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
@@ -19,7 +19,7 @@ import 'package:aco_plus/app/modules/materia_prima/ui/materia_prima_bottom.dart'
 import 'package:aco_plus/app/modules/materia_prima/ui/materias_primas_create_page.dart';
 import 'package:aco_plus/app/modules/ordem/ordem_controller.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem/components/ordem_status_widget.dart';
-import 'package:aco_plus/app/modules/ordem/ui/ordem/components/produto/ordem_pedido_produto_widget.dart';
+import 'package:aco_plus/app/modules/ordem/ui/ordem/components/bitola/ordem_pedido_bitola_widget.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem_create_page.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem_exportar_pdf_tipo_bottom.dart';
 import 'package:aco_plus/app/modules/ordem/view_models/ordem_view_model.dart';
@@ -153,7 +153,7 @@ class _OrdemPageState extends State<OrdemPage> {
                   ),
                 if (usuario.isNotOperador)
                   if (!ordem.freezed.isFreezed &&
-                      ordem.status != PedidoProdutoStatus.pronto)
+                      ordem.status != PedidoBitolaStatus.pronto)
                     _freezedWidget(ordem),
               ],
             ),
@@ -175,7 +175,7 @@ class _OrdemPageState extends State<OrdemPage> {
               Expanded(
                 child: _infoCard(
                   icon: Icons.straighten_outlined,
-                  label: 'Produto',
+                  label: 'Bitola',
                   value: '${ordem.produto.nome} · ${ordem.produto.descricao}',
                   color: AppColors.primaryMain,
                 ),

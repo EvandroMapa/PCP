@@ -1,6 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/notificacao/notificacao_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/tag/models/tag_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/w.dart';
@@ -100,17 +100,17 @@ class PedidoItemWidget extends StatelessWidget {
                     child: Row(
                       children: [
                         _progressChartWidget(
-                          PedidoProdutoStatus.aguardandoProducao,
+                          PedidoBitolaStatus.aguardandoProducao,
                           pedido.getPrcntgAguardandoProducao(),
                         ),
                         const W(16),
                         _progressChartWidget(
-                          PedidoProdutoStatus.produzindo,
+                          PedidoBitolaStatus.produzindo,
                           pedido.getPrcntgProduzindo(),
                         ),
                         const W(16),
                         _progressChartWidget(
-                          PedidoProdutoStatus.pronto,
+                          PedidoBitolaStatus.pronto,
                           pedido.getPrcntgPronto(),
                         ),
                       ],
@@ -169,7 +169,7 @@ class PedidoItemWidget extends StatelessWidget {
     );
   }
 
-  Widget _progressChartWidget(PedidoProdutoStatus status, double porcentagem) {
+  Widget _progressChartWidget(PedidoBitolaStatus status, double porcentagem) {
     return Stack(
       alignment: Alignment.center,
       children: [

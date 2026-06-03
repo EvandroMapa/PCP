@@ -1,8 +1,8 @@
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/app_drop_down.dart';
 import 'package:aco_plus/app/core/components/app_drop_down_list.dart';
@@ -129,10 +129,10 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
             },
           ),
           const H(16),
-          AppDropDownList<PedidoProdutoStatus>(
+          AppDropDownList<PedidoBitolaStatus>(
             label: 'Status',
             addeds: model.status,
-            itens: PedidoProdutoStatus.values,
+            itens: PedidoBitolaStatus.values,
             itemLabel: (e) => e.label,
             itemColor: (e) => e.color.withValues(alpha: 0.1),
             onChanged: () {
@@ -141,10 +141,10 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
             },
           ),
           const H(16),
-          AppDropDownList<ProdutoModel>(
+          AppDropDownList<BitolaModel>(
             label: 'Bitolas',
             addeds: model.produtos,
-            itens: FirestoreClient.produtos.data,
+            itens: FirestoreClient.bitolas.data,
             itemLabel: (e) => e.descricao,
             onChanged: () {
               relatorioCtrl.pedidoViewModelStream.add(model);
@@ -221,7 +221,7 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
           const H(24),
           Text('Resumo por Bitola', style: AppCss.mediumBold),
           const H(8),
-          for (final produto in FirestoreClient.produtos.data.toList()
+          for (final produto in FirestoreClient.bitolas.data.toList()
             ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex)))
             Builder(
               builder: (context) {
@@ -281,7 +281,7 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
   }
 
   Widget _bitolaDetalheWidget(RelatorioPedidoViewModel model,
-      ProdutoModel produto, double totalBitola) {
+      BitolaModel produto, double totalBitola) {
     List<PedidoModel> pedidos = model.relatorio!.pedidos
         .where((p) => p.produtos.any((pr) => pr.produto.id == produto.id))
         .toList();
@@ -389,7 +389,7 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Row(
-              children: PedidoProdutoStatus.values.map((status) {
+              children: PedidoBitolaStatus.values.map((status) {
                 double qtde = relatorioCtrl.getPedidosTotalPorStatus(status);
                 if (qtde <= 0) return const SizedBox();
                 return Expanded(
@@ -407,7 +407,7 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
         Wrap(
           spacing: 12,
           runSpacing: 8,
-          children: PedidoProdutoStatus.values.map((status) {
+          children: PedidoBitolaStatus.values.map((status) {
             double qtde = relatorioCtrl.getPedidosTotalPorStatus(status);
             if (qtde <= 0) return const SizedBox();
             double percent = (qtde / total) * 100;

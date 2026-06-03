@@ -15,7 +15,7 @@ import 'package:aco_plus/app/core/enums/sort_type.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
-import 'package:aco_plus/app/modules/pedido/view_models/pedido_produto_view_model.dart';
+import 'package:aco_plus/app/modules/pedido/view_models/pedido_bitola_view_model.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 
@@ -47,9 +47,9 @@ class PedidoCreateModel {
   ClienteModel? clienteAdd;
   ObraModel? obra;
   PedidoTipo? tipo;
-  PedidoProdutoCreateModel produto = PedidoProdutoCreateModel();
+  PedidoBitolaCreateModel produto = PedidoBitolaCreateModel();
   final GlobalKey produtoKey = GlobalKey();
-  List<PedidoProdutoCreateModel> produtos = [];
+  List<PedidoBitolaCreateModel> produtos = [];
   DateTime? deliveryAt;
   ChecklistModel? checklist;
   StepModel? step;
@@ -112,7 +112,7 @@ class PedidoCreateModel {
     obra = cliente?.obras.firstWhereOrNull((e) => e.id == pedido.obra.id);
     tipo = pedido.tipo;
     produtos =
-        pedido.produtos.map((e) => PedidoProdutoCreateModel.edit(e)).toList();
+        pedido.produtos.map((e) => PedidoBitolaCreateModel.edit(e)).toList();
     deliveryAt = pedido.deliveryAt;
     final firstStep = pedido.steps.firstOrNull;
     step = firstStep != null
@@ -169,7 +169,7 @@ class PedidoCreateModel {
       produtos: produtos
           .where((e) => e.isSelected)
           .toList()
-          .map((e) => e.toPedidoProdutoModel(id, cliente!, obra!).copyWith())
+          .map((e) => e.toPedidoBitolaModel(id, cliente!, obra!).copyWith())
           .toList(),
       deliveryAt: deliveryAt,
       steps: pedido?.steps ?? [pedidoStepModel],

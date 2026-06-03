@@ -50,7 +50,7 @@ class EstoqueSupabaseCollection {
     try {
       await SupabaseService.client.from(name).upsert(
             model.toSupabaseMap(),
-            onConflict: 'produto_id',
+            onConflict: 'bitola_id',
           );
       await fetch();
     } catch (e) {

@@ -45,7 +45,7 @@ class BackupExplorerController {
     final pedidosRaw =
         (_rawData['pedidos'] as List?)?.cast<Map<String, dynamic>>() ?? [];
     final produtosRaw =
-        (_rawData['pedido_produtos'] as List?)?.cast<Map<String, dynamic>>() ??
+        (_rawData['pedido_bitolas'] as List?)?.cast<Map<String, dynamic>>() ??
             [];
     final statusRaw = (_rawData['pedido_status_history'] as List?)
             ?.cast<Map<String, dynamic>>() ??
@@ -228,7 +228,7 @@ class BackupExplorerController {
       // 2. Inserir sub-tabelas
       if (pedido.produtosRaw.isNotEmpty) {
         await SupabaseService.client
-            .from('pedido_produtos')
+            .from('pedido_bitolas')
             .upsert(pedido.produtosRaw);
       }
       if (pedido.statusRaw.isNotEmpty) {
@@ -301,7 +301,7 @@ class BackupExplorerController {
   Future<DiagnosticoResult> diagnosticarPedido(BackupPedidoResumo pedido) async {
     final tabelas = [
       'pedidos',
-      'pedido_produtos',
+      'pedido_bitolas',
       'pedido_status_history',
       'pedido_steps_history',
       'pedido_tags',
@@ -321,7 +321,7 @@ class BackupExplorerController {
         backup[tabela] = 1; // o próprio pedido
       } else if (tabela == 'ordem_produtos') {
         backup[tabela] = 0; // não está no backup do pedido
-      } else if (tabela == 'pedido_produtos') {
+      } else if (tabela == 'pedido_bitolas') {
         backup[tabela] = pedido.produtosRaw.length;
       } else if (tabela == 'pedido_status_history') {
         backup[tabela] = pedido.statusRaw.length;
@@ -460,7 +460,7 @@ class DiagnosticoResult {
 
   static const _labels = {
     'pedidos': 'Pedido',
-    'pedido_produtos': 'Produtos',
+    'pedido_bitolas': 'Bitolas',
     'pedido_status_history': 'Histórico Status',
     'pedido_steps_history': 'Histórico Etapas',
     'pedido_tags': 'Tags',

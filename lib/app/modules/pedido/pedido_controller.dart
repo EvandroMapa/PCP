@@ -14,8 +14,8 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedi
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
@@ -36,7 +36,7 @@ import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_status_bottom.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_step_bottom.dart';
 
-import 'package:aco_plus/app/modules/pedido/view_models/pedido_produto_view_model.dart';
+import 'package:aco_plus/app/modules/pedido/view_models/pedido_bitola_view_model.dart';
 import 'package:aco_plus/app/modules/pedido/view_models/pedido_view_model.dart';
 import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/pedido/relatorio_pedido_pdf_page.dart';
@@ -238,20 +238,20 @@ class PedidoController {
     form.instrucoesEntrega.text = pai.instrucoesEntrega;
 
     // Ordena produtos pela bitola (valor numérico da descrição)
-    final produtosOrdenados = List<PedidoProdutoModel>.from(pai.produtos)
+    final produtosOrdenados = List<PedidoBitolaModel>.from(pai.produtos)
       ..sort((a, b) {
-        final prodA = BackendClient.produtos.getById(a.produto.id);
-        final prodB = BackendClient.produtos.getById(b.produto.id);
+        final prodA = BackendClient.bitolas.getById(a.produto.id);
+        final prodB = BackendClient.bitolas.getById(b.produto.id);
         return prodA.number.compareTo(prodB.number);
       });
 
     for (final produto in produtosOrdenados) {
-      final produtoBase = BackendClient.produtos.getById(produto.produto.id);
+      final produtoBase = BackendClient.bitolas.getById(produto.produto.id);
       // pega a quantidade de Kg disponível de acordo com o produto (com base na original)
       final double qtdeTotal = produto.qtdeOriginal;
       final double qtdeDirecionada = pai.getQtdeDirecionada(produto);
       final double qtdeDisponivel = qtdeTotal - qtdeDirecionada;
-      final create = PedidoProdutoCreateModel(
+      final create = PedidoBitolaCreateModel(
         isEnabled: qtdeDisponivel > 0,
         qtdeDisponivel: qtdeDisponivel,
         isSelected: false, // Inicia desmarcado — só seleciona quando preenche quantidade
@@ -598,7 +598,7 @@ class PedidoController {
     }
   }
 
-  OrdemModel? getOrdemByProduto(PedidoProdutoModel produto, bool isArquivada) {
+  OrdemModel? getOrdemByProduto(PedidoBitolaModel produto, bool isArquivada) {
     return ([
       ...FirestoreClient.ordens.data,
       if (isArquivada) ...FirestoreClient.ordens.ordensArquivadas,
@@ -773,7 +773,7 @@ class PedidoController {
     // Regra 2: Pedido Normal/Parcial — todos os produtos precisam estar prontos
     if (!pedido.isMestre &&
         pedido.produtos.any(
-          (e) => e.status.status != PedidoProdutoStatus.pronto,
+          (e) => e.status.status != PedidoBitolaStatus.pronto,
         )) {
       NotificationService.showNegative(
         'Pedido não pode ser arquivado',

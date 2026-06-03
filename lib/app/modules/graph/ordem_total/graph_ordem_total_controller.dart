@@ -1,5 +1,5 @@
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/modules/graph/core/graph_model.dart';
@@ -34,12 +34,12 @@ class GrahpOrdemTotalController {
           ),
         )
         .toList()
-        .where((e) => e.status != PedidoProdutoStatus.pronto)
+        .where((e) => e.status != PedidoBitolaStatus.pronto)
         .toList();
 
     List<GraphModel> source = [];
 
-    for (final status in PedidoProdutoStatus.values) {
+    for (final status in PedidoBitolaStatus.values) {
       double volFinal = 0.0;
       double lengthFinal = 0.0;
       for (OrdemModel ordem in ordens) {
@@ -49,7 +49,7 @@ class GrahpOrdemTotalController {
         volFinal += vol;
         lengthFinal += pedidos.length;
       }
-      if (volFinal > 0 && status != PedidoProdutoStatus.pronto) {
+      if (volFinal > 0 && status != PedidoBitolaStatus.pronto) {
         source.add(
           GraphModel(
             vol: volFinal,

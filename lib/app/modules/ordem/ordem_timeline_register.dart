@@ -10,12 +10,12 @@ import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/hist
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/types/ordem_history_type_editada_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/types/ordem_history_type_materia_prima_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/types/ordem_history_type_pausada_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/types/ordem_history_type_status_produto_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_materia_prima_produtos.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/types/ordem_history_type_status_bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_materia_prima_bitolas.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_status_produtos.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_status_bitolas.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 
@@ -51,7 +51,7 @@ class OrdemTimelineRegister {
         materiaPrimaProdutos: OrdemMateriaPrimaProdutos(
           materiaPrima: now.materiaPrima!,
           produtos: now.produtos
-              .where((e) => e.status.status != PedidoProdutoStatus.pronto)
+              .where((e) => e.status.status != PedidoBitolaStatus.pronto)
               .toList(),
         ),
         adicionados:
@@ -94,7 +94,7 @@ class OrdemTimelineRegister {
       ordemId: now.id,
       type: OrdemHistoryTypeEnum.statusProdutoAlterada,
       message: 'Status do produto alterado',
-      data: OrdemHistoryTypeStatusProdutoModel(
+      data: OrdemHistoryTypeStatusBitolaModel(
         createdAt: DateTime.now(),
         user: usuario,
         statusProdutos: statusProdutos,
@@ -105,7 +105,7 @@ class OrdemTimelineRegister {
   static Future<void> materiaPrimaEditada(
     OrdemModel now,
     MateriaPrimaModel materiaPrima,
-    List<PedidoProdutoModel> produtos,
+    List<PedidoBitolaModel> produtos,
   ) async {
     OrdemTimelineRegister(ordem: now).register(
       ordemId: now.id,
@@ -161,7 +161,7 @@ class OrdemTimelineRegister {
 
   static Future<void> produtoPausado(
     OrdemModel ordem,
-    PedidoProdutoModel produto,
+    PedidoBitolaModel produto,
     String motivo,
   ) async {
     OrdemTimelineRegister(ordem: ordem).register(
@@ -182,7 +182,7 @@ class OrdemTimelineRegister {
 
   static Future<void> produtoDespausado(
     OrdemModel ordem,
-    PedidoProdutoModel produto,
+    PedidoBitolaModel produto,
   ) async {
     OrdemTimelineRegister(ordem: ordem).register(
       ordemId: ordem.id,

@@ -7,8 +7,8 @@ import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/mod
 
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_status_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
@@ -50,7 +50,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
   static const String _selectCompleto = '''
     *,
-    pedido_produtos (*),
+    pedido_bitolas (*),
     pedido_status_history (*),
     pedido_steps_history (*),
     pedido_tags (*),
@@ -151,7 +151,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
   PedidoModel _mapPedido(Map<String, dynamic> pMap) {
     return PedidoModel.fromSupabaseMap(
       pMap,
-      produtosRaw: (pMap['pedido_produtos'] as List?)
+      produtosRaw: (pMap['pedido_bitolas'] as List?)
           ?.map((e) => Map<String, dynamic>.from(e)).toList(),
       statusRaw: (pMap['pedido_status_history'] as List?)
           ?.map((e) => Map<String, dynamic>.from(e)).toList(),
@@ -218,9 +218,9 @@ class PedidoSupabaseCollection extends PedidoCollection {
       PedidoModel.empty();
 
   @override
-  PedidoProdutoModel getProdutoByPedidoId(String pedidoId, String produtoId) =>
+  PedidoBitolaModel getProdutoByPedidoId(String pedidoId, String produtoId) =>
       getById(pedidoId).produtos.firstWhereOrNull((e) => e.id == produtoId) ??
-      PedidoProdutoModel.empty(getById(pedidoId));
+      PedidoBitolaModel.empty(getById(pedidoId));
 
   @override
   Future<PedidoModel?> add(PedidoModel model) async {
@@ -271,7 +271,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
       // Deletar tabelas filhas primeiro
       await Future.wait([
         SupabaseService.client
-            .from('pedido_produtos')
+            .from('pedido_bitolas')
             .delete()
             .eq('pedido_id', model.id),
         SupabaseService.client
@@ -373,16 +373,16 @@ class PedidoSupabaseCollection extends PedidoCollection {
       if (idsToKeep.isNotEmpty) {
         final payload =
             model.produtos.map((p) => p.toSupabaseMap(model.id)).toList();
-        await SupabaseService.client.from('pedido_produtos').upsert(payload);
+        await SupabaseService.client.from('pedido_bitolas').upsert(payload);
         // Exclui o que não está mais no modelo
         await SupabaseService.client
-            .from('pedido_produtos')
+            .from('pedido_bitolas')
             .delete()
             .eq('pedido_id', model.id)
             .filter('id', 'not.in', '(${idsToKeep.join(",")})');
       } else {
         await SupabaseService.client
-            .from('pedido_produtos')
+            .from('pedido_bitolas')
             .delete()
             .eq('pedido_id', model.id);
       }
@@ -452,14 +452,14 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
   @override
   Future<void> updateProdutoMateriaPrima(
-    PedidoProdutoModel produto,
+    PedidoBitolaModel produto,
     MateriaPrimaModel? materiaPrima,
   ) async {
     return await updateProdutosMateriaPrima([(produto, materiaPrima)]);
   }
 
   Future<void> updateProdutosMateriaPrima(
-    List<(PedidoProdutoModel, MateriaPrimaModel?)> updates,
+    List<(PedidoBitolaModel, MateriaPrimaModel?)> updates,
   ) async {
     try {
       if (updates.isEmpty) return;
@@ -487,7 +487,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
       if (payload.isNotEmpty) {
         await SupabaseService.client
-            .from('pedido_produtos')
+            .from('pedido_bitolas')
             .upsert(payload, onConflict: 'id');
       }
 
@@ -509,7 +509,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
   @override
   Future<void> updateProdutoPause(
-    PedidoProdutoModel produto,
+    PedidoBitolaModel produto,
     bool isPaused,
   ) async {
     try {
@@ -521,7 +521,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
         }
       }
       await SupabaseService.client
-          .from('pedido_produtos')
+          .from('pedido_bitolas')
           .update({'is_paused': isPaused}).eq('id', produto.id);
 
       // Gatilho: atualiza a tabela pai 'pedidos' com um valor novo (timestamp) para garantir que o stream dispare
@@ -538,15 +538,15 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
   @override
   Future<void> updateProdutoStatus(
-    PedidoProdutoModel produto,
-    PedidoProdutoStatus status, {
+    PedidoBitolaModel produto,
+    PedidoBitolaStatus status, {
     bool clear = false,
   }) async {
     return await updateProdutosStatus([(produto, status)], clear: clear);
   }
 
   Future<void> updateProdutosStatus(
-    List<(PedidoProdutoModel, PedidoProdutoStatus)> updates, {
+    List<(PedidoBitolaModel, PedidoBitolaStatus)> updates, {
     bool clear = false,
   }) async {
     try {
@@ -571,7 +571,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
         if (pedidoProduto.statusess.isEmpty ||
             pedidoProduto.statusess.last.status != status) {
-          pedidoProduto.statusess.add(PedidoProdutoStatusModel.create(status));
+          pedidoProduto.statusess.add(PedidoBitolaStatusModel.create(status));
         }
 
         payload.add(pedidoProduto.toSupabaseMap(pedido.id));
@@ -579,7 +579,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
       if (payload.isNotEmpty) {
         await SupabaseService.client
-            .from('pedido_produtos')
+            .from('pedido_bitolas')
             .upsert(payload, onConflict: 'id');
       }
 
@@ -600,7 +600,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
   }
 
   @override
-  Future<PedidoModel?> updatePedidoStatus(PedidoProdutoModel produto) async {
+  Future<PedidoModel?> updatePedidoStatus(PedidoBitolaModel produto) async {
     try {
       final pedido = getById(produto.pedidoId);
       final newPedidoStatus = getPedidoStatusByProduto(pedido);

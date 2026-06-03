@@ -75,7 +75,7 @@ class _PontasPageState extends State<PontasPage> {
 
   // ─── Adicionar bitola (grupo vazio) ───────────────────────────────────────
   Future<void> _adicionarBitola() async {
-    final produtos = FirestoreClient.produtos.data.toList();
+    final produtos = FirestoreClient.bitolas.data.toList();
     if (produtos.isEmpty) return;
 
     // Filtrar bitolas já cadastradas
@@ -566,7 +566,7 @@ class _PontasPageState extends State<PontasPage> {
   /// Peso de 1 ponta: (tamanho_cm / 100) * massaFinal
   String _pesoUnitario(PontaBitolaGrupo grupo, PontaModel p) {
     try {
-      final produto = FirestoreClient.produtos.data
+      final produto = FirestoreClient.bitolas.data
           .firstWhere((pr) => pr.id == grupo.bitolaId);
       final peso = (p.tamanho / 100) * produto.massaFinal;
       return '${peso.toStringAsFixed(2)} kg';
@@ -578,7 +578,7 @@ class _PontasPageState extends State<PontasPage> {
   /// Peso total da linha: peso unitário × quantidade
   String _pesoTotal(PontaBitolaGrupo grupo, PontaModel p) {
     try {
-      final produto = FirestoreClient.produtos.data
+      final produto = FirestoreClient.bitolas.data
           .firstWhere((pr) => pr.id == grupo.bitolaId);
       final peso = (p.tamanho / 100) * produto.massaFinal * p.quantidade;
       return '${peso.toStringAsFixed(2)} kg';

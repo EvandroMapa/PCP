@@ -1425,7 +1425,7 @@ class _PlanoCorteRelatorioPageState extends State<PlanoCorteRelatorioPage> {
       // Filtra posições pela bitola da ordem
       final bitolaId = ordem.produto.id;
       final posicoesFiltradas = List<Map<String, dynamic>>.from(posicoesRaw)
-          .where((p) => p['produto_id'].toString() == bitolaId)
+          .where((p) => p['bitola_id'].toString() == bitolaId)
           .toList();
 
       // Buscar medidas variáveis das posições filtradas

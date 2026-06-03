@@ -1,6 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
@@ -33,7 +33,7 @@ class PaiPedidoSaldoTableWidget extends StatelessWidget {
     if (produtos.isEmpty) return const SizedBox();
 
     // Calcula saldo por produto: qtdeOriginal do mestre - soma dos filhos
-    double _saldo(PedidoProdutoModel mestProduto) {
+    double _saldo(PedidoBitolaModel mestProduto) {
       final totalFilhos = filhos.fold<double>(0, (acc, filho) {
         final fp = filho.produtos.where(
           (p) => p.produto.id == mestProduto.produto.id,
@@ -85,7 +85,7 @@ class PaiPedidoSaldoTableWidget extends StatelessWidget {
 
   // ── HEADER ────────────────────────────────────────────────────────────────
 
-  Widget _headerRow(List<PedidoProdutoModel> produtos) {
+  Widget _headerRow(List<PedidoBitolaModel> produtos) {
     return Container(
       color: const Color(0xFFF8FAFC),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -123,7 +123,7 @@ class PaiPedidoSaldoTableWidget extends StatelessWidget {
 
   // ── LINHA MESTRE ──────────────────────────────────────────────────────────
 
-  Widget _mestreRow(PedidoModel mestre, List<PedidoProdutoModel> produtos) {
+  Widget _mestreRow(PedidoModel mestre, List<PedidoBitolaModel> produtos) {
     return Container(
       color: const Color(0xFFFFFBEB), // âmbar clarinho
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -181,7 +181,7 @@ class PaiPedidoSaldoTableWidget extends StatelessWidget {
   Widget _filhoRow(
     BuildContext context,
     PedidoModel filho,
-    List<PedidoProdutoModel> produtos,
+    List<PedidoBitolaModel> produtos,
     {required bool isEven}
   ) {
     return InkWell(
@@ -269,8 +269,8 @@ class PaiPedidoSaldoTableWidget extends StatelessWidget {
   // ── LINHA SALDO ───────────────────────────────────────────────────────────
 
   Widget _saldoRow(
-    List<PedidoProdutoModel> produtos,
-    double Function(PedidoProdutoModel) saldoFn,
+    List<PedidoBitolaModel> produtos,
+    double Function(PedidoBitolaModel) saldoFn,
   ) {
     return Container(
       color: const Color(0xFFF0FDF4), // verde clarinho

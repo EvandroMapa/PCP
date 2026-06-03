@@ -1,5 +1,5 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
@@ -100,7 +100,7 @@ class _EstoqueMovimentacaoSectionState
   // ─────────────────────────────────────────────────────────────────────────
 
   Widget _filtrosBitolas(EstoqueMovimentacaoFiltroModel filtro) {
-    final produtos = BackendClient.produtos.data
+    final produtos = BackendClient.bitolas.data
       ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
 
     return Container(
@@ -334,7 +334,7 @@ class _EstoqueMovimentacaoSectionState
   }
 
   Widget _listaMovimentacoes(EstoqueMovimentacaoFiltroModel filtro) {
-    final produtos = BackendClient.produtos.data
+    final produtos = BackendClient.bitolas.data
         .where((p) => filtro.produtoIds.contains(p.id))
         .toList()
       ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
@@ -350,7 +350,7 @@ class _EstoqueMovimentacaoSectionState
   // BLOCO POR PRODUTO
   // ─────────────────────────────────────────────────────────────────────────
 
-  Widget _blocoProduto(ProdutoModel produto) {
+  Widget _blocoProduto(BitolaModel produto) {
     final (saldoInicial, linhas) =
         estoqueCtrl.getExtratoPorProduto(produto);
     final saldoFinal =

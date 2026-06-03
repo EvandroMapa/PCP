@@ -1,13 +1,13 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/enums/materia_prima_status.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/components/archive/archive_model.dart';
 
 class MateriaPrimaModel {
   final String id;
   final FabricanteModel fabricanteModel;
-  final ProdutoModel produto;
+  final BitolaModel produto;
   final String corridaLote;
   final List<ArchiveModel> anexos;
   MateriaPrimaStatus status;
@@ -26,7 +26,7 @@ class MateriaPrimaModel {
   static MateriaPrimaModel empty() => MateriaPrimaModel(
         id: 'register_unavailable',
         fabricanteModel: FabricanteModel.empty(),
-        produto: ProdutoModel.empty(),
+        produto: BitolaModel.empty(),
         corridaLote: 'Não especificado',
         anexos: [],
         status: MateriaPrimaStatus.disponivel,
@@ -34,13 +34,13 @@ class MateriaPrimaModel {
 
   factory MateriaPrimaModel.fromMap(Map<String, dynamic> map) {
     final fabricanteSnapshot = FabricanteModel.fromMap(map['fabricanteModel']);
-    final produtoSnapshot = ProdutoModel.fromMap(map['produto']);
+    final produtoSnapshot = BitolaModel.fromMap(map['produto']);
     // Dynamic linking: busca versão mais recente no cache reativo
     final fabricante = BackendClient.fabricantes.data.isNotEmpty
         ? BackendClient.fabricantes.getById(fabricanteSnapshot.id)
         : fabricanteSnapshot;
-    final produto = BackendClient.produtos.data.isNotEmpty
-        ? BackendClient.produtos.getById(produtoSnapshot.id)
+    final produto = BackendClient.bitolas.data.isNotEmpty
+        ? BackendClient.bitolas.getById(produtoSnapshot.id)
         : produtoSnapshot;
     return MateriaPrimaModel(
       id: map['id'] as String,
@@ -59,13 +59,13 @@ class MateriaPrimaModel {
   factory MateriaPrimaModel.fromSupabaseMap(Map<String, dynamic> map) {
     final fabricanteSnapshot =
         FabricanteModel.fromMap(map['fabricante_model_raw']);
-    final produtoSnapshot = ProdutoModel.fromMap(map['produto_raw']);
+    final produtoSnapshot = BitolaModel.fromMap(map['bitola_raw']);
     // Dynamic linking: busca versão mais recente no cache reativo
     final fabricante = BackendClient.fabricantes.data.isNotEmpty
         ? BackendClient.fabricantes.getById(fabricanteSnapshot.id)
         : fabricanteSnapshot;
-    final produto = BackendClient.produtos.data.isNotEmpty
-        ? BackendClient.produtos.getById(produtoSnapshot.id)
+    final produto = BackendClient.bitolas.data.isNotEmpty
+        ? BackendClient.bitolas.getById(produtoSnapshot.id)
         : produtoSnapshot;
     return MateriaPrimaModel(
       id: map['id'] as String,
@@ -85,7 +85,7 @@ class MateriaPrimaModel {
     return {
       'id': id,
       'fabricante_model_raw': fabricanteModel.toMap(),
-      'produto_raw': produto.toMap(),
+      'bitola_raw': produto.toMap(),
       'corrida_lote': corridaLote,
       'anexos': anexos.map((e) => e.toMap()).toList(),
       'status': status.index,

@@ -1,6 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
@@ -55,7 +55,7 @@ extension RelatorioProducaoStatusExt on RelatorioProducaoStatus {
 }
 
 class RelatorioProducaoViewModel {
-  late List<ProdutoModel> produtos;
+  late List<BitolaModel> produtos;
   DateTimeRange? dates = DateTimeRange(
     start: DateTime.now().subtract(const Duration(days: 5)),
     end: DateTime.now(),
@@ -64,7 +64,7 @@ class RelatorioProducaoViewModel {
   RelatorioProducaoModel? relatorio;
 
   RelatorioProducaoViewModel.create() {
-    produtos = FirestoreClient.produtos.data.map((e) => e.copyWith()).toList();
+    produtos = FirestoreClient.bitolas.data.map((e) => e.copyWith()).toList();
   }
 }
 

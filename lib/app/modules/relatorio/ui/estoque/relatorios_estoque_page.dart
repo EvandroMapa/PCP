@@ -1,5 +1,5 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido_compra/pedido_compra_model.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -51,7 +51,7 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
   }
 
   Widget _body(RelatorioPedidoViewModel model) {
-    final produtos = BackendClient.produtos.data.toList()
+    final produtos = BackendClient.bitolas.data.toList()
       ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
 
     if (produtos.isEmpty) {
@@ -204,7 +204,7 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
   // ── Card por produto ───────────────────────────────────────────────────────
 
   Widget _produtoCard(
-    ProdutoModel produto,
+    BitolaModel produto,
     double saldoAtual,
     double consumoPrevisto,
     List<PedidoCompraModel> itensPedido,

@@ -1,6 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
@@ -24,7 +24,7 @@ import 'package:aco_plus/app/modules/pedido/ui/components/pedido_entrega_widget.
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_filhos_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_financ_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_producao_graph_widget.dart';
-import 'package:aco_plus/app/modules/pedido/ui/components/pedido_produtos_widget.dart';
+import 'package:aco_plus/app/modules/pedido/ui/components/pedido_bitolas_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_status_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_steps_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_tags_widget.dart';
@@ -195,7 +195,7 @@ class _PedidoPageState extends State<PedidoPage>
               ),
               tabs: [
                 Tab(text: pedido.isMestre ? 'INFORMAÇÕES GERAIS' : 'DASHBOARD'),
-                const Tab(text: 'PRODUTOS'),
+                const Tab(text: 'BITOLAS'),
                 if (_lastShowElementos) const Tab(text: 'ELEMENTOS'),
               ],
             ),
@@ -932,21 +932,21 @@ class _PedidoPageState extends State<PedidoPage>
           label: 'Aguardando',
           pesoKg: aguardando,
           percentual: aguardando / total,
-          color: PedidoProdutoStatus.aguardandoProducao.color,
+          color: PedidoBitolaStatus.aguardandoProducao.color,
         ),
       if (produzindo > 0)
         ProducaoGraphData(
           label: 'Produzindo',
           pesoKg: produzindo,
           percentual: produzindo / total,
-          color: PedidoProdutoStatus.produzindo.color,
+          color: PedidoBitolaStatus.produzindo.color,
         ),
       if (pronto > 0)
         ProducaoGraphData(
           label: 'Pronto',
           pesoKg: pronto,
           percentual: pronto / total,
-          color: PedidoProdutoStatus.pronto.color,
+          color: PedidoBitolaStatus.pronto.color,
         ),
     ];
   }

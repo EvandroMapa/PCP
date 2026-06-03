@@ -1,5 +1,5 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/components/app_drop_down.dart';
 import 'package:aco_plus/app/core/components/app_field.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -66,15 +66,15 @@ class _EstoqueCompraSectionState extends State<EstoqueCompraSection> {
               child: Column(children: [
                 const Divider(height: 1),
                 const SizedBox(height: 12),
-                AppDropDown<ProdutoModel?>(
-                  label: 'Produto',
+                AppDropDown<BitolaModel?>(
+                  label: 'Bitola',
                   item: form.produtoId != null
-                      ? BackendClient.produtos.data.cast<ProdutoModel?>().firstWhere(
+                      ? BackendClient.bitolas.data.cast<BitolaModel?>().firstWhere(
                             (e) => e?.id == form.produtoId,
                             orElse: () => null,
                           )
                       : null,
-                  itens: BackendClient.produtos.data.toList()
+                  itens: BackendClient.bitolas.data.toList()
                     ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex)),
                   itemLabel: (e) => '${e!.nome} — ${e.descricao}',
                   onSelect: (e) {

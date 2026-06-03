@@ -1,5 +1,5 @@
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
@@ -33,9 +33,9 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
   late ElementoCreateModel _form;
 
   // Produtos disponíveis no pedido = bitolas
-  List<ProdutoModel> get _bitolas {
+  List<BitolaModel> get _bitolas {
     final ids = widget.pedido.getProdutos().map((pp) => pp.produto.id).toSet();
-    return FirestoreClient.produtos.data
+    return FirestoreClient.bitolas.data
         .where((p) => ids.contains(p.id))
         .toList();
   }
@@ -216,7 +216,7 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
                       // Bitola (dropdown)
                       Expanded(
                         flex: 3,
-                        child: DropdownButtonFormField<ProdutoModel>(
+                        child: DropdownButtonFormField<BitolaModel>(
                           initialValue: pos.produto,
                           hint: const Text('Bitola',
                               style: TextStyle(fontSize: 13)),

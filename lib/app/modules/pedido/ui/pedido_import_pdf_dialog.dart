@@ -3,10 +3,10 @@ import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_m
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_step_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
@@ -211,23 +211,23 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
       final ClienteModel finalCliente = selectedCliente!;
 
       final List<String> missingProducts = [];
-      final List<PedidoProdutoModel> produtosMapped = [];
+      final List<PedidoBitolaModel> produtosMapped = [];
 
       for (final p in extractedProducts) {
-        final produtoBase = FirestoreClient.produtos.data.firstWhereOrNull(
+        final produtoBase = FirestoreClient.bitolas.data.firstWhereOrNull(
           (e) => e.codigoFinanceiro == p['codigo'],
         );
 
         if (produtoBase == null) {
           missingProducts.add('${p['codigo']} - ${p['descricao']}');
         } else {
-          produtosMapped.add(PedidoProdutoModel(
+          produtosMapped.add(PedidoBitolaModel(
             id: HashService.get,
             pedidoId: '',
             clienteId: finalCliente.id,
             obraId: selectedObra?.id ?? '',
             produto: produtoBase,
-            statusess: [PedidoProdutoStatusModel.empty()],
+            statusess: [PedidoBitolaStatusModel.empty()],
             qtde: p['qtde'],
             qtdeOriginal: p['qtde'],
             valorUnitario: p['unitario'],
@@ -827,7 +827,7 @@ class _PedidoImportPdfDialogState extends State<PedidoImportPdfDialog> {
                 itemBuilder: (context, index) {
                   final p = extractedProducts[index];
                   final produtoBase =
-                      FirestoreClient.produtos.data.firstWhereOrNull(
+                      FirestoreClient.bitolas.data.firstWhereOrNull(
                     (e) =>
                         e.codigoFinanceiro.trim().toLowerCase() ==
                         p['codigo'].toString().trim().toLowerCase(),

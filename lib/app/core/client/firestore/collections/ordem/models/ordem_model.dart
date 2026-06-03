@@ -4,9 +4,9 @@ import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/mod
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/ordem_history_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_durations_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:aco_plus/app/core/services/preferences_service.dart';
@@ -15,21 +15,21 @@ import 'package:flutter/material.dart';
 
 class OrdemModel {
   final String id;
-  final ProdutoModel produto;
+  final BitolaModel produto;
   final DateTime createdAt;
   DateTime updatedAt;
   MateriaPrimaModel? materiaPrima;
   DateTime? endAt;
   List<Map<String, String>> idPedidosProdutosRefs = [];
-  List<PedidoProdutoModel>? _produtosIniciais;
+  List<PedidoBitolaModel>? _produtosIniciais;
 
-  List<PedidoProdutoModel> get produtos {
+  List<PedidoBitolaModel> get produtos {
     if (idPedidosProdutosRefs.isNotEmpty) {
-      final List<PedidoProdutoModel> result = [];
+      final List<PedidoBitolaModel> result = [];
       for (var x in idPedidosProdutosRefs) {
         try {
           final pedidoId = x['pedidoId'] ?? x['pedido_id'] ?? '';
-          final produtoId = x['produtoId'] ?? x['produto_id'] ?? '';
+          final produtoId = x['produtoId'] ?? x['bitola_id'] ?? '';
           if (pedidoId.isEmpty || produtoId.isEmpty) continue;
 
           final produto =
@@ -44,7 +44,7 @@ class OrdemModel {
     return _produtosIniciais ?? [];
   }
 
-  set produtos(List<PedidoProdutoModel> value) {
+  set produtos(List<PedidoBitolaModel> value) {
     _produtosIniciais = value;
     idPedidosProdutosRefs =
         value.map((x) => {'pedidoId': x.pedidoId, 'produtoId': x.id}).toList();
@@ -98,7 +98,7 @@ class OrdemModel {
     }
     var where = produtos
         .where(
-          (e) => e.statusView.status == PedidoProdutoStatus.aguardandoProducao,
+          (e) => e.statusView.status == PedidoBitolaStatus.aguardandoProducao,
         )
         .toList();
     return where.isEmpty
@@ -116,7 +116,7 @@ class OrdemModel {
       if (result.hasData) return result.pesoProduzindo;
     }
     var where = produtos
-        .where((e) => e.status.status == PedidoProdutoStatus.produzindo)
+        .where((e) => e.status.status == PedidoBitolaStatus.produzindo)
         .toList();
     return where.isEmpty
         ? 0
@@ -135,7 +135,7 @@ class OrdemModel {
       if (result.hasData) return result.pesoPronto;
     }
     var where = produtos
-        .where((e) => e.status.status == PedidoProdutoStatus.pronto)
+        .where((e) => e.status.status == PedidoBitolaStatus.pronto)
         .toList();
     return where.isEmpty
         ? 0
@@ -148,11 +148,11 @@ class OrdemModel {
   IconData get icon {
     if (freezed.isFreezed) return Icons.stop_circle_outlined;
     switch (status) {
-      case PedidoProdutoStatus.aguardandoProducao:
+      case PedidoBitolaStatus.aguardandoProducao:
         return Icons.access_time;
-      case PedidoProdutoStatus.produzindo:
+      case PedidoBitolaStatus.produzindo:
         return Icons.build_outlined;
-      case PedidoProdutoStatus.pronto:
+      case PedidoBitolaStatus.pronto:
         return Icons.check;
       default:
         return Icons.error;
@@ -187,16 +187,16 @@ class OrdemModel {
     return pronto / total;
   }
 
-  PedidoProdutoStatus get status {
+  PedidoBitolaStatus get status {
     if (pedidos.isEmpty) {
-      return PedidoProdutoStatus.aguardandoProducao;
+      return PedidoBitolaStatus.aguardandoProducao;
     }
     if (qtdePronto() == quantideTotal()) {
-      return PedidoProdutoStatus.pronto;
+      return PedidoBitolaStatus.pronto;
     } else if (qtdeProduzindo() > 0) {
-      return PedidoProdutoStatus.produzindo;
+      return PedidoBitolaStatus.produzindo;
     } else {
-      return PedidoProdutoStatus.aguardandoProducao;
+      return PedidoBitolaStatus.aguardandoProducao;
     }
   }
 
@@ -204,7 +204,7 @@ class OrdemModel {
     if (produtoId.isEmpty) return false;
     return idPedidosProdutosRefs.any((ref) {
       final id =
-          (ref['produtoId'] ?? ref['produto_id'] ?? '').toString().trim();
+          (ref['produtoId'] ?? ref['bitola_id'] ?? '').toString().trim();
       return id == produtoId.trim();
     });
   }
@@ -215,7 +215,7 @@ class OrdemModel {
     required this.id,
     required this.createdAt,
     required this.produto,
-    required List<PedidoProdutoModel> produtos,
+    required List<PedidoBitolaModel> produtos,
     required this.freezed,
     required this.updatedAt,
     this.isArchived = false,
@@ -260,19 +260,19 @@ class OrdemModel {
       return value;
     }
 
-    final produtoRaw = tryDecode(map['produto'] ?? map['produto_raw']);
+    final produtoRaw = tryDecode(map['produto'] ?? map['bitola_raw']);
     final materiaPrimaRaw =
         tryDecode(map['materiaPrima'] ?? map['materia_prima_raw']);
     final freezedRaw = tryDecode(map['freezed']);
     final historyRaw = tryDecode(map['history']);
     final idPedidosProdutosRaw =
-        tryDecode(map['idPedidosProdutos'] ?? map['id_pedidos_produtos']);
+        tryDecode(map['idPedidosProdutos'] ?? map['id_pedidos_bitolas']);
 
     // Dynamic linking: busca Produto e MateriaPrima atualizados no cache reativo
-    final produtoId = ProdutoModel.fromMap(produtoRaw).id;
-    final produto = BackendClient.produtos.data.isNotEmpty
-        ? BackendClient.produtos.getById(produtoId)
-        : ProdutoModel.fromMap(produtoRaw);
+    final produtoId = BitolaModel.fromMap(produtoRaw).id;
+    final produto = BackendClient.bitolas.data.isNotEmpty
+        ? BackendClient.bitolas.getById(produtoId)
+        : BitolaModel.fromMap(produtoRaw);
 
     MateriaPrimaModel? materiaPrima;
     if (materiaPrimaRaw != null) {
@@ -311,7 +311,7 @@ class OrdemModel {
               'pedidoId': (mapx['pedidoId'] ?? mapx['pedido_id'] ?? '')
                   .toString()
                   .trim(),
-              'produtoId': (mapx['produtoId'] ?? mapx['produto_id'] ?? '')
+              'produtoId': (mapx['produtoId'] ?? mapx['bitola_id'] ?? '')
                   .toString()
                   .trim(),
             };
@@ -345,7 +345,7 @@ class OrdemModel {
         id: '',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        produto: ProdutoModel.empty(),
+        produto: BitolaModel.empty(),
         produtos: [],
         freezed: OrdemFreezedModel.static(),
         history: [],
@@ -356,8 +356,8 @@ class OrdemModel {
         'created_at': createdAt.toIso8601String(),
         'updated_at': updatedAt.toIso8601String(),
         'end_at': endAt?.toIso8601String(),
-        'produto_raw': produto.toMap(),
-        'id_pedidos_produtos': idPedidosProdutosRefs,
+        'bitola_raw': produto.toMap(),
+        'id_pedidos_bitolas': idPedidosProdutosRefs,
         'freezed': freezed.toMap(),
         'is_archived': isArchived,
         'belt_index': beltIndex,
@@ -372,10 +372,10 @@ class OrdemModel {
 
   OrdemModel copyWith({
     String? id,
-    ProdutoModel? produto,
+    BitolaModel? produto,
     DateTime? createdAt,
     ValueGetter<DateTime?>? endAt,
-    List<PedidoProdutoModel>? produtos,
+    List<PedidoBitolaModel>? produtos,
     OrdemFreezedModel? freezed,
     MateriaPrimaModel? materiaPrima,
     DateTime? updatedAt,

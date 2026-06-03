@@ -6,7 +6,7 @@ import 'package:aco_plus/app/modules/kanban/ui/kanban_page.dart';
 import 'package:aco_plus/app/modules/materia_prima/ui/materias_primas_page.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordens_page.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedidos_page.dart';
-import 'package:aco_plus/app/modules/produto/ui/produtos_page.dart';
+import 'package:aco_plus/app/modules/bitola/ui/bitolas_page.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/estoque/relatorios_estoque_page.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/ordem/relatorios_ordem_page.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/pedido/relatorios_pedido_page.dart';
@@ -73,7 +73,7 @@ extension AppModuleExt on AppModule {
       case AppModule.fabricantes:
         return const FabricantesPage();
       case AppModule.produtos:
-        return const ProdutosPage();
+        return const BitolasPage();
       case AppModule.materiaPrima:
         return const MateriasPrimasPage();
       case AppModule.pontas:
@@ -171,7 +171,7 @@ extension AppModuleExt on AppModule {
       case AppModule.fabricantes:
         return 'Fabricantes';
       case AppModule.produtos:
-        return 'Produtos';
+        return 'Bitolas';
       case AppModule.materiaPrima:
         return 'Matéria Prima';
       case AppModule.pontas:

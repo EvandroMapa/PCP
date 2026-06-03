@@ -106,7 +106,7 @@ class PontaBitolaGrupo {
     try {
       // Busca o produto (bitola) para pegar a massa/kg por metro
       final produto =
-          FirestoreClient.produtos.data.firstWhere((p) => p.id == bitolaId);
+          FirestoreClient.bitolas.data.firstWhere((p) => p.id == bitolaId);
       // Tamanho é informado em centímetros, então dividimos por 100 para metros
       return (totalTamanho / 100) * produto.massaFinal;
     } catch (_) {

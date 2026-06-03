@@ -1,8 +1,8 @@
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/produto/produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/enums/sort_type.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
@@ -58,11 +58,11 @@ class PedidoController {
         .toList();
 
     for (PedidoModel pedido in pedidos) {
-      List<PedidoProdutoModel> produtos =
+      List<PedidoBitolaModel> produtos =
           pedido.produtos.map((e) => e.copyWith()).toList();
       pedido.produtos.clear();
 
-      for (PedidoProdutoModel produto in produtos) {
+      for (PedidoBitolaModel produto in produtos) {
         if (pedidoViewModel.status.contains(produto.statusess.last.status)) {
           pedido.produtos.add(produto);
         }
@@ -80,11 +80,11 @@ class PedidoController {
     //remove produtos dos pedidos que nao estao na lista de produtos do filtro(view model)
     if (pedidoViewModel.produtos.isNotEmpty) {
       for (PedidoModel pedido in pedidos) {
-        List<PedidoProdutoModel> produtos =
+        List<PedidoBitolaModel> produtos =
             pedido.produtos.map((e) => e.copyWith()).toList();
         pedido.produtos.clear();
 
-        for (PedidoProdutoModel produto in produtos) {
+        for (PedidoBitolaModel produto in produtos) {
           if (pedidoViewModel.produtos
               .map((e) => e.id)
               .contains(produto.produto.id)) {
@@ -160,7 +160,7 @@ class PedidoController {
     if (quantidade == RelatorioPedidoQuantidade.unico) {
       for (var pedido in pedidoViewModel.relatorio!.pedidos) {
         for (var produto in pedido.produtos) {
-          if (produto.statusess.last.status == PedidoProdutoStatus.pronto) {
+          if (produto.statusess.last.status == PedidoBitolaStatus.pronto) {
             final ordem = pedidoCtrl.getOrdemByProduto(produto, true);
             produto.materiaPrima = produto.materiaPrima ?? ordem?.materiaPrima;
             if (produto.materiaPrima != null) {
@@ -205,7 +205,7 @@ class PedidoController {
     return double.parse(qtde.toStringAsFixed(2));
   }
 
-  double getPedidosTotalPorStatus(PedidoProdutoStatus status) {
+  double getPedidosTotalPorStatus(PedidoBitolaStatus status) {
     double qtde = 0;
     for (var pedido in pedidoViewModel.relatorio!.pedidos) {
       for (var produto in pedido.produtos) {
@@ -217,7 +217,7 @@ class PedidoController {
     return double.parse(qtde.toStringAsFixed(2));
   }
 
-  double getPedidosTotalPorBitola(ProdutoModel produto) {
+  double getPedidosTotalPorBitola(BitolaModel produto) {
     double qtde = 0;
     for (var pedido in pedidoViewModel.relatorio!.pedidos) {
       for (var produto in pedido.produtos
@@ -230,8 +230,8 @@ class PedidoController {
   }
 
   double getPedidosTotalPorBitolaStatus(
-    ProdutoModel produto,
-    PedidoProdutoStatus status,
+    BitolaModel produto,
+    PedidoBitolaStatus status,
   ) {
     double qtde = 0;
     for (var pedido in pedidoViewModel.relatorio!.pedidos) {
@@ -312,7 +312,7 @@ class PedidoController {
   }
 
   bool _whereProductStatus(
-    PedidoProdutoModel produto,
+    PedidoBitolaModel produto,
     List<RelatorioOrdemStatus> status,
   ) {
     final productStatus = produto.statusess.last.status;
@@ -321,13 +321,13 @@ class PedidoController {
       switch (status) {
         case RelatorioOrdemStatus.AGUARDANDO_PRODUCAO:
           isAvailable = [
-            PedidoProdutoStatus.separado,
-            PedidoProdutoStatus.aguardandoProducao,
+            PedidoBitolaStatus.separado,
+            PedidoBitolaStatus.aguardandoProducao,
           ].contains(productStatus);
         case RelatorioOrdemStatus.EM_PRODUCAO:
-          isAvailable = productStatus == PedidoProdutoStatus.produzindo;
+          isAvailable = productStatus == PedidoBitolaStatus.produzindo;
         case RelatorioOrdemStatus.PRODUZIDAS:
-          isAvailable = productStatus == PedidoProdutoStatus.pronto;
+          isAvailable = productStatus == PedidoBitolaStatus.pronto;
       }
     }
     return isAvailable;
@@ -343,12 +343,12 @@ class PedidoController {
     return double.parse(qtde.toStringAsFixed(2));
   }
 
-  List<ProdutoModel> getTiposProdutosId() {
-    List<ProdutoModel> produtos = [];
+  List<BitolaModel> getTiposProdutosId() {
+    List<BitolaModel> produtos = [];
     for (var ordem in ordemViewModel.relatorio!.ordens) {
       for (var produto in ordem.produtos) {
         if (produtos.map((e) => e.id).contains(produto.produto.id) == false) {
-          if (produto.produto.nome != 'Produto não encontrado') {
+          if (produto.produto.nome != 'Bitola não encontrada') {
             produtos.add(produto.produto);
           }
         }
@@ -357,8 +357,8 @@ class PedidoController {
     return produtos.toList();
   }
 
-  List<PedidoProdutoModel> getOrdemTotalProduto() {
-    List<PedidoProdutoModel> pedidoProdutos = [];
+  List<PedidoBitolaModel> getOrdemTotalProduto() {
+    List<PedidoBitolaModel> pedidoProdutos = [];
     final types = getTiposProdutosId();
     for (var type in types) {
       double qtde = 0;
@@ -370,7 +370,7 @@ class PedidoController {
         }
       }
       pedidoProdutos.add(
-        PedidoProdutoModel(
+        PedidoBitolaModel(
           id: 'total',
           produto: type,
           qtde: qtde,
@@ -458,7 +458,7 @@ class PedidoController {
     List<OrdemModel> ordens,
     RelatorioOrdensPdfExportarTipo tipo, {
     DateTimeRange? periodo,
-    ProdutoModel? bitola,
+    BitolaModel? bitola,
   }) async {
     final pdf = pw.Document();
     final imageBytes = await LogoHelper.logoBytesForPdf();
@@ -488,8 +488,8 @@ class PedidoController {
   RelatorioProducaoViewModel get producaoViewModel =>
       producaoViewModelStream.value;
 
-  List<PedidoProdutoModel> getOrdemTotalTempoProduto() {
-    List<PedidoProdutoModel> pedidoProdutos = [];
+  List<PedidoBitolaModel> getOrdemTotalTempoProduto() {
+    List<PedidoBitolaModel> pedidoProdutos = [];
     final types = getOrdemTiposProdutosId();
     for (var type in types) {
       double qtde = 0;
@@ -501,7 +501,7 @@ class PedidoController {
         }
       }
       pedidoProdutos.add(
-        PedidoProdutoModel(
+        PedidoBitolaModel(
           id: 'total',
           produto: type,
           qtde: qtde,
@@ -517,12 +517,12 @@ class PedidoController {
     return pedidoProdutos;
   }
 
-  List<ProdutoModel> getOrdemTiposProdutosId() {
-    List<ProdutoModel> produtos = [];
+  List<BitolaModel> getOrdemTiposProdutosId() {
+    List<BitolaModel> produtos = [];
     for (var ordem in producaoViewModel.relatorio!.ordens) {
       for (var produto in ordem.produtos) {
         if (produtos.map((e) => e.id).contains(produto.produto.id) == false) {
-          if (produto.produto.nome != 'Produto não encontrado') {
+          if (produto.produto.nome != 'Bitola não encontrada') {
             produtos.add(produto.produto);
           }
         }
@@ -605,7 +605,7 @@ class PedidoController {
   }
 
   // bool _whereProductStatus(
-  //   PedidoProdutoModel produto,
+  //   PedidoBitolaModel produto,
   //   List<RelatorioOrdemStatus> status,
   // ) {
   //   final productStatus = produto.statusess.last.status;
@@ -614,13 +614,13 @@ class PedidoController {
   //     switch (status) {
   //       case RelatorioOrdemStatus.AGUARDANDO_PRODUCAO:
   //         isAvailable = [
-  //           PedidoProdutoStatus.separado,
-  //           PedidoProdutoStatus.aguardandoProducao,
+  //           PedidoBitolaStatus.separado,
+  //           PedidoBitolaStatus.aguardandoProducao,
   //         ].contains(productStatus);
   //       case RelatorioOrdemStatus.EM_PRODUCAO:
-  //         isAvailable = productStatus == PedidoProdutoStatus.produzindo;
+  //         isAvailable = productStatus == PedidoBitolaStatus.produzindo;
   //       case RelatorioOrdemStatus.PRODUZIDAS:
-  //         isAvailable = productStatus == PedidoProdutoStatus.pronto;
+  //         isAvailable = productStatus == PedidoBitolaStatus.pronto;
   //     }
   //   }
   //   return isAvailable;
@@ -636,12 +636,12 @@ class PedidoController {
   //   return double.parse(qtde.toStringAsFixed(2));
   // }
 
-  // List<ProdutoModel> getTiposProdutosId() {
-  //   List<ProdutoModel> produtos = [];
+  // List<BitolaModel> getTiposProdutosId() {
+  //   List<BitolaModel> produtos = [];
   //   for (var ordem in ordemViewModel.relatorio!.ordens) {
   //     for (var produto in ordem.produtos) {
   //       if (produtos.map((e) => e.id).contains(produto.produto.id) == false) {
-  //         if (produto.produto.nome != 'Produto não encontrado') {
+  //         if (produto.produto.nome != 'Bitola não encontrada') {
   //           produtos.add(produto.produto);
   //         }
   //       }
@@ -650,8 +650,8 @@ class PedidoController {
   //   return produtos.toList();
   // }
 
-  // List<PedidoProdutoModel> getOrdemTotalProduto() {
-  //   List<PedidoProdutoModel> pedidoProdutos = [];
+  // List<PedidoBitolaModel> getOrdemTotalProduto() {
+  //   List<PedidoBitolaModel> pedidoProdutos = [];
   //   final types = getTiposProdutosId();
   //   for (var type in types) {
   //     double qtde = 0;
@@ -663,7 +663,7 @@ class PedidoController {
   //       }
   //     }
   //     pedidoProdutos.add(
-  //       PedidoProdutoModel(
+  //       PedidoBitolaModel(
   //         id: 'total',
   //         produto: type,
   //         qtde: qtde,
@@ -724,7 +724,7 @@ class PedidoController {
   }
 
   Duration getOrdensTempPorBitola(
-    ProdutoModel produto,
+    BitolaModel produto,
     List<OrdemModel> ordens,
   ) {
     List<Duration> durations = [];

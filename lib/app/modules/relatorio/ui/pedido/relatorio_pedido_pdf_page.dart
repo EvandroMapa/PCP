@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
@@ -214,7 +214,7 @@ class RelatorioPedidoPdfPage {
   }
 
   pw.Widget _buildTotalsSection() {
-    final statusTotals = PedidoProdutoStatus.values
+    final statusTotals = PedidoBitolaStatus.values
         .map((s) => [s.label, relatorioCtrl.getPedidosTotalPorStatus(s).toKg()])
         .where((e) => e[1] != '0,00kg')
         .toList();

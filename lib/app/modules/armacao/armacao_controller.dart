@@ -116,7 +116,7 @@ class ArmacaoController {
           final pesoPos = double.tryParse(pos['peso_kg'].toString()) ?? 0.0;
           final pesoTotalPos = pesoPos * qtde;
 
-          final prodId = pos['produto_id'].toString();
+          final prodId = pos['bitola_id'].toString();
           pesoPorBitola[prodId] = (pesoPorBitola[prodId] ?? 0) + pesoTotalPos;
           pesoTotal += pesoTotalPos;
         }

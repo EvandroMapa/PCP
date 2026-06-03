@@ -1,6 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
 import 'package:aco_plus/app/core/components/app_bottom.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -39,7 +39,7 @@ class _OrderCreatePedidosSelecionadosBottomState
     return StreamOut(
       stream: ordemCtrl.formStream.listen,
       builder: (_, form) {
-        List<PedidoProdutoModel> produtos = ordemCtrl.getPedidosPorProduto(
+        List<PedidoBitolaModel> produtos = ordemCtrl.getPedidosPorProduto(
           form.produto!,
           ordem: widget.ordem,
         );
@@ -79,7 +79,7 @@ class _OrderCreatePedidosSelecionadosBottomState
                   ],
                 ),
                 const H(16),
-                for (PedidoProdutoModel produto in produtos)
+                for (PedidoBitolaModel produto in produtos)
                   _itemProduto(
                     isEnable: produto.isAvailable,
                     produto: produto,
@@ -101,7 +101,7 @@ class _OrderCreatePedidosSelecionadosBottomState
   }
 
   Widget _itemProduto({
-    required PedidoProdutoModel produto,
+    required PedidoBitolaModel produto,
     required bool check,
     required void Function() onTap,
     required bool isEnable,

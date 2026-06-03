@@ -1,5 +1,5 @@
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_produto_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:flutter/material.dart';
 
 /// Barra de progresso CD com percentuais posicionados esquerda/centro/direita.
@@ -42,19 +42,19 @@ class KanbanCardCDWidget extends StatelessWidget {
                   if (pPronto > 0)
                     Flexible(
                       flex: (pPronto * 1000).toInt().clamp(1, 1000),
-                      child: Container(color: PedidoProdutoStatus.pronto.color),
+                      child: Container(color: PedidoBitolaStatus.pronto.color),
                     ),
                   if (pProduzindo > 0)
                     Flexible(
                       flex: (pProduzindo * 1000).toInt().clamp(1, 1000),
                       child: Container(
-                          color: PedidoProdutoStatus.produzindo.color),
+                          color: PedidoBitolaStatus.produzindo.color),
                     ),
                   if (pAguardando > 0)
                     Flexible(
                       flex: (pAguardando * 1000).toInt().clamp(1, 1000),
                       child: Container(
-                        color: PedidoProdutoStatus.aguardandoProducao.color
+                        color: PedidoBitolaStatus.aguardandoProducao.color
                             .withValues(alpha: 0.35),
                       ),
                     ),
@@ -68,13 +68,13 @@ class KanbanCardCDWidget extends StatelessWidget {
             children: [
               _pctLabel(
                   pctAg,
-                  PedidoProdutoStatus.aguardandoProducao.color
+                  PedidoBitolaStatus.aguardandoProducao.color
                       .withValues(alpha: 0.8),
                   'Ag.'),
               const Spacer(),
-              _pctLabel(pctProd, PedidoProdutoStatus.produzindo.color, 'Prod.'),
+              _pctLabel(pctProd, PedidoBitolaStatus.produzindo.color, 'Prod.'),
               const Spacer(),
-              _pctLabel(pctPronto, PedidoProdutoStatus.pronto.color, 'Pronto'),
+              _pctLabel(pctPronto, PedidoBitolaStatus.pronto.color, 'Pronto'),
             ],
           ),
         ],
