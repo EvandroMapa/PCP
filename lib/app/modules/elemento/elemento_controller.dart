@@ -645,6 +645,38 @@ class ElementoController {
     if (contextGlobal.mounted) Navigator.pop(contextGlobal);
   }
 
+  /// Normaliza strings numéricas do padrão BR (1.018,08) para o formato
+  /// internacional (1018.08) compatível com [double.tryParse].
+  /// Detecta automaticamente se o ponto é separador de milhar.
+  String _normalizarNumero(String valor) {
+    if (valor.isEmpty) return '0';
+    // Remove espaços e letras residuais (ex: "kg")
+    valor = valor.replaceAll(RegExp(r'[a-zA-Z\s]'), '');
+    // Padrão BR: ponto como milhar e vírgula como decimal (ex: 1.018,08)
+    if (valor.contains('.') && valor.contains(',')) {
+      return valor.replaceAll('.', '').replaceAll(',', '.');
+    }
+    // Só vírgula → decimal BR (ex: 203,62)
+    if (valor.contains(',')) {
+      return valor.replaceAll(',', '.');
+    }
+    // Só ponto → pode ser milhar OU decimal
+    // Se tem mais de um ponto, são milhares (ex: 1.018.000 → 1018000)
+    if (RegExp(r'\..*\.').hasMatch(valor)) {
+      return valor.replaceAll('.', '');
+    }
+    // Ponto único: verificar se são 3 dígitos depois (milhar) ou não (decimal)
+    final dotIndex = valor.indexOf('.');
+    if (dotIndex != -1) {
+      final afterDot = valor.substring(dotIndex + 1);
+      if (afterDot.length == 3 && !afterDot.contains(RegExp(r'[^0-9]'))) {
+        // Ex: 1.018 → provavelmente milhar (1018)
+        return valor.replaceAll('.', '');
+      }
+    }
+    return valor;
+  }
+
   Future<Map<String, dynamic>> onImportCSV(
       Uint8List bytes, PedidoModel pedido, bool clearExisting) async {
     String rawText = '';
@@ -783,16 +815,16 @@ class ElementoController {
         final bitolaStr =
             columns[idxBitola].trim().replaceAll('mm', '').replaceAll(',', '.');
         final pesoStr = idxPeso != -1 && columns.length > idxPeso
-            ? columns[idxPeso].trim().replaceAll(',', '.')
+            ? _normalizarNumero(columns[idxPeso].trim())
             : '0';
         final posQtdeStr = idxQtde != -1 && columns.length > idxQtde
             ? columns[idxQtde].trim()
             : '0';
         final comprCorteStr = idxComprCorte != -1 && columns.length > idxComprCorte
-            ? columns[idxComprCorte].trim().replaceAll(',', '.')
+            ? _normalizarNumero(columns[idxComprCorte].trim())
             : '0';
         final comprUnitStr = idxComprUnit != -1 && columns.length > idxComprUnit
-            ? columns[idxComprUnit].trim().replaceAll(',', '.')
+            ? _normalizarNumero(columns[idxComprUnit].trim())
             : '0';
 
         if (elNome.isEmpty || posNome.isEmpty) continue;

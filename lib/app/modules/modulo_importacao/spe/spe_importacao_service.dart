@@ -123,25 +123,26 @@ class SpeImportacaoService {
           int.tryParse(elemPt['quantidade_solicitada']?.toString() ?? '1') ?? 1;
       final qtdeTotal =
           int.tryParse(elemPt['elemento_quantidade']?.toString() ?? '1') ?? 1;
+      // peso_total do SPE — valor correto calculado pelo sistema de origem
+      final pesoTotalSpe =
+          double.tryParse(elemPt['peso_total']?.toString() ?? '0') ?? 0.0;
 
       // Filtrar posições deste elemento no detalhamento
       final posicoesDoElemento =
           posicoesSpe.where((p) => p['elemento_id'] == elementoId).toList();
 
-      final posicoesExtraidas = <SpePosicaoExtraida>[];
-      int posCounter = 1;
+      // ── 1ª passagem: calcular pesos brutos de cada posição ──────────────
+      final dadosPosicoes = <Map<String, dynamic>>[];
+      double somaPesoBruto = 0;
 
       for (final pos in posicoesDoElemento) {
         final bitolaId = pos['bitola_id']?.toString() ?? '';
         final bitolaNome = pos['bitola_nome']?.toString() ?? '';
         final qtdePos = int.tryParse(pos['qtde']?.toString() ?? '1') ?? 1;
-        final multiplicador =
-            int.tryParse(pos['multiplicador']?.toString() ?? '1') ?? 1;
         final comprCorte = double.tryParse(
                 pos['comprimento_de_corte']?.toString() ?? '0') ??
             0.0;
 
-        // Calcular peso da posição
         final bitolaData = bitolasPorId[bitolaId];
         final massaFinal = bitolaData != null
             ? (double.tryParse(
@@ -149,10 +150,10 @@ class SpeImportacaoService {
                 0.0)
             : 0.0;
 
-        // peso = qtde × multiplicador × comprimentoDeCorte(cm→m) × massaFinal(kg/m)
-        // comprimentoDeCorte está em centímetros no SPE
-        final pesoPos =
-            qtdePos * multiplicador * (comprCorte / 100) * massaFinal;
+        // Peso bruto proporcional (pode divergir do SPE, serve apenas
+        // para distribuir o peso_total correto entre as posições)
+        final pesoRaw = qtdePos * (comprCorte / 100) * massaFinal;
+        somaPesoBruto += pesoRaw;
 
         // Match com BitolaModel do PCP
         if (!bitolaMatch.containsKey(bitolaNome)) {
@@ -163,12 +164,39 @@ class SpeImportacaoService {
           );
         }
 
+        dadosPosicoes.add({
+          'pos': pos,
+          'bitolaId': bitolaId,
+          'bitolaNome': bitolaNome,
+          'qtdePos': qtdePos,
+          'comprCorte': comprCorte,
+          'pesoRaw': pesoRaw,
+        });
+      }
+
+      // ── Fator de correção usando peso_total do SPE ──────────────────────
+      // peso_total do SPE é para a quantidade_solicitada; obtemos o unitário
+      final pesoUnitarioSpe =
+          qtdeSolicitada > 0 ? pesoTotalSpe / qtdeSolicitada : pesoTotalSpe;
+      final fatorCorrecao =
+          (somaPesoBruto > 0 && pesoUnitarioSpe > 0)
+              ? pesoUnitarioSpe / somaPesoBruto
+              : 1.0;
+
+      // ── 2ª passagem: criar posições com peso corrigido ──────────────────
+      final posicoesExtraidas = <SpePosicaoExtraida>[];
+      int posCounter = 1;
+
+      for (final dados in dadosPosicoes) {
+        final pesoPos = (dados['pesoRaw'] as double) * fatorCorrecao;
+        final bitolaNome = dados['bitolaNome'] as String;
+
         posicoesExtraidas.add(SpePosicaoExtraida(
-          nome: 'Pos ${pos['posicao'] ?? posCounter}',
+          nome: 'Pos ${(dados['pos'] as Map)['posicao'] ?? posCounter}',
           bitolaNome: bitolaNome,
           pesoKg: pesoPos,
-          qtde: qtdePos * multiplicador,
-          comprCorte: comprCorte,
+          qtde: dados['qtdePos'] as int,
+          comprCorte: dados['comprCorte'] as double,
           produtoPcp: bitolaMatch[bitolaNome],
         ));
 
@@ -233,15 +261,20 @@ class SpeImportacaoService {
         final produtoId = HashService.get;
         await SupabaseService.client.from('pedido_bitolas').insert({
           'id': produtoId,
+          'id_id': produtoId,
           'pedido_id': pedido.id,
           'bitola_id': bitola.produtoPcp!.id,
-          'bitola_nome': bitola.produtoPcp!.nome,
-          'bitola_descricao': bitola.produtoPcp!.descricao,
-          'bitola_massa_final': bitola.produtoPcp!.massaFinal,
+          'bitola_raw': bitola.produtoPcp!.toMap(),
           'qtde': bitola.pesoTotalKg,
+          'quantidade': bitola.pesoTotalKg,
           'qtde_original': bitola.pesoTotalKg,
           'cliente_id': pedido.cliente.id,
           'obra_id': pedido.obra.id,
+          'unidade': '',
+          'status': 'separado',
+          'statusess_raw': [PedidoBitolaStatusModel.empty().toMap()],
+          'valor_unitario': 0.0,
+          'valor_total': 0.0,
         });
       }
 
