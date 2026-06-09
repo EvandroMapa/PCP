@@ -663,6 +663,12 @@ class _PedidoPageState extends State<PedidoPage>
           // Preview da entidade (topo)
           Tooltip(
             message: widget.pedido.localizador,
+            positionDelegate: (context) {
+              return Offset(
+                context.target.dx + context.targetSize.width - 12,
+                context.target.dy + (context.targetSize.height - context.tooltipSize.height) / 2,
+              );
+            },
             child: Container(
               width: 36,
               height: 36,
@@ -738,6 +744,12 @@ class _PedidoPageState extends State<PedidoPage>
                 message: item.label,
                 preferBelow: false,
                 waitDuration: const Duration(milliseconds: 300),
+                positionDelegate: (context) {
+                  return Offset(
+                    context.target.dx + context.targetSize.width - 12,
+                    context.target.dy + (context.targetSize.height - context.tooltipSize.height) / 2,
+                  );
+                },
                 child: InkWell(
                   onTap: () => onTap(item.index),
                   borderRadius: BorderRadius.circular(8),
