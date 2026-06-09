@@ -7,6 +7,7 @@ import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:aco_plus/app/modules/modulo_importacao/ui/spe/spe_importar_dialog.dart';
+import 'package:aco_plus/app/modules/modulo_importacao/ui/tqs/tqs_importar_dialog.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_create_page.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_page.dart';
@@ -249,39 +250,52 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
         return;
       }
 
-      // Se múltiplos, mostra bottom sheet
+      // Se múltiplos, mostra dialog centralizado
       if (!context.mounted) return;
-      showModalBottomSheet(
+      showDialog(
         context: context,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        builder: (ctx) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  'Selecione o módulo de importação',
-                  style: AppCss.smallBold,
-                ),
-              ),
-              const Divider(height: 1),
-              ...modulos.map((m) => ListTile(
-                    leading: const Icon(Icons.cloud_download_rounded),
-                    title: Text(
-                      _nomeModulo(m['id']),
-                      style: AppCss.minimumBold.setSize(13),
-                    ),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _abrirModulo(m['id']);
-                    },
-                  )),
-              const SizedBox(height: 8),
-            ],
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
+          title: Text(
+            'Selecione o módulo de importação',
+            style: AppCss.mediumBold,
+            textAlign: TextAlign.center,
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: modulos.map((m) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: ListTile(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  hoverColor: AppColors.primaryMain.withValues(alpha: 0.05),
+                  leading: Icon(
+                    _iconeModulo(m['id']),
+                    color: AppColors.primaryMain,
+                  ),
+                  title: Text(
+                    _nomeModulo(m['id']),
+                    style: AppCss.minimumBold.setSize(13),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _abrirModulo(m['id']);
+                  },
+                ),
+              );
+            }).toList(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+          ],
         ),
       );
     } catch (e) {
@@ -290,10 +304,24 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
     }
   }
 
+  IconData _iconeModulo(String id) {
+    switch (id) {
+      case 'spe':
+        return Icons.cloud_download_rounded;
+      case 'tqs':
+        return Icons.table_chart_rounded;
+      default:
+        return Icons.cloud_download_rounded;
+    }
+  }
+
   Future<void> _abrirModulo(String moduloId) async {
     switch (moduloId) {
       case 'spe':
         await showSpeImportarDialog(pedido);
+        break;
+      case 'tqs':
+        await showTqsImportarDialog(pedido);
         break;
       default:
         NotificationService.showNeutral(
@@ -307,6 +335,8 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
     switch (id) {
       case 'spe':
         return 'SPE — Pedido Técnico';
+      case 'tqs':
+        return 'TQS — Importar CSV';
       default:
         return id.toUpperCase();
     }

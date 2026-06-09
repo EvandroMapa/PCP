@@ -7,14 +7,14 @@ import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:flutter/material.dart';
 
-class SpeConfigPage extends StatefulWidget {
-  const SpeConfigPage({super.key});
+class TqsConfigPage extends StatefulWidget {
+  const TqsConfigPage({super.key});
 
   @override
-  State<SpeConfigPage> createState() => _SpeConfigPageState();
+  State<TqsConfigPage> createState() => _TqsConfigPageState();
 }
 
-class _SpeConfigPageState extends State<SpeConfigPage> {
+class _TqsConfigPageState extends State<TqsConfigPage> {
   bool _habilitado = false;
   bool _carregando = true;
 
@@ -30,7 +30,7 @@ class _SpeConfigPageState extends State<SpeConfigPage> {
       final response = await SupabaseService.client
           .from('modulos_importacao')
           .select()
-          .eq('id', 'spe')
+          .eq('id', 'tqs')
           .maybeSingle();
 
       if (response != null) {
@@ -41,14 +41,14 @@ class _SpeConfigPageState extends State<SpeConfigPage> {
       } else {
         // Cria registro se não existir
         await SupabaseService.client.from('modulos_importacao').insert({
-          'id': 'spe',
+          'id': 'tqs',
           'habilitado': false,
           'config': {},
         });
         setState(() => _carregando = false);
       }
     } catch (e) {
-      log('SpeConfigPage._carregarEstado erro: $e');
+      log('TqsConfigPage._carregarEstado erro: $e');
       setState(() => _carregando = false);
     }
   }
@@ -56,26 +56,26 @@ class _SpeConfigPageState extends State<SpeConfigPage> {
   Future<void> _toggleHabilitado(bool valor) async {
     setState(() => _habilitado = valor);
     try {
-      debugPrint('SpeConfigPage: salvando habilitado=$valor...');
+      debugPrint('TqsConfigPage: salvando habilitado=$valor...');
       await SupabaseService.client
           .from('modulos_importacao')
           .upsert({
-            'id': 'spe',
+            'id': 'tqs',
             'habilitado': valor,
             'config': {},
             'updated_at': DateTime.now().toIso8601String(),
           });
 
-      debugPrint('SpeConfigPage: salvo com sucesso!');
+      debugPrint('TqsConfigPage: salvo com sucesso!');
       NotificationService.showPositive(
         valor ? 'Módulo Habilitado' : 'Módulo Desabilitado',
         valor
-            ? 'SPE disponível no botão Importar dos pedidos'
-            : 'SPE removido do menu de importação',
+            ? 'TQS disponível no botão Importar dos pedidos'
+            : 'TQS removido do menu de importação',
       );
     } catch (e) {
-      log('SpeConfigPage._toggleHabilitado erro: $e');
-      debugPrint('SpeConfigPage: ERRO ao salvar: $e');
+      log('TqsConfigPage._toggleHabilitado erro: $e');
+      debugPrint('TqsConfigPage: ERRO ao salvar: $e');
       setState(() => _habilitado = !valor); // reverte
       NotificationService.showNegative(
         'Erro',
@@ -84,13 +84,12 @@ class _SpeConfigPageState extends State<SpeConfigPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
       appBar: AppBar(
         title: Text(
-          'SPE - Configurações',
+          'TQS - Configurações',
           style: AppCss.largeBold.setColor(AppColors.white),
         ),
         backgroundColor: AppColors.primaryMain,
@@ -119,16 +118,16 @@ class _SpeConfigPageState extends State<SpeConfigPage> {
                       height: 48,
                       decoration: BoxDecoration(
                         color: (_habilitado
-                                ? const Color(0xFF3B82F6)
+                                ? const Color(0xFF10B981)
                                 : Colors.grey[400]!)
                             .withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
-                        Icons.cloud_download_rounded,
+                        Icons.table_chart_rounded,
                         size: 24,
                         color: _habilitado
-                            ? const Color(0xFF3B82F6)
+                            ? const Color(0xFF10B981)
                             : Colors.grey[400],
                       ),
                     ),
@@ -138,13 +137,13 @@ class _SpeConfigPageState extends State<SpeConfigPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Módulo SPE',
+                            'Módulo TQS',
                             style: AppCss.mediumBold.setColor(AppColors.black),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Importa elementos com pesos e bitolas do pedido técnico SPE. '
-                            'Permite compor um pedido PCP a partir de múltiplos pedidos técnicos.',
+                            'Importa elementos exportados pelo relatório TQS Planilhar via CSV. '
+                            'Não importa pesos totais por bitola.',
                             style: AppCss.minimumRegular
                                 .setColor(AppColors.neutralMedium)
                                 .setSize(13),
@@ -199,10 +198,9 @@ class _SpeConfigPageState extends State<SpeConfigPage> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'O botão "Importar" no título de cada pedido incluirá a opção SPE. '
-                                    'Importa elementos com seus respectivos pesos (compondo a aba Elementos) '
-                                    'e pesos totais por bitola do pedido. '
-                                    'Permite importar mais de um pedido técnico para compor um único pedido PCP.',
+                                    'O botão "Importar" no título de cada pedido incluirá a opção TQS. '
+                                    'Importa elementos e posições exportados pelo relatório TQS Planilhar '
+                                    'a partir de um arquivo CSV. Não importa pesos totais por bitola.',
                                     style: AppCss.minimumRegular
                                         .setColor(Colors.green[700]!)
                                         .setSize(12),
@@ -239,7 +237,7 @@ class _SpeConfigPageState extends State<SpeConfigPage> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    'Habilite o módulo para que a opção SPE apareça '
+                                    'Habilite o módulo para que a opção TQS apareça '
                                     'no menu de importação dos pedidos.',
                                     style: AppCss.minimumRegular
                                         .setColor(Colors.red[400]!)
@@ -253,12 +251,51 @@ class _SpeConfigPageState extends State<SpeConfigPage> {
                       ),
               ),
 
+              const SizedBox(height: 24),
+
+              // ── Informações sobre o formato CSV ────────────────────────────
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline_rounded,
+                            color: Colors.grey[600], size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Formato do CSV aceito',
+                          style: AppCss.smallBold
+                              .setColor(Colors.grey[800]!),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Colunas obrigatórias: ELEMENTO, POSICAO, BITOLA, PESO\n'
+                      'Colunas opcionais: QTDE ELEM, OS, QTDE, COMPR UNIT, COMPR CORTE, ID ELEM\n\n'
+                      'Dica: Salve sua planilha como "CSV UTF-8" (separado por ponto-e-vírgula).',
+                      style: AppCss.minimumRegular
+                          .setColor(Colors.grey[600]!)
+                          .setSize(12),
+                    ),
+                  ],
+                ),
+              ),
+
               const Spacer(),
 
               // ── Rodapé informativo ────────────────────────────────────────
               Center(
                 child: Text(
-                  'Módulo de importação SPE v1.0',
+                  'Módulo de importação TQS v1.0',
                   style: AppCss.minimumRegular
                       .setColor(Colors.grey[400]!)
                       .setSize(11),

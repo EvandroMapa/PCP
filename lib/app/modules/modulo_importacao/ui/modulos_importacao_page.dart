@@ -3,6 +3,7 @@ import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/modulo_importacao/ui/spe/spe_config_page.dart';
+import 'package:aco_plus/app/modules/modulo_importacao/ui/tqs/tqs_config_page.dart';
 import 'package:flutter/material.dart';
 
 class ModulosImportacaoPage extends StatefulWidget {
@@ -25,26 +26,28 @@ class _ModulosImportacaoPageState extends State<ModulosImportacaoPage> {
     _ModuloInfo(
       id: 'spe',
       nome: 'SPE',
-      descricao: 'Importação de pedidos da plataforma SPE',
+      descricao: 'Importa elementos com pesos e bitolas do pedido técnico SPE. Permite compor um pedido PCP a partir de múltiplos pedidos técnicos.',
       icone: Icons.cloud_download_rounded,
       cor: const Color(0xFF3B82F6),
       is_habilitado: true,
     ),
-    // Módulos futuros podem ser adicionados aqui:
-    // _ModuloInfo(
-    //   id: 'erp_xyz',
-    //   nome: 'ERP XYZ',
-    //   descricao: 'Importação de pedidos do ERP XYZ',
-    //   icone: Icons.integration_instructions_rounded,
-    //   cor: const Color(0xFF10B981),
-    //   is_habilitado: false,
-    // ),
+    _ModuloInfo(
+      id: 'tqs',
+      nome: 'TQS',
+      descricao: 'Importa elementos exportados pelo relatório TQS Planilhar via CSV. Não importa pesos totais por bitola.',
+      icone: Icons.table_chart_rounded,
+      cor: const Color(0xFF10B981),
+      is_habilitado: true,
+    ),
   ];
 
   void _onModuloTap(_ModuloInfo modulo) {
     switch (modulo.id) {
       case 'spe':
         push(context, const SpeConfigPage());
+        break;
+      case 'tqs':
+        push(context, const TqsConfigPage());
         break;
       default:
         break;
