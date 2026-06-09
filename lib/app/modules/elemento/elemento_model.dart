@@ -365,10 +365,10 @@ class ElementoPosicaoCreateModel {
         isEdit = true {
     nome.text = m.nome;
     numeroOs.text = m.numeroOs;
-    pesoKg.text = m.pesoKg.toStringAsFixed(3);
+    pesoKg.text = m.pesoKg.toStringAsFixed(2);
     qtde.text = m.qtde.toString();
-    comprUnit.text = m.comprUnit.toStringAsFixed(3);
-    comprCorte.text = m.comprCorte.toStringAsFixed(3);
+    comprUnit.text = m.comprUnit.toStringAsFixed(2);
+    comprCorte.text = m.comprCorte.toStringAsFixed(2);
     medidas = m.medidas.map((m) => PosicaoMedidaCreateModel.fromModel(m)).toList();
   }
 

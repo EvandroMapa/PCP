@@ -239,7 +239,7 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
                         flex: 2,
                         child: TextFormField(
                           controller: pos.pesoKg.controller,
-                          decoration: _inputDecor('0.000'),
+                          decoration: _inputDecor('0.00'),
                           keyboardType: const TextInputType.numberWithOptions(
                               decimal: true),
                           inputFormatters: [
@@ -282,7 +282,7 @@ class _ElementoFormDialogState extends State<ElementoFormDialog> {
                         style:
                             AppCss.mediumBold.setColor(AppColors.primaryMain)),
                     Text(
-                      '${_form.pesoTotal.toStringAsFixed(3)} kg',
+                      '${_form.pesoTotal.toStringAsFixed(2)} kg',
                       style: AppCss.largeBold.setColor(AppColors.primaryMain),
                     ),
                   ],

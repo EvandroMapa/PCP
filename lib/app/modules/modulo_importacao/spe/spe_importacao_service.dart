@@ -1,6 +1,6 @@
 import 'dart:developer';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
+
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
@@ -32,11 +32,13 @@ class SpeExtracao {
 class SpeBitolaExtraida {
   final String bitolaNome; // ex: "CA-50 8.0mm"
   final double pesoTotalKg;
+  final double metrosLineares; // metros lineares totais
   final BitolaModel? produtoPcp; // null se não encontrou match
 
   SpeBitolaExtraida({
     required this.bitolaNome,
     required this.pesoTotalKg,
+    required this.metrosLineares,
     this.produtoPcp,
   });
 }
@@ -45,27 +47,26 @@ class SpeElementoExtraido {
   final String nome; // ex: "V1"
   final int qtde;
   final List<SpePosicaoExtraida> posicoes;
-  /// Peso total vindo direto do banco do SPE (fonte de verdade)
-  final double pesoTotalSpe;
 
-  /// Usa o peso do SPE quando disponível; caso contrário recalcula
-  double get pesoTotal =>
-      pesoTotalSpe > 0 ? pesoTotalSpe : posicoes.fold(0.0, (s, p) => s + p.pesoKg) * qtde;
+  /// Peso unitário = soma dos pesos das posições (1 unidade do elemento)
+  double get pesoUnitario => posicoes.fold(0.0, (s, p) => s + p.pesoKg);
+
+  /// Peso total = pesoUnitário × quantidade de elementos
+  double get pesoTotal => pesoUnitario * qtde;
 
   SpeElementoExtraido({
     required this.nome,
     required this.qtde,
     required this.posicoes,
-    this.pesoTotalSpe = 0,
   });
 }
 
 class SpePosicaoExtraida {
   final String nome; // ex: "Pos 1"
   final String bitolaNome;
-  final double pesoKg;
+  final double pesoKg; // peso real: metroLinear × qtde × massaFinal PCP
   final int qtde;
-  final double comprCorte;
+  final double metroLinear; // comprimento normal (soma dos trechos) em metros
   final BitolaModel? produtoPcp;
 
   SpePosicaoExtraida({
@@ -73,13 +74,20 @@ class SpePosicaoExtraida {
     required this.bitolaNome,
     required this.pesoKg,
     required this.qtde,
-    required this.comprCorte,
+    required this.metroLinear,
     this.produtoPcp,
   });
 }
 
 /// Serviço de importação SPE → PCP.
 /// Totalmente isolável — para remover, deletar este arquivo e suas referências.
+///
+/// LÓGICA DE PESO:
+/// - Comprimento normal = soma dos trechos (campo `comprimentos` da posição SPE)
+/// - Peso = metros lineares × massaFinal do PCP
+/// - Comprimento de corte NÃO vai para o PCP (fica exclusivamente no SPE)
+/// - Cada posição tem seu peso real (sem normalização)
+/// - Σ posições = elemento, Σ elementos = pedido — tudo da mesma base
 class SpeImportacaoService {
   final SpeSupabaseClient _speClient = SpeSupabaseClient();
 
@@ -100,8 +108,8 @@ class SpeImportacaoService {
       _speClient.buscarElementosDoDetalhamento(detalhamentoId),
       _speClient.buscarBitolas(),
     ]);
-    final elementosDetalhamento = resultados[0] as List<Map<String, dynamic>>;
-    final bitolasSpe = resultados[1] as List<Map<String, dynamic>>;
+    final elementosDetalhamento = resultados[0];
+    final bitolasSpe = resultados[1];
 
     // Mapear elementoId do pedido técnico → elemento do detalhamento
     final elementoIds =
@@ -110,7 +118,7 @@ class SpeImportacaoService {
     // Buscar posições de todos os elementos do detalhamento
     final posicoesSpe = await _speClient.buscarPosicoesPorElementoIds(elementoIds);
 
-    // Indexar bitolas por ID
+    // Indexar bitolas SPE por ID (para match)
     final bitolasPorId = <String, Map<String, dynamic>>{};
     for (final b in bitolasSpe) {
       bitolasPorId[b['id'].toString()] = b;
@@ -119,19 +127,13 @@ class SpeImportacaoService {
     // Produtos do PCP para match
     final produtosPcp = FirestoreClient.bitolas.data;
 
-    // ── Verificar se há resumo_aco pré-calculado pelo SPE ──────────────────
-    final resumoAco = pedidoTecnico['resumo_aco'] as Map<String, dynamic>?;
-    final resumoBitolasJson =
-        resumoAco?['bitolas'] as Map<String, dynamic>?;
-    final resumoElementosJson =
-        resumoAco?['elementos'] as Map<String, dynamic>?;
-    final temResumo =
-        resumoBitolasJson != null && resumoBitolasJson.isNotEmpty;
+    // Cache de match bitola SPE → BitolaModel PCP
+    final bitolaMatch = <String, BitolaModel?>{};
 
     // ── Processar cada elemento do pedido técnico ──────────────────────────
     final elementosExtraidos = <SpeElementoExtraido>[];
-    final bitolaAcumulado = <String, double>{}; // bitolaNome → peso total
-    final bitolaMatch = <String, BitolaModel?>{}; // cache de match
+    final bitolaAcumuladoPeso = <String, double>{}; // bitolaNome → peso total kg
+    final bitolaAcumuladoMetros = <String, double>{}; // bitolaNome → metros totais
 
     for (final elemPt in elementos) {
       final elementoId = elemPt['elemento_id']?.toString() ?? '';
@@ -139,23 +141,11 @@ class SpeImportacaoService {
       final qtdeSolicitada =
           int.tryParse(elemPt['quantidade_solicitada']?.toString() ?? '1') ?? 1;
 
-      // ── Peso do elemento: usar resumo_aco se disponível ─────────────────
-      double pesoTotalElemento;
-      if (temResumo && resumoElementosJson != null) {
-        final elemResumo = resumoElementosJson[elementoNome] as Map<String, dynamic>?;
-        pesoTotalElemento = elemResumo != null
-            ? (elemResumo['peso'] as num?)?.toDouble() ?? 0.0
-            : (double.tryParse(elemPt['peso_total']?.toString() ?? '0') ?? 0.0);
-      } else {
-        pesoTotalElemento =
-            double.tryParse(elemPt['peso_total']?.toString() ?? '0') ?? 0.0;
-      }
-
       // Filtrar posições deste elemento no detalhamento
       final posicoesDoElemento =
           posicoesSpe.where((p) => p['elemento_id'] == elementoId).toList();
 
-      // ── Montar posições para exibição ───────────────────────────────────
+      // ── Montar posições ────────────────────────────────────────────────
       final posicoesExtraidas = <SpePosicaoExtraida>[];
       int posCounter = 1;
 
@@ -165,9 +155,6 @@ class SpeImportacaoService {
         final qtdePos = int.tryParse(pos['qtde']?.toString() ?? '1') ?? 1;
         final multiplicador =
             int.tryParse(pos['multiplicador']?.toString() ?? '1') ?? 1;
-        final comprCorte = double.tryParse(
-                pos['comprimento_de_corte']?.toString() ?? '0') ??
-            0.0;
 
         final bitolaData = bitolasPorId[bitolaId];
 
@@ -180,21 +167,82 @@ class SpeImportacaoService {
           );
         }
 
-        // Peso real da posição: qtde × multiplicador × comprimento_de_corte × massa_final
-        // Usa comprimento_de_corte (já inclui desconto de dobra) em vez de somar trechos
-        final massaFinal = bitolaData != null
-            ? (double.tryParse(
-                    (bitolaData['massa_final'] ?? '0').toString()) ??
-                0.0)
-            : 0.0;
-        final pesoPos = qtdePos * (comprCorte / 100.0) * massaFinal;
+        // ── METRO LINEAR: soma dos trechos (comprimento normal) ─────────
+        // O campo `comprimentos` traz os trechos em cm.
+        // O campo `variaveis` indica quais trechos têm comprimento variável.
+        // O campo `variaveis_config` traz as medidas reais de cada instância.
+        //
+        // FIXO: {"T1": 163, "T2": 50, "T3": 50} → soma = 263 cm × qtde
+        // VARIÁVEL: T1 varia por instância → medidas [40, 66, 92, ...]
+        //   Cada medida é usada `multiplicador` vezes.
+        //   Total = Σ (medida_T1 + T2_fixo + T3_fixo) × multiplicador
+        final comprimentos = pos['comprimentos'] as Map<String, dynamic>? ?? {};
+        final variaveis = pos['variaveis'] as Map<String, dynamic>? ?? {};
+        final variaveisConfig = pos['variaveis_config'] as Map<String, dynamic>? ?? {};
+
+        final temVariavel = variaveis.values.any((v) => v == true);
+
+        double metroLinearTotal; // metros lineares de TODAS as peças da posição
+        final qtdeTotal = qtdePos * multiplicador;
+
+        if (temVariavel && variaveisConfig.isNotEmpty) {
+          // ── POSIÇÃO COM TRECHOS VARIÁVEIS ─────────────────────────────
+          // Separar trechos fixos e variáveis
+          final trechosFixos = <String, double>{};
+          final trechosVariaveis = <String, List<double>>{};
+
+          for (final entry in comprimentos.entries) {
+            final trecho = entry.key; // ex: "T1"
+            if (variaveis[trecho] == true && variaveisConfig[trecho] != null) {
+              // Trecho variável: pegar medidas reais
+              final config = variaveisConfig[trecho] as Map<String, dynamic>;
+              final medidas = (config['medidas'] as List?)
+                  ?.map((m) => double.tryParse(m.toString()) ?? 0.0)
+                  .toList() ?? [];
+              trechosVariaveis[trecho] = medidas;
+            } else {
+              // Trecho fixo
+              trechosFixos[trecho] = double.tryParse(entry.value.toString()) ?? 0.0;
+            }
+          }
+
+          // Soma dos trechos fixos (igual para todas as peças)
+          final somaFixosCm = trechosFixos.values.fold(0.0, (s, v) => s + v);
+
+          // Para cada medida variável: comprimento total = medida + fixos
+          // Cada medida é usada `multiplicador` vezes
+          double somaMetrosCm = 0.0;
+          if (trechosVariaveis.isNotEmpty) {
+            // Pegar o trecho variável com medidas (normalmente 1 trecho variável)
+            final medidasPrincipal = trechosVariaveis.values.first;
+            for (final medida in medidasPrincipal) {
+              somaMetrosCm += (medida + somaFixosCm) * multiplicador;
+            }
+          }
+
+          metroLinearTotal = somaMetrosCm / 100.0; // cm → m
+        } else {
+          // ── POSIÇÃO COM TRECHOS FIXOS ─────────────────────────────────
+          final somaTrechosCm = comprimentos.values.fold<double>(
+            0.0,
+            (s, v) => s + (double.tryParse(v.toString()) ?? 0.0),
+          );
+          metroLinearTotal = (somaTrechosCm / 100.0) * qtdeTotal; // cm → m × qtde
+        }
+
+        // Metro linear por unidade (para referência)
+        final metroLinearUnit = qtdeTotal > 0 ? metroLinearTotal / qtdeTotal : 0.0;
+
+        // ── PESO: metros totais × massaFinal do PCP (não do SPE) ─────────
+        final massaFinalPcp = bitolaMatch[bitolaNome]?.massaFinal ?? 0.0;
+        final pesoPos = double.parse((metroLinearTotal * massaFinalPcp).toStringAsFixed(2));
 
         posicoesExtraidas.add(SpePosicaoExtraida(
           nome: 'Pos ${pos['posicao'] ?? posCounter}',
           bitolaNome: bitolaNome,
           pesoKg: pesoPos,
-          qtde: qtdePos * multiplicador,
-          comprCorte: comprCorte,
+          qtde: qtdeTotal,
+          metroLinear: metroLinearUnit,
           produtoPcp: bitolaMatch[bitolaNome],
         ));
 
@@ -205,22 +253,28 @@ class SpeImportacaoService {
         nome: elementoNome,
         qtde: qtdeSolicitada,
         posicoes: posicoesExtraidas,
-        pesoTotalSpe: double.parse(pesoTotalElemento.toStringAsFixed(2)),
       ));
+
+      // ── Acumular peso/metros por bitola (considerando qtde do elemento) ─
+      for (final pos in posicoesExtraidas) {
+        final pesoProporcionado = pos.pesoKg * qtdeSolicitada;
+        // metroLinearTotal da posição já inclui todas as peças
+        // Aqui multiplicamos pela qtde do elemento
+        final metrosProporcionados = pos.metroLinear * pos.qtde * qtdeSolicitada;
+        bitolaAcumuladoPeso[pos.bitolaNome] =
+            (bitolaAcumuladoPeso[pos.bitolaNome] ?? 0) + pesoProporcionado;
+        bitolaAcumuladoMetros[pos.bitolaNome] =
+            (bitolaAcumuladoMetros[pos.bitolaNome] ?? 0) + metrosProporcionados;
+      }
     }
 
     // ── Montar lista de bitolas agrupadas ──────────────────────────────────
-    if (temResumo) {
-      // ── CAMINHO PRINCIPAL: usar resumo_aco do SPE (zero recálculo) ──────
-      for (final entry in resumoBitolasJson!.entries) {
-        final bitolaNome = entry.key;
-        final dados = entry.value as Map<String, dynamic>;
-        final peso = (dados['peso'] as num?)?.toDouble() ?? 0.0;
-        bitolaAcumulado[bitolaNome] = peso;
-
-        // Garantir match com PCP para bitolas do resumo
+    // Garantir match para bitolas que não apareceram nas posições (ex: resumo_aco)
+    final resumoAco = pedidoTecnico['resumo_aco'] as Map<String, dynamic>?;
+    final resumoBitolasJson = resumoAco?['bitolas'] as Map<String, dynamic>?;
+    if (resumoBitolasJson != null) {
+      for (final bitolaNome in resumoBitolasJson.keys) {
         if (!bitolaMatch.containsKey(bitolaNome)) {
-          // Tentar encontrar bitolaData pelo nome
           final bitolaData = bitolasPorId.values
               .where((b) => b['nome']?.toString() == bitolaNome)
               .firstOrNull;
@@ -231,21 +285,14 @@ class SpeImportacaoService {
           );
         }
       }
-    } else {
-      // ── FALLBACK: recalcular (pedidos antigos sem resumo_aco) ───────────
-      for (final elem in elementosExtraidos) {
-        for (final pos in elem.posicoes) {
-          final pesoProporcionado = pos.pesoKg * elem.qtde;
-          bitolaAcumulado[pos.bitolaNome] =
-              (bitolaAcumulado[pos.bitolaNome] ?? 0) + pesoProporcionado;
-        }
-      }
     }
 
-    final bitolasExtraidas = bitolaAcumulado.entries.map((e) {
+    final bitolasExtraidas = bitolaAcumuladoPeso.entries.map((e) {
       return SpeBitolaExtraida(
         bitolaNome: e.key,
         pesoTotalKg: double.parse(e.value.toStringAsFixed(2)),
+        metrosLineares: double.parse(
+            (bitolaAcumuladoMetros[e.key] ?? 0).toStringAsFixed(2)),
         produtoPcp: bitolaMatch[e.key],
       );
     }).toList();
@@ -386,7 +433,6 @@ class SpeImportacaoService {
             .eq('pedido_id', pedido.id);
       }
 
-
       // Inserir novos elementos e posições em lote (batch)
       final elementosBatch = <Map<String, dynamic>>[];
       final posicoesBatch = <Map<String, dynamic>>[];
@@ -394,48 +440,33 @@ class SpeImportacaoService {
       for (final elem in extracao.elementos) {
         final elementoId = HashService.get;
 
-        // Peso unitário: precisão total (sem arredondar, para que peso_unit * qtde == pesoTotalSpe)
-        final pesoUnit = elem.qtde > 0
-            ? elem.pesoTotalSpe / elem.qtde
-            : elem.pesoTotalSpe;
+        // Peso unitário = soma real das posições (sem normalização)
+        final pesoUnit = elem.pesoUnitario;
 
         elementosBatch.add({
           'id': elementoId,
           'pedido_id': pedido.id,
           'nome': elem.nome,
           'qtde': elem.qtde,
-          'peso_unitario': pesoUnit,
+          'peso_unitario': double.parse(pesoUnit.toStringAsFixed(2)),
           'status': 'aguardando',
         });
 
-        // ── Posições com pesos normalizados ──────────────────────────────
-        // A tabela posicoes do SPE não tem campo de peso — o peso é
-        // calculado de dimensões × massa. Porém essa fórmula não replica
-        // exatamente o cálculo interno do SPE (fatores de dobra, etc).
-        // Solução: usamos o cálculo como PROPORÇÃO, mas o peso real
-        // vem do pesoUnit do elemento (dado direto do SPE).
-        // Resultado: Σ(posicao.peso_kg) = pesoUnit do elemento = dado real.
+        // ── Posições com pesos reais (sem normalização) ─────────────────
         final posicoesValidas = elem.posicoes.where((p) => p.produtoPcp != null).toList();
-        final somaCalculada = posicoesValidas.fold(0.0, (s, p) => s + p.pesoKg);
 
         int osCounter = 1;
         for (final pos in posicoesValidas) {
-          // Peso normalizado: mantém a proporção entre posições,
-          // mas ajustado para que a soma = pesoUnit
-          final pesoNormalizado = somaCalculada > 0
-              ? (pos.pesoKg / somaCalculada) * pesoUnit
-              : 0.0;
-
           posicoesBatch.add({
             'id': HashService.get,
             'elemento_id': elementoId,
             'nome': pos.nome,
             'numero_os': osCounter.toString().padLeft(3, '0'),
             'bitola_id': pos.produtoPcp!.id,
-            'peso_kg': double.parse(pesoNormalizado.toStringAsFixed(3)),
+            'peso_kg': double.parse(pos.pesoKg.toStringAsFixed(2)),
             'qtde': pos.qtde,
-            'compr_unit': 0,
-            'compr_corte': pos.comprCorte,
+            'compr_unit': double.parse(pos.metroLinear.toStringAsFixed(3)),
+            'compr_corte': 0,
             'status': 'aguardando',
           });
           osCounter++;
@@ -449,7 +480,6 @@ class SpeImportacaoService {
       if (posicoesBatch.isNotEmpty) {
         await SupabaseService.client.from('elemento_posicoes').insert(posicoesBatch);
       }
-
 
       log('SpeImportacaoService: Importação concluída. '
           'Bitolas: ${extracao.bitolas.length}, '

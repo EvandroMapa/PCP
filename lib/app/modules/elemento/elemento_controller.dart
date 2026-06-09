@@ -901,7 +901,7 @@ class ElementoController {
             // Divide pela qtde de elementos para obter o peso de 1 elemento.
             final qtdeElem = int.tryParse(elQtdeStr) ?? 1;
             final pesoUnitario = qtdeElem > 1 ? pesoLido / qtdeElem : pesoLido;
-            pos.pesoKg.text = pesoUnitario.toStringAsFixed(3);
+            pos.pesoKg.text = pesoUnitario.toStringAsFixed(2);
             pos.qtde.text = totalQtdePosicao.toString();
             pos.produto = produtoEncontrado;
 
@@ -1076,7 +1076,7 @@ class ElementoController {
       final esperado = pp.qtde;
       final calculado = pesoNasPosicoesMap[pp.produto.id] ?? 0.0;
       final diff = (esperado - calculado).abs();
-      if (diff > 0.001) {
+      if (diff > 0.01) {
         divergencias.add(ElementoDivergenciaBitola(
           produto: pp,
           esperadoKg: esperado,
@@ -1094,7 +1094,7 @@ class ElementoController {
       totalElementosKg: totalElementos,
       divergencias: divergencias,
       isOk:
-          divergencias.isEmpty && (totalPedido - totalElementos).abs() < 0.001,
+          divergencias.isEmpty && (totalPedido - totalElementos).abs() < 0.01,
     );
   }
 }
