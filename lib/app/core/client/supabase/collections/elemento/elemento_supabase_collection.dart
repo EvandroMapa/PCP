@@ -12,6 +12,9 @@ class ElementoSupabaseCollection {
   }
   factory ElementoSupabaseCollection() => _instance;
 
+  /// Flag global: bloqueia re-fetches automáticos durante importação SPE
+  static bool isImportando = false;
+
   final String name = 'elementos';
   late final AppStream<List<ElementoModel>> dataStream;
   List<ElementoModel> get data => dataStream.value;
@@ -40,14 +43,21 @@ class ElementoSupabaseCollection {
       final List<String> eIds =
           elementosRaw.map((e) => e['id'].toString()).toList();
 
-      // 2. Buscar tabelas auxiliares em paralelo para todos os elementos
+      // 2. Buscar tabelas auxiliares em lotes (evita URL too long)
       Future<List<Map<String, dynamic>>> safeFetch(String table) async {
         try {
-          final res = await SupabaseService.client
-              .from(table)
-              .select()
-              .filter('elemento_id', 'in', eIds);
-          return List<Map<String, dynamic>>.from(res);
+          final resultados = <Map<String, dynamic>>[];
+          const batchSize = 50;
+          for (int i = 0; i < eIds.length; i += batchSize) {
+            final batch = eIds.sublist(
+                i, i + batchSize > eIds.length ? eIds.length : i + batchSize);
+            final res = await SupabaseService.client
+                .from(table)
+                .select()
+                .filter('elemento_id', 'in', batch);
+            resultados.addAll(List<Map<String, dynamic>>.from(res));
+          }
+          return resultados;
         } catch (_) {
           return [];
         }
@@ -109,23 +119,17 @@ class ElementoSupabaseCollection {
     SupabaseService.client
         .from(name)
         .stream(primaryKey: ['id']).listen((_) => _updateStreams());
-
-    // NOVO: Escuta mudanças na tabela de posições para atualizar pesos/OS
-    SupabaseService.client
-        .from('elemento_posicoes')
-        .stream(primaryKey: ['id']).listen((_) => _updateStreams());
-
-    // NOVO: Escuta mudanças na tabela de arquivos para atualizar os desenhos em tempo real
-    SupabaseService.client
-        .from('elemento_arquivos')
-        .stream(primaryKey: ['id']).listen((_) => _updateStreams());
   }
 
   Timer? _streamDebounce;
   void _updateStreams() {
     _streamDebounce?.cancel();
     _streamDebounce = Timer(const Duration(milliseconds: 500), () {
-      _isStarted = false; // Forçar que o start() ignore o cache anterior
+      if (isImportando) {
+        log('Supabase Realtime: Elementos ignorado (importação em andamento).');
+        return;
+      }
+      _isStarted = false;
       start();
       log('Supabase Realtime: Elementos e Arquivos reatualizados.');
     });

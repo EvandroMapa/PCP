@@ -45,11 +45,8 @@ Future<void> initFirebaseMessaging() async {
 
 Future<String?> getDeviceToken() async {
   if (kIsWeb) {
-    return await _menssaging.getToken(
-      vapidKey: kIsWeb
-          ? 'BMzSKaJYdozeg3ZFbdIKl7prhb03HQEU-VR9SbAqvAJNUDzQjRM6Tm463QGv5WkKdYea9gkVZS-WhEP4_U7Z8TY'
-          : null,
-    );
+    // FCM não é suportado na web neste projeto
+    return null;
   } else if (Platform.isAndroid) {
     return await _menssaging.getToken();
   } else {

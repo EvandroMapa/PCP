@@ -4,11 +4,12 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/elemento/elemento_supabase_collection.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
-import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/modulo_importacao/spe/spe_supabase_client.dart';
 import 'package:collection/collection.dart';
+
 
 /// Resultado da extração de dados do pedido técnico SPE.
 class SpeExtracao {
@@ -44,14 +45,18 @@ class SpeElementoExtraido {
   final String nome; // ex: "V1"
   final int qtde;
   final List<SpePosicaoExtraida> posicoes;
+  /// Peso total vindo direto do banco do SPE (fonte de verdade)
+  final double pesoTotalSpe;
 
+  /// Usa o peso do SPE quando disponível; caso contrário recalcula
   double get pesoTotal =>
-      posicoes.fold(0.0, (s, p) => s + p.pesoKg) * qtde;
+      pesoTotalSpe > 0 ? pesoTotalSpe : posicoes.fold(0.0, (s, p) => s + p.pesoKg) * qtde;
 
   SpeElementoExtraido({
     required this.nome,
     required this.qtde,
     required this.posicoes,
+    this.pesoTotalSpe = 0,
   });
 }
 
@@ -90,9 +95,13 @@ class SpeImportacaoService {
     // Buscar detalhamento para obter posições com bitolas
     final detalhamentoId = pedidoTecnico['detalhamento_id'] as String? ?? '';
 
-    // Buscar elementos do detalhamento para obter os IDs reais
-    final elementosDetalhamento =
-        await _speClient.buscarElementosDoDetalhamento(detalhamentoId);
+    // Buscar elementos do detalhamento e bitolas do SPE em paralelo
+    final resultados = await Future.wait([
+      _speClient.buscarElementosDoDetalhamento(detalhamentoId),
+      _speClient.buscarBitolas(),
+    ]);
+    final elementosDetalhamento = resultados[0] as List<Map<String, dynamic>>;
+    final bitolasSpe = resultados[1] as List<Map<String, dynamic>>;
 
     // Mapear elementoId do pedido técnico → elemento do detalhamento
     final elementoIds =
@@ -101,8 +110,7 @@ class SpeImportacaoService {
     // Buscar posições de todos os elementos do detalhamento
     final posicoesSpe = await _speClient.buscarPosicoesPorElementoIds(elementoIds);
 
-    // Buscar bitolas do SPE para ter massaFinal
-    final bitolasSpe = await _speClient.buscarBitolas();
+    // Indexar bitolas por ID
     final bitolasPorId = <String, Map<String, dynamic>>{};
     for (final b in bitolasSpe) {
       bitolasPorId[b['id'].toString()] = b;
@@ -110,6 +118,15 @@ class SpeImportacaoService {
 
     // Produtos do PCP para match
     final produtosPcp = FirestoreClient.bitolas.data;
+
+    // ── Verificar se há resumo_aco pré-calculado pelo SPE ──────────────────
+    final resumoAco = pedidoTecnico['resumo_aco'] as Map<String, dynamic>?;
+    final resumoBitolasJson =
+        resumoAco?['bitolas'] as Map<String, dynamic>?;
+    final resumoElementosJson =
+        resumoAco?['elementos'] as Map<String, dynamic>?;
+    final temResumo =
+        resumoBitolasJson != null && resumoBitolasJson.isNotEmpty;
 
     // ── Processar cada elemento do pedido técnico ──────────────────────────
     final elementosExtraidos = <SpeElementoExtraido>[];
@@ -121,39 +138,38 @@ class SpeImportacaoService {
       final elementoNome = elemPt['elemento_nome']?.toString() ?? '';
       final qtdeSolicitada =
           int.tryParse(elemPt['quantidade_solicitada']?.toString() ?? '1') ?? 1;
-      final qtdeTotal =
-          int.tryParse(elemPt['elemento_quantidade']?.toString() ?? '1') ?? 1;
-      // peso_total do SPE — valor correto calculado pelo sistema de origem
-      final pesoTotalSpe =
-          double.tryParse(elemPt['peso_total']?.toString() ?? '0') ?? 0.0;
+
+      // ── Peso do elemento: usar resumo_aco se disponível ─────────────────
+      double pesoTotalElemento;
+      if (temResumo && resumoElementosJson != null) {
+        final elemResumo = resumoElementosJson[elementoNome] as Map<String, dynamic>?;
+        pesoTotalElemento = elemResumo != null
+            ? (elemResumo['peso'] as num?)?.toDouble() ?? 0.0
+            : (double.tryParse(elemPt['peso_total']?.toString() ?? '0') ?? 0.0);
+      } else {
+        pesoTotalElemento =
+            double.tryParse(elemPt['peso_total']?.toString() ?? '0') ?? 0.0;
+      }
 
       // Filtrar posições deste elemento no detalhamento
       final posicoesDoElemento =
           posicoesSpe.where((p) => p['elemento_id'] == elementoId).toList();
 
-      // ── 1ª passagem: calcular pesos brutos de cada posição ──────────────
-      final dadosPosicoes = <Map<String, dynamic>>[];
-      double somaPesoBruto = 0;
+      // ── Montar posições para exibição ───────────────────────────────────
+      final posicoesExtraidas = <SpePosicaoExtraida>[];
+      int posCounter = 1;
 
       for (final pos in posicoesDoElemento) {
         final bitolaId = pos['bitola_id']?.toString() ?? '';
         final bitolaNome = pos['bitola_nome']?.toString() ?? '';
         final qtdePos = int.tryParse(pos['qtde']?.toString() ?? '1') ?? 1;
+        final multiplicador =
+            int.tryParse(pos['multiplicador']?.toString() ?? '1') ?? 1;
         final comprCorte = double.tryParse(
                 pos['comprimento_de_corte']?.toString() ?? '0') ??
             0.0;
 
         final bitolaData = bitolasPorId[bitolaId];
-        final massaFinal = bitolaData != null
-            ? (double.tryParse(
-                    (bitolaData['massa_final'] ?? '0').toString()) ??
-                0.0)
-            : 0.0;
-
-        // Peso bruto proporcional (pode divergir do SPE, serve apenas
-        // para distribuir o peso_total correto entre as posições)
-        final pesoRaw = qtdePos * (comprCorte / 100) * massaFinal;
-        somaPesoBruto += pesoRaw;
 
         // Match com BitolaModel do PCP
         if (!bitolaMatch.containsKey(bitolaNome)) {
@@ -164,47 +180,23 @@ class SpeImportacaoService {
           );
         }
 
-        dadosPosicoes.add({
-          'pos': pos,
-          'bitolaId': bitolaId,
-          'bitolaNome': bitolaNome,
-          'qtdePos': qtdePos,
-          'comprCorte': comprCorte,
-          'pesoRaw': pesoRaw,
-        });
-      }
-
-      // ── Fator de correção usando peso_total do SPE ──────────────────────
-      // peso_total do SPE é para a quantidade_solicitada; obtemos o unitário
-      final pesoUnitarioSpe =
-          qtdeSolicitada > 0 ? pesoTotalSpe / qtdeSolicitada : pesoTotalSpe;
-      final fatorCorrecao =
-          (somaPesoBruto > 0 && pesoUnitarioSpe > 0)
-              ? pesoUnitarioSpe / somaPesoBruto
-              : 1.0;
-
-      // ── 2ª passagem: criar posições com peso corrigido ──────────────────
-      final posicoesExtraidas = <SpePosicaoExtraida>[];
-      int posCounter = 1;
-
-      for (final dados in dadosPosicoes) {
-        final pesoPos = (dados['pesoRaw'] as double) * fatorCorrecao;
-        final bitolaNome = dados['bitolaNome'] as String;
+        // Peso real da posição: qtde × multiplicador × comprimento_de_corte × massa_final
+        // Usa comprimento_de_corte (já inclui desconto de dobra) em vez de somar trechos
+        final massaFinal = bitolaData != null
+            ? (double.tryParse(
+                    (bitolaData['massa_final'] ?? '0').toString()) ??
+                0.0)
+            : 0.0;
+        final pesoPos = qtdePos * (comprCorte / 100.0) * massaFinal;
 
         posicoesExtraidas.add(SpePosicaoExtraida(
-          nome: 'Pos ${(dados['pos'] as Map)['posicao'] ?? posCounter}',
+          nome: 'Pos ${pos['posicao'] ?? posCounter}',
           bitolaNome: bitolaNome,
           pesoKg: pesoPos,
-          qtde: dados['qtdePos'] as int,
-          comprCorte: dados['comprCorte'] as double,
+          qtde: qtdePos * multiplicador,
+          comprCorte: comprCorte,
           produtoPcp: bitolaMatch[bitolaNome],
         ));
-
-        // Acumular peso por bitola (proporcional à qtdeSolicitada)
-        final pesoProporcionado =
-            qtdeTotal > 0 ? (pesoPos / qtdeTotal) * qtdeSolicitada : pesoPos;
-        bitolaAcumulado[bitolaNome] =
-            (bitolaAcumulado[bitolaNome] ?? 0) + pesoProporcionado;
 
         posCounter++;
       }
@@ -213,14 +205,47 @@ class SpeImportacaoService {
         nome: elementoNome,
         qtde: qtdeSolicitada,
         posicoes: posicoesExtraidas,
+        pesoTotalSpe: double.parse(pesoTotalElemento.toStringAsFixed(2)),
       ));
     }
 
     // ── Montar lista de bitolas agrupadas ──────────────────────────────────
+    if (temResumo) {
+      // ── CAMINHO PRINCIPAL: usar resumo_aco do SPE (zero recálculo) ──────
+      for (final entry in resumoBitolasJson!.entries) {
+        final bitolaNome = entry.key;
+        final dados = entry.value as Map<String, dynamic>;
+        final peso = (dados['peso'] as num?)?.toDouble() ?? 0.0;
+        bitolaAcumulado[bitolaNome] = peso;
+
+        // Garantir match com PCP para bitolas do resumo
+        if (!bitolaMatch.containsKey(bitolaNome)) {
+          // Tentar encontrar bitolaData pelo nome
+          final bitolaData = bitolasPorId.values
+              .where((b) => b['nome']?.toString() == bitolaNome)
+              .firstOrNull;
+          bitolaMatch[bitolaNome] = _encontrarProdutoPcp(
+            produtosPcp,
+            bitolaNome,
+            bitolaData,
+          );
+        }
+      }
+    } else {
+      // ── FALLBACK: recalcular (pedidos antigos sem resumo_aco) ───────────
+      for (final elem in elementosExtraidos) {
+        for (final pos in elem.posicoes) {
+          final pesoProporcionado = pos.pesoKg * elem.qtde;
+          bitolaAcumulado[pos.bitolaNome] =
+              (bitolaAcumulado[pos.bitolaNome] ?? 0) + pesoProporcionado;
+        }
+      }
+    }
+
     final bitolasExtraidas = bitolaAcumulado.entries.map((e) {
       return SpeBitolaExtraida(
         bitolaNome: e.key,
-        pesoTotalKg: double.parse(e.value.toStringAsFixed(3)),
+        pesoTotalKg: double.parse(e.value.toStringAsFixed(2)),
         produtoPcp: bitolaMatch[e.key],
       );
     }).toList();
@@ -244,6 +269,8 @@ class SpeImportacaoService {
     required SpeExtracao extracao,
     required String modo, // 'substituir' | 'acrescentar'
   }) async {
+    // Pausar streams Realtime durante importação (evita cascata de re-fetches)
+    ElementoSupabaseCollection.isImportando = true;
     try {
       // ── 1. Tratar produtos (bitolas) ──────────────────────────────────────
       if (modo == 'substituir') {
@@ -254,28 +281,82 @@ class SpeImportacaoService {
             .eq('pedido_id', pedido.id);
       }
 
-      // Inserir novos produtos
+      // Buscar bitolas já existentes no pedido (para modo 'acrescentar')
+      final Map<String, Map<String, dynamic>> bitolaExistente = {};
+      if (modo == 'acrescentar') {
+        final existentes = await SupabaseService.client
+            .from('pedido_bitolas')
+            .select()
+            .eq('pedido_id', pedido.id);
+        for (final e in existentes) {
+          final bitolaId = e['bitola_id']?.toString() ?? '';
+          if (bitolaId.isNotEmpty) {
+            bitolaExistente[bitolaId] = e;
+          }
+        }
+      }
+
+      // Inserir ou atualizar produtos
+      final bitolaInsertBatch = <Map<String, dynamic>>[];
+      final bitolaUpdateFutures = <Future>[];
+
       for (final bitola in extracao.bitolas) {
         if (bitola.produtoPcp == null) continue; // pular bitolas sem match
 
-        final produtoId = HashService.get;
-        await SupabaseService.client.from('pedido_bitolas').insert({
-          'id': produtoId,
-          'id_id': produtoId,
-          'pedido_id': pedido.id,
-          'bitola_id': bitola.produtoPcp!.id,
-          'bitola_raw': bitola.produtoPcp!.toMap(),
-          'qtde': bitola.pesoTotalKg,
-          'quantidade': bitola.pesoTotalKg,
-          'qtde_original': bitola.pesoTotalKg,
-          'cliente_id': pedido.cliente.id,
-          'obra_id': pedido.obra.id,
-          'unidade': '',
-          'status': 'separado',
-          'statusess_raw': [PedidoBitolaStatusModel.empty().toMap()],
-          'valor_unitario': 0.0,
-          'valor_total': 0.0,
-        });
+        final bitolaId = bitola.produtoPcp!.id;
+        final existente = bitolaExistente[bitolaId];
+
+        if (existente != null) {
+          // Já existe — somar peso (agendar update)
+          final pesoAtual =
+              double.tryParse(existente['qtde']?.toString() ?? '0') ?? 0.0;
+          final pesoOriginal = double.tryParse(
+                  existente['qtde_original']?.toString() ?? '0') ??
+              0.0;
+          final novoPeso = pesoAtual + bitola.pesoTotalKg;
+          final novoOriginal = pesoOriginal + bitola.pesoTotalKg;
+          bitolaUpdateFutures.add(
+            SupabaseService.client
+                .from('pedido_bitolas')
+                .update({
+                  'qtde': novoPeso,
+                  'quantidade': novoPeso,
+                  'qtde_original': novoOriginal,
+                })
+                .eq('id', existente['id']),
+          );
+        } else {
+          // Não existe — acumular para batch insert
+          final produtoId = HashService.get;
+          bitolaInsertBatch.add({
+            'id': produtoId,
+            'id_id': produtoId,
+            'pedido_id': pedido.id,
+            'bitola_id': bitolaId,
+            'bitola_raw': bitola.produtoPcp!.toMap(),
+            'qtde': bitola.pesoTotalKg,
+            'quantidade': bitola.pesoTotalKg,
+            'qtde_original': bitola.pesoTotalKg,
+            'cliente_id': pedido.cliente.id,
+            'obra_id': pedido.obra.id,
+            'unidade': '',
+            'status': 'separado',
+            'statusess_raw': [PedidoBitolaStatusModel.empty().toMap()],
+            'valor_unitario': 0.0,
+            'valor_total': 0.0,
+          });
+        }
+      }
+
+      // Executar batch insert + updates em paralelo
+      final futures = <Future>[...bitolaUpdateFutures];
+      if (bitolaInsertBatch.isNotEmpty) {
+        futures.add(
+          SupabaseService.client.from('pedido_bitolas').insert(bitolaInsertBatch),
+        );
+      }
+      if (futures.isNotEmpty) {
+        await Future.wait(futures);
       }
 
       // ── 2. Tratar elementos ────────────────────────────────────────────────
@@ -288,14 +369,16 @@ class SpeImportacaoService {
         final existenteIds =
             existentes.map((e) => e['id'].toString()).toList();
         if (existenteIds.isNotEmpty) {
-          await SupabaseService.client
-              .from('elemento_posicoes')
-              .delete()
-              .filter('elemento_id', 'in', existenteIds);
-          await SupabaseService.client
-              .from('elemento_arquivos')
-              .delete()
-              .filter('elemento_id', 'in', existenteIds);
+          await Future.wait([
+            SupabaseService.client
+                .from('elemento_posicoes')
+                .delete()
+                .filter('elemento_id', 'in', existenteIds),
+            SupabaseService.client
+                .from('elemento_arquivos')
+                .delete()
+                .filter('elemento_id', 'in', existenteIds),
+          ]);
         }
         await SupabaseService.client
             .from('elementos')
@@ -303,30 +386,53 @@ class SpeImportacaoService {
             .eq('pedido_id', pedido.id);
       }
 
-      // Inserir novos elementos
+
+      // Inserir novos elementos e posições em lote (batch)
+      final elementosBatch = <Map<String, dynamic>>[];
+      final posicoesBatch = <Map<String, dynamic>>[];
+
       for (final elem in extracao.elementos) {
         final elementoId = HashService.get;
 
-        await SupabaseService.client.from('elementos').insert({
+        // Peso unitário: precisão total (sem arredondar, para que peso_unit * qtde == pesoTotalSpe)
+        final pesoUnit = elem.qtde > 0
+            ? elem.pesoTotalSpe / elem.qtde
+            : elem.pesoTotalSpe;
+
+        elementosBatch.add({
           'id': elementoId,
           'pedido_id': pedido.id,
           'nome': elem.nome,
           'qtde': elem.qtde,
+          'peso_unitario': pesoUnit,
           'status': 'aguardando',
         });
 
-        // Inserir posições do elemento
-        int osCounter = 1;
-        for (final pos in elem.posicoes) {
-          if (pos.produtoPcp == null) continue;
+        // ── Posições com pesos normalizados ──────────────────────────────
+        // A tabela posicoes do SPE não tem campo de peso — o peso é
+        // calculado de dimensões × massa. Porém essa fórmula não replica
+        // exatamente o cálculo interno do SPE (fatores de dobra, etc).
+        // Solução: usamos o cálculo como PROPORÇÃO, mas o peso real
+        // vem do pesoUnit do elemento (dado direto do SPE).
+        // Resultado: Σ(posicao.peso_kg) = pesoUnit do elemento = dado real.
+        final posicoesValidas = elem.posicoes.where((p) => p.produtoPcp != null).toList();
+        final somaCalculada = posicoesValidas.fold(0.0, (s, p) => s + p.pesoKg);
 
-          await SupabaseService.client.from('elemento_posicoes').insert({
+        int osCounter = 1;
+        for (final pos in posicoesValidas) {
+          // Peso normalizado: mantém a proporção entre posições,
+          // mas ajustado para que a soma = pesoUnit
+          final pesoNormalizado = somaCalculada > 0
+              ? (pos.pesoKg / somaCalculada) * pesoUnit
+              : 0.0;
+
+          posicoesBatch.add({
             'id': HashService.get,
             'elemento_id': elementoId,
             'nome': pos.nome,
             'numero_os': osCounter.toString().padLeft(3, '0'),
             'bitola_id': pos.produtoPcp!.id,
-            'peso_kg': pos.pesoKg,
+            'peso_kg': double.parse(pesoNormalizado.toStringAsFixed(3)),
             'qtde': pos.qtde,
             'compr_unit': 0,
             'compr_corte': pos.comprCorte,
@@ -336,12 +442,27 @@ class SpeImportacaoService {
         }
       }
 
+      // Batch insert: 1 request para elementos, 1 para posições
+      if (elementosBatch.isNotEmpty) {
+        await SupabaseService.client.from('elementos').insert(elementosBatch);
+      }
+      if (posicoesBatch.isNotEmpty) {
+        await SupabaseService.client.from('elemento_posicoes').insert(posicoesBatch);
+      }
+
+
       log('SpeImportacaoService: Importação concluída. '
           'Bitolas: ${extracao.bitolas.length}, '
           'Elementos: ${extracao.elementos.length}');
     } catch (e) {
       log('SpeImportacaoService.importarParaPedido erro: $e');
       rethrow;
+    } finally {
+      // Manter flag por mais 2s para bloquear Realtime de disparar refetches
+      // O dialog fará o fetch focado (elementoCtrl.onFetch) logo em seguida
+      Future.delayed(const Duration(seconds: 2), () {
+        ElementoSupabaseCollection.isImportando = false;
+      });
     }
   }
 

@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
@@ -10,6 +11,7 @@ import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_controller.dart';
 import 'package:aco_plus/app/modules/modulo_importacao/spe/spe_importacao_service.dart';
 import 'package:aco_plus/app/modules/modulo_importacao/spe/spe_supabase_client.dart';
+import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:flutter/material.dart';
 
 /// Abre o dialog de importação SPE para o pedido informado.
@@ -102,8 +104,30 @@ class _SpeImportarDialogState extends State<SpeImportarDialog> {
         modo: modo,
       );
 
-      // Atualizar os elementos localmente
-      await elementoCtrl.onFetch(widget.pedido.id);
+      // Atualizar elementos e pedido em paralelo (um único fetch de cada)
+      final results = await Future.wait([
+        elementoCtrl.onFetch(widget.pedido.id),
+        BackendClient.pedidos.getByIdSupabase(widget.pedido.id),
+      ]);
+
+      // Atualizar o pedido na UI
+      final pedidoAtualizado = results[1] as PedidoModel?;
+      if (pedidoAtualizado != null) {
+        log('Importação: pedido recarregado com ${pedidoAtualizado.produtos.length} bitolas');
+        pedidoCtrl.pedidoStream.add(pedidoAtualizado);
+
+        // Atualizar na lista global sem refetch de TODOS os pedidos
+        final currentData = List<PedidoModel>.from(BackendClient.pedidos.data);
+        final idx = currentData.indexWhere((p) => p.id == pedidoAtualizado.id);
+        if (idx != -1) {
+          currentData[idx] = pedidoAtualizado;
+        } else {
+          currentData.add(pedidoAtualizado);
+        }
+        BackendClient.pedidos.dataStream.add(currentData);
+        BackendClient.pedidos.pedidosUnarchivedsStream
+            .add(currentData.where((e) => !e.isArchived).toList());
+      }
 
       if (mounted) {
         Navigator.pop(context, true);
@@ -289,14 +313,17 @@ class _SpeImportarDialogState extends State<SpeImportarDialog> {
                     itemBuilder: (context, index) {
                       final pt = filtrados[index];
                       final elementos = List.from(pt['elementos'] ?? []);
-                      final pesoTotal = elementos.fold<double>(
-                        0.0,
-                        (s, e) =>
-                            s +
-                            (double.tryParse(
-                                    (e['peso_total'] ?? '0').toString()) ??
-                                0),
-                      );
+                      final resumoAco = pt['resumo_aco'] as Map<String, dynamic>?;
+                      final pesoTotal = resumoAco?['peso_total'] != null
+                          ? (resumoAco!['peso_total'] as num).toDouble()
+                          : elementos.fold<double>(
+                              0.0,
+                              (s, e) =>
+                                  s +
+                                  (double.tryParse(
+                                          (e['peso_total'] ?? '0').toString()) ??
+                                      0),
+                            );
 
                       return InkWell(
                         borderRadius: BorderRadius.circular(10),
@@ -378,6 +405,14 @@ class _SpeImportarDialogState extends State<SpeImportarDialog> {
   Widget _buildEtapaConferencia() {
     if (_extracao == null) return const SizedBox.shrink();
 
+    // Calcular totais
+    final totalPesoBitolas = _extracao!.bitolas.fold<double>(
+        0.0, (s, b) => s + b.pesoTotalKg);
+    final totalPesoElementos = _extracao!.elementos.fold<double>(
+        0.0, (s, e) => s + e.pesoTotal);
+    final divergencia = (totalPesoBitolas - totalPesoElementos).abs();
+    final temDivergencia = divergencia > 0.01;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -405,6 +440,46 @@ class _SpeImportarDialogState extends State<SpeImportarDialog> {
               ],
             ),
           ),
+
+          // ── Alerta de divergência ─────────────────────────────────────
+          if (temDivergencia) ...[
+            const H(12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                border: Border.all(color: Colors.red.shade300),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.warning_rounded, color: Colors.red[700], size: 20),
+                  const W(10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Divergência de peso detectada',
+                          style: AppCss.minimumBold
+                              .setSize(12)
+                              .setColor(Colors.red[800]!),
+                        ),
+                        const H(4),
+                        Text(
+                          'Bitolas: ${totalPesoBitolas.toKg()}  ×  Elementos: ${totalPesoElementos.toKg()}\n'
+                          'Diferença: ${divergencia.toKg()}',
+                          style: AppCss.minimumRegular
+                              .setSize(11)
+                              .setColor(Colors.red[700]!),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const H(20),
 
           // ── Bitolas ─────────────────────────────────────────────────────
@@ -530,6 +605,42 @@ class _SpeImportarDialogState extends State<SpeImportarDialog> {
                     ),
                   );
                 }),
+                // ── Totalizador bitolas ──
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    border: Border(
+                      top: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(10),
+                      bottomRight: Radius.circular(10),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: Text('TOTAL',
+                            style: AppCss.minimumBold
+                                .setSize(12)
+                                .setColor(Colors.grey[700]!)),
+                      ),
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          totalPesoBitolas.toKg(),
+                          style: AppCss.minimumBold
+                              .setSize(12)
+                              .setColor(AppColors.primaryMain),
+                        ),
+                      ),
+                      const Expanded(flex: 2, child: SizedBox()),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -621,6 +732,99 @@ class _SpeImportarDialogState extends State<SpeImportarDialog> {
                     ),
                   );
                 }),
+                // ── Totalizador elementos ──
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    border: Border(
+                      top: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(10),
+                      bottomRight: Radius.circular(10),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: Text('TOTAL',
+                            style: AppCss.minimumBold
+                                .setSize(12)
+                                .setColor(Colors.grey[700]!)),
+                      ),
+                      const Expanded(flex: 1, child: SizedBox()),
+                      const Expanded(flex: 1, child: SizedBox()),
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          totalPesoElementos.toKg(),
+                          style: AppCss.minimumBold
+                              .setSize(12)
+                              .setColor(temDivergencia
+                                  ? Colors.red[700]!
+                                  : AppColors.primaryMain),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Resumo de conferência ─────────────────────────────────────
+          const H(16),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: temDivergencia ? Colors.red.shade50 : Colors.green.shade50,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: temDivergencia
+                    ? Colors.red.shade200
+                    : Colors.green.shade200,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  temDivergencia
+                      ? Icons.error_outline
+                      : Icons.check_circle_outline,
+                  color:
+                      temDivergencia ? Colors.red[700] : Colors.green[700],
+                  size: 22,
+                ),
+                const W(10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        temDivergencia
+                            ? 'Pesos divergentes'
+                            : 'Pesos conferidos ✓',
+                        style: AppCss.minimumBold.setSize(12).setColor(
+                            temDivergencia
+                                ? Colors.red[800]!
+                                : Colors.green[800]!),
+                      ),
+                      const H(2),
+                      Text(
+                        'Σ Bitolas: ${totalPesoBitolas.toKg()}  •  '
+                        'Σ Elementos: ${totalPesoElementos.toKg()}'
+                        '${temDivergencia ? '  •  Δ ${divergencia.toKg()}' : ''}',
+                        style: AppCss.minimumRegular.setSize(11).setColor(
+                            temDivergencia
+                                ? Colors.red[700]!
+                                : Colors.green[700]!),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),

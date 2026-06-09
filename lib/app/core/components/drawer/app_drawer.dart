@@ -17,7 +17,6 @@ import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:aco_plus/app/core/utils/app_env.dart';
 import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});

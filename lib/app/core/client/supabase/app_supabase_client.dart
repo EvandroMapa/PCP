@@ -77,7 +77,7 @@ class AppSupabaseClient {
       checklists.listen();
       automatizacao.listen();
       notificacoes.listen();
-      elementoArquivos.listen();
+      // elementoArquivos.listen(); — removido: causava cascata de re-fetches durante importação
       elementos.listen();
       patios.listen();
       boxes.listen();
@@ -123,9 +123,7 @@ class AppSupabaseClient {
       await notificacoes
           .start()
           .catchError((e) => log('Error starting notificacoes: $e'));
-      await elementoArquivos
-          .start()
-          .catchError((e) => log('Error starting elementoArquivos: $e'));
+      // elementoArquivos.start() removido — arquivos já carregados via elementos.start() (batch)
       await elementos
           .start()
           .catchError((e) => log('Error starting elementos: $e'));

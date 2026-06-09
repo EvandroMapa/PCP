@@ -204,6 +204,9 @@ class ElementoModel {
   final ElementoStatus status;
   List<ElementoPosicaoModel> posicoes;
   List<ElementoArquivoModel> arquivos;
+  /// Peso unitário vindo do SPE (fonte de verdade). Quando definido,
+  /// pesoTotal e pesoUnitario usam este valor em vez de somar posições.
+  final double? pesoUnitarioSpe;
 
   ElementoModel({
     required this.id,
@@ -215,13 +218,16 @@ class ElementoModel {
     required this.arquivos,
     this.qtdePronto = 0,
     this.status = ElementoStatus.aguardando,
+    this.pesoUnitarioSpe,
   });
 
-  /// Peso total calculado (soma das posições * qtde)
-  double get pesoTotal => posicoes.fold(0.0, (sum, p) => sum + p.pesoKg) * qtde;
+  /// Peso total: usa pesoUnitarioSpe quando disponível (importação SPE)
+  double get pesoTotal =>
+      pesoUnitarioSpe != null ? pesoUnitarioSpe! * qtde : posicoes.fold(0.0, (sum, p) => sum + p.pesoKg) * qtde;
 
-  /// Peso unitário de um elemento (soma das posições)
-  double get pesoUnitario => posicoes.fold(0.0, (sum, p) => sum + p.pesoKg);
+  /// Peso unitário de um elemento
+  double get pesoUnitario =>
+      pesoUnitarioSpe ?? posicoes.fold(0.0, (sum, p) => sum + p.pesoKg);
 
   ElementoModel copyWith({
     String? id,
@@ -233,6 +239,7 @@ class ElementoModel {
     ElementoStatus? status,
     List<ElementoPosicaoModel>? posicoes,
     List<ElementoArquivoModel>? arquivos,
+    double? pesoUnitarioSpe,
   }) {
     return ElementoModel(
       id: id ?? this.id,
@@ -244,6 +251,7 @@ class ElementoModel {
       status: status ?? this.status,
       posicoes: posicoes ?? this.posicoes,
       arquivos: arquivos ?? this.arquivos,
+      pesoUnitarioSpe: pesoUnitarioSpe ?? this.pesoUnitarioSpe,
     );
   }
 
@@ -296,17 +304,24 @@ class ElementoModel {
       status: ElementoStatus.values.firstWhere(
           (e) => e.name == (map['status'] ?? 'aguardando'),
           orElse: () => ElementoStatus.aguardando),
+      pesoUnitarioSpe: map['peso_unitario'] != null
+          ? double.tryParse(map['peso_unitario'].toString())
+          : null,
     );
   }
 
-  Map<String, dynamic> toSupabaseMap() => {
-        'id': id,
-        'pedido_id': pedidoId,
-        'nome': nome,
-        'qtde': qtde,
-        'qtde_pronto': qtdePronto,
-        'status': status.name,
-      };
+  Map<String, dynamic> toSupabaseMap() {
+    final map = <String, dynamic>{
+      'id': id,
+      'pedido_id': pedidoId,
+      'nome': nome,
+      'qtde': qtde,
+      'qtde_pronto': qtdePronto,
+      'status': status.name,
+    };
+    if (pesoUnitarioSpe != null) map['peso_unitario'] = pesoUnitarioSpe;
+    return map;
+  }
 }
 
 // ─── MODELOS DE CRIAÇÃO / EDIÇÃO (para formulário) ───────────────────────────

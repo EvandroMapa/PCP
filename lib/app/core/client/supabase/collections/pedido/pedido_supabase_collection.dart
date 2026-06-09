@@ -15,6 +15,7 @@ import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:collection/collection.dart';
 
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/pedido_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/elemento/elemento_supabase_collection.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 
 class PedidoSupabaseCollection extends PedidoCollection {
@@ -203,7 +204,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
           _realtimeDebounce?.cancel();
           _realtimeDebounce =
               Timer(const Duration(milliseconds: 1200), () async {
-            if (!kanbanCtrl.isDropLocked && !_optimisticCooldown) {
+            if (!kanbanCtrl.isDropLocked && !_optimisticCooldown && !ElementoSupabaseCollection.isImportando) {
               await start(lock: false);
             }
           });

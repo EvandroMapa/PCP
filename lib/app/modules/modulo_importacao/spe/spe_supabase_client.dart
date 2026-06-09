@@ -30,31 +30,52 @@ class SpeSupabaseClient {
   /// Busca todos os pedidos técnicos abertos do SPE, com seus elementos.
   Future<List<Map<String, dynamic>>> buscarPedidosTecnicosAbertos() async {
     try {
-      final response = await _client
-          .from('pedidos_tecnicos')
-          .select()
-          .eq('status', 'aberto')
-          .order('codigo', ascending: false);
+      // 1 query: buscar todos os pedidos abertos
+      final pedidos = List<Map<String, dynamic>>.from(
+        await _client
+            .from('pedidos_tecnicos')
+            .select()
+            .eq('status', 'aberto')
+            .order('codigo', ascending: false),
+      );
 
-      final pedidos = List<Map<String, dynamic>>.from(response);
-      final result = <Map<String, dynamic>>[];
+      if (pedidos.isEmpty) return [];
 
-      for (final p in pedidos) {
-        final pedidoId = p['id'] as String;
-        final elementosRaw = List<Map<String, dynamic>>.from(
+      // 2ª query: buscar todos os elementos de todos os pedidos de uma vez
+      final pedidoIds = pedidos.map((p) => p['id'] as String).toList();
+      final todosElementos = <Map<String, dynamic>>[];
+
+      // Buscar em lotes para evitar URL muito longa
+      const batchSize = 50;
+      for (var i = 0; i < pedidoIds.length; i += batchSize) {
+        final end = (i + batchSize < pedidoIds.length)
+            ? i + batchSize
+            : pedidoIds.length;
+        final batch = pedidoIds.sublist(i, end);
+        final response = List<Map<String, dynamic>>.from(
           await _client
               .from('pedido_tecnico_elementos')
               .select()
-              .eq('pedido_id', pedidoId),
+              .inFilter('pedido_id', batch),
         );
-
-        result.add({
-          ...p,
-          'elementos': elementosRaw,
-        });
+        todosElementos.addAll(response);
       }
 
-      return result;
+      // Agrupar elementos por pedido_id
+      final elementosPorPedido = <String, List<Map<String, dynamic>>>{};
+      for (final elem in todosElementos) {
+        final pedidoId = elem['pedido_id']?.toString() ?? '';
+        (elementosPorPedido[pedidoId] ??= []).add(elem);
+      }
+
+      // Montar resultado
+      return pedidos.map((p) {
+        final pedidoId = p['id'] as String;
+        return {
+          ...p,
+          'elementos': elementosPorPedido[pedidoId] ?? [],
+        };
+      }).toList();
     } catch (e) {
       log('SpeSupabaseClient.buscarPedidosTecnicosAbertos erro: $e');
       return [];
