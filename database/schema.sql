@@ -317,6 +317,7 @@ CREATE TABLE steps (
     id text NOT NULL,
     index integer NOT NULL DEFAULT 0,
     dados_entrega jsonb DEFAULT '{}'::jsonb,
+    aceita_sem_data_entrega boolean NOT NULL DEFAULT false,
     PRIMARY KEY (id)
 );
 

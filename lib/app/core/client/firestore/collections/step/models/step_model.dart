@@ -26,6 +26,7 @@ class StepModel {
   bool isAcceptSemEndereco = true;
   bool isConsiderarTotalProducao = true;
   bool isMarcarEntregue = false;
+  bool isAcceptSemDataEntrega = false;
 
   static StepModel notFound = StepModel(
     createdAt: DateTime.now(),
@@ -47,6 +48,7 @@ class StepModel {
     isAcceptSemEndereco: true,
     isConsiderarTotalProducao: true,
     isMarcarEntregue: false,
+    isAcceptSemDataEntrega: false,
   );
 
   List<StepModel> get fromSteps => fromStepsIds
@@ -79,6 +81,7 @@ class StepModel {
     required this.isAcceptSemEndereco,
     required this.isConsiderarTotalProducao,
     required this.isMarcarEntregue,
+    required this.isAcceptSemDataEntrega,
   });
 
   StepModel copyWith({
@@ -102,6 +105,7 @@ class StepModel {
     bool? isAcceptSemEndereco,
     bool? isConsiderarTotalProducao,
     bool? isMarcarEntregue,
+    bool? isAcceptSemDataEntrega,
   }) {
     return StepModel(
       id: id ?? this.id,
@@ -127,6 +131,8 @@ class StepModel {
       isConsiderarTotalProducao:
           isConsiderarTotalProducao ?? this.isConsiderarTotalProducao,
       isMarcarEntregue: isMarcarEntregue ?? this.isMarcarEntregue,
+      isAcceptSemDataEntrega:
+          isAcceptSemDataEntrega ?? this.isAcceptSemDataEntrega,
     );
   }
 
@@ -151,6 +157,7 @@ class StepModel {
       'isAcceptSemEndereco': isAcceptSemEndereco,
       'isConsiderarTotalProducao': isConsiderarTotalProducao,
       'isMarcarEntregue': isMarcarEntregue,
+      'isAcceptSemDataEntrega': isAcceptSemDataEntrega,
     };
   }
 
@@ -191,6 +198,7 @@ class StepModel {
         isAcceptSemEndereco: map['isAcceptSemEndereco'] ?? true,
         isConsiderarTotalProducao: map['isConsiderarTotalProducao'] ?? true,
         isMarcarEntregue: map['isMarcarEntregue'] ?? false,
+        isAcceptSemDataEntrega: map['isAcceptSemDataEntrega'] ?? false,
       );
     }
     return StepModel(
@@ -225,6 +233,7 @@ class StepModel {
       isAcceptSemEndereco: map['isAcceptSemEndereco'] ?? true,
       isConsiderarTotalProducao: map['isConsiderarTotalProducao'] ?? true,
       isMarcarEntregue: map['isMarcarEntregue'] ?? false,
+      isAcceptSemDataEntrega: map['isAcceptSemDataEntrega'] ?? false,
     );
   }
 
@@ -253,6 +262,7 @@ class StepModel {
       isAcceptSemEndereco: map['aceita_sem_endereco'] ?? true,
       isConsiderarTotalProducao: map['is_considerar_total_producao'] ?? true,
       isMarcarEntregue: map['is_marcar_entregue'] ?? false,
+      isAcceptSemDataEntrega: map['aceita_sem_data_entrega'] ?? false,
     );
   }
 
@@ -306,6 +316,7 @@ class StepModel {
       'aceita_sem_endereco': isAcceptSemEndereco,
       'is_considerar_total_producao': isConsiderarTotalProducao,
       'is_marcar_entregue': isMarcarEntregue,
+      'aceita_sem_data_entrega': isAcceptSemDataEntrega,
     };
   }
 
@@ -316,6 +327,6 @@ class StepModel {
 
   @override
   String toString() {
-    return 'StepModel(id: $id, name: $name, color: $color, fromSteps: $fromSteps, moveRoles: $moveRoles, createdAt: $createdAt, index: $index, isDefault: $isDefault, isShipping: $isShipping, shipping: $shipping, isArchivedAvailable: $isArchivedAvailable, considerarConsumoRelatorioPedidos: $considerarConsumoRelatorioPedidos, isExibirArmacao: $isExibirArmacao  )';
+    return 'StepModel(id: $id, name: $name, color: $color, fromSteps: $fromSteps, moveRoles: $moveRoles, createdAt: $createdAt, index: $index, isDefault: $isDefault, isShipping: $isShipping, shipping: $shipping, isArchivedAvailable: $isArchivedAvailable, considerarConsumoRelatorioPedidos: $considerarConsumoRelatorioPedidos, isExibirArmacao: $isExibirArmacao, isAcceptSemDataEntrega: $isAcceptSemDataEntrega )';
   }
 }

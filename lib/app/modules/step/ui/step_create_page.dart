@@ -65,7 +65,7 @@ class _StepCreatePageState extends State<StepCreatePage> {
       '|${form.considerarConsumoRelatorioPedidos}'
       '|${form.isExibirArmacao}|${form.isExibirGraficoCDA}'
       '|${form.isAcceptWithoutElements}|${form.isAcceptSemEndereco}|${form.isConsiderarTotalProducao}'
-      '|${form.isMarcarEntregue}';
+      '|${form.isMarcarEntregue}|${form.isAcceptSemDataEntrega}';
 
   @override
   void initState() {
@@ -566,6 +566,18 @@ class _StepCreatePageState extends State<StepCreatePage> {
             value: form.isMarcarEntregue,
             onChanged: (_) {
               form.isMarcarEntregue = !form.isMarcarEntregue;
+              stepCtrl.formStream.update();
+            },
+          ),
+          const Divider(height: 28),
+          _switchOption(
+            icon: Icons.calendar_today_outlined,
+            label: 'Aceitar pedidos sem data de entrega',
+            description:
+                'Pedidos sem data de entrega só podem ENTRAR nesta etapa se esta opção estiver ativa.',
+            value: form.isAcceptSemDataEntrega,
+            onChanged: (_) {
+              form.isAcceptSemDataEntrega = !form.isAcceptSemDataEntrega;
               stepCtrl.formStream.update();
             },
           ),

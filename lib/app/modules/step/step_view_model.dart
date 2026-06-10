@@ -33,6 +33,7 @@ class StepCreateModel {
   bool isAcceptSemEndereco = true;
   bool isConsiderarTotalProducao = true;
   bool isMarcarEntregue = false;
+  bool isAcceptSemDataEntrega = false;
 
   late bool isEdit;
 
@@ -65,6 +66,7 @@ class StepCreateModel {
     isAcceptSemEndereco = etapa.isAcceptSemEndereco;
     isConsiderarTotalProducao = etapa.isConsiderarTotalProducao;
     isMarcarEntregue = etapa.isMarcarEntregue;
+    isAcceptSemDataEntrega = etapa.isAcceptSemDataEntrega;
   }
 
   StepModel toStepModel(StepModel? etapa) => StepModel(
@@ -87,5 +89,6 @@ class StepCreateModel {
         isAcceptSemEndereco: isAcceptSemEndereco,
         isConsiderarTotalProducao: isConsiderarTotalProducao,
         isMarcarEntregue: isMarcarEntregue,
+        isAcceptSemDataEntrega: isAcceptSemDataEntrega,
       );
 }

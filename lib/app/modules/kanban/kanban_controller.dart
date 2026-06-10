@@ -271,6 +271,15 @@ class StepController {
         }
       }
 
+      // Regra de Aceite sem Data de Entrega (todos os tipos de pedido)
+      if (!step.isAcceptSemDataEntrega && pedido.deliveryAt == null) {
+        NotificationService.showNegative(
+          'Data de entrega obrigatória',
+          'Esta etapa exige uma data de entrega cadastrada no pedido.',
+        );
+        return false;
+      }
+
       final isStepAvailable =
           step.fromSteps.map((e) => e.id).contains(pedido.step.id);
       if (!isStepAvailable) {
