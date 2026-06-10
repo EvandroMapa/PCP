@@ -25,7 +25,9 @@ class AppRepository {
 
   static Future<void> clear() async {
     final sharedPrefs = await SharedPreferences.getInstance();
-    sharedPrefs.clear();
+    await sharedPrefs.remove('usuario');
+    await sharedPrefs.remove('saved_email');
+    await sharedPrefs.remove('saved_senha');
   }
 
   // ── Credenciais para "Manter conectado" ──
