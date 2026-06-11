@@ -49,13 +49,14 @@ class PedidoSupabaseCollection extends PedidoCollection {
     _isStarted = true;
   }
 
+  // Não inclui elementos no join — carregados separadamente pelo ElementoSupabaseCollection
+  // e resolvidos por memória em _mapPedido. Evita query com 3k+ elementos + 9k posições.
   static const String _selectCompleto = '''
     *,
     pedido_bitolas (*),
     pedido_status_history (*),
     pedido_steps_history (*),
-    pedido_tags (*),
-    elementos (*, elemento_posicoes (*))
+    pedido_tags (*)
   ''';
 
   @override
@@ -148,9 +149,13 @@ class PedidoSupabaseCollection extends PedidoCollection {
     }
   }
 
-  /// Mapeia os dados do Supabase (com joins) para o PedidoModel
+  /// Mapeia os dados do Supabase (com joins) para o PedidoModel.
+  /// Elementos são resolvidos a partir do cache em memória do ElementoSupabaseCollection.
   PedidoModel _mapPedido(Map<String, dynamic> pMap) {
-    return PedidoModel.fromSupabaseMap(
+    final pedidoId = (pMap['id'] ?? '').toString();
+
+    // Monta o pedido sem elementos (join removido da query)
+    final pedido = PedidoModel.fromSupabaseMap(
       pMap,
       produtosRaw: (pMap['pedido_bitolas'] as List?)
           ?.map((e) => Map<String, dynamic>.from(e)).toList(),
@@ -160,15 +165,18 @@ class PedidoSupabaseCollection extends PedidoCollection {
           ?.map((e) => Map<String, dynamic>.from(e)).toList(),
       tagsIds: (pMap['pedido_tags'] as List?)
           ?.map((t) => t['tag_id'].toString()).toList(),
-      elementosRaw: (pMap['elementos'] as List?)?.map((e) {
-        final eMap = Map<String, dynamic>.from(e);
-        return {
-          ...eMap,
-          'posicoesRaw': (eMap['elemento_posicoes'] as List?)
-              ?.map((p) => Map<String, dynamic>.from(p)).toList(),
-        };
-      }).toList(),
+      elementosRaw: null,
     );
+
+    // Injeta os elementos já instanciados do cache em memória
+    final elementosDoPedido = ElementoSupabaseCollection().data
+        .where((e) => e.pedidoId == pedidoId)
+        .toList();
+    pedido.elementos
+      ..clear()
+      ..addAll(elementosDoPedido);
+
+    return pedido;
   }
 
   bool _isListen = false;

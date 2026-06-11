@@ -510,7 +510,7 @@ class AppDrawerItem extends StatelessWidget {
                     size: 16,
                     color: item == module
                         ? AppColors.primaryMain.withValues(alpha: 0.7)
-                        : Colors.grey[450],
+                        : Colors.grey[400],
                   ),
                   tooltip: 'Abrir em nova janela',
                 ),
