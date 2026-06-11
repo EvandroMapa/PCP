@@ -280,6 +280,16 @@ class StepController {
         return false;
       }
 
+      // Regra de Aceite sem Pedido Financeiro (todos os tipos de pedido)
+      if (!step.isAcceptSemPedidoFinanceiro &&
+          pedido.pedidoFinanceiro.trim().isEmpty) {
+        NotificationService.showNegative(
+          'Pedido financeiro obrigatório',
+          'Esta etapa exige o número do pedido financeiro preenchido no pedido.',
+        );
+        return false;
+      }
+
       final isStepAvailable =
           step.fromSteps.map((e) => e.id).contains(pedido.step.id);
       if (!isStepAvailable) {

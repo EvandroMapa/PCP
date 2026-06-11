@@ -65,7 +65,7 @@ class _StepCreatePageState extends State<StepCreatePage> {
       '|${form.considerarConsumoRelatorioPedidos}'
       '|${form.isExibirArmacao}|${form.isExibirGraficoCDA}'
       '|${form.isAcceptWithoutElements}|${form.isAcceptSemEndereco}|${form.isConsiderarTotalProducao}'
-      '|${form.isMarcarEntregue}|${form.isAcceptSemDataEntrega}';
+      '|${form.isMarcarEntregue}|${form.isAcceptSemDataEntrega}|${form.isAcceptSemPedidoFinanceiro}';
 
   @override
   void initState() {
@@ -578,6 +578,19 @@ class _StepCreatePageState extends State<StepCreatePage> {
             value: form.isAcceptSemDataEntrega,
             onChanged: (_) {
               form.isAcceptSemDataEntrega = !form.isAcceptSemDataEntrega;
+              stepCtrl.formStream.update();
+            },
+          ),
+          const Divider(height: 28),
+          _switchOption(
+            icon: Icons.request_quote_outlined,
+            label: 'Aceitar pedidos sem pedido financeiro',
+            description:
+                'Pedidos sem pedido financeiro preenchido só podem ENTRAR nesta etapa se esta opção estiver ativa.',
+            value: form.isAcceptSemPedidoFinanceiro,
+            onChanged: (_) {
+              form.isAcceptSemPedidoFinanceiro =
+                  !form.isAcceptSemPedidoFinanceiro;
               stepCtrl.formStream.update();
             },
           ),

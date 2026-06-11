@@ -27,6 +27,7 @@ class StepModel {
   bool isConsiderarTotalProducao = true;
   bool isMarcarEntregue = false;
   bool isAcceptSemDataEntrega = false;
+  bool isAcceptSemPedidoFinanceiro = true;
 
   static StepModel notFound = StepModel(
     createdAt: DateTime.now(),
@@ -49,6 +50,7 @@ class StepModel {
     isConsiderarTotalProducao: true,
     isMarcarEntregue: false,
     isAcceptSemDataEntrega: false,
+    isAcceptSemPedidoFinanceiro: true,
   );
 
   List<StepModel> get fromSteps => fromStepsIds
@@ -82,6 +84,7 @@ class StepModel {
     required this.isConsiderarTotalProducao,
     required this.isMarcarEntregue,
     required this.isAcceptSemDataEntrega,
+    required this.isAcceptSemPedidoFinanceiro,
   });
 
   StepModel copyWith({
@@ -106,6 +109,7 @@ class StepModel {
     bool? isConsiderarTotalProducao,
     bool? isMarcarEntregue,
     bool? isAcceptSemDataEntrega,
+    bool? isAcceptSemPedidoFinanceiro,
   }) {
     return StepModel(
       id: id ?? this.id,
@@ -133,6 +137,8 @@ class StepModel {
       isMarcarEntregue: isMarcarEntregue ?? this.isMarcarEntregue,
       isAcceptSemDataEntrega:
           isAcceptSemDataEntrega ?? this.isAcceptSemDataEntrega,
+      isAcceptSemPedidoFinanceiro:
+          isAcceptSemPedidoFinanceiro ?? this.isAcceptSemPedidoFinanceiro,
     );
   }
 
@@ -158,6 +164,7 @@ class StepModel {
       'isConsiderarTotalProducao': isConsiderarTotalProducao,
       'isMarcarEntregue': isMarcarEntregue,
       'isAcceptSemDataEntrega': isAcceptSemDataEntrega,
+      'isAcceptSemPedidoFinanceiro': isAcceptSemPedidoFinanceiro,
     };
   }
 
@@ -199,6 +206,7 @@ class StepModel {
         isConsiderarTotalProducao: map['isConsiderarTotalProducao'] ?? true,
         isMarcarEntregue: map['isMarcarEntregue'] ?? false,
         isAcceptSemDataEntrega: map['isAcceptSemDataEntrega'] ?? false,
+        isAcceptSemPedidoFinanceiro: map['isAcceptSemPedidoFinanceiro'] ?? true,
       );
     }
     return StepModel(
@@ -234,6 +242,7 @@ class StepModel {
       isConsiderarTotalProducao: map['isConsiderarTotalProducao'] ?? true,
       isMarcarEntregue: map['isMarcarEntregue'] ?? false,
       isAcceptSemDataEntrega: map['isAcceptSemDataEntrega'] ?? false,
+      isAcceptSemPedidoFinanceiro: map['isAcceptSemPedidoFinanceiro'] ?? true,
     );
   }
 
@@ -263,6 +272,7 @@ class StepModel {
       isConsiderarTotalProducao: map['is_considerar_total_producao'] ?? true,
       isMarcarEntregue: map['is_marcar_entregue'] ?? false,
       isAcceptSemDataEntrega: map['aceita_sem_data_entrega'] ?? false,
+      isAcceptSemPedidoFinanceiro: map['aceita_sem_pedido_financeiro'] ?? true,
     );
   }
 
@@ -317,6 +327,7 @@ class StepModel {
       'is_considerar_total_producao': isConsiderarTotalProducao,
       'is_marcar_entregue': isMarcarEntregue,
       'aceita_sem_data_entrega': isAcceptSemDataEntrega,
+      'aceita_sem_pedido_financeiro': isAcceptSemPedidoFinanceiro,
     };
   }
 
