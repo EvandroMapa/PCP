@@ -39,6 +39,8 @@ class OrdemPage extends StatefulWidget {
 class _OrdemPageState extends State<OrdemPage> {
   // Prontos ocultos por padrão no modo operador por pedido
   bool _mostrarProntos = false;
+  // Gráfico de produção oculto por padrão
+  bool _mostrarGraficoStatus = false;
 
   @override
   void initState() {
@@ -161,7 +163,7 @@ class _OrdemPageState extends State<OrdemPage> {
               children: [
                 _descriptionWidget(ordem),
                 const Divisor(),
-                OrdemStatusWidget(ordem: ordem),
+                if (_mostrarGraficoStatus) OrdemStatusWidget(ordem: ordem),
                 for (final produto in produtos)
                   OrdemPedidoProdutoWidget(
                     produto: produto,
@@ -233,63 +235,88 @@ class _OrdemPageState extends State<OrdemPage> {
   }
 
   Widget _descriptionWidget(OrdemModel ordem) {
+    final materiaPrimaLabel = ordem.materiaPrima?.label;
+
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Linha: Produto + Data
-          Row(
+          // ─── Linha única: bitola + hora + matéria prima ───────────
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
             children: [
-              Expanded(
-                child: _infoCard(
-                  icon: Icons.straighten_outlined,
-                  label: 'Bitola',
-                  value: '${ordem.produto.nome} · ${ordem.produto.descricao}',
-                  color: AppColors.primaryMain,
-                ),
+              _pill(
+                icon: Icons.straighten_outlined,
+                label: ordem.produto.nome,
+                color: AppColors.primaryMain,
               ),
-              const SizedBox(width: 10),
-              _infoCard(
-                icon: Icons.calendar_today_outlined,
-                label: 'Iniciada',
-                value: ordem.createdAt.text(),
+              _pill(
+                icon: Icons.schedule_rounded,
+                label: ordem.createdAt.textHour(),
                 color: Colors.blueGrey,
               ),
-              if (ordem.endAt != null) ...[
-                const SizedBox(width: 10),
-                _infoCard(
+              if (materiaPrimaLabel != null)
+                GestureDetector(
+                  onTap: () async {
+                    final result =
+                        await showMateriaPrimaBottom(ordem.materiaPrima!);
+                    if (result != null && context.mounted) {
+                      push(context,
+                          MateriaPrimaCreatePage(materiaPrima: result));
+                    }
+                  },
+                  child: _pill(
+                    icon: Icons.inventory_2_outlined,
+                    label: materiaPrimaLabel,
+                    color: Colors.orange,
+                    trailing: const Icon(Icons.chevron_right,
+                        size: 12, color: Colors.orange),
+                  ),
+                ),
+              if (ordem.endAt != null)
+                _pill(
                   icon: Icons.check_circle_outline,
-                  label: 'Finalizada',
-                  value: ordem.endAt.text(),
+                  label: 'Finalizada ${ordem.endAt.text()}',
                   color: Colors.green,
                 ),
-              ],
             ],
           ),
-          const SizedBox(height: 10),
-          // Matéria Prima
-          InkWell(
-            onTap: () async {
-              if (ordem.materiaPrima == null) return;
-              final result = await showMateriaPrimaBottom(ordem.materiaPrima!);
-              if (result != null) {
-                push(context, MateriaPrimaCreatePage(materiaPrima: result));
-              }
-            },
-            borderRadius: BorderRadius.circular(12),
-            child: _infoCard(
-              icon: Icons.inventory_2_outlined,
-              label: 'Matéria Prima',
-              value: ordem.materiaPrima != null
-                  ? ordem.materiaPrima!.label
-                  : 'Não especificado',
-              color: Colors.orange,
-              fullWidth: true,
-              trailing: ordem.materiaPrima != null
-                  ? const Icon(Icons.chevron_right,
-                      size: 16, color: Colors.orange)
-                  : null,
+
+          // ─── Toggle do gráfico de produção ────────────────────────
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () =>
+                setState(() => _mostrarGraficoStatus = !_mostrarGraficoStatus),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.18)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.bar_chart_rounded,
+                      size: 15, color: Colors.grey[500]),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Gráfico de produção',
+                    style: AppCss.minimumRegular
+                        .setSize(12)
+                        .setColor(Colors.grey[600]!),
+                  ),
+                  const Spacer(),
+                  Icon(
+                    _mostrarGraficoStatus
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    size: 16,
+                    color: Colors.grey[400],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -297,51 +324,33 @@ class _OrdemPageState extends State<OrdemPage> {
     );
   }
 
-  Widget _infoCard({
+  Widget _pill({
     required IconData icon,
     required String label,
-    required String value,
     required Color color,
-    bool fullWidth = false,
     Widget? trailing,
   }) {
     return Container(
-      width: fullWidth ? double.infinity : null,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Row(
-        mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label.toUpperCase(),
-                  style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: color.withValues(alpha: 0.7),
-                      letterSpacing: 1),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: AppCss.minimumBold
-                      .setSize(12)
-                      .setColor(Colors.grey[800]!),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color.withValues(alpha: 0.85),
             ),
           ),
-          if (trailing != null) trailing,
+          if (trailing != null) ...[const SizedBox(width: 3), trailing],
         ],
       ),
     );
