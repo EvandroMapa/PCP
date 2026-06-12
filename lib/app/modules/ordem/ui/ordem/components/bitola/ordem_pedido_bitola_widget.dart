@@ -18,6 +18,7 @@ import 'package:aco_plus/app/modules/ordem/ui/ordem/components/bitola/ordem_pedi
 import 'package:aco_plus/app/modules/ordem/ui/ordem/components/bitola/ordem_pedido_bitola_pause_widget.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem/components/bitola/status/ordem_pedido_status_normal_widget.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem/components/bitola/status/ordem_pedido_status_operator_widget.dart';
+import 'package:aco_plus/app/modules/ordem/ordem_controller.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 
@@ -38,15 +39,22 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
     final status = produto.statusView.status;
     final statusColor = produto.isPaused ? Colors.orange : status.color;
 
-    // Verifica se deve usar modo "por OS"
+    // Modo "por OS": operador com elementos cadastrados
     final isModoPorOS = usuario.isOperador &&
         PreferencesService.apontamentoProducaoCD.value == 'por_os' &&
         _pedidoTemElementos();
 
+    // Modo "por pedido": operador que não está no modo por OS
+    final isModoPorPedido = usuario.isOperador && !isModoPorOS;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: InkWell(
-        onTap: isModoPorOS ? () => _openElementosDialog(context) : null,
+        onTap: isModoPorOS
+            ? () => _openElementosDialog(context)
+            : isModoPorPedido
+                ? () => _openStatusDialog(context)
+                : null,
         borderRadius: BorderRadius.circular(14),
         child: Container(
           decoration: BoxDecoration(
@@ -69,14 +77,14 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
               children: [
                 // Borda lateral colorida pelo status
                 Container(width: 4, color: statusColor),
-                // Conteúdo
+                // Conteúdo principal
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Header: localizador + tags
+                        // Header: localizador + tags + badge status (modo por pedido)
                         Row(
                           children: [
                             if (produto.isPaused) _pauseTagWidget(),
@@ -86,6 +94,39 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
                               produto.pedido.localizador,
                               style: AppCss.mediumBold.setSize(15),
                             ),
+                            if (isModoPorPedido) ...[
+                              const Spacer(),
+                              // Badge de status clicável
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                      color:
+                                          statusColor.withValues(alpha: 0.4)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      status ==
+                                              PedidoBitolaStatus
+                                                  .aguardandoProducao
+                                          ? 'AGUARDANDO'
+                                          : status.label.toUpperCase(),
+                                      style: AppCss.minimumBold
+                                          .setSize(11)
+                                          .setColor(statusColor),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Icon(Icons.touch_app_rounded,
+                                        size: 13, color: statusColor),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                         const SizedBox(height: 6),
@@ -171,22 +212,29 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Botões de status + pause
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _statusWidget(readOnly: isModoPorOS),
-                      if (!isModoPorOS &&
-                          produto.statusView.status ==
-                              PedidoBitolaStatus.produzindo)
-                        OrdemPedidoProdutoPauseWidget(
-                            ordem: ordem, produto: produto),
-                      if (isModoPorOS) _buildMiniProgressOS(),
-                    ],
+                // Botões de status laterais (somente quando NÃO é modo por pedido)
+                if (!isModoPorPedido)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _statusWidget(readOnly: isModoPorOS),
+                        if (!isModoPorOS &&
+                            produto.statusView.status ==
+                                PedidoBitolaStatus.produzindo)
+                          OrdemPedidoProdutoPauseWidget(
+                              ordem: ordem, produto: produto),
+                        if (isModoPorOS) _buildMiniProgressOS(),
+                      ],
+                    ),
                   ),
-                ),
+                // Mini progress (modo por OS)
+                if (isModoPorOS)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: _buildMiniProgressOS(),
+                  ),
               ],
             ),
           ),
@@ -195,13 +243,11 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
     );
   }
 
-  /// Verifica se o pedido associado a este produto tem elementos/OS cadastrados
   bool _pedidoTemElementos() {
     return AppSupabaseClient.elementos.data
         .any((e) => e.pedidoId == produto.pedidoId);
   }
 
-  /// Abre a página fullscreen de controle por OS/Elemento
   void _openElementosDialog(BuildContext context) {
     Navigator.push(
       context,
@@ -210,6 +256,29 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
           produto: produto,
           ordem: ordem,
         ),
+      ),
+    );
+  }
+
+  void _openStatusDialog(BuildContext context) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Fechar',
+      barrierColor: Colors.black.withValues(alpha: 0.75),
+      transitionDuration: const Duration(milliseconds: 280),
+      transitionBuilder: (ctx, anim, _, child) => FadeTransition(
+        opacity: CurvedAnimation(parent: anim, curve: Curves.easeOut),
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.93, end: 1.0).animate(
+            CurvedAnimation(parent: anim, curve: Curves.easeOutCubic),
+          ),
+          child: child,
+        ),
+      ),
+      pageBuilder: (ctx, _, __) => _OperadorStatusDialog(
+        produto: produto,
+        ordem: ordem,
       ),
     );
   }
@@ -239,8 +308,8 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _miniCircle('Ag.', result.prcntAguardando,
-                  PosicaoStatus.aguardando.color),
+              _miniCircle(
+                  'Ag.', result.prcntAguardando, PosicaoStatus.aguardando.color),
               const SizedBox(width: 8),
               _miniCircle('Prod.', result.prcntProduzindo,
                   PosicaoStatus.produzindo.color),
@@ -333,6 +402,278 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
         'PAUSADO',
         style: TextStyle(
             color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
+      ),
+    );
+  }
+}
+
+// ─── DIALOG FULLSCREEN DE STATUS (MODO POR PEDIDO) ───────────────────────────
+
+class _OperadorStatusDialog extends StatefulWidget {
+  final PedidoBitolaModel produto;
+  final OrdemModel ordem;
+
+  const _OperadorStatusDialog({
+    required this.produto,
+    required this.ordem,
+  });
+
+  @override
+  State<_OperadorStatusDialog> createState() => _OperadorStatusDialogState();
+}
+
+class _OperadorStatusDialogState extends State<_OperadorStatusDialog> {
+  PedidoBitolaStatus? _selecionando;
+  PedidoBitolaStatus? _statusAtualLocal;
+
+  @override
+  void initState() {
+    super.initState();
+    _statusAtualLocal = widget.produto.statusView.status;
+  }
+
+  Future<void> _onSelectStatus(PedidoBitolaStatus status) async {
+    if (status == _statusAtualLocal) return;
+    setState(() => _selecionando = status);
+    await ordemCtrl.onSelectProdutoStatus(
+        widget.ordem, widget.produto, status);
+    if (mounted) {
+      setState(() {
+        _statusAtualLocal = status;
+        _selecionando = null;
+      });
+    }
+  }
+
+  IconData _iconFor(PedidoBitolaStatus status) {
+    switch (status) {
+      case PedidoBitolaStatus.aguardandoProducao:
+        return Icons.hourglass_bottom_rounded;
+      case PedidoBitolaStatus.produzindo:
+        return Icons.construction_rounded;
+      case PedidoBitolaStatus.pronto:
+        return Icons.check_circle_rounded;
+      default:
+        return Icons.circle;
+    }
+  }
+
+  String _labelFor(PedidoBitolaStatus status) {
+    if (status == PedidoBitolaStatus.aguardandoProducao) return 'AGUARDANDO';
+    return status.label.toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final statusAtual = _statusAtualLocal ?? widget.produto.statusView.status;
+    final statuses = [
+      PedidoBitolaStatus.aguardandoProducao,
+      PedidoBitolaStatus.produzindo,
+      PedidoBitolaStatus.pronto,
+    ];
+
+    return Center(
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          width: 480,
+          margin: const EdgeInsets.symmetric(horizontal: 24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A2E),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.08),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.6),
+                blurRadius: 40,
+                spreadRadius: 10,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ─── HEADER ───────────────────────────────────────────────
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(28, 28, 28, 24),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.04),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(28)),
+                  border: Border(
+                    bottom: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.07)),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      widget.produto.pedido.localizador,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.produto.cliente.nome,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.produto.obra.descricao,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ─── BOTÕES DE STATUS ─────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                child: Column(
+                  children: statuses.map((status) {
+                    final isAtivo = status == statusAtual;
+                    final isCarregando = _selecionando == status;
+                    final color = status.color;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: GestureDetector(
+                        onTap: isCarregando
+                            ? null
+                            : () => _onSelectStatus(status),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 20),
+                          decoration: BoxDecoration(
+                            color: isAtivo
+                                ? color.withValues(alpha: 0.18)
+                                : Colors.white.withValues(alpha: 0.04),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: isAtivo
+                                  ? color.withValues(alpha: 0.7)
+                                  : Colors.white.withValues(alpha: 0.10),
+                              width: isAtivo ? 2.5 : 1.5,
+                            ),
+                            boxShadow: isAtivo
+                                ? [
+                                    BoxShadow(
+                                      color: color.withValues(alpha: 0.25),
+                                      blurRadius: 20,
+                                      spreadRadius: 2,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: color.withValues(
+                                      alpha: isAtivo ? 0.25 : 0.10),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: isCarregando
+                                    ? Padding(
+                                        padding: const EdgeInsets.all(12),
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2.5,
+                                          color: color,
+                                        ),
+                                      )
+                                    : Icon(
+                                        _iconFor(status),
+                                        size: 24,
+                                        color: color,
+                                      ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Text(
+                                  _labelFor(status),
+                                  style: TextStyle(
+                                    color: isAtivo
+                                        ? Colors.white
+                                        : Colors.white.withValues(alpha: 0.75),
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 1,
+                                  ),
+                                ),
+                              ),
+                              if (isAtivo)
+                                Icon(Icons.check_circle_rounded,
+                                    color: color, size: 26),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+
+              // ─── BOTÃO FECHAR ─────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                child: Container(
+                  height: 1,
+                  color: Colors.white.withValues(alpha: 0.07),
+                  margin: const EdgeInsets.only(bottom: 16),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.12)),
+                    ),
+                    child: const Text(
+                      'FECHAR',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

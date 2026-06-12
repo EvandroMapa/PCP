@@ -12,6 +12,7 @@ import 'package:aco_plus/app/core/components/item_label.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
+import 'package:aco_plus/app/core/services/preferences_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
@@ -36,6 +37,9 @@ class OrdemPage extends StatefulWidget {
 }
 
 class _OrdemPageState extends State<OrdemPage> {
+  // Prontos ocultos por padrão no modo operador por pedido
+  bool _mostrarProntos = false;
+
   @override
   void initState() {
     setWebTitle('Ordem');
@@ -124,6 +128,22 @@ class _OrdemPageState extends State<OrdemPage> {
   }
 
   Widget body(List<PedidoModel> pedidos, OrdemModel ordem) {
+    // Modo operador + apontamento por pedido: ocultar prontos
+    final isModoPorPedido = usuario.isOperador &&
+        PreferencesService.apontamentoProducaoCD.value != 'por_os';
+
+    final produtos = isModoPorPedido && !_mostrarProntos
+        ? ordem.produtos
+            .where((p) => p.statusView.status != PedidoBitolaStatus.pronto)
+            .toList()
+        : ordem.produtos;
+
+    final qtdeProntos = isModoPorPedido
+        ? ordem.produtos
+            .where((p) => p.statusView.status == PedidoBitolaStatus.pronto)
+            .length
+        : 0;
+
     return RefreshIndicator(
       onRefresh: () async {
         await FirestoreClient.ordens.fetch();
@@ -142,7 +162,7 @@ class _OrdemPageState extends State<OrdemPage> {
                 _descriptionWidget(ordem),
                 const Divisor(),
                 OrdemStatusWidget(ordem: ordem),
-                for (final produto in ordem.produtos)
+                for (final produto in produtos)
                   OrdemPedidoProdutoWidget(
                     produto: produto,
                     ordem: ordem,
@@ -151,6 +171,9 @@ class _OrdemPageState extends State<OrdemPage> {
                       produto,
                     ),
                   ),
+                // Banner de prontos ocultos (modo operador por pedido)
+                if (isModoPorPedido && qtdeProntos > 0)
+                  _prontosBanner(qtdeProntos),
                 if (usuario.isNotOperador)
                   if (!ordem.freezed.isFreezed &&
                       ordem.status != PedidoBitolaStatus.pronto)
@@ -159,6 +182,52 @@ class _OrdemPageState extends State<OrdemPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _prontosBanner(int qtde) {
+    return GestureDetector(
+      onTap: () => setState(() => _mostrarProntos = !_mostrarProntos),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: _mostrarProntos
+              ? Colors.green.withValues(alpha: 0.08)
+              : Colors.grey.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _mostrarProntos
+                ? Colors.green.withValues(alpha: 0.4)
+                : Colors.grey.withValues(alpha: 0.25),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              _mostrarProntos
+                  ? Icons.visibility_rounded
+                  : Icons.visibility_off_rounded,
+              size: 18,
+              color: _mostrarProntos ? Colors.green[700] : Colors.grey[500],
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                _mostrarProntos
+                    ? '$qtde pedido${qtde > 1 ? 's' : ''} pronto${qtde > 1 ? 's' : ''} (clique para ocultar)'
+                    : '$qtde pedido${qtde > 1 ? 's' : ''} pronto${qtde > 1 ? 's' : ''} oculto${qtde > 1 ? 's' : ''} — clique para exibir',
+                style: AppCss.minimumRegular
+                    .setSize(13)
+                    .setColor(_mostrarProntos
+                        ? Colors.green[700]!
+                        : Colors.grey[600]!),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
