@@ -188,13 +188,23 @@ class _OrdemPageState extends State<OrdemPage> {
     final isModoPorPedido = usuario.isOperador &&
         PreferencesService.apontamentoProducaoCD.value != 'por_os';
 
-    final produtos = isModoPorPedido && !_mostrarProntos
-        ? ordem.produtos
-            .where((p) => p.statusView.status != PedidoBitolaStatus.pronto)
-            .toList()
-        : ordem.produtos;
-
-
+    final produtos = () {
+      final lista = isModoPorPedido && !_mostrarProntos
+          ? ordem.produtos
+              .where((p) => p.statusView.status != PedidoBitolaStatus.pronto)
+              .toList()
+          : List.of(ordem.produtos);
+      // Prontos sempre por último
+      if (isModoPorPedido) {
+        lista.sort((a, b) {
+          final aProto = a.statusView.status == PedidoBitolaStatus.pronto;
+          final bProto = b.statusView.status == PedidoBitolaStatus.pronto;
+          if (aProto == bProto) return 0;
+          return aProto ? 1 : -1;
+        });
+      }
+      return lista;
+    }();
 
     return RefreshIndicator(
       onRefresh: () async {
