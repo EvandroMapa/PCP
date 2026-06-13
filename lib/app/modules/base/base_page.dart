@@ -51,14 +51,22 @@ class _BasePageState extends State<BasePage> {
 
   void _entrarFullscreen() {
     try {
-      html.document.documentElement?.requestFullscreen();
-    } catch (_) {}
+      final el = html.document.documentElement ?? html.document.body;
+      el?.requestFullscreen();
+      // Atualiza estado otimisticamente (o listener cobre o ESC)
+      if (mounted) setState(() => _emFullscreen = true);
+    } catch (e) {
+      debugPrint('Fullscreen error: $e');
+    }
   }
 
   void _sairFullscreen() {
     try {
       html.document.exitFullscreen();
-    } catch (_) {}
+      if (mounted) setState(() => _emFullscreen = false);
+    } catch (e) {
+      debugPrint('Exit fullscreen error: $e');
+    }
   }
 
   void _toggleFullscreen() {
