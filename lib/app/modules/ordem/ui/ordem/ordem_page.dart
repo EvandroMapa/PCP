@@ -68,7 +68,61 @@ class _OrdemPageState extends State<OrdemPage> {
             appBar: AppBar(
               iconTheme: const IconThemeData(color: Colors.white, size: 20),
               actions: usuario.isOperador
-                  ? []
+                  ? () {
+                      final isModoPorPedido =
+                          PreferencesService.apontamentoProducaoCD.value !=
+                              'por_os';
+                      final qtdeProntos = isModoPorPedido
+                          ? ordem.produtos
+                              .where((p) =>
+                                  p.statusView.status ==
+                                  PedidoBitolaStatus.pronto)
+                              .length
+                          : 0;
+                      return qtdeProntos == 0
+                          ? <Widget>[]
+                          : [
+                              GestureDetector(
+                                onTap: () => setState(
+                                    () => _mostrarProntos = !_mostrarProntos),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        _mostrarProntos
+                                            ? Icons.visibility_rounded
+                                            : Icons.visibility_off_rounded,
+                                        color: Colors.white,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 7, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white
+                                              .withValues(alpha: 0.25),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          '$qtdeProntos pronto${qtdeProntos > 1 ? 's' : ''}',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ];
+                    }()
                   : [
                       if (!ordem.isArchived)
                         IconButton(
@@ -140,11 +194,7 @@ class _OrdemPageState extends State<OrdemPage> {
             .toList()
         : ordem.produtos;
 
-    final qtdeProntos = isModoPorPedido
-        ? ordem.produtos
-            .where((p) => p.statusView.status == PedidoBitolaStatus.pronto)
-            .length
-        : 0;
+
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -173,9 +223,6 @@ class _OrdemPageState extends State<OrdemPage> {
                       produto,
                     ),
                   ),
-                // Banner de prontos ocultos (modo operador por pedido)
-                if (isModoPorPedido && qtdeProntos > 0)
-                  _prontosBanner(qtdeProntos),
                 if (usuario.isNotOperador)
                   if (!ordem.freezed.isFreezed &&
                       ordem.status != PedidoBitolaStatus.pronto)
@@ -188,51 +235,7 @@ class _OrdemPageState extends State<OrdemPage> {
     );
   }
 
-  Widget _prontosBanner(int qtde) {
-    return GestureDetector(
-      onTap: () => setState(() => _mostrarProntos = !_mostrarProntos),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: _mostrarProntos
-              ? Colors.green.withValues(alpha: 0.08)
-              : Colors.grey.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: _mostrarProntos
-                ? Colors.green.withValues(alpha: 0.4)
-                : Colors.grey.withValues(alpha: 0.25),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              _mostrarProntos
-                  ? Icons.visibility_rounded
-                  : Icons.visibility_off_rounded,
-              size: 18,
-              color: _mostrarProntos ? Colors.green[700] : Colors.grey[500],
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                _mostrarProntos
-                    ? '$qtde pedido${qtde > 1 ? 's' : ''} pronto${qtde > 1 ? 's' : ''} (clique para ocultar)'
-                    : '$qtde pedido${qtde > 1 ? 's' : ''} pronto${qtde > 1 ? 's' : ''} oculto${qtde > 1 ? 's' : ''} — clique para exibir',
-                style: AppCss.minimumRegular
-                    .setSize(13)
-                    .setColor(_mostrarProntos
-                        ? Colors.green[700]!
-                        : Colors.grey[600]!),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+
 
   Widget _descriptionWidget(OrdemModel ordem) {
     final materiaPrimaLabel = ordem.materiaPrima?.label;
