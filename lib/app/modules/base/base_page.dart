@@ -20,14 +20,20 @@ class BasePage extends StatefulWidget {
 
 class _BasePageState extends State<BasePage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _emFullscreen = false;
 
   @override
   void initState() {
     baseCtrl.onInit().then((_) {
       kanbanCtrl.onInit();
     });
-    // Fullscreen automático para operadores (somente web)
     if (kIsWeb && usuario.isOperador) {
+      // Escuta mudanças de fullscreen (inclusive saída por ESC)
+      html.document.onFullscreenChange.listen((_) {
+        final estaFullscreen = html.document.fullscreenElement != null;
+        if (mounted) setState(() => _emFullscreen = estaFullscreen);
+      });
+      // Entra em fullscreen automaticamente
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _entrarFullscreen();
       });
@@ -55,6 +61,14 @@ class _BasePageState extends State<BasePage> {
     } catch (_) {}
   }
 
+  void _toggleFullscreen() {
+    if (_emFullscreen) {
+      _sairFullscreen();
+    } else {
+      _entrarFullscreen();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamOut<AppModule>(
@@ -66,13 +80,20 @@ class _BasePageState extends State<BasePage> {
         appBar: module.appBar(context) ??
             AppBar(
               iconTheme: const IconThemeData(color: Colors.white, size: 20),
-              // Botão de sair do fullscreen para operadores
+              // Botão toggle fullscreen para operadores
               leading: usuario.isOperador
                   ? IconButton(
-                      tooltip: 'Sair do modo tela cheia',
-                      onPressed: _sairFullscreen,
-                      icon: const Icon(Icons.fullscreen_exit_rounded,
-                          color: Colors.white, size: 22),
+                      tooltip: _emFullscreen
+                          ? 'Sair do modo tela cheia'
+                          : 'Entrar em tela cheia',
+                      onPressed: _toggleFullscreen,
+                      icon: Icon(
+                        _emFullscreen
+                            ? Icons.fullscreen_exit_rounded
+                            : Icons.fullscreen_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                     )
                   : null,
               title: Text(
