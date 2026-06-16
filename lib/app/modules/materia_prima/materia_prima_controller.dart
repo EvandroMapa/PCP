@@ -76,6 +76,7 @@ class MateriaPrimaController {
           await finalizarMateriaPrima(edit);
         }
         await FirestoreClient.materiaPrimas.update(edit);
+
         // Propaga dados atualizados para todas as ordens que referenciam esta MP
         for (var ordem in FirestoreClient.ordens.data.where(
           (o) => o.materiaPrima?.id == edit.id,
@@ -84,17 +85,17 @@ class MateriaPrimaController {
           await FirestoreClient.ordens.update(ordem);
         }
 
-        // Propaga dados atualizados para todos os pedidos/produtos (itens do Kanban)
+        // Propaga dados atualizados para os produtos de pedido vinculados a esta MP.
+        // Usa updateProdutoMateriaPrima (upsert direto em pedido_bitolas) em vez de
+        // pedidos.update(), que passa pelo cooldown otimista e pode descartar o update.
         for (var pedido in FirestoreClient.pedidos.data) {
-          bool pedidoUpdated = false;
           for (var produto in pedido.produtos) {
             if (produto.materiaPrima?.id == edit.id) {
-              produto.materiaPrima = edit;
-              pedidoUpdated = true;
+              await FirestoreClient.pedidos.updateProdutoMateriaPrima(
+                produto,
+                edit,
+              );
             }
-          }
-          if (pedidoUpdated) {
-            await FirestoreClient.pedidos.update(pedido);
           }
         }
       } else {

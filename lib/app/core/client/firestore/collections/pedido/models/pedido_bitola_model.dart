@@ -11,6 +11,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/enums/obra_status.dart';
 
 import 'package:collection/collection.dart';
@@ -367,15 +368,21 @@ class PedidoBitolaModel {
       // Falha silenciosa ou log apropriado
     }
 
-    // materia_prima_raw: mesmo padrão robusto
+    // materia_prima_raw: dynamic linking — igual ao OrdemModel.fromMap.
+    // Parseia o id do raw e depois resolve do cache BackendClient.materiaPrima,
+    // garantindo que dados editados na MP apareçam imediatamente, mesmo que o
+    // JSONB no banco ainda não tenha sido atualizado via updateProdutoMateriaPrima.
     MateriaPrimaModel? materiaPrima;
     try {
       if (map['materia_prima_raw'] != null) {
         final rawMap = map['materia_prima_raw'] is String
             ? json.decode(map['materia_prima_raw'])
             : map['materia_prima_raw'];
-        materiaPrima =
+        final mpSnapshot =
             MateriaPrimaModel.fromMap(Map<String, dynamic>.from(rawMap));
+        materiaPrima = BackendClient.materiaPrima.data.isNotEmpty
+            ? BackendClient.materiaPrima.getById(mpSnapshot.id)
+            : mpSnapshot;
       }
     } catch (_) {}
 
