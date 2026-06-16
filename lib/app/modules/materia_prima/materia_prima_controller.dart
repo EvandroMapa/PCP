@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/enums/materia_prima_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/models/materia_prima_model.dart';
@@ -78,26 +79,54 @@ class MateriaPrimaController {
         await FirestoreClient.materiaPrimas.update(edit);
 
         // Propaga dados atualizados para todas as ordens que referenciam esta MP
-        for (var ordem in FirestoreClient.ordens.data.where(
-          (o) => o.materiaPrima?.id == edit.id,
-        )) {
+        final ordensComMp = FirestoreClient.ordens.data
+            .where((o) => o.materiaPrima?.id == edit.id)
+            .toList();
+
+        for (var ordem in ordensComMp) {
           ordem.materiaPrima = edit;
           await FirestoreClient.ordens.update(ordem);
         }
 
+        // Coleta os IDs dos produtos que pertencem a ordens vinculadas a esta MP.
+        final produtoIdsNasOrdens = <String>{};
+        for (final ordem in ordensComMp) {
+          for (final ref in ordem.idPedidosProdutosRefs) {
+            final produtoId =
+                (ref['produtoId'] ?? ref['bitola_id'] ?? '').toString();
+            if (produtoId.isNotEmpty) produtoIdsNasOrdens.add(produtoId);
+          }
+        }
+
+        // Notificação de diagnóstico — REMOVER APÓS IDENTIFICAR O PROBLEMA
+        NotificationService.showNeutral(
+          'DEBUG: Ordens=${ordensComMp.length} | ProdutosNasOrdens=${produtoIdsNasOrdens.length} | Pedidos=${FirestoreClient.pedidos.data.length}',
+          'Corrida: "${edit.corridaLote}"',
+          position: NotificationPosition.bottom,
+        );
+
         // Propaga dados atualizados para os produtos de pedido vinculados a esta MP.
-        // Usa updateProdutoMateriaPrima (upsert direto em pedido_bitolas) em vez de
-        // pedidos.update(), que passa pelo cooldown otimista e pode descartar o update.
+        int totalProdutosAtualizados = 0;
         for (var pedido in FirestoreClient.pedidos.data) {
           for (var produto in pedido.produtos) {
-            if (produto.materiaPrima?.id == edit.id) {
+            final matchPorMp = produto.materiaPrima?.id == edit.id;
+            final matchPorOrdem = produtoIdsNasOrdens.contains(produto.id);
+            if (matchPorMp || matchPorOrdem) {
               await FirestoreClient.pedidos.updateProdutoMateriaPrima(
                 produto,
                 edit,
               );
+              totalProdutosAtualizados++;
             }
           }
         }
+
+        // Notificação de diagnóstico — REMOVER APÓS IDENTIFICAR O PROBLEMA
+        NotificationService.showNeutral(
+          'DEBUG: Produtos de pedido atualizados: $totalProdutosAtualizados',
+          'matchPorMp ou matchPorOrdem',
+          position: NotificationPosition.bottom,
+        );
       } else {
         final materiaPrimaCreate = form.toMateriaPrimaModel();
         await FirestoreClient.materiaPrimas.add(materiaPrimaCreate);
