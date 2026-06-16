@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/enums/materia_prima_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/models/materia_prima_model.dart';
@@ -98,35 +97,22 @@ class MateriaPrimaController {
           }
         }
 
-        // Notificação de diagnóstico — REMOVER APÓS IDENTIFICAR O PROBLEMA
-        NotificationService.showNeutral(
-          'DEBUG: Ordens=${ordensComMp.length} | ProdutosNasOrdens=${produtoIdsNasOrdens.length} | Pedidos=${FirestoreClient.pedidos.data.length}',
-          'Corrida: "${edit.corridaLote}"',
-          position: NotificationPosition.bottom,
-        );
-
         // Propaga dados atualizados para os produtos de pedido vinculados a esta MP.
-        int totalProdutosAtualizados = 0;
+        // Cobre dois casos:
+        //   1. Produto já tem a MP definida no nível do produto (produto.materiaPrima?.id == edit.id)
+        //   2. Produto pertence a uma ordem com esta MP mas sem MP no nível do produto
+        //      (comum em ordens congeladas — apenas a ordem.materiaPrima está preenchida)
         for (var pedido in FirestoreClient.pedidos.data) {
           for (var produto in pedido.produtos) {
-            final matchPorMp = produto.materiaPrima?.id == edit.id;
-            final matchPorOrdem = produtoIdsNasOrdens.contains(produto.id);
-            if (matchPorMp || matchPorOrdem) {
+            if (produto.materiaPrima?.id == edit.id ||
+                produtoIdsNasOrdens.contains(produto.id)) {
               await FirestoreClient.pedidos.updateProdutoMateriaPrima(
                 produto,
                 edit,
               );
-              totalProdutosAtualizados++;
             }
           }
         }
-
-        // Notificação de diagnóstico — REMOVER APÓS IDENTIFICAR O PROBLEMA
-        NotificationService.showNeutral(
-          'DEBUG: Produtos de pedido atualizados: $totalProdutosAtualizados',
-          'matchPorMp ou matchPorOrdem',
-          position: NotificationPosition.bottom,
-        );
       } else {
         final materiaPrimaCreate = form.toMateriaPrimaModel();
         await FirestoreClient.materiaPrimas.add(materiaPrimaCreate);
