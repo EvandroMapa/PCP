@@ -111,4 +111,8 @@ class SimuladorCompraModel {
   /// Total projetado com compra
   double get totalProjetadoComCompra =>
       itens.fold(0.0, (s, i) => s + i.saldoProjetadoComCompra);
+
+  /// Percentual atual do pedido em relação à sugestão base (0.0 a 2.0+)
+  double get percentualAtual =>
+      totalSugestaoBase > 0 ? (totalSugerido / totalSugestaoBase).clamp(0.0, 2.0) : 1.0;
 }
