@@ -34,6 +34,9 @@ class UsuarioModel {
   bool get podeExcluirPedido =>
       isAdmin || (tipo?.isPermitirExcluirPedido ?? false);
 
+  bool get podeAjustarEstoque =>
+      isAdmin || (tipo?.isPermitirAjusteEstoque ?? false);
+
   static UsuarioModel get system => UsuarioModel(
         id: 'system',
         nome: 'Sistema',

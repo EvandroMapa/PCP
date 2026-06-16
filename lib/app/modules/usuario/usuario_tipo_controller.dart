@@ -98,6 +98,7 @@ class UsuarioTipoCreateModel {
   bool isPermitirElementos = false;
   bool isPermitirEditarElementos = false;
   bool isPermitirExcluirPedido = false;
+  bool isPermitirAjusteEstoque = false;
   bool isOperador = false;
   bool isArmador = false;
   bool isEdit = false;
@@ -113,6 +114,7 @@ class UsuarioTipoCreateModel {
     isPermitirElementos = m.isPermitirElementos;
     isPermitirEditarElementos = m.isPermitirEditarElementos;
     isPermitirExcluirPedido = m.isPermitirExcluirPedido;
+    isPermitirAjusteEstoque = m.isPermitirAjusteEstoque;
     isOperador = m.isOperador;
     isArmador = m.isArmador;
   }
@@ -123,6 +125,7 @@ class UsuarioTipoCreateModel {
         isPermitirElementos: isPermitirElementos,
         isPermitirEditarElementos: isPermitirEditarElementos,
         isPermitirExcluirPedido: isPermitirExcluirPedido,
+        isPermitirAjusteEstoque: isPermitirAjusteEstoque,
         isOperador: isOperador,
         isArmador: isArmador,
         createdAt: DateTime.now(),

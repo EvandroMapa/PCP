@@ -8,6 +8,8 @@ enum EstoqueTipoMovimentacao {
   compra,
   baixaProducao,
   estorno,
+  ajusteEntrada,
+  ajusteSaida,
 }
 
 extension EstoqueTipoMovimentacaoExt on EstoqueTipoMovimentacao {
@@ -21,6 +23,10 @@ extension EstoqueTipoMovimentacaoExt on EstoqueTipoMovimentacao {
         return 'Baixa (Produção)';
       case EstoqueTipoMovimentacao.estorno:
         return 'Estorno';
+      case EstoqueTipoMovimentacao.ajusteEntrada:
+        return 'Ajuste de Entrada';
+      case EstoqueTipoMovimentacao.ajusteSaida:
+        return 'Ajuste de Saída';
     }
   }
 
@@ -34,6 +40,10 @@ extension EstoqueTipoMovimentacaoExt on EstoqueTipoMovimentacao {
         return 'baixa_producao';
       case EstoqueTipoMovimentacao.estorno:
         return 'estorno';
+      case EstoqueTipoMovimentacao.ajusteEntrada:
+        return 'ajuste_entrada';
+      case EstoqueTipoMovimentacao.ajusteSaida:
+        return 'ajuste_saida';
     }
   }
 
@@ -47,6 +57,10 @@ extension EstoqueTipoMovimentacaoExt on EstoqueTipoMovimentacao {
         return Colors.orange;
       case EstoqueTipoMovimentacao.estorno:
         return Colors.purple;
+      case EstoqueTipoMovimentacao.ajusteEntrada:
+        return const Color(0xFF0891B2); // cyan-600
+      case EstoqueTipoMovimentacao.ajusteSaida:
+        return const Color(0xFFDC2626); // red-600
     }
   }
 
@@ -60,12 +74,18 @@ extension EstoqueTipoMovimentacaoExt on EstoqueTipoMovimentacao {
         return Icons.remove_circle_outline;
       case EstoqueTipoMovimentacao.estorno:
         return Icons.undo_rounded;
+      case EstoqueTipoMovimentacao.ajusteEntrada:
+        return Icons.add_circle_outline;
+      case EstoqueTipoMovimentacao.ajusteSaida:
+        return Icons.remove_circle_outline;
     }
   }
 
-  bool get isEntrada => this == EstoqueTipoMovimentacao.compra ||
+  bool get isEntrada =>
+      this == EstoqueTipoMovimentacao.compra ||
       this == EstoqueTipoMovimentacao.implantacao ||
-      this == EstoqueTipoMovimentacao.estorno;
+      this == EstoqueTipoMovimentacao.estorno ||
+      this == EstoqueTipoMovimentacao.ajusteEntrada;
 
   static EstoqueTipoMovimentacao fromValue(String value) {
     switch (value) {
@@ -77,6 +97,10 @@ extension EstoqueTipoMovimentacaoExt on EstoqueTipoMovimentacao {
         return EstoqueTipoMovimentacao.baixaProducao;
       case 'estorno':
         return EstoqueTipoMovimentacao.estorno;
+      case 'ajuste_entrada':
+        return EstoqueTipoMovimentacao.ajusteEntrada;
+      case 'ajuste_saida':
+        return EstoqueTipoMovimentacao.ajusteSaida;
       default:
         return EstoqueTipoMovimentacao.implantacao;
     }

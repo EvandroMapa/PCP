@@ -4,6 +4,7 @@ class UsuarioTipoModel {
   final bool isPermitirElementos;
   final bool isPermitirEditarElementos;
   final bool isPermitirExcluirPedido;
+  final bool isPermitirAjusteEstoque;
   final bool isOperador;
   final bool isArmador;
   final DateTime createdAt;
@@ -14,6 +15,7 @@ class UsuarioTipoModel {
     required this.isPermitirElementos,
     required this.isPermitirEditarElementos,
     required this.isPermitirExcluirPedido,
+    required this.isPermitirAjusteEstoque,
     required this.isOperador,
     required this.isArmador,
     required this.createdAt,
@@ -25,6 +27,7 @@ class UsuarioTipoModel {
         isPermitirElementos: false,
         isPermitirEditarElementos: false,
         isPermitirExcluirPedido: false,
+        isPermitirAjusteEstoque: false,
         isOperador: false,
         isArmador: false,
         createdAt: DateTime.now(),
@@ -37,6 +40,7 @@ class UsuarioTipoModel {
       isPermitirElementos: map['permitir_elementos'] ?? false,
       isPermitirEditarElementos: map['permitir_editar_elementos'] ?? false,
       isPermitirExcluirPedido: map['permitir_excluir_pedido'] ?? false,
+      isPermitirAjusteEstoque: map['permitir_ajuste_estoque'] ?? false,
       isOperador: map['is_operador'] ?? false,
       isArmador: map['is_armador'] ?? false,
       createdAt: map['created_at'] != null
@@ -51,6 +55,7 @@ class UsuarioTipoModel {
       'permitir_elementos': isPermitirElementos,
       'permitir_editar_elementos': isPermitirEditarElementos,
       'permitir_excluir_pedido': isPermitirExcluirPedido,
+      'permitir_ajuste_estoque': isPermitirAjusteEstoque,
       'is_operador': isOperador,
       'is_armador': isArmador,
     };
@@ -62,7 +67,7 @@ class UsuarioTipoModel {
 
   @override
   String toString() {
-    return 'UsuarioTipoModel(id: $id, nome: $nome, isPermitirElementos: $isPermitirElementos, isPermitirEditarElementos: $isPermitirEditarElementos, isPermitirExcluirPedido: $isPermitirExcluirPedido, isOperador: $isOperador, isArmador: $isArmador)';
+    return 'UsuarioTipoModel(id: $id, nome: $nome, isPermitirElementos: $isPermitirElementos, isPermitirEditarElementos: $isPermitirEditarElementos, isPermitirExcluirPedido: $isPermitirExcluirPedido, isPermitirAjusteEstoque: $isPermitirAjusteEstoque, isOperador: $isOperador, isArmador: $isArmador)';
   }
 
   @override

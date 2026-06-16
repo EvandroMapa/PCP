@@ -1,3 +1,4 @@
+import 'package:aco_plus/app/core/client/supabase/collections/estoque/estoque_movimentacao_model.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 
 class EstoqueUtils {
@@ -27,19 +28,14 @@ class EstoqueCompraCreateModel {
 
 class EstoqueEditarSaldoModel {
   final String produtoId;
-  final TextController novoSaldo = TextController();
   final TextController estoqueMinimo = TextController();
   final TextController estoqueIdeal = TextController();
 
   EstoqueEditarSaldoModel({
     required this.produtoId,
-    double saldoAtual = 0,
     double estoqueMinimoAtual = 0,
     double estoqueIdealAtual = 0,
   }) {
-    novoSaldo.text = saldoAtual == 0
-        ? ''
-        : saldoAtual.toStringAsFixed(3).replaceAll('.000', '');
     estoqueMinimo.text = estoqueMinimoAtual == 0
         ? ''
         : estoqueMinimoAtual.toStringAsFixed(3).replaceAll('.000', '');
@@ -48,14 +44,82 @@ class EstoqueEditarSaldoModel {
         : estoqueIdealAtual.toStringAsFixed(3).replaceAll('.000', '');
   }
 
-  double get novoSaldoValue =>
-      double.tryParse(novoSaldo.text.replaceAll(',', '.')) ?? 0.0;
-
   double get estoqueMinimoValue =>
       double.tryParse(estoqueMinimo.text.replaceAll(',', '.')) ?? 0.0;
 
   double get estoqueIdealValue =>
       double.tryParse(estoqueIdeal.text.replaceAll(',', '.')) ?? 0.0;
+}
+
+/// Model para o novo dialog de ajuste de saldo por movimentação.
+class EstoqueAjusteModel {
+  final String produtoId;
+  final double saldoAtual;
+  EstoqueTipoMovimentacao tipo;
+  final TextController quantidade = TextController();
+  final TextController saldoFinal = TextController();
+  final TextController motivo = TextController();
+
+  /// Controla qual campo foi editado por último para evitar loop de atualização.
+  bool _editandoSaldoFinal = false;
+
+  EstoqueAjusteModel({
+    required this.produtoId,
+    required this.saldoAtual,
+    this.tipo = EstoqueTipoMovimentacao.ajusteEntrada,
+  });
+
+  double get quantidadeValue =>
+      double.tryParse(quantidade.text.replaceAll(',', '.')) ?? 0.0;
+
+  double get saldoFinalValue =>
+      double.tryParse(saldoFinal.text.replaceAll(',', '.')) ?? saldoAtual;
+
+  bool get isEntrada => tipo == EstoqueTipoMovimentacao.ajusteEntrada;
+
+  double get saldoResultante =>
+      saldoAtual + (isEntrada ? quantidadeValue : -quantidadeValue);
+
+  bool get isValid =>
+      quantidadeValue > 0 && motivo.text.trim().isNotEmpty;
+
+  /// Chamado quando o usuário digita na Quantidade.
+  /// Recalcula e atualiza o Saldo Final exibido.
+  void onQuantidadeChanged(void Function(void Function()) setState) {
+    if (_editandoSaldoFinal) return;
+    setState(() {
+      final qtde = quantidadeValue;
+      if (qtde > 0) {
+        final resultado = saldoAtual + (isEntrada ? qtde : -qtde);
+        saldoFinal.text = resultado == 0
+            ? ''
+            : resultado.toStringAsFixed(3).replaceAll(RegExp(r'\.?0+$'), '');
+      } else {
+        saldoFinal.text = '';
+      }
+    });
+  }
+
+  /// Chamado quando o usuário digita no Saldo Final.
+  /// Calcula a diferença, determina se é entrada ou saída,
+  /// e atualiza o campo Quantidade automaticamente.
+  void onSaldoFinalChanged(void Function(void Function()) setState) {
+    _editandoSaldoFinal = true;
+    setState(() {
+      final meta = saldoFinalValue;
+      final diff = meta - saldoAtual;
+      if (diff == 0) {
+        quantidade.text = '';
+      } else if (diff > 0) {
+        tipo = EstoqueTipoMovimentacao.ajusteEntrada;
+        quantidade.text = diff.toStringAsFixed(3).replaceAll(RegExp(r'\.?0+$'), '');
+      } else {
+        tipo = EstoqueTipoMovimentacao.ajusteSaida;
+        quantidade.text = (-diff).toStringAsFixed(3).replaceAll(RegExp(r'\.?0+$'), '');
+      }
+    });
+    _editandoSaldoFinal = false;
+  }
 }
 
 class EstoqueRelatorioFiltroModel {

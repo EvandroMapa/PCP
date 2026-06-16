@@ -128,6 +128,7 @@ class AuditService {
     'excluir_perfil': 'Excluir Perfil',
     'restaurar_pedido': 'Restaurar Pedido (Backup)',
     'restaurar_backup_completo': 'Restaurar Backup Completo',
+    'ajuste_estoque': 'Ajuste de Estoque',
   };
 
   static String acaoLabel(String acao) => acaoLabels[acao] ?? acao;

@@ -1,5 +1,6 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/estoque/estoque_model.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/estoque/estoque_movimentacao_model.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido_compra/pedido_compra_model.dart';
 import 'package:aco_plus/app/core/components/app_field.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -10,6 +11,7 @@ import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/modules/estoque/estoque_controller.dart';
 import 'package:aco_plus/app/modules/estoque/estoque_view_model.dart';
+import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 
 class EstoqueSaldoSection extends StatefulWidget {
@@ -272,9 +274,22 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
                         ],
                       ),
                     ),
-                    // Botão editar
+                    // Botão Ajuste de Saldo — visível apenas para quem tem permissão
+                    if (usuarioCtrl.usuario?.podeAjustarEstoque == true)
+                      Tooltip(
+                        message: 'Lançar ajuste de estoque',
+                        preferBelow: false,
+                        waitDuration: const Duration(milliseconds: 300),
+                        child: IconButton(
+                          icon: Icon(Icons.swap_vert,
+                              size: 17, color: Colors.blueGrey[400]),
+                          onPressed: () =>
+                              _showAjusteDialog(produto, saldoFisico),
+                        ),
+                      ),
+                    // Botão editar limites (mínimo e ideal)
                     Tooltip(
-                      message: 'Editar saldo, mínimo e ideal',
+                      message: 'Editar mínimo e ideal',
                       preferBelow: false,
                       waitDuration: const Duration(milliseconds: 300),
                       child: IconButton(
@@ -282,7 +297,6 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
                             size: 17, color: Colors.grey[400]),
                         onPressed: () => _showEditDialog(
                           produto,
-                          saldoFisico,
                           estoqueMin,
                           estoqueIdeal,
                         ),
@@ -582,37 +596,349 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // DIALOG DE EDIÇÃO
+  // DIALOG ↕ — LANÇAR AJUSTE DE SALDO
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Future<void> _showEditDialog(produto, double saldoAtual,
-      double estoqueMinimoAtual, double estoqueIdealAtual) async {
-    final form = EstoqueEditarSaldoModel(
+  Future<void> _showAjusteDialog(produto, double saldoAtual) async {
+    final form = EstoqueAjusteModel(
       produtoId: produto.id,
       saldoAtual: saldoAtual,
+    );
+    await showDialog(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final isEntrada = form.isEntrada;
+          final corTipo = isEntrada
+              ? const Color(0xFF0891B2)
+              : const Color(0xFFDC2626);
+          final saldoResultante = form.saldoResultante;
+          final isValid = form.isValid;
+
+          return AlertDialog(
+            title: Row(children: [
+              Icon(Icons.swap_vert, size: 20, color: AppColors.primaryMain),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('Ajuste — ${produto.nome}',
+                    style: AppCss.mediumBold),
+              ),
+            ]),
+            content: SizedBox(
+              width: 380,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Linha de saldos: Atual | Seta | Final ──────────
+                  Row(children: [
+                    // Saldo Atual
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.neutralLightest,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                              color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Saldo atual',
+                                style: AppCss.minimumRegular
+                                    .setColor(Colors.grey[500]!)
+                                    .setSize(10)),
+                            const SizedBox(height: 2),
+                            Text(saldoAtual.toKg(),
+                                style: AppCss.minimumBold
+                                    .setColor(AppColors.primaryMain)
+                                    .setSize(14)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Seta direcional animada
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 180),
+                        child: Icon(
+                          form.quantidadeValue <= 0
+                              ? Icons.arrow_forward
+                              : isEntrada
+                                  ? Icons.trending_up
+                                  : Icons.trending_down,
+                          key: ValueKey(
+                              '${isEntrada}_${form.quantidadeValue}'),
+                          size: 20,
+                          color: form.quantidadeValue <= 0
+                              ? Colors.grey[350]
+                              : corTipo,
+                        ),
+                      ),
+                    ),
+                    // Campo Saldo Final
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Saldo final (meta)',
+                              style: AppCss.minimumRegular
+                                  .setColor(Colors.grey[500]!)
+                                  .setSize(10)),
+                          const SizedBox(height: 2),
+                          SizedBox(
+                            height: 36,
+                            child: TextField(
+                              controller:
+                                  form.saldoFinal.controller,
+                              keyboardType: TextInputType.number,
+                              style: AppCss.minimumBold
+                                  .setSize(14)
+                                  .setColor(corTipo),
+                              decoration: InputDecoration(
+                                hintText: 'kg',
+                                hintStyle: AppCss.minimumRegular
+                                    .setColor(Colors.grey[350]!)
+                                    .setSize(13),
+                                isDense: true,
+                                contentPadding:
+                                    const EdgeInsets.symmetric(
+                                        vertical: 8,
+                                        horizontal: 0),
+                                border: InputBorder.none,
+                                enabledBorder: UnderlineInputBorder(
+                                  borderSide: BorderSide(
+                                      color: corTipo.withValues(
+                                          alpha: 0.4),
+                                      width: 1.5),
+                                ),
+                                focusedBorder: UnderlineInputBorder(
+                                  borderSide: BorderSide(
+                                      color: corTipo, width: 2),
+                                ),
+                              ),
+                              onChanged: (_) =>
+                                  form.onSaldoFinalChanged(
+                                      setDialogState),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 16),
+
+                  // Toggle Entrada / Saída
+                  Text('Tipo de ajuste',
+                      style: AppCss.minimumBold
+                          .setColor(Colors.grey[700]!)
+                          .setSize(12)),
+                  const SizedBox(height: 6),
+                  Row(children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setDialogState(() {
+                          form.tipo =
+                              EstoqueTipoMovimentacao.ajusteEntrada;
+                          form.onQuantidadeChanged(setDialogState);
+                        }),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isEntrada
+                                ? const Color(0xFF0891B2)
+                                    .withValues(alpha: 0.12)
+                                : Colors.grey.withValues(alpha: 0.06),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isEntrada
+                                  ? const Color(0xFF0891B2)
+                                  : Colors.grey.withValues(alpha: 0.25),
+                              width: isEntrada ? 1.5 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_circle_outline,
+                                  size: 15,
+                                  color: isEntrada
+                                      ? const Color(0xFF0891B2)
+                                      : Colors.grey[400]),
+                              const SizedBox(width: 6),
+                              Text('Entrada',
+                                  style: AppCss.minimumBold
+                                      .setColor(isEntrada
+                                          ? const Color(0xFF0891B2)
+                                          : Colors.grey[500]!)
+                                      .setSize(13)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setDialogState(() {
+                          form.tipo =
+                              EstoqueTipoMovimentacao.ajusteSaida;
+                          form.onQuantidadeChanged(setDialogState);
+                        }),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 10),
+                          decoration: BoxDecoration(
+                            color: !isEntrada
+                                ? const Color(0xFFDC2626)
+                                    .withValues(alpha: 0.10)
+                                : Colors.grey.withValues(alpha: 0.06),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: !isEntrada
+                                  ? const Color(0xFFDC2626)
+                                  : Colors.grey.withValues(alpha: 0.25),
+                              width: !isEntrada ? 1.5 : 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.remove_circle_outline,
+                                  size: 15,
+                                  color: !isEntrada
+                                      ? const Color(0xFFDC2626)
+                                      : Colors.grey[400]),
+                              const SizedBox(width: 6),
+                              Text('Saída',
+                                  style: AppCss.minimumBold
+                                      .setColor(!isEntrada
+                                          ? const Color(0xFFDC2626)
+                                          : Colors.grey[500]!)
+                                      .setSize(13)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 14),
+
+                  // Campo quantidade
+                  AppField(
+                    label: 'Quantidade (kg)',
+                    controller: form.quantidade,
+                    type: TextInputType.number,
+                    hint: '0,000',
+                    onChanged: (_) =>
+                        form.onQuantidadeChanged(setDialogState),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Campo motivo
+                  AppField(
+                    label: 'Motivo (obrigatório)',
+                    controller: form.motivo,
+                    hint: 'Ex: Contagem física, Quebra, Perda...',
+                    onChanged: (_) => setDialogState(() {}),
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Preview saldo resultante (exibe apenas quando há quantidade)
+                  if (form.quantidadeValue > 0)
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: corTipo.withValues(alpha: 0.07),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: corTipo.withValues(alpha: 0.25)),
+                      ),
+                      child: Row(children: [
+                        Icon(
+                          isEntrada
+                              ? Icons.trending_up
+                              : Icons.trending_down,
+                          size: 16,
+                          color: corTipo,
+                        ),
+                        const SizedBox(width: 8),
+                        Text('Saldo resultante: ',
+                            style: AppCss.minimumRegular
+                                .setColor(Colors.grey[600]!)),
+                        Text(
+                          saldoResultante.toKg(),
+                          style: AppCss.minimumBold
+                              .setColor(corTipo)
+                              .setSize(14),
+                        ),
+                      ]),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isValid
+                      ? AppColors.primaryMain
+                      : Colors.grey[300],
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: isValid
+                    ? () async {
+                        Navigator.pop(ctx);
+                        await estoqueCtrl.onLancarAjuste(form);
+                      }
+                    : null,
+                child: const Text('Confirmar Ajuste'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DIALOG ✏️ — EDITAR LIMITES (mínimo e ideal)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Future<void> _showEditDialog(
+      produto, double estoqueMinimoAtual, double estoqueIdealAtual) async {
+    final form = EstoqueEditarSaldoModel(
+      produtoId: produto.id,
       estoqueMinimoAtual: estoqueMinimoAtual,
       estoqueIdealAtual: estoqueIdealAtual,
     );
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('Editar Estoque — ${produto.nome}'),
+        title: Row(children: [
+          Icon(Icons.edit_outlined,
+              size: 18, color: AppColors.primaryMain),
+          const SizedBox(width: 8),
+          Text('Limites — ${produto.nome}'),
+        ]),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Saldo atual: ${saldoAtual.toKg()}',
-                style: AppCss.minimumRegular.setColor(Colors.grey[600]!)),
-            const SizedBox(height: 12),
-            AppField(
-              label: 'Novo saldo (kg)',
-              controller: form.novoSaldo,
-              type: TextInputType.number,
-              hint: '0,000',
-            ),
-            const SizedBox(height: 16),
             Row(children: [
-              Icon(Icons.shield_outlined, size: 14, color: Colors.amber[700]),
+              Icon(Icons.shield_outlined,
+                  size: 14, color: Colors.amber[700]),
               const SizedBox(width: 6),
               Text('Estoque de Segurança',
                   style: AppCss.minimumBold

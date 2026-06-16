@@ -4,6 +4,7 @@ import 'package:aco_plus/app/core/client/supabase/collections/estoque/estoque_mo
 import 'package:aco_plus/app/core/client/supabase/collections/estoque/estoque_movimentacao_model.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
+import 'package:aco_plus/app/core/services/audit_service.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:aco_plus/app/modules/estoque/estoque_view_model.dart';
@@ -134,50 +135,94 @@ class EstoqueController {
     return movs;
   }
 
-  /// Edita o saldo de implantação de um produto
+  /// Salva estoque mínimo e ideal (sem editar saldo diretamente)
   Future<void> onEditarSaldo(EstoqueEditarSaldoModel form) async {
     try {
-      final novaQtde = form.novoSaldoValue;
       final novoMinimo = form.estoqueMinimoValue;
       final novoIdeal = form.estoqueIdealValue;
 
-      // Busca ou cria o registro de estoque
       var estoque = BackendClient.estoques.getByProdutoId(form.produtoId);
       estoque ??= EstoqueModel.novo(form.produtoId);
 
-      final saldoAnterior = estoque.quantidade;
-      final diff = novaQtde - saldoAnterior;
-
-      // Atualiza saldo + estoque mínimo + estoque ideal
       final estoqueAtualizado = estoque.copyWith(
-        quantidade: novaQtde,
         estoqueMinimo: novoMinimo,
         estoqueIdeal: novoIdeal,
         updatedAt: DateTime.now(),
       );
       await BackendClient.estoques.upsert(estoqueAtualizado);
 
-      // Registra movimentação de implantação (apenas se o saldo mudou)
-      if (diff != 0) {
-        await BackendClient.estoquesMovimentacao.add(
-          EstoqueMovimentacaoModel.novo(
-            produtoId: form.produtoId,
-            tipo: EstoqueTipoMovimentacao.implantacao,
-            quantidade: diff,
-            observacao: 'Ajuste de implantação: $saldoAnterior kg → $novaQtde kg',
-            usuarioNome: usuarioCtrl.usuario?.nome,
-          ),
-        );
-      }
-
       NotificationService.showPositive(
-        'Estoque Atualizado',
-        'Saldo: ${novaQtde.toStringAsFixed(3)} kg · Mínimo: ${novoMinimo.toStringAsFixed(3)} kg · Ideal: ${novoIdeal.toStringAsFixed(3)} kg',
+        'Parâmetros Atualizados',
+        'Mínimo: ${novoMinimo.toStringAsFixed(3)} kg · Ideal: ${novoIdeal.toStringAsFixed(3)} kg',
         position: NotificationPosition.bottom,
       );
     } catch (e) {
       NotificationService.showNegative(
-        'Erro ao atualizar saldo',
+        'Erro ao atualizar parâmetros',
+        e.toString(),
+        position: NotificationPosition.bottom,
+      );
+      rethrow;
+    }
+  }
+
+  /// Lança um ajuste de estoque (entrada ou saída) com motivo obrigatório.
+  /// Gera uma movimentação rastrevel do tipo ajusteEntrada ou ajusteSaida
+  /// e registra no log de auditoria.
+  Future<void> onLancarAjuste(EstoqueAjusteModel form) async {
+    try {
+      if (!form.isValid) {
+        throw Exception('Informe a quantidade e o motivo do ajuste');
+      }
+
+      final qtde = form.isEntrada ? form.quantidadeValue : -form.quantidadeValue;
+
+      var estoque = BackendClient.estoques.getByProdutoId(form.produtoId);
+      estoque ??= EstoqueModel.novo(form.produtoId);
+
+      final saldoAnterior = estoque.quantidade;
+      final novaQtde = saldoAnterior + qtde;
+
+      await BackendClient.estoques.upsert(
+        estoque.copyWith(quantidade: novaQtde, updatedAt: DateTime.now()),
+      );
+
+      await BackendClient.estoquesMovimentacao.add(
+        EstoqueMovimentacaoModel.novo(
+          produtoId: form.produtoId,
+          tipo: form.tipo,
+          quantidade: qtde,
+          observacao: form.motivo.text.trim(),
+          usuarioNome: usuarioCtrl.usuario?.nome,
+        ),
+      );
+
+      // Registra no log de auditoria (fire-and-forget)
+      final nomeProduto = BackendClient.bitolas
+          .getById(form.produtoId)
+          .nome;
+      AuditService.registrar(
+        acao: 'ajuste_estoque',
+        modulo: 'estoque',
+        entidadeId: form.produtoId,
+        entidadeLabel: nomeProduto,
+        detalhes: {
+          'tipo': form.tipo.value,
+          'quantidade': form.quantidadeValue,
+          'saldo_anterior': saldoAnterior,
+          'saldo_novo': novaQtde,
+          'motivo': form.motivo.text.trim(),
+        },
+      );
+
+      NotificationService.showPositive(
+        form.isEntrada ? 'Entrada lançada' : 'Saída lançada',
+        '${form.quantidadeValue.toStringAsFixed(3)} kg · Saldo: ${novaQtde.toStringAsFixed(3)} kg',
+        position: NotificationPosition.bottom,
+      );
+    } catch (e) {
+      NotificationService.showNegative(
+        'Erro ao lançar ajuste',
         e.toString(),
         position: NotificationPosition.bottom,
       );
