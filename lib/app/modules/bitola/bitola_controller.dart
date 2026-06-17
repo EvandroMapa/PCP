@@ -1,5 +1,5 @@
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
-import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/audit_service.dart';
@@ -30,7 +30,7 @@ class BitolaController {
 
   void onInit() {
     utilsStream.add(BitolaUtils());
-    FirestoreClient.bitolas.listen();
+    BackendClient.bitolas.listen();
   }
 
   final AppStream<BitolaCreateModel> formStream =
@@ -62,15 +62,15 @@ class BitolaController {
       onValid(produto);
       if (form.isEdit) {
         final edit = form.toBitolaModel();
-        await FirestoreClient.bitolas.update(edit);
+        await BackendClient.bitolas.update(edit);
       } else {
-        await FirestoreClient.bitolas.add(form.toBitolaModel());
+        await BackendClient.bitolas.add(form.toBitolaModel());
       }
-      await FirestoreClient.bitolas.fetch();
+      await BackendClient.bitolas.fetch();
       pop(value);
       NotificationService.showPositive(
         'Produto ${form.isEdit ? 'Editado' : 'Adicionado'}',
-        'Operação realizada com sucesso',
+        'Operacao realizada com sucesso',
         position: NotificationPosition.bottom,
       );
     } catch (e) {
@@ -84,11 +84,11 @@ class BitolaController {
 
   Future<void> onDelete(value, BitolaModel produto) async {
     if (await _isDeleteUnavailable(produto)) return;
-    await FirestoreClient.bitolas.delete(produto);
+    await BackendClient.bitolas.delete(produto);
     pop(value);
     NotificationService.showPositive(
       'Produto Excluido',
-      'Operação realizada com sucesso',
+      'Operacao realizada com sucesso',
       position: NotificationPosition.bottom,
     );
 
@@ -106,10 +106,10 @@ class BitolaController {
   ) async =>
       !await onDeleteProcess(
         deleteTitle: 'Deseja excluir o produto?',
-        deleteMessage: 'Todos seus dados serão apagados do sistema',
+        deleteMessage: 'Todos seus dados serao apagados do sistema',
         infoMessage:
-            'Não é possível excluir o produto, pois ele está vinculado a outras partes do sistema.',
-        conditional: FirestoreClient.pedidos.data.any(
+            'Nao e possivel excluir o produto, pois ele esta vinculado a outras partes do sistema.',
+        conditional: BackendClient.pedidos.data.any(
           (e) => e.produtos.any((p) => p.produto.id == produto.id),
         ),
       );
@@ -117,28 +117,28 @@ class BitolaController {
   void onValid(BitolaModel? produto) {
     String nomeForm = form.nome.text.trim();
     if (nomeForm.length < 2) {
-      throw Exception('Nome deve conter no mínimo 3 caracteres');
+      throw Exception('Nome deve conter no minimo 3 caracteres');
     }
     if (form.isEdit) {
-      if (FirestoreClient.bitolas.data.any((e) =>
+      if (BackendClient.bitolas.data.any((e) =>
           e.nome.trim().toLowerCase() == nomeForm.toLowerCase() &&
           e.id.toString().trim() != form.id.toString().trim())) {
-        throw Exception('Já existe um produto com esse nome');
+        throw Exception('Ja existe um produto com esse nome');
       }
     } else {
-      if (FirestoreClient.bitolas.data
+      if (BackendClient.bitolas.data
           .any((e) => e.nome.trim().toLowerCase() == nomeForm.toLowerCase())) {
-        throw Exception('Já existe um produto com esse nome');
+        throw Exception('Ja existe um produto com esse nome');
       }
     }
   }
 
-  /// Persiste a nova ordem de classificação dos produtos após o usuário arrastar
+  /// Persiste a nova ordem de classificacao dos produtos apos o usuario arrastar
   Future<void> onReorder(List<BitolaModel> reordered) async {
     for (int i = 0; i < reordered.length; i++) {
       final updated = reordered[i].copyWith(sortIndex: i);
-      await FirestoreClient.bitolas.update(updated);
+      await BackendClient.bitolas.update(updated);
     }
-    await FirestoreClient.bitolas.fetch();
+    await BackendClient.bitolas.fetch();
   }
 }

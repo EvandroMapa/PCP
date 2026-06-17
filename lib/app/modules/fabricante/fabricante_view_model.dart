@@ -9,6 +9,10 @@ class FabricanteUtils {
 class FabricanteCreateModel {
   final String id;
   TextController nome = TextController();
+  TextController descricao = TextController();
+  TextController contato = TextController();
+  TextController telefone = TextController();
+  TextController email = TextController();
   late bool isEdit;
 
   FabricanteCreateModel()
@@ -19,8 +23,18 @@ class FabricanteCreateModel {
       : id = fabricante.id,
         isEdit = true {
     nome.text = fabricante.nome;
+    descricao.text = fabricante.descricao ?? '';
+    contato.text = fabricante.contato ?? '';
+    telefone.text = fabricante.telefone ?? '';
+    email.text = fabricante.email ?? '';
   }
 
-  FabricanteModel toFabricanteModel() =>
-      FabricanteModel(id: id, nome: nome.text);
+  FabricanteModel toFabricanteModel() => FabricanteModel(
+        id: id,
+        nome: nome.text,
+        descricao: descricao.text.isEmpty ? null : descricao.text,
+        contato: contato.text.isEmpty ? null : contato.text,
+        telefone: telefone.text.isEmpty ? null : telefone.text,
+        email: email.text.isEmpty ? null : email.text,
+      );
 }

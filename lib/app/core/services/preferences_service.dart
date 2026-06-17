@@ -25,6 +25,8 @@ class PreferencesService implements Service {
   static final AppStream<int> parqueComprimento = AppStream<int>.seed(0);
   static final AppStream<int> parqueLargura = AppStream<int>.seed(0);
   static final AppStream<String> modoMapa = AppStream<String>.seed('croqui');
+  static final AppStream<String> nomeEmpresa = AppStream<String>.seed('');
+  static final AppStream<String> descricaoEmpresa = AppStream<String>.seed('');
 
   @override
   Future<void> initialize() async {
@@ -335,6 +337,51 @@ class PreferencesService implements Service {
             onConflict: 'key');
       } catch (e) {
         log('Erro ao salvar parque largura: $e');
+      }
+    });
+
+    // Recupera nome e descrição da empresa
+    try {
+      final nomeConfig = await SupabaseService.client
+          .from('configs')
+          .select()
+          .eq('key', 'nome_empresa')
+          .maybeSingle();
+      if (nomeConfig != null) {
+        final val = nomeConfig['value']?.toString() ?? '';
+        if (val.isNotEmpty) nomeEmpresa.add(val);
+      }
+
+      final descConfig = await SupabaseService.client
+          .from('configs')
+          .select()
+          .eq('key', 'descricao_empresa')
+          .maybeSingle();
+      if (descConfig != null) {
+        final val = descConfig['value']?.toString() ?? '';
+        if (val.isNotEmpty) descricaoEmpresa.add(val);
+      }
+    } catch (e) {
+      log('Erro ao carregar dados da empresa: $e');
+    }
+
+    nomeEmpresa.listen.skip(1).listen((value) async {
+      try {
+        await SupabaseService.client.from('configs').upsert(
+            {'key': 'nome_empresa', 'value': value},
+            onConflict: 'key');
+      } catch (e) {
+        log('Erro ao salvar nome da empresa: $e');
+      }
+    });
+
+    descricaoEmpresa.listen.skip(1).listen((value) async {
+      try {
+        await SupabaseService.client.from('configs').upsert(
+            {'key': 'descricao_empresa', 'value': value},
+            onConflict: 'key');
+      } catch (e) {
+        log('Erro ao salvar descrição da empresa: $e');
       }
     });
   }

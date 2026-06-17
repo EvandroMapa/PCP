@@ -93,7 +93,9 @@ class BackupSchedulerService {
   }
 
   Future<void> _check() async {
-    _config ??= await BackupScheduleConfig.load();
+    // Sempre relê do SharedPreferences para garantir que a config está atualizada,
+    // independentemente de login/logout ou salvamentos pelo diálogo de agendamento.
+    _config = await BackupScheduleConfig.load();
     final cfg = _config!;
     if (!cfg.enabled || cfg.dias.isEmpty || _context == null) return;
 

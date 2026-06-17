@@ -569,6 +569,33 @@ class _LogRow extends StatelessWidget {
       case 'restaurar_backup_completo':
         return 'Backup completo restaurado';
 
+      case 'ajuste_estoque':
+        final tipo = det['tipo']?.toString() ?? '';
+        final qtde = det['quantidade'];
+        final saldoAnt = det['saldo_anterior'];
+        final saldoNovo = det['saldo_novo'];
+        final motivo = det['motivo']?.toString() ?? '';
+        final tipoLabel = tipo == 'ajusteEntrada'
+            ? '▲ Entrada'
+            : tipo == 'ajusteSaida'
+                ? '▼ Saída'
+                : tipo;
+        final qtdeStr = qtde != null
+            ? '${(qtde as num).toStringAsFixed(3)} kg'
+            : '—';
+        final saldoAntStr = saldoAnt != null
+            ? '${(saldoAnt as num).toStringAsFixed(3)} kg'
+            : '—';
+        final saldoNovoStr = saldoNovo != null
+            ? '${(saldoNovo as num).toStringAsFixed(3)} kg'
+            : '—';
+        final partes = <String>[];
+        if (label.isNotEmpty) partes.add(label);
+        partes.add('$tipoLabel de $qtdeStr');
+        partes.add('Saldo: $saldoAntStr → $saldoNovoStr');
+        if (motivo.isNotEmpty) partes.add('Motivo: $motivo');
+        return partes.join(' · ');
+
       default:
         // Fallback genérico
         if (label.isNotEmpty) return label;

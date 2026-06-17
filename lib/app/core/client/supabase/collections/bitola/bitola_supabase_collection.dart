@@ -45,39 +45,25 @@ class BitolaSupabaseCollection extends BitolaCollection {
 
   @override
   Future<BitolaModel?> add(BitolaModel model) async {
-    try {
-      await SupabaseService.client.from(name).insert(model.toSupabaseMap());
-      await fetch();
-      return model;
-    } catch (e) {
-      log('Supabase Error (Produto.add): $e');
-      return null;
-    }
+    await SupabaseService.client.from(name).insert(model.toSupabaseMap());
+    await fetch();
+    return model;
   }
 
   @override
   Future<BitolaModel?> update(BitolaModel model) async {
-    try {
-      await SupabaseService.client
-          .from(name)
-          .update(model.toSupabaseMap())
-          .eq('id', model.id);
-      await fetch();
-      return model;
-    } catch (e) {
-      log('Supabase Error (Produto.update): $e');
-      return null;
-    }
+    await SupabaseService.client
+        .from(name)
+        .update(model.toSupabaseMap())
+        .eq('id', model.id);
+    await fetch();
+    return model;
   }
 
   @override
   Future<void> delete(BitolaModel model) async {
-    try {
-      await SupabaseService.client.from(name).delete().eq('id', model.id);
-      await fetch();
-    } catch (e) {
-      log('Supabase Error (Produto.delete): $e');
-    }
+    await SupabaseService.client.from(name).delete().eq('id', model.id);
+    await fetch();
   }
 
   bool _isListen = false;

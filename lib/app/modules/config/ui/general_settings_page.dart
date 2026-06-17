@@ -32,6 +32,7 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
     _SidebarItem(icon: Icons.assignment_outlined, label: 'Apontamento CD'),
     _SidebarItem(icon: Icons.alt_route_outlined, label: 'Acompanhamento'),
     _SidebarItem(icon: Icons.image_outlined, label: 'Logomarca'),
+    _SidebarItem(icon: Icons.business_outlined, label: 'Empresa'),
     _SidebarItem(icon: Icons.location_on_outlined, label: 'Localização'),
     _SidebarItem(icon: Icons.build_outlined, label: 'Manutenção'),
   ];
@@ -167,8 +168,10 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
       case 5:
         return _logoSettings();
       case 6:
-        return _locationSettings();
+        return _empresaSettings();
       case 7:
+        return _locationSettings();
+      case 8:
         return const ManutencaoSettingsWidget();
       default:
         return const SizedBox.shrink();
@@ -802,6 +805,95 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
       'Logo removida',
       'O sistema voltará a usar a logo padrão',
       position: NotificationPosition.bottom,
+    );
+  }
+
+  // ═══════════════════════════════════════════════════
+  //  EMPRESA
+  // ═══════════════════════════════════════════════════
+  Widget _empresaSettings() {
+    return _settingsCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.business_outlined, color: Colors.indigo),
+              const SizedBox(width: 12),
+              const Text(
+                'Identificação da Empresa',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Nome e descrição utilizados no cabeçalho dos relatórios de Pedido de Compra e Cotação.',
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 24),
+          StreamOut<String>(
+            stream: PreferencesService.nomeEmpresa.listen,
+            builder: (_, nome) {
+              return TextFormField(
+                initialValue: nome,
+                decoration: InputDecoration(
+                  labelText: 'Nome da Empresa',
+                  hintText: 'Ex: Construtora Exemplo Ltda',
+                  prefixIcon: const Icon(Icons.business_center_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onChanged: (val) => PreferencesService.nomeEmpresa.add(val),
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+          StreamOut<String>(
+            stream: PreferencesService.descricaoEmpresa.listen,
+            builder: (_, desc) {
+              return TextFormField(
+                initialValue: desc,
+                decoration: InputDecoration(
+                  labelText: 'Descrição / Setor',
+                  hintText: 'Ex: Departamento de Compras',
+                  prefixIcon: const Icon(Icons.description_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onChanged: (val) =>
+                    PreferencesService.descricaoEmpresa.add(val),
+              );
+            },
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.indigo[50],
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.indigo[100]!),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.info_outline, color: Colors.indigo[700], size: 18),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Esses dados aparecerão no topo do PDF de Pedido de Compra '  
+                    'e no Pedido de Cotação como remetente.',
+                    style: TextStyle(
+                        fontSize: 12, color: Colors.indigo[800], height: 1.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

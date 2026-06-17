@@ -29,7 +29,6 @@ class _BackupsPageState extends State<BackupsPage> {
   void initState() {
     setWebTitle('Backup');
     backupCtrl.onInit();
-    BackupSchedulerService().start(context);
     super.initState();
   }
 

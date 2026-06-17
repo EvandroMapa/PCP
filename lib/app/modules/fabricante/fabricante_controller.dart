@@ -1,5 +1,5 @@
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
-import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
@@ -27,7 +27,7 @@ class FabricanteController {
 
   void onInit() {
     utilsStream.add(FabricanteUtils());
-    FirestoreClient.fabricantes.listen();
+    BackendClient.fabricantes.listen();
   }
 
   final AppStream<FabricanteCreateModel> formStream =
@@ -61,11 +61,11 @@ class FabricanteController {
       onValid(fabricante);
       if (form.isEdit) {
         final edit = form.toFabricanteModel();
-        await FirestoreClient.fabricantes.update(edit);
+        await BackendClient.fabricantes.update(edit);
       } else {
-        await FirestoreClient.fabricantes.add(form.toFabricanteModel());
+        await BackendClient.fabricantes.add(form.toFabricanteModel());
       }
-      await FirestoreClient.fabricantes.fetch();
+      await BackendClient.fabricantes.fetch();
       pop(value);
       NotificationService.showPositive(
         'Fabricante ${form.isEdit ? 'Editado' : 'Adicionado'}',
@@ -83,7 +83,7 @@ class FabricanteController {
 
   Future<void> onDelete(value, FabricanteModel fabricante) async {
     if (await _isDeleteUnavailable(fabricante)) return;
-    await FirestoreClient.fabricantes.delete(fabricante);
+    await BackendClient.fabricantes.delete(fabricante);
     pop(value);
     NotificationService.showPositive(
       'Fabricante Excluido',
@@ -100,7 +100,7 @@ class FabricanteController {
         deleteMessage: 'Todos seus dados serão apagados do sistema',
         infoMessage:
             'Não é possível exlcuir o fabricante, pois ele está vinculado a uma prdem.',
-        conditional: FirestoreClient.ordens.data.any(
+        conditional: BackendClient.ordens.data.any(
           (e) => e.materiaPrima?.fabricanteModel.id == fabricante.id,
         ),
       );
@@ -111,15 +111,15 @@ class FabricanteController {
       throw Exception('Nome deve conter no mínimo 3 caracteres');
     }
     if (form.isEdit) {
-      if (FirestoreClient.fabricantes.data.any((e) =>
+      if (BackendClient.fabricantes.data.any((e) =>
           e.nome.trim().toLowerCase() == nomeForm.toLowerCase() &&
           e.id.toString().trim() != form.id.toString().trim())) {
-        throw Exception('Já existe um fabricante com esse nome');
+        throw Exception('Ja existe um fabricante com esse nome');
       }
     } else {
-      if (FirestoreClient.fabricantes.data
+      if (BackendClient.fabricantes.data
           .any((e) => e.nome.trim().toLowerCase() == nomeForm.toLowerCase())) {
-        throw Exception('Já existe um fabricante com esse nome');
+        throw Exception('Ja existe um fabricante com esse nome');
       }
     }
   }

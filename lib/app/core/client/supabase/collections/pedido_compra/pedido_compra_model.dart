@@ -21,13 +21,14 @@ class PedidoCompraModel {
   final String id;
   final String grupoId;
   final String produtoId;
-  final String fabricanteId;
+  final String fabricanteId; // vazio = sem fornecedor (pendente)
   final double quantidade;
   final double? quantidadeRecebida;
   PedidoCompraStatus status;
   final DateTime? dataPrevista;    // data estimada de chegada (status confirmado)
   final String? observacao;
   final String? usuarioNome;
+  final String? numeroPedido;      // ex: "001/26" — gerado ao confirmar
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -42,6 +43,7 @@ class PedidoCompraModel {
     this.dataPrevista,
     this.observacao,
     this.usuarioNome,
+    this.numeroPedido,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -95,13 +97,15 @@ class PedidoCompraModel {
         'id': id,
         'grupo_id': grupoId,
         'bitola_id': produtoId,
-        'fabricante_id': fabricanteId,
+        // Envia null quando não há fornecedor (pedido pendente sem seleção)
+        'fabricante_id': fabricanteId.isEmpty ? null : fabricanteId,
         'quantidade': quantidade,
         'quantidade_recebida': quantidadeRecebida,
         'status': status.name,
         'data_prevista': dataPrevista?.toIso8601String(),
         'observacao': observacao,
         'usuario_nome': usuarioNome,
+        'numero_pedido': numeroPedido,
         'created_at': createdAt.toIso8601String(),
         'updated_at': updatedAt.toIso8601String(),
       };
@@ -126,6 +130,7 @@ class PedidoCompraModel {
             : null,
         observacao: map['observacao'],
         usuarioNome: map['usuario_nome'],
+        numeroPedido: map['numero_pedido'],
         createdAt: map['created_at'] != null
             ? DateTime.parse(map['created_at'])
             : DateTime.now(),
@@ -139,6 +144,7 @@ class PedidoCompraModel {
     String? grupoId,
     String? produtoId,
     String? fabricanteId,
+    bool clearFabricante = false,
     double? quantidade,
     double? quantidadeRecebida,
     PedidoCompraStatus? status,
@@ -146,6 +152,8 @@ class PedidoCompraModel {
     bool clearDataPrevista = false,
     String? observacao,
     String? usuarioNome,
+    String? numeroPedido,
+    bool clearNumeroPedido = false,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) =>
@@ -153,7 +161,7 @@ class PedidoCompraModel {
         id: id ?? this.id,
         grupoId: grupoId ?? this.grupoId,
         produtoId: produtoId ?? this.produtoId,
-        fabricanteId: fabricanteId ?? this.fabricanteId,
+        fabricanteId: clearFabricante ? '' : (fabricanteId ?? this.fabricanteId),
         quantidade: quantidade ?? this.quantidade,
         quantidadeRecebida: quantidadeRecebida ?? this.quantidadeRecebida,
         status: status ?? this.status,
@@ -161,6 +169,7 @@ class PedidoCompraModel {
             clearDataPrevista ? null : (dataPrevista ?? this.dataPrevista),
         observacao: observacao ?? this.observacao,
         usuarioNome: usuarioNome ?? this.usuarioNome,
+        numeroPedido: clearNumeroPedido ? null : (numeroPedido ?? this.numeroPedido),
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );

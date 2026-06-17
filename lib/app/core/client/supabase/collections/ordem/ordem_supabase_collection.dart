@@ -57,12 +57,19 @@ class OrdemSupabaseCollection extends OrdemCollection {
   }
 
   @override
-  Future<void> startOnlyArquivadas() async {
+  Future<void> startOnlyArquivadas({DateTime? de, DateTime? ate}) async {
     try {
+      // Período padrão: mês corrente
+      final inicio = de ?? DateTime(DateTime.now().year, DateTime.now().month, 1);
+      final fim = ate ?? DateTime(DateTime.now().year, DateTime.now().month + 1, 1)
+          .subtract(const Duration(seconds: 1));
+
       final response = await SupabaseService.client
           .from(name)
           .select()
-          .eq('is_archived', true);
+          .eq('is_archived', true)
+          .gte('updated_at', inicio.toIso8601String())
+          .lte('updated_at', fim.toIso8601String());
 
       final ordens = List<Map<String, dynamic>>.from(response)
           .map((e) => OrdemModel.fromSupabaseMap(e))

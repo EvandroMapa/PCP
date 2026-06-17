@@ -1,15 +1,24 @@
+import 'dart:typed_data';
+
 import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido_compra/pedido_compra_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
+import 'package:aco_plus/app/core/services/pdf_download_service/pdf_download_service_mobile.dart';
+import 'package:aco_plus/app/core/services/preferences_service.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
+import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:aco_plus/app/modules/estoque/estoque_controller.dart';
 import 'package:aco_plus/app/modules/pedido_compra/ui/pedido_compra_create_page.dart';
 import 'package:aco_plus/app/modules/pedido_compra/ui/pedido_compra_efetivar_page.dart';
+import 'package:aco_plus/app/modules/pedido_compra/ui/relatorio/pedido_compra_compra_pdf.dart';
+import 'package:aco_plus/app/modules/pedido_compra/ui/relatorio/pedido_compra_cotacao_pdf.dart';
 import 'package:aco_plus/app/modules/pedido_compra/pedido_compra_view_model.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:overlay_support/overlay_support.dart';
 
 final pedidoCompraCtrl = PedidoCompraController();
@@ -37,13 +46,15 @@ class PedidoCompraController {
       if (!form.isValid) {
         NotificationService.showNegative(
           'Campos obrigatórios',
-          'Selecione o fabricante e adicione pelo menos um item válido',
+          'Adicione pelo menos um item válido ao pedido',
           position: NotificationPosition.bottom,
         );
         return;
       }
 
       final usuarioNome = usuarioCtrl.usuario?.nome;
+      // Fabricante placeholder vazio — será definido na confirmação
+      const fabricanteIdVazio = '';
 
       if (form.modoEdicao) {
         // EDIÇÃO: apaga itens antigos e recria com mesmo grupoId
@@ -51,6 +62,10 @@ class PedidoCompraController {
         final itensAntigos = BackendClient.pedidosCompra.data
             .where((e) => e.grupoId == grupoId)
             .toList();
+        // Preserva o fabricanteId atual (não altera)
+        final fabricanteIdAtual = itensAntigos.isNotEmpty
+            ? itensAntigos.first.fabricanteId
+            : fabricanteIdVazio;
         for (final item in itensAntigos) {
           await BackendClient.pedidosCompra.delete(item);
         }
@@ -58,7 +73,7 @@ class PedidoCompraController {
           final pedido = PedidoCompraModel.novo(
             grupoId: grupoId,
             produtoId: item.produto!.id,
-            fabricanteId: form.fabricante!.id,
+            fabricanteId: fabricanteIdAtual,
             quantidade: item.quantidadeValue,
             usuarioNome: usuarioNome,
           );
@@ -76,7 +91,7 @@ class PedidoCompraController {
           final pedido = PedidoCompraModel.novo(
             grupoId: grupoId,
             produtoId: item.produto!.id,
-            fabricanteId: form.fabricante!.id,
+            fabricanteId: fabricanteIdVazio,
             quantidade: item.quantidadeValue,
             usuarioNome: usuarioNome,
           );
@@ -84,7 +99,7 @@ class PedidoCompraController {
         }
         NotificationService.showPositive(
           'Pedido registrado',
-          '${form.itensValidos.length} item${form.itensValidos.length > 1 ? 's' : ''} para ${form.fabricante?.nome ?? ''}',
+          '${form.itensValidos.length} item${form.itensValidos.length > 1 ? 's' : ''} — selecione o fornecedor ao confirmar',
           position: NotificationPosition.bottom,
         );
       }
@@ -105,8 +120,7 @@ class PedidoCompraController {
 
   void onIniciarEdicao(BuildContext context, List<PedidoCompraModel> itens) {
     final modelo = PedidoCompraCreateModel()
-      ..grupoId = itens.first.grupoId
-      ..fabricante = itens.first.fabricante;
+      ..grupoId = itens.first.grupoId;
 
     for (final item in itens) {
       final itemForm = PedidoCompraItemForm()
@@ -179,8 +193,8 @@ class PedidoCompraController {
       builder: (_) => AlertDialog(
         title: const Text('Voltar para Pendente?'),
         content: const Text(
-          'O pedido voltará ao status de orçamento.\n'
-          'A data prevista de entrega será removida.',
+          'O pedido voltara ao status de orcamento.\n'
+          'O fornecedor e a data prevista serao removidos.',
         ),
         actions: [
           TextButton(
@@ -205,13 +219,15 @@ class PedidoCompraController {
           item.copyWith(
             status: PedidoCompraStatus.pendente,
             clearDataPrevista: true,
+            clearFabricante: true,
+            clearNumeroPedido: true,
             updatedAt: DateTime.now(),
           ),
         );
       }
       NotificationService.showPending(
         'Pedido voltou para Pendente',
-        itens.first.fabricante.nome,
+        'Fornecedor removido - selecione ao confirmar',
       );
     } catch (e) {
       NotificationService.showNegative('Erro', e.toString(),
@@ -227,36 +243,149 @@ class PedidoCompraController {
     List<PedidoCompraModel> itens,
   ) async {
     DateTime? dataPrevista;
+    String? fabricanteId;
+    String? fabricanteNome;
 
     final confirmado = await showDialog<bool>(
       context: context,
       builder: (_) => _ConfirmarGrupoDialog(
-        fabricante: itens.first.fabricante.nome,
+        fabricanteAtualId: itens.first.fabricanteId,
+        onFabricanteChanged: (id, nome) {
+          fabricanteId = id;
+          fabricanteNome = nome;
+        },
         onDataChanged: (d) => dataPrevista = d,
       ),
     );
 
     if (confirmado != true) return;
 
+    if (fabricanteId == null || fabricanteId!.isEmpty) {
+      NotificationService.showNegative(
+        'Fornecedor obrigatorio',
+        'Selecione o fornecedor para confirmar o pedido',
+        position: NotificationPosition.bottom,
+      );
+      return;
+    }
+
     try {
+      // Gera numero sequencial NNN/AA
+      final numeroPedido = _gerarNumeroPedido();
+
       for (final item in itens) {
         await BackendClient.pedidosCompra.update(
           item.copyWith(
             status: PedidoCompraStatus.confirmado,
+            fabricanteId: fabricanteId,
             dataPrevista: dataPrevista,
+            numeroPedido: numeroPedido,
             updatedAt: DateTime.now(),
           ),
         );
       }
 
       NotificationService.showPositive(
-        'Pedido confirmado',
-        '${itens.first.fabricante.nome} — ${itens.length} item${itens.length > 1 ? 's' : ''}',
+        'Pedido $numeroPedido confirmado',
+        '${fabricanteNome ?? ''} - ${itens.length} item${itens.length > 1 ? 's' : ''}',
         position: NotificationPosition.bottom,
       );
     } catch (e) {
       NotificationService.showNegative(
         'Erro ao confirmar pedido',
+        e.toString(),
+        position: NotificationPosition.bottom,
+      );
+    }
+  }
+
+  /// Gera o proximo numero de pedido no formato NNN/AA
+  /// Conta grupos distintos que ja possuem numero_pedido com o sufixo do ano atual
+  String _gerarNumeroPedido() {
+    final anoAtual = (DateTime.now().year % 100).toString().padLeft(2, '0');
+    final sufixo = '/$anoAtual';
+
+    // Conta grupos unicos que ja tem numero de pedido neste ano
+    final gruposComNumero = BackendClient.pedidosCompra.data
+        .where((e) =>
+            e.numeroPedido != null && e.numeroPedido!.endsWith(sufixo))
+        .map((e) => e.grupoId)
+        .toSet();
+
+    final proximo = gruposComNumero.length + 1;
+    return '${proximo.toString().padLeft(3, '0')}$sufixo';
+  }
+
+  // ── Gerar PDF de Cotação (somente Pendente) ───────────────────────────────
+
+  Future<void> onGerarCotacao(
+    BuildContext context,
+    List<PedidoCompraModel> itens,
+    FabricanteModel fabricante,
+  ) async {
+    try {
+      NotificationService.showNeutral(
+        'Gerando cotação…',
+        'Aguarde',
+        position: NotificationPosition.bottom,
+      );
+      final logoBytes = await LogoHelper.logoBytesForPdf();
+      final pdfDoc = await PedidoCompraCotacaoPdfPage(
+        itens: itens,
+        fabricante: fabricante,
+        nomeEmpresa: PreferencesService.nomeEmpresa.value,
+        descricaoEmpresa: PreferencesService.descricaoEmpresa.value,
+        usuarioNome: usuarioCtrl.usuario?.nome,
+      ).build(logoBytes);
+      final bytes = await pdfDoc.save();
+      final ts = DateFormat('yyyyMMdd_HHmm').format(DateTime.now());
+      await downloadPDF(
+        'cotacao_${fabricante.nome.toLowerCase().replaceAll(' ', '_')}_$ts.pdf',
+        '/pedido_compra/cotacao/',
+        Uint8List.fromList(bytes),
+      );
+    } catch (e) {
+      NotificationService.showNegative(
+        'Erro ao gerar cotação',
+        e.toString(),
+        position: NotificationPosition.bottom,
+      );
+    }
+  }
+
+  // ── Gerar PDF de Pedido de Compra (somente Confirmado) ───────────────────
+
+  Future<void> onGerarPedidoCompra(
+    BuildContext context,
+    List<PedidoCompraModel> itens,
+  ) async {
+    try {
+      NotificationService.showNeutral(
+        'Gerando pedido de compra…',
+        'Aguarde',
+        position: NotificationPosition.bottom,
+      );
+      final fabricante = itens.first.fabricante;
+      final logoBytes = await LogoHelper.logoBytesForPdf();
+      final numero = itens.first.numeroPedido ?? itens.first.grupoId.substring(0, 8).toUpperCase();
+      final pdfDoc = await PedidoCompraCompraPdfPage(
+        itens: itens,
+        fabricante: fabricante,
+        nomeEmpresa: PreferencesService.nomeEmpresa.value,
+        descricaoEmpresa: PreferencesService.descricaoEmpresa.value,
+        usuarioNome: usuarioCtrl.usuario?.nome,
+        numeroPedido: numero,
+      ).build(logoBytes);
+      final bytes = await pdfDoc.save();
+      final ts = DateFormat('yyyyMMdd_HHmm').format(DateTime.now());
+      await downloadPDF(
+        'pedido_compra_${fabricante.nome.toLowerCase().replaceAll(' ', '_')}_$ts.pdf',
+        '/pedido_compra/compra/',
+        Uint8List.fromList(bytes),
+      );
+    } catch (e) {
+      NotificationService.showNegative(
+        'Erro ao gerar pedido de compra',
         e.toString(),
         position: NotificationPosition.bottom,
       );
@@ -441,10 +570,12 @@ class PedidoCompraController {
 // ── Dialog: Confirmar Pedido ──────────────────────────────────────────────
 
 class _ConfirmarGrupoDialog extends StatefulWidget {
-  final String fabricante;
+  final String? fabricanteAtualId;
+  final void Function(String id, String nome) onFabricanteChanged;
   final ValueChanged<DateTime?> onDataChanged;
   const _ConfirmarGrupoDialog({
-    required this.fabricante,
+    required this.fabricanteAtualId,
+    required this.onFabricanteChanged,
     required this.onDataChanged,
   });
 
@@ -454,68 +585,132 @@ class _ConfirmarGrupoDialog extends StatefulWidget {
 
 class _ConfirmarGrupoDialogState extends State<_ConfirmarGrupoDialog> {
   DateTime? _dataPrevista;
+  FabricanteModel? _fabricanteSelecionado;
+
+  @override
+  void initState() {
+    super.initState();
+    // Se já tem fabricante pré-selecionado (edição)
+    if (widget.fabricanteAtualId != null &&
+        widget.fabricanteAtualId!.isNotEmpty) {
+      try {
+        _fabricanteSelecionado = BackendClient.fabricantes.data
+            .firstWhere((f) => f.id == widget.fabricanteAtualId);
+      } catch (_) {}
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final fabricantes = [...BackendClient.fabricantes.data]
+      ..sort((a, b) => a.nome.compareTo(b.nome));
+
     return AlertDialog(
-      title: Text('Confirmar Pedido — ${widget.fabricante}'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+      title: const Row(
         children: [
-          Text(
-            'O pedido será marcado como confirmado.\nO estoque só será creditado ao efetivar a entrega.',
-            style: TextStyle(color: Colors.grey[600], fontSize: 13),
-          ),
-          const SizedBox(height: 16),
-          Text('Prazo previsto de entrega (opcional)',
+          Icon(Icons.check_circle_outline, color: Colors.blue),
+          SizedBox(width: 10),
+          Text('Confirmar Pedido'),
+        ],
+      ),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'O pedido será marcado como confirmado.\nO estoque só será creditado ao efetivar a entrega.',
+              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+            ),
+            const SizedBox(height: 20),
+
+            // ── Fornecedor (obrigatório) ──────────────────────────────
+            Text(
+              'Fornecedor *',
               style: TextStyle(
                   color: Colors.grey[700],
                   fontSize: 13,
-                  fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          InkWell(
-            onTap: _selecionarData,
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              width: double.infinity,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[300]!),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(children: [
-                Icon(Icons.calendar_today_outlined,
-                    size: 16, color: Colors.grey[500]),
-                const SizedBox(width: 8),
-                Text(
-                  _dataPrevista != null
-                      ? '${_dataPrevista!.day.toString().padLeft(2, '0')}/'
-                          '${_dataPrevista!.month.toString().padLeft(2, '0')}/'
-                          '${_dataPrevista!.year}'
-                      : 'Selecionar data',
-                  style: TextStyle(
-                    color: _dataPrevista != null
-                        ? Colors.black87
-                        : Colors.grey[400],
-                  ),
-                ),
-                if (_dataPrevista != null) ...[
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() => _dataPrevista = null);
-                      widget.onDataChanged(null);
-                    },
-                    child:
-                        Icon(Icons.close, size: 16, color: Colors.grey[400]),
-                  ),
-                ],
-              ]),
+                  fontWeight: FontWeight.w600),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            DropdownButtonFormField<FabricanteModel>(
+              value: _fabricanteSelecionado,
+              decoration: InputDecoration(
+                hintText: 'Selecione o fornecedor',
+                prefixIcon: const Icon(Icons.factory_outlined, size: 18),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              ),
+              items: fabricantes
+                  .map((f) => DropdownMenuItem(
+                        value: f,
+                        child: Text(f.nome),
+                      ))
+                  .toList(),
+              onChanged: (v) {
+                setState(() => _fabricanteSelecionado = v);
+                if (v != null) widget.onFabricanteChanged(v.id, v.nome);
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            // ── Prazo previsto ────────────────────────────────────────
+            Text(
+              'Prazo previsto de entrega (opcional)',
+              style: TextStyle(
+                  color: Colors.grey[700],
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+            InkWell(
+              onTap: _selecionarData,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(children: [
+                  Icon(Icons.calendar_today_outlined,
+                      size: 16, color: Colors.grey[500]),
+                  const SizedBox(width: 8),
+                  Text(
+                    _dataPrevista != null
+                        ? '${_dataPrevista!.day.toString().padLeft(2, '0')}/'
+                            '${_dataPrevista!.month.toString().padLeft(2, '0')}/'
+                            '${_dataPrevista!.year}'
+                        : 'Selecionar data',
+                    style: TextStyle(
+                      color: _dataPrevista != null
+                          ? Colors.black87
+                          : Colors.grey[400],
+                    ),
+                  ),
+                  if (_dataPrevista != null) ...[
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() => _dataPrevista = null);
+                        widget.onDataChanged(null);
+                      },
+                      child:
+                          Icon(Icons.close, size: 16, color: Colors.grey[400]),
+                    ),
+                  ],
+                ]),
+              ),
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(
@@ -527,7 +722,9 @@ class _ConfirmarGrupoDialogState extends State<_ConfirmarGrupoDialog> {
             backgroundColor: Colors.blue[700],
             foregroundColor: Colors.white,
           ),
-          onPressed: () => Navigator.pop(context, true),
+          onPressed: _fabricanteSelecionado != null
+              ? () => Navigator.pop(context, true)
+              : null,
           icon: const Icon(Icons.check, size: 16),
           label: const Text('Confirmar Pedido'),
         ),

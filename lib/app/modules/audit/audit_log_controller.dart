@@ -40,7 +40,12 @@ class AuditLogController {
     filtroAcao = null;
     filtroBusca = null;
     filtroDispositivo = null;
-    filtroData = null;
+    // Padrão: últimos 30 dias
+    final hoje = DateTime.now();
+    filtroData = DateTimeRange(
+      start: hoje.subtract(const Duration(days: 30)),
+      end: hoje,
+    );
     _offset = 0;
     temMais = true;
     logsStream.add([]);
@@ -75,10 +80,13 @@ class AuditLogController {
         query = query.eq('dispositivo', filtroDispositivo!);
       }
       if (filtroData != null) {
+        final inicio = filtroData!.start.copyWith(
+            hour: 0, minute: 0, second: 0, millisecond: 0);
+        final fim = filtroData!.end.copyWith(
+            hour: 23, minute: 59, second: 59, millisecond: 999);
         query = query
-            .gte('created_at', filtroData!.start.toIso8601String())
-            .lte('created_at',
-                filtroData!.end.add(const Duration(days: 1)).toIso8601String());
+            .gte('created_at', inicio.toIso8601String())
+            .lte('created_at', fim.toIso8601String());
       }
 
       final List<dynamic> rows = await query
@@ -182,8 +190,8 @@ class AuditLogEntry {
   factory AuditLogEntry.fromMap(Map<String, dynamic> m) {
     return AuditLogEntry(
       id: m['id']?.toString() ?? '',
-      createdAt: DateTime.tryParse(m['created_at']?.toString() ?? '') ??
-          DateTime.now(),
+      createdAt: (DateTime.tryParse(m['created_at']?.toString() ?? '') ??
+          DateTime.now()).toLocal(),
       usuarioId: m['usuario_id']?.toString() ?? '',
       usuarioNome: m['usuario_nome']?.toString() ?? '',
       acao: m['acao']?.toString() ?? '',

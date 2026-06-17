@@ -4,6 +4,7 @@ import 'package:aco_plus/app/core/components/app_bottom_nav.dart';
 import 'package:aco_plus/app/core/components/drawer/app_drawer.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/enums/app_module.dart';
+import 'package:aco_plus/app/modules/backup/backup_scheduler_service.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
@@ -27,6 +28,11 @@ class _BasePageState extends State<BasePage> {
     baseCtrl.onInit().then((_) {
       kanbanCtrl.onInit();
     });
+    // Inicia o agendador de backup para QUALQUER usuário logado,
+    // independentemente de visitar a tela de Backups.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) BackupSchedulerService().start(context);
+    });
     if (kIsWeb && usuario.isOperador) {
       // Escuta mudanças de fullscreen (inclusive saída por ESC)
       html.document.onFullscreenChange.listen((_) {
@@ -43,6 +49,7 @@ class _BasePageState extends State<BasePage> {
 
   @override
   void dispose() {
+    BackupSchedulerService().stop();
     if (kIsWeb && usuario.isOperador) {
       _sairFullscreen();
     }

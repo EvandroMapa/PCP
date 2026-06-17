@@ -1,5 +1,4 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido_compra/pedido_compra_model.dart';
 import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
@@ -136,6 +135,55 @@ class SimuladorCompraController {
     modelStream.update();
   }
 
+  /// Aplica um percentual global (0.0 a 2.0) redistribuindo proporcionalmente.
+  /// Cada item incluído recebe: qtd = round(sugestaoBase * pct, múltiplo).
+  /// Desativa "Formatar Carga" automaticamente.
+  void onAjustarPercentual(double pct) {
+    if (model == null) return;
+
+    // Desativa Formatar Carga ao usar o slider
+    model!.formatarCarga = false;
+
+    final multiplo = model!.multiploValue;
+
+    for (final item in model!.itens) {
+      if (!item.incluir) continue;
+      if (item.sugestaoBase <= 0) continue;
+
+      final novaQtd = item.sugestaoBase * pct;
+      final arredondado = multiplo > 0 && novaQtd > 0
+          ? _arredondar(novaQtd, multiplo)
+          : novaQtd;
+
+      item.quantidadeSugerida.text =
+          arredondado > 0 ? arredondado.toStringAsFixed(0) : '';
+    }
+
+    modelStream.update();
+  }
+
+  /// Incrementa (+) ou decrementa (−) exatamente 1 múltiplo em cada item selecionado.
+  /// Desativa "Formatar Carga" automaticamente.
+  void onIncrementarMultiplo(bool adicionar) {
+    if (model == null) return;
+
+    // Desativa Formatar Carga ao usar os botões ±
+    model!.formatarCarga = false;
+
+    final multiplo = model!.multiploValue > 0 ? model!.multiploValue : 1000;
+
+    for (final item in model!.itens) {
+      if (!item.incluir) continue;
+
+      final atual = item.quantidadeDigitada;
+      final nova = adicionar ? atual + multiplo : (atual - multiplo).clamp(0.0, double.infinity);
+      item.quantidadeSugerida.text =
+          nova > 0 ? nova.toStringAsFixed(0) : '';
+    }
+
+    modelStream.update();
+  }
+
   /// Toggle da formatação de carga
   void onToggleFormatarCarga(bool valor) {
     if (model == null) return;
@@ -233,74 +281,37 @@ class SimuladorCompraController {
       return;
     }
 
-    // Pede o fabricante via dialog
-    final fabricantes = [...BackendClient.fabricantes.data]
-      ..sort((a, b) => a.nome.compareTo(b.nome));
-
-    if (fabricantes.isEmpty) {
-      NotificationService.showNegative(
-        'Sem fabricantes',
-        'Cadastre ao menos um fabricante antes de gerar o pedido',
-        position: NotificationPosition.bottom,
-      );
-      return;
-    }
-
-    final fabricante = await showDialog<FabricanteModel>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Selecionar Fabricante'),
-        content: SizedBox(
-          width: 320,
-          child: ListView.separated(
-            shrinkWrap: true,
-            itemCount: fabricantes.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (_, i) {
-              final fab = fabricantes[i];
-              return ListTile(
-                dense: true,
-                title: Text(fab.nome,
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
-                onTap: () => Navigator.pop(ctx, fab),
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, null),
-            child: const Text('Cancelar'),
-          ),
-        ],
-      ),
-    );
-
-    if (fabricante == null) return;
-
-    // Confirmação
+    // Confirmação simples — fornecedor será escolhido ao confirmar o pedido
     if (!context.mounted) return;
     final confirma = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Confirmar Pedido'),
+        title: const Row(
+          children: [
+            Icon(Icons.shopping_cart_outlined, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('Gerar Pedido'),
+          ],
+        ),
         content: Text(
-          'Gerar pedido para ${fabricante.nome} com '
           '${selecionados.length} item${selecionados.length > 1 ? 's' : ''} · '
-          '${model!.totalSugerido.toStringAsFixed(0)} kg?',
+          '${model!.totalSugerido.toStringAsFixed(0)} kg\n\n'
+          'O fornecedor será selecionado ao confirmar o pedido.',
+          style: const TextStyle(fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Cancelar'),
           ),
-          ElevatedButton(
+          ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green[700],
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Gerar Pedido'),
+            icon: const Icon(Icons.check, size: 16),
+            label: const Text('Gerar Pedido'),
           ),
         ],
       ),
@@ -319,7 +330,7 @@ class SimuladorCompraController {
         final pedido = PedidoCompraModel.novo(
           grupoId: grupoId,
           produtoId: item.produto.id,
-          fabricanteId: fabricante.id,
+          fabricanteId: '', // fornecedor definido na confirmação
           quantidade: item.quantidadeDigitada,
           usuarioNome: usuarioNome,
         );
@@ -332,7 +343,7 @@ class SimuladorCompraController {
       NotificationService.showPositive(
         'Pedido gerado',
         '${selecionados.length} item${selecionados.length > 1 ? 's' : ''} · '
-            '${fabricante.nome} · ${model!.totalSugerido.toStringAsFixed(0)} kg',
+            '${model!.totalSugerido.toStringAsFixed(0)} kg — selecione o fornecedor ao confirmar',
         position: NotificationPosition.bottom,
       );
 

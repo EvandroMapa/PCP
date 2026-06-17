@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/models/materia_prima_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/ordem_history_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/ordem_history_type_enum.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_durations_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
@@ -210,6 +211,16 @@ class OrdemModel {
   }
 
   OrdemDurationsModel? get durations => OrdemDurationsModel.getByOrdem(this);
+
+  /// Retorna a data em que a ordem foi arquivada (último evento 'arquivada' no history).
+  /// Fallback para updatedAt se não encontrar no history.
+  DateTime get archivedAt {
+    final evento = history
+        .where((e) => e.type == OrdemHistoryTypeEnum.arquivada)
+        .toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return evento.isNotEmpty ? evento.first.createdAt : updatedAt;
+  }
 
   OrdemModel({
     required this.id,

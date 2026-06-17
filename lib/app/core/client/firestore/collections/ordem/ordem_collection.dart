@@ -34,7 +34,8 @@ class OrdemCollection {
   CollectionReference<Map<String, dynamic>> get collection =>
       FirebaseFirestore.instance.collection(name);
 
-  Future<void> startOnlyArquivadas() async {
+  Future<void> startOnlyArquivadas({DateTime? de, DateTime? ate}) async {
+    // Firestore legado: mantém sem filtro de período por simplicidade
     final data = await FirebaseFirestore.instance
         .collection(name)
         .where('isArchived', isEqualTo: true)

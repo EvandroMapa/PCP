@@ -1,4 +1,5 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido_compra/pedido_compra_model.dart';
 import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -263,7 +264,10 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
     final status = itens.first.status;
     final isPendente = status == PedidoCompraStatus.pendente;
     final accentColor = isPendente ? Colors.orange[700]! : Colors.blue[700]!;
-    final fabricante = itens.first.fabricante.nome;
+    final semFornecedor = itens.first.fabricanteId.isEmpty;
+    final fabricante = semFornecedor
+        ? 'Fornecedor a definir'
+        : itens.first.fabricante.nome;
     final totalKg = itens.fold<double>(0, (s, i) => s + i.quantidade);
     final dataPrevista = itens.first.dataPrevista;
 
@@ -303,8 +307,14 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(fabricante,
-                          style: AppCss.minimumBold.setSize(14)),
+                      Text(
+                          fabricante,
+                          style: semFornecedor
+                              ? AppCss.minimumRegular
+                                  .setSize(13)
+                                  .setColor(Colors.grey[400]!)
+                                  .copyWith(fontStyle: FontStyle.italic)
+                              : AppCss.minimumBold.setSize(14)),
                       if (!isPendente && dataPrevista != null)
                         Row(children: [
                           Icon(Icons.calendar_today_outlined,
@@ -324,6 +334,21 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
                   ),
                 ),
                 _badgeStatus(status),
+                if (!isPendente && itens.first.numeroPedido != null) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.blue[200]!),
+                    ),
+                    child: Text(
+                      'N ${itens.first.numeroPedido!}',
+                      style: AppCss.minimumBold.setSize(11).setColor(Colors.blue[700]!),
+                    ),
+                  ),
+                ],
               ]),
             ),
 
@@ -393,7 +418,112 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   if (isPendente) ...[
-                    // Pendente: Excluir + Editar + Confirmar
+                    // Pendente: Cotação + Excluir + Editar + Confirmar
+                    Tooltip(
+                      message: 'Gerar Pedido de Cotação',
+                      preferBelow: false,
+                      waitDuration: const Duration(milliseconds: 300),
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.orange[700],
+                          side: BorderSide(
+                              color: Colors.orange.withValues(alpha: 0.40)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          minimumSize: Size.zero,
+                        ),
+                        onPressed: () async {
+                          // Dialog para escolher o fornecedor
+                          final fabricantes =
+                              [...BackendClient.fabricantes.data]
+                                ..sort((a, b) => a.nome.compareTo(b.nome));
+                          FabricanteModel? escolhido = fabricantes.isEmpty
+                              ? null
+                              : fabricantes.first;
+                          await showDialog<void>(
+                            context: context,
+                            builder: (_) => StatefulBuilder(
+                              builder: (ctx, setS) => AlertDialog(
+                                title: const Row(
+                                  children: [
+                                    Icon(Icons.request_quote_outlined,
+                                        color: Colors.orange),
+                                    SizedBox(width: 8),
+                                    Text('Pedido de Cotação'),
+                                  ],
+                                ),
+                                content: SizedBox(
+                                  width: 360,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Selecione o fornecedor para quem deseja enviar esta cotação.',
+                                        style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.grey[600]),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      DropdownButtonFormField<FabricanteModel>(
+                                        value: escolhido,
+                                        decoration: InputDecoration(
+                                          hintText:
+                                              'Selecione o fornecedor',
+                                          prefixIcon: const Icon(
+                                              Icons.factory_outlined,
+                                              size: 18),
+                                          border: OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                        ),
+                                        items: fabricantes
+                                            .map((f) => DropdownMenuItem(
+                                                  value: f,
+                                                  child: Text(f.nome),
+                                                ))
+                                            .toList(),
+                                        onChanged: (v) =>
+                                            setS(() => escolhido = v),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(ctx),
+                                    child: const Text('Cancelar'),
+                                  ),
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.orange[700],
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    onPressed: escolhido != null
+                                        ? () {
+                                            Navigator.pop(ctx);
+                                            pedidoCompraCtrl.onGerarCotacao(
+                                              context,
+                                              itens,
+                                              escolhido!,
+                                            );
+                                          }
+                                        : null,
+                                    icon: const Icon(
+                                        Icons.picture_as_pdf_outlined,
+                                        size: 15),
+                                    label: const Text('Gerar PDF'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Icon(Icons.request_quote_outlined, size: 16),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
                     Tooltip(
                       message: 'Excluir pedido',
                       child: OutlinedButton(
@@ -439,7 +569,27 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
                           style: TextStyle(fontSize: 12)),
                     ),
                   ] else ...[
-                    // Confirmado: Voltar para Pendente + Efetivar
+                    // Confirmado: Pedido de Compra + Voltar para Pendente + Efetivar
+                    Tooltip(
+                      message: 'Gerar Pedido de Compra',
+                      preferBelow: false,
+                      waitDuration: const Duration(milliseconds: 300),
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.blue[700],
+                          side: BorderSide(
+                              color: Colors.blue.withValues(alpha: 0.40)),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          minimumSize: Size.zero,
+                        ),
+                        onPressed: () => pedidoCompraCtrl
+                            .onGerarPedidoCompra(context, itens),
+                        child:
+                            const Icon(Icons.picture_as_pdf_outlined, size: 16),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.orange[700],

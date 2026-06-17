@@ -1,4 +1,3 @@
-import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido_compra/pedido_compra_model.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
@@ -14,16 +13,13 @@ class PedidoCompraItemForm {
       double.tryParse(quantidade.text.replaceAll(',', '.')) ?? 0.0;
 }
 
-/// Form principal: 1 fabricante + N itens
+/// Form principal: N itens (fabricante é escolhido na confirmação)
 class PedidoCompraCreateModel {
   String? grupoId;
-  FabricanteModel? fabricante;
   List<PedidoCompraItemForm> itens = [];
 
   bool get modoEdicao => grupoId != null;
-  bool get fabricanteValido => fabricante != null;
-  bool get isValid =>
-      fabricante != null && itens.any((i) => i.isValid);
+  bool get isValid => itens.any((i) => i.isValid);
 
   List<PedidoCompraItemForm> get itensValidos =>
       itens.where((i) => i.isValid).toList();
@@ -34,7 +30,6 @@ class PedidoCompraCreateModel {
 
   void clear() {
     grupoId = null;
-    fabricante = null;
     itens = [];
   }
 }

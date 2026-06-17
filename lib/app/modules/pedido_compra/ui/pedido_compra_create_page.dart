@@ -27,7 +27,7 @@ class _PedidoCompraCreatePageState extends State<PedidoCompraCreatePage> {
   @override
   void initState() {
     setWebTitle('Pedido de Compra');
-    // Só reinicia o form se NÃO for modo edição
+    // Reinicia o form se NÃO for modo edição
     if (!pedidoCompraCtrl.form.modoEdicao) {
       pedidoCompraCtrl.formStream.add(PedidoCompraCreateModel());
     }
@@ -121,9 +121,6 @@ class _PedidoCompraCreatePageState extends State<PedidoCompraCreatePage> {
   }
 
   Widget _body(BuildContext context, PedidoCompraCreateModel form) {
-    final fabricantes = [...BackendClient.fabricantes.data]
-      ..sort((a, b) => a.nome.compareTo(b.nome));
-
     // Produtos já adicionados não aparecem como opção
     final produtosAdicionados =
         form.itens.map((i) => i.produto?.id).whereType<String>().toSet();
@@ -141,29 +138,33 @@ class _PedidoCompraCreatePageState extends State<PedidoCompraCreatePage> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              // ── 1. Fabricante ─────────────────────────────────────────
-              _bloco(
-                icon: Icons.factory_outlined,
-                label: 'Fabricante *',
-                child: DropdownButtonFormField(
-                  value: form.fabricante,
-                  decoration: _dec('Selecione o fornecedor'),
-                  items: fabricantes
-                      .map((f) => DropdownMenuItem(
-                            value: f,
-                            child: Text(f.nome),
-                          ))
-                      .toList(),
-                  onChanged: (v) {
-                    form.fabricante = v;
-                    pedidoCompraCtrl.formStream.update();
-                  },
+              // ── Aviso informativo sobre fornecedor ────────────────
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.blue.withValues(alpha: 0.20)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 16, color: Colors.blue[700]),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'O fornecedor será escolhido ao confirmar o pedido.',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.blue[700],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
-              const SizedBox(height: 16),
-
-              // ── 3. Entrada rápida de itens ────────────────────────────
+              // ── Entrada rápida de itens ──────────────────────────────
               Row(children: [
                 Icon(Icons.add_shopping_cart_outlined,
                     size: 16, color: AppColors.primaryMain),
@@ -445,31 +446,6 @@ class _PedidoCompraCreatePageState extends State<PedidoCompraCreatePage> {
     );
   }
 
-  Widget _bloco({
-    required IconData icon,
-    required String label,
-    required Widget child,
-  }) =>
-      Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              Icon(icon, size: 15, color: AppColors.primaryMain),
-              const SizedBox(width: 6),
-              Text(label, style: AppCss.minimumBold.setSize(13)),
-            ]),
-            const SizedBox(height: 10),
-            child,
-          ],
-        ),
-      );
 
   InputDecoration _dec(String hint) => InputDecoration(
         hintText: hint,
