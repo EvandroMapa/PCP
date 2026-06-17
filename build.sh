@@ -3,9 +3,8 @@ echo "Installing Flutter..."
 # Fixado na versão 3.41.5 para garantir builds consistentes com o ambiente local.
 # NÃO usar "-b stable" pois pega sempre a versão mais recente e pode quebrar.
 FLUTTER_VERSION="3.41.5"
-if [ ! -d "flutter" ]; then
-  git clone https://github.com/flutter/flutter.git --branch ${FLUTTER_VERSION} --depth 1
-fi
+rm -rf flutter
+git clone https://github.com/flutter/flutter.git --branch ${FLUTTER_VERSION} --depth 1
 export PATH="$PATH:`pwd`/flutter/bin"
 echo "Building Flutter Web com Flutter ${FLUTTER_VERSION}..."
 flutter pub get
