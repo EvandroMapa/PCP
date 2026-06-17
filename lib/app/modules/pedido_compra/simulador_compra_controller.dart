@@ -136,55 +136,6 @@ class SimuladorCompraController {
     modelStream.update();
   }
 
-  /// Aplica um percentual global (0.0 a 2.0) redistribuindo proporcionalmente.
-  /// Cada item incluído recebe: qtd = round(sugestaoBase * pct, múltiplo).
-  /// Desativa "Formatar Carga" automaticamente.
-  void onAjustarPercentual(double pct) {
-    if (model == null) return;
-
-    // Desativa Formatar Carga ao usar o slider
-    model!.formatarCarga = false;
-
-    final multiplo = model!.multiploValue;
-
-    for (final item in model!.itens) {
-      if (!item.incluir) continue;
-      if (item.sugestaoBase <= 0) continue;
-
-      final novaQtd = item.sugestaoBase * pct;
-      final arredondado = multiplo > 0 && novaQtd > 0
-          ? _arredondar(novaQtd, multiplo)
-          : novaQtd;
-
-      item.quantidadeSugerida.text =
-          arredondado > 0 ? arredondado.toStringAsFixed(0) : '';
-    }
-
-    modelStream.update();
-  }
-
-  /// Incrementa (+) ou decrementa (−) exatamente 1 múltiplo em cada item selecionado.
-  /// Desativa "Formatar Carga" automaticamente.
-  void onIncrementarMultiplo(bool adicionar) {
-    if (model == null) return;
-
-    // Desativa Formatar Carga ao usar os botões ±
-    model!.formatarCarga = false;
-
-    final multiplo = model!.multiploValue > 0 ? model!.multiploValue : 1000;
-
-    for (final item in model!.itens) {
-      if (!item.incluir) continue;
-
-      final atual = item.quantidadeDigitada;
-      final nova = adicionar ? atual + multiplo : (atual - multiplo).clamp(0.0, double.infinity);
-      item.quantidadeSugerida.text =
-          nova > 0 ? nova.toStringAsFixed(0) : '';
-    }
-
-    modelStream.update();
-  }
-
   /// Toggle da formatação de carga
   void onToggleFormatarCarga(bool valor) {
     if (model == null) return;

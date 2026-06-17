@@ -15,10 +15,6 @@ class SimuladorCompraPage extends StatefulWidget {
 }
 
 class _SimuladorCompraPageState extends State<SimuladorCompraPage> {
-  /// Valor local do Slider — sincronizado com o model mas controlado localmente
-  /// para resposta imediata sem esperar o stream.
-  double _sliderValue = 1.0;
-
   @override
   void initState() {
     super.initState();
@@ -56,25 +52,9 @@ class _SimuladorCompraPageState extends State<SimuladorCompraPage> {
   // ───────────────────────────────────────────────────────────────────────────
 
   Widget _body(BuildContext context, SimuladorCompraModel model) {
-    // Sincroniza slider com o model a cada rebuild do stream.
-    // Isso garante que edições manuais, botões ± por linha e qualquer
-    // outra alteração reflitam na posição do Slider.
-    final pctAtual = model.percentualAtual;
-    if ((pctAtual - _sliderValue).abs() > 0.005) {
-      // Usa addPostFrameCallback para não chamar setState durante build
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) setState(() => _sliderValue = pctAtual);
-      });
-    }
-    // Reseta slider quando não há itens selecionados
-    if (model.itensSelecionados.isEmpty) _sliderValue = 1.0;
-
     return Column(
       children: [
         _formatarCargaBar(model),
-        // Barra de percentual — só aparece com itens selecionados e sugestão > 0
-        if (model.itensSelecionados.isNotEmpty && model.totalSugestaoBase > 0)
-          _ajustePercentualBar(model),
         const Divider(height: 1),
         _acoesMassa(model),
         const Divider(height: 1),
@@ -233,158 +213,6 @@ class _SimuladorCompraPageState extends State<SimuladorCompraPage> {
       child: child,
     );
   }
-
-  // ───────────────────────────────────────────────────────────────────────────
-  // Barra de Ajuste Percentual
-  // ───────────────────────────────────────────────────────────────────────────
-
-  Widget _ajustePercentualBar(SimuladorCompraModel model) {
-    final multiplo = model.multiploValue > 0 ? model.multiploValue : 1000;
-    final nSelecionados = model.itensSelecionados.length;
-
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Label superior ───────────────────────────────────────
-          Row(children: [
-            Icon(Icons.tune_rounded, size: 13, color: Colors.grey[500]),
-            const SizedBox(width: 5),
-            Text(
-              'Ajuste do pedido — $nSelecionados item${nSelecionados > 1 ? 's' : ''}',
-              style: AppCss.minimumRegular
-                  .setColor(Colors.grey[600]!)
-                  .setSize(11),
-            ),
-          ]),
-          const SizedBox(height: 4),
-
-          // ── Slider + botões ± ────────────────────────────────────
-          Row(children: [
-            // Botão −
-            _sliderBtn(
-              icon: Icons.remove_rounded,
-              tooltip: '− ${multiplo.toStringAsFixed(0)} kg por item',
-              onTap: () {
-                simuladorCompraCtrl.onIncrementarMultiplo(false);
-                // Sincroniza slider com novo percentual calculado
-                setState(() {
-                  _sliderValue = model.percentualAtual;
-                });
-              },
-            ),
-            const SizedBox(width: 6),
-
-            // Slider central
-            Expanded(
-              child: Column(
-                children: [
-                  SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: AppColors.primaryMain,
-                      thumbColor: AppColors.primaryMain,
-                      inactiveTrackColor: AppColors.primaryMain.withValues(alpha: 0.18),
-                      overlayColor: AppColors.primaryMain.withValues(alpha: 0.12),
-                      trackHeight: 4,
-                      thumbShape: const RoundSliderThumbShape(
-                          enabledThumbRadius: 7),
-                      overlayShape: const RoundSliderOverlayShape(
-                          overlayRadius: 14),
-                    ),
-                    child: Slider(
-                      value: _sliderValue,
-                      min: 0.0,
-                      max: 2.0,
-                      divisions: 200,
-                      onChanged: (v) {
-                        setState(() => _sliderValue = v);
-                      },
-                      onChangeEnd: (v) {
-                        simuladorCompraCtrl.onAjustarPercentual(v);
-                        // Após redistribuição, lê percentual real do model
-                        Future.microtask(() {
-                          setState(() {
-                            _sliderValue = model.percentualAtual;
-                          });
-                        });
-                      },
-                    ),
-                  ),
-                  // Régua: 0% · 50% · 100% · 150% · 200%
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        '0%', '50%', '100%', '150%', '200%',
-                      ].map((l) {
-                        final isCenter = l == '100%';
-                        return Text(
-                          l,
-                          style: AppCss.minimumRegular
-                              .setColor(isCenter
-                                  ? AppColors.primaryMain
-                                  : Colors.grey[400]!)
-                              .setSize(9)
-                              .copyWith(
-                                  fontWeight: isCenter
-                                      ? FontWeight.bold
-                                      : FontWeight.normal),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(width: 6),
-            // Botão +
-            _sliderBtn(
-              icon: Icons.add_rounded,
-              tooltip: '+ ${multiplo.toStringAsFixed(0)} kg por item',
-              onTap: () {
-                simuladorCompraCtrl.onIncrementarMultiplo(true);
-                setState(() {
-                  _sliderValue = model.percentualAtual;
-                });
-              },
-            ),
-          ]),
-        ],
-      ),
-    );
-  }
-
-  Widget _sliderBtn({
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback onTap,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      preferBelow: false,
-      waitDuration: const Duration(milliseconds: 300),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: AppColors.primaryMain.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-                color: AppColors.primaryMain.withValues(alpha: 0.20)),
-          ),
-          child: Icon(icon, size: 17, color: AppColors.primaryMain),
-        ),
-      ),
-    );
-  }
-
 
   Widget _compactField({
     required String label,
@@ -706,103 +534,66 @@ class _SimuladorCompraPageState extends State<SimuladorCompraPage> {
                 ? Colors.blue[600]!
                 : Colors.grey[350]!,
           ),
-          // Pedido (editável) — com botões ± individuais
+          // Pedido (editável)
           Expanded(
             flex: _f[9],
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
-              child: Row(children: [
-                // Botão −
-                if (item.incluir)
-                  _rowBtn(
-                    icon: Icons.remove_rounded,
-                    onTap: () {
-                      final multiplo = simuladorCompraCtrl.model?.multiploValue ?? 0;
-                      final step = multiplo > 0 ? multiplo : 1000;
-                      final atual = item.quantidadeDigitada;
-                      final nova = (atual - step).clamp(0.0, double.infinity);
-                      item.quantidadeSugerida.text =
-                          nova > 0 ? nova.toStringAsFixed(0) : '';
-                      simuladorCompraCtrl.onQuantidadeAlterada();
-                    },
-                  )
-                else
-                  const SizedBox(width: 20),
-                const SizedBox(width: 2),
-                // Campo texto
-                Expanded(
-                  child: SizedBox(
-                    height: 28,
-                    child: TextFormField(
-                      controller: item.quantidadeSugerida.controller,
-                      enabled: item.incluir,
-                      onTap: () {
-                        item.quantidadeSugerida.controller.selection =
-                            TextSelection(
-                          baseOffset: 0,
-                          extentOffset:
-                              item.quantidadeSugerida.controller.text.length,
-                        );
-                      },
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
-                      textAlign: TextAlign.center,
-                      textAlignVertical: TextAlignVertical.center,
-                      style: AppCss.minimumBold
-                          .setColor(item.incluir ? Colors.black87 : Colors.grey[400]!)
-                          .setSize(13),
-                      decoration: InputDecoration(
-                        hintText: '0',
-                        hintStyle: AppCss.minimumRegular
-                            .setColor(Colors.grey[300]!)
-                            .setSize(13),
-                        isCollapsed: true,
-                        contentPadding:
-                            const EdgeInsets.fromLTRB(4, 8, 4, 4),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(6),
-                          borderSide: BorderSide(
-                              color: Colors.grey.withValues(alpha: 0.25)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(6),
-                          borderSide: BorderSide(
-                              color: Colors.grey.withValues(alpha: 0.25)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(6),
-                          borderSide: BorderSide(color: Colors.green[700]!),
-                        ),
-                        suffixText: 'kg',
-                        suffixStyle: AppCss.minimumRegular
-                            .setColor(Colors.grey[400]!)
-                            .setSize(9),
-                      ),
-                      onChanged: (_) =>
-                          simuladorCompraCtrl.onQuantidadeAlterada(),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: SizedBox(
+                height: 28,
+                child: TextFormField(
+                  controller: item.quantidadeSugerida.controller,
+                  enabled: item.incluir,
+                  onTap: () {
+                    item.quantidadeSugerida.controller.selection =
+                        TextSelection(
+                      baseOffset: 0,
+                      extentOffset:
+                          item.quantidadeSugerida.controller.text.length,
+                    );
+                  },
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                  textAlign: TextAlign.right,
+                  textAlignVertical: TextAlignVertical.center,
+                  style: AppCss.minimumBold
+                      .setColor(item.incluir ? Colors.black87 : Colors.grey[400]!)
+                      .setSize(13),
+                  decoration: InputDecoration(
+                    hintText: '0',
+                    hintStyle: AppCss.minimumRegular
+                        .setColor(Colors.grey[300]!)
+                        .setSize(13),
+                    isCollapsed: true,
+                    contentPadding:
+                        const EdgeInsets.fromLTRB(8, 8, 8, 4),
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide(
+                          color: Colors.grey.withValues(alpha: 0.25)),
                     ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide(
+                          color: Colors.grey.withValues(alpha: 0.25)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(6),
+                      borderSide: BorderSide(color: Colors.green[700]!),
+                    ),
+                    suffixText: 'kg',
+                    suffixStyle: AppCss.minimumRegular
+                        .setColor(Colors.grey[400]!)
+                        .setSize(9),
                   ),
+                  onChanged: (_) =>
+                      simuladorCompraCtrl.onQuantidadeAlterada(),
                 ),
-                const SizedBox(width: 2),
-                // Botão +
-                if (item.incluir)
-                  _rowBtn(
-                    icon: Icons.add_rounded,
-                    onTap: () {
-                      final multiplo = simuladorCompraCtrl.model?.multiploValue ?? 0;
-                      final step = multiplo > 0 ? multiplo : 1000;
-                      final nova = item.quantidadeDigitada + step;
-                      item.quantidadeSugerida.text = nova.toStringAsFixed(0);
-                      simuladorCompraCtrl.onQuantidadeAlterada();
-                    },
-                  )
-                else
-                  const SizedBox(width: 20),
-              ]),
+              ),
             ),
           ),
           // Saldo Final
@@ -833,25 +624,6 @@ class _SimuladorCompraPageState extends State<SimuladorCompraPage> {
               ? AppCss.minimumBold.setColor(cor).setSize(small ? 11 : 13)
               : AppCss.minimumRegular.setColor(cor).setSize(small ? 11 : 13),
         ),
-      ),
-    );
-  }
-
-  /// Botão compacto ± por linha da tabela (menor que o _sliderBtn da barra global)
-  Widget _rowBtn({required IconData icon, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(4),
-      child: Container(
-        width: 20,
-        height: 24,
-        decoration: BoxDecoration(
-          color: AppColors.primaryMain.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-              color: AppColors.primaryMain.withValues(alpha: 0.20)),
-        ),
-        child: Icon(icon, size: 13, color: AppColors.primaryMain),
       ),
     );
   }
