@@ -208,6 +208,14 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
           final ordens = _filtrarOrdens(todas);
           return Column(
             children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Ordens de Produção',
+                      style: AppCss.largeBold.setSize(20)),
+                ),
+              ),
               _filtros(context),
               const Divider(height: 1),
               _kpisHeaderWith(ordens),

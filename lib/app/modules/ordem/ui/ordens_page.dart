@@ -513,9 +513,9 @@ class _OrdensPageState extends State<OrdensPage> {
           _tarjaBtn(
             icon: Icons.analytics_outlined,
             color: Colors.blueGrey[400]!,
-            tooltip: 'Relatório de Ordens',
+            tooltip: 'Relatórios de Produção',
             onTap: () =>
-                baseCtrl.moduleStream.add(AppModule.ordemRelatorio),
+                baseCtrl.moduleStream.add(AppModule.relatoriosProducao),
           ),
         ],
       ),

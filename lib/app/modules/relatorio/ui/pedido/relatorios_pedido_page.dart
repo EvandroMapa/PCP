@@ -73,6 +73,11 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
       builder: (_, model) => ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Text('Consumo Estimado',
+                style: AppCss.largeBold.setSize(20)),
+          ),
           if (model.showFilter) ...[
             _filterWidget(model),
             const Divisor(height: 32),
@@ -207,9 +212,8 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text('RESUMO GERAL', style: AppCss.mediumBold),
               Text(
                 'Total: ${relatorioCtrl.getPedidosTotal().toKg()}',
                 style: AppCss.mediumBold.setColor(AppColors.primaryMain),

@@ -290,6 +290,14 @@ class ArmacaoController {
       'qtde_pronto': novoQtdePronto,
     }).eq('id', elemento.id);
 
+    // Registrar histórico de mudança de status
+    await SupabaseService.client.from('elemento_status_history').insert({
+      'elemento_id': elemento.id,
+      'pedido_id': pedido.id,
+      'status': statusFinal.name,
+      'qtde_pronto': novoQtdePronto,
+    });
+
     // 5. Finalização de Pedido inteiro
     final todosProntos = pedido.elementos.every(
       (e) => e.status == ElementoStatus.pronto && e.qtdePronto >= e.qtde,

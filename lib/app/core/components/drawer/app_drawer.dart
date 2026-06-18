@@ -161,7 +161,7 @@ class _AppDrawerNotOperatorListState extends State<AppDrawerNotOperatorList> {
       AppModule.planoCorte,
       AppModule.pontas,
       AppModule.materiaPrima,
-      AppModule.pedidoRelatorio,
+      AppModule.relatoriosProducao,
     ],
     _estoque: [
       AppModule.estoqueSaldo,

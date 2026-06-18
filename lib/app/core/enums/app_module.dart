@@ -8,9 +8,8 @@ import 'package:aco_plus/app/modules/ordem/ui/ordens_page.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedidos_page.dart';
 import 'package:aco_plus/app/modules/bitola/ui/bitolas_page.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/estoque/relatorios_estoque_page.dart';
-import 'package:aco_plus/app/modules/relatorio/ui/ordem/relatorios_ordem_page.dart';
-import 'package:aco_plus/app/modules/relatorio/ui/pedido/relatorios_pedido_page.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/plano_corte/planos_corte_page.dart';
+import 'package:aco_plus/app/modules/relatorio/ui/relatorios_producao_page.dart';
 import 'package:aco_plus/app/modules/ponta/ui/pontas_page.dart';
 import 'package:aco_plus/app/modules/step/ui/steps_page.dart';
 import 'package:aco_plus/app/modules/tag/ui/tags_page.dart';
@@ -28,8 +27,7 @@ enum AppModule {
   kanban,
   pedidos,
   ordens,
-  pedidoRelatorio,
-  ordemRelatorio,
+  relatoriosProducao,
   estoqueRelatorio,
   planoCorte,
   cliente,
@@ -56,10 +54,8 @@ extension AppModuleExt on AppModule {
         return const PedidosPage();
       case AppModule.ordens:
         return const OrdensPage();
-      case AppModule.pedidoRelatorio:
-        return const RelatoriosPedidoPage();
-      case AppModule.ordemRelatorio:
-        return const RelatoriosOrdemPage();
+      case AppModule.relatoriosProducao:
+        return const RelatoriosProducaoPage();
       case AppModule.estoqueRelatorio:
         return const RelatoriosEstoquePage();
       case AppModule.planoCorte:
@@ -86,6 +82,7 @@ extension AppModuleExt on AppModule {
         return const EstoqueMovimentacaoPage();
       case AppModule.pedidoCompra:
         return const PedidoCompraPage();
+
     }
   }
 
@@ -111,10 +108,8 @@ extension AppModuleExt on AppModule {
         return (usuarioCtrl.usuario?.isNotOperador ?? false)
             ? Icons.list
             : Icons.work_outline;
-      case AppModule.pedidoRelatorio:
-        return Icons.shopping_cart_outlined;
-      case AppModule.ordemRelatorio:
-        return Icons.work_outline;
+      case AppModule.relatoriosProducao:
+        return Icons.assessment_outlined;
       case AppModule.estoqueRelatorio:
         return Icons.inventory_2_outlined;
       case AppModule.planoCorte:
@@ -141,6 +136,7 @@ extension AppModuleExt on AppModule {
         return Icons.swap_vert_outlined;
       case AppModule.pedidoCompra:
         return Icons.shopping_cart_outlined;
+
     }
   }
 
@@ -154,10 +150,8 @@ extension AppModuleExt on AppModule {
         return 'Listagem';
       case AppModule.ordens:
         return 'Ordens de Produção';
-      case AppModule.ordemRelatorio:
-        return 'Ordens de Produção';
-      case AppModule.pedidoRelatorio:
-        return 'Consumo Previsto';
+      case AppModule.relatoriosProducao:
+        return 'Relatórios';
       case AppModule.estoqueRelatorio:
         return 'Posição de Estoque';
       case AppModule.planoCorte:
@@ -184,6 +178,7 @@ extension AppModuleExt on AppModule {
         return 'Movimentação de Estoque';
       case AppModule.pedidoCompra:
         return 'Pedidos de Compra';
+
     }
   }
 

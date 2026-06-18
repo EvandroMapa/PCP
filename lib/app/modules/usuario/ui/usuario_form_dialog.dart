@@ -79,8 +79,12 @@ class _UsuarioFormDialogState extends State<UsuarioFormDialog> {
                       flex: 1,
                       child: AppDropDown<UsuarioTipoModel?>(
                         label: 'Perfil',
-                        item: BackendClient.usuarioTipos
-                            .getById(form.usuarioTipoId),
+                        item: form.usuarioTipoId.isNotEmpty
+                            ? BackendClient.usuarioTipos
+                                .data
+                                .where((t) => t.id == form.usuarioTipoId)
+                                .firstOrNull
+                            : null,
                         itens: BackendClient.usuarioTipos.data,
                         itemLabel: (e) => e?.nome ?? 'Selecione',
                         onSelect: (e) {
