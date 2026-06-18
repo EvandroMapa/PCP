@@ -73,6 +73,7 @@ dependencies:
   google_maps_flutter: ^2.17.0
   google_maps_flutter_web: ^0.6.2+1
   pointer_interceptor: ^0.10.1+2
+  fl_chart: ^1.2.0
 
   # f pub run flutter_launcher_icons && dart run flutter_native_splash:create
 

@@ -13,6 +13,7 @@ import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
+import 'package:aco_plus/app/modules/relatorio/ui/produtividade/produtividade_grafico_dialog.dart';
 import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_produtividade_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -37,6 +38,21 @@ class _RelatorioProdutividadePageState
     relatorioCtrl.onCreateRelatorioProdutividade();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       baseCtrl.appBarActionsStream.add(<Widget>[
+        StreamOut(
+          stream:
+              relatorioCtrl.produtividadeViewModelStream.listen,
+          builder: (_, model) => IconButton(
+            onPressed: model.relatorio != null
+                ? () => showProdutividadeGraficoDialog(context)
+                : null,
+            icon: Icon(
+              Icons.bar_chart_rounded,
+              color: model.relatorio != null
+                  ? Colors.white
+                  : Colors.grey[500],
+            ),
+          ),
+        ),
         StreamOut(
           stream:
               relatorioCtrl.produtividadeViewModelStream.listen,
