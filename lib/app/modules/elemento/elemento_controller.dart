@@ -724,9 +724,6 @@ class ElementoController {
         };
       }
 
-      final List<ElementoCreateModel> novosElementos = [];
-      ElementoCreateModel? currentElement;
-
       // Extrai a linha de cabeçalho (ignorando case e espaços)
       final headerLine =
           lines.first.split(';').map((e) => e.trim().toUpperCase()).toList();
@@ -792,7 +789,8 @@ class ElementoController {
         };
       }
 
-      String currentElementIdStr = '';
+      // Mapa de elementos agrupados por chave (ID ELEM ou nome+qtde)
+      final Map<String, ElementoCreateModel> elementosMap = {};
 
       // Pula a linha de cabeçalho
       for (int i = 1; i < lines.length; i++) {
@@ -800,6 +798,11 @@ class ElementoController {
         final columns = line.split(';');
 
         if (columns.length <= idxBitola) continue;
+
+        // Pular linhas de cabeçalho repetidas no meio do arquivo
+        // (TQS Planilhar repete o cabeçalho a cada ~58 linhas)
+        final primeiraColuna = columns[0].trim().toUpperCase();
+        if (primeiraColuna == headerLine[0]) continue;
 
         final elNome = columns[idxElemento].trim();
         final idElemStr = idxIdElem != -1 && columns.length > idxIdElem
@@ -831,20 +834,18 @@ class ElementoController {
 
         final elQtdeNormalizado = int.tryParse(elQtdeStr)?.toString() ?? '1';
 
-        // Agrupa por ID ELEM ou (NOME + QTDE ELEM)
-        if (currentElement == null ||
-            (idElemStr.isNotEmpty && currentElementIdStr != idElemStr) ||
-            (idElemStr.isEmpty &&
-                (currentElement.nome.text != elNome ||
-                    currentElement.qtde.text != elQtdeNormalizado))) {
-          if (currentElement != null && currentElement.posicoes.isNotEmpty) {
-            novosElementos.add(currentElement);
-          }
-          currentElement = ElementoCreateModel();
-          currentElementIdStr = idElemStr;
-          currentElement.nome.text = elNome;
-          currentElement.qtde.text = elQtdeNormalizado;
-        }
+        // Chave de agrupamento: prioriza ID ELEM, senão usa nome+qtde
+        final String chaveElemento = idElemStr.isNotEmpty
+            ? idElemStr
+            : '${elNome}_$elQtdeNormalizado';
+
+        // Busca ou cria o elemento no mapa
+        final currentElement = elementosMap.putIfAbsent(chaveElemento, () {
+          final el = ElementoCreateModel();
+          el.nome.text = elNome;
+          el.qtde.text = elQtdeNormalizado;
+          return el;
+        });
 
         final bitola = double.tryParse(bitolaStr);
         final pesoLido = double.tryParse(pesoStr);
@@ -939,10 +940,10 @@ class ElementoController {
         }
       }
 
-      // Adiciona o último elemento acumulado
-      if (currentElement != null && currentElement.posicoes.isNotEmpty) {
-        novosElementos.add(currentElement);
-      }
+      // Converte o mapa para lista, filtrando elementos sem posições
+      final novosElementos = elementosMap.values
+          .where((el) => el.posicoes.isNotEmpty)
+          .toList();
 
       if (novosElementos.isEmpty) {
         importProgressStream.add(null);
