@@ -828,10 +828,13 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Nome e descrição utilizados no cabeçalho dos relatórios de Pedido de Compra e Cotação.',
+            'Dados utilizados no cabeçalho dos relatórios de Pedido de Compra, '
+            'Cotação e demais documentos externos.',
             style: TextStyle(fontSize: 14, color: Colors.grey[600]),
           ),
           const SizedBox(height: 24),
+
+          // ── Nome da Empresa (fantasia) ──
           StreamOut<String>(
             stream: PreferencesService.nomeEmpresa.listen,
             builder: (_, nome) {
@@ -839,7 +842,7 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                 initialValue: nome,
                 decoration: InputDecoration(
                   labelText: 'Nome da Empresa',
-                  hintText: 'Ex: Construtora Exemplo Ltda',
+                  hintText: 'Ex: ACO Estruturas',
                   prefixIcon: const Icon(Icons.business_center_outlined),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -850,24 +853,138 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
             },
           ),
           const SizedBox(height: 16),
+
+          // ── CNPJ ──
           StreamOut<String>(
-            stream: PreferencesService.descricaoEmpresa.listen,
-            builder: (_, desc) {
+            stream: PreferencesService.empresaCnpj.listen,
+            builder: (_, value) {
               return TextFormField(
-                initialValue: desc,
+                initialValue: value,
                 decoration: InputDecoration(
-                  labelText: 'Descrição / Setor',
-                  hintText: 'Ex: Departamento de Compras',
-                  prefixIcon: const Icon(Icons.description_outlined),
+                  labelText: 'CNPJ',
+                  hintText: 'Ex: 12.345.678/0001-99',
+                  prefixIcon: const Icon(Icons.numbers_outlined),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 onChanged: (val) =>
-                    PreferencesService.descricaoEmpresa.add(val),
+                    PreferencesService.empresaCnpj.add(val),
               );
             },
           ),
+          const SizedBox(height: 16),
+
+          // ── Razão Social ──
+          StreamOut<String>(
+            stream: PreferencesService.empresaRazaoSocial.listen,
+            builder: (_, value) {
+              return TextFormField(
+                initialValue: value,
+                decoration: InputDecoration(
+                  labelText: 'Razão Social',
+                  hintText: 'Ex: ACO Estruturas Metálicas Ltda',
+                  prefixIcon: const Icon(Icons.badge_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onChanged: (val) =>
+                    PreferencesService.empresaRazaoSocial.add(val),
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // ── Endereço ──
+          StreamOut<String>(
+            stream: PreferencesService.empresaEndereco.listen,
+            builder: (_, value) {
+              return TextFormField(
+                initialValue: value,
+                decoration: InputDecoration(
+                  labelText: 'Endereço',
+                  hintText: 'Ex: Rua das Indústrias, 100 - Bairro, Cidade/UF',
+                  prefixIcon: const Icon(Icons.location_on_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onChanged: (val) =>
+                    PreferencesService.empresaEndereco.add(val),
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // ── Telefone e E-mail lado a lado ──
+          Row(
+            children: [
+              Expanded(
+                child: StreamOut<String>(
+                  stream: PreferencesService.empresaTelefone.listen,
+                  builder: (_, value) {
+                    return TextFormField(
+                      initialValue: value,
+                      decoration: InputDecoration(
+                        labelText: 'Telefone',
+                        hintText: 'Ex: (31) 3333-4444',
+                        prefixIcon: const Icon(Icons.phone_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onChanged: (val) =>
+                          PreferencesService.empresaTelefone.add(val),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: StreamOut<String>(
+                  stream: PreferencesService.empresaEmail.listen,
+                  builder: (_, value) {
+                    return TextFormField(
+                      initialValue: value,
+                      decoration: InputDecoration(
+                        labelText: 'E-mail',
+                        hintText: 'Ex: compras@empresa.com.br',
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onChanged: (val) =>
+                          PreferencesService.empresaEmail.add(val),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // ── Redes Sociais ──
+          StreamOut<String>(
+            stream: PreferencesService.empresaRedesSociais.listen,
+            builder: (_, value) {
+              return TextFormField(
+                initialValue: value,
+                decoration: InputDecoration(
+                  labelText: 'Redes Sociais',
+                  hintText: 'Ex: @empresa · facebook.com/empresa',
+                  prefixIcon: const Icon(Icons.share_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onChanged: (val) =>
+                    PreferencesService.empresaRedesSociais.add(val),
+              );
+            },
+          ),
+
           const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.all(14),
@@ -883,8 +1000,9 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Esses dados aparecerão no topo do PDF de Pedido de Compra '  
-                    'e no Pedido de Cotação como remetente.',
+                    'Esses dados aparecerão no topo do PDF de Pedido de Compra '
+                    'e no Pedido de Cotação como remetente.\n'
+                    'Preencha ao menos o Nome e a Razão Social para relatórios completos.',
                     style: TextStyle(
                         fontSize: 12, color: Colors.indigo[800], height: 1.5),
                   ),
@@ -896,6 +1014,7 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
       ),
     );
   }
+
 
   // ═══════════════════════════════════════════════════
   //  LOCALIZAÇÃO

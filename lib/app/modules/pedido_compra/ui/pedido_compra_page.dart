@@ -497,6 +497,26 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
                                   ),
                                   ElevatedButton.icon(
                                     style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF25D366),
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    onPressed: escolhido != null
+                                        ? () {
+                                            Navigator.pop(ctx);
+                                            pedidoCompraCtrl.onEnviarCotacaoWhatsApp(
+                                              context,
+                                              itens,
+                                              escolhido!,
+                                            );
+                                          }
+                                        : null,
+                                    icon: const Icon(
+                                        Icons.send_outlined,
+                                        size: 15),
+                                    label: const Text('WhatsApp'),
+                                  ),
+                                  ElevatedButton.icon(
+                                    style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.orange[700],
                                       foregroundColor: Colors.white,
                                     ),

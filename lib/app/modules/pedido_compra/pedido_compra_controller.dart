@@ -1,3 +1,4 @@
+import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import 'package:aco_plus/app/core/client/backend_client.dart';
@@ -8,6 +9,7 @@ import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/services/pdf_download_service/pdf_download_service_mobile.dart';
 import 'package:aco_plus/app/core/services/preferences_service.dart';
+import 'package:aco_plus/app/core/services/supabase_storage_service.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:aco_plus/app/modules/estoque/estoque_controller.dart';
@@ -20,6 +22,8 @@ import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:overlay_support/overlay_support.dart';
+import 'package:printing/printing.dart';
+import 'dart:html' as html;
 
 final pedidoCompraCtrl = PedidoCompraController();
 
@@ -336,6 +340,12 @@ class PedidoCompraController {
         nomeEmpresa: PreferencesService.nomeEmpresa.value,
         descricaoEmpresa: PreferencesService.descricaoEmpresa.value,
         usuarioNome: usuarioCtrl.usuario?.nome,
+        razaoSocial: PreferencesService.empresaRazaoSocial.value,
+        endereco: PreferencesService.empresaEndereco.value,
+        telefone: PreferencesService.empresaTelefone.value,
+        email: PreferencesService.empresaEmail.value,
+        redesSociais: PreferencesService.empresaRedesSociais.value,
+        cnpj: PreferencesService.empresaCnpj.value,
       ).build(logoBytes);
       final bytes = await pdfDoc.save();
       final ts = DateFormat('yyyyMMdd_HHmm').format(DateTime.now());
@@ -350,6 +360,156 @@ class PedidoCompraController {
         e.toString(),
         position: NotificationPosition.bottom,
       );
+    }
+  }
+
+  // ── Enviar Cotação via WhatsApp (imagem) ──────────────────────────────────
+
+  Future<void> onEnviarCotacaoWhatsApp(
+    BuildContext context,
+    List<PedidoCompraModel> itens,
+    FabricanteModel fabricante,
+  ) async {
+    try {
+      NotificationService.showNeutral(
+        'Gerando imagem da cotação…',
+        'Aguarde',
+        position: NotificationPosition.bottom,
+      );
+      final logoBytes = await LogoHelper.logoBytesForPdf();
+      final pdfDoc = await PedidoCompraCotacaoPdfPage(
+        itens: itens,
+        fabricante: fabricante,
+        nomeEmpresa: PreferencesService.nomeEmpresa.value,
+        descricaoEmpresa: PreferencesService.descricaoEmpresa.value,
+        usuarioNome: usuarioCtrl.usuario?.nome,
+        razaoSocial: PreferencesService.empresaRazaoSocial.value,
+        endereco: PreferencesService.empresaEndereco.value,
+        telefone: PreferencesService.empresaTelefone.value,
+        email: PreferencesService.empresaEmail.value,
+        redesSociais: PreferencesService.empresaRedesSociais.value,
+        cnpj: PreferencesService.empresaCnpj.value,
+      ).build(logoBytes);
+      final pdfBytes = Uint8List.fromList(await pdfDoc.save());
+
+      // Converter PDF → imagem via Printing.raster (funciona no web)
+      Uint8List? imageBytes;
+      await for (final page in Printing.raster(pdfBytes, pages: [0], dpi: 200)) {
+        imageBytes = await page.toPng();
+        break; // só primeira página
+      }
+
+      if (imageBytes == null || imageBytes.isEmpty) {
+        NotificationService.showNegative(
+          'Erro',
+          'Não foi possível gerar a imagem',
+          position: NotificationPosition.bottom,
+        );
+        return;
+      }
+
+      final ts = DateFormat('yyyyMMdd_HHmm').format(DateTime.now());
+      final nomeArquivo =
+          'cotacao_${fabricante.nome.toLowerCase().replaceAll(' ', '_')}_$ts.png';
+
+      // Web Share API — abre menu de compartilhamento (WhatsApp, etc)
+      await _compartilharImagemWeb(imageBytes, nomeArquivo);
+
+      NotificationService.showPositive(
+        'Imagem gerada',
+        'Cotação pronta para envio',
+        position: NotificationPosition.bottom,
+      );
+    } catch (e) {
+      NotificationService.showNegative(
+        'Erro ao enviar cotação',
+        e.toString(),
+        position: NotificationPosition.bottom,
+      );
+    }
+  }
+
+  // ── Compartilhar imagem via Web Share API ─────────────────────────────────
+  Future<void> _compartilharImagemWeb(Uint8List bytes, String fileName) async {
+    try {
+      // Cria um File JS a partir dos bytes
+      final jsFile = js_util.callConstructor(
+        js_util.getProperty(html.window, 'File'),
+        [
+          js_util.jsify([bytes.buffer]),
+          fileName,
+          js_util.jsify({'type': 'image/png'}),
+        ],
+      );
+
+      // Verifica se o browser suporta compartilhar arquivos
+      final shareData = js_util.jsify({
+        'files': [jsFile],
+        'title': 'Cotação de materiais',
+      });
+
+      final canShare = js_util.callMethod<bool>(
+        html.window.navigator,
+        'canShare',
+        [shareData],
+      );
+
+      if (canShare) {
+        await js_util.promiseToFuture<void>(
+          js_util.callMethod(
+            html.window.navigator,
+            'share',
+            [shareData],
+          ),
+        );
+        return;
+      }
+    } catch (e) {
+      if (e.toString().contains('AbortError')) return; // usuário cancelou
+    }
+
+    // Fallback: dialog "Salvar como"
+    await _downloadImageWeb(bytes, fileName);
+  }
+
+  // ── Download de imagem via browser (web) ──────────────────────────────────
+  Future<void> _downloadImageWeb(Uint8List bytes, String fileName) async {
+    try {
+      // File System Access API — abre o dialog "Salvar como"
+      final blob = html.Blob([bytes.buffer], 'image/png');
+      final jsHandle = await js_util.promiseToFuture<dynamic>(
+        js_util.callMethod(html.window, 'showSaveFilePicker', [
+          js_util.jsify({
+            'suggestedName': fileName,
+            'types': [
+              {
+                'description': 'Imagem PNG',
+                'accept': {
+                  'image/png': ['.png'],
+                },
+              },
+            ],
+          }),
+        ]),
+      );
+      final writable = await js_util.promiseToFuture<dynamic>(
+        js_util.callMethod(jsHandle, 'createWritable', []),
+      );
+      await js_util.promiseToFuture<void>(
+        js_util.callMethod(writable, 'write', [blob]),
+      );
+      await js_util.promiseToFuture<void>(
+        js_util.callMethod(writable, 'close', []),
+      );
+    } catch (e) {
+      // Fallback: download direto se API não suportada ou usuario cancelou
+      if (e.toString().contains('AbortError')) return; // usuario cancelou
+      final blob = html.Blob([bytes.buffer], 'image/png');
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      html.AnchorElement(href: url)
+        ..setAttribute('download', fileName)
+        ..click();
+      html.Url.revokeObjectUrl(url);
     }
   }
 
@@ -375,6 +535,12 @@ class PedidoCompraController {
         descricaoEmpresa: PreferencesService.descricaoEmpresa.value,
         usuarioNome: usuarioCtrl.usuario?.nome,
         numeroPedido: numero,
+        razaoSocial: PreferencesService.empresaRazaoSocial.value,
+        endereco: PreferencesService.empresaEndereco.value,
+        telefone: PreferencesService.empresaTelefone.value,
+        email: PreferencesService.empresaEmail.value,
+        redesSociais: PreferencesService.empresaRedesSociais.value,
+        cnpj: PreferencesService.empresaCnpj.value,
       ).build(logoBytes);
       final bytes = await pdfDoc.save();
       final ts = DateFormat('yyyyMMdd_HHmm').format(DateTime.now());

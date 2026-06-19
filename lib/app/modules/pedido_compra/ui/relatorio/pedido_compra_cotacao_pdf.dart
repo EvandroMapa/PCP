@@ -15,6 +15,12 @@ class PedidoCompraCotacaoPdfPage {
   final String nomeEmpresa;
   final String descricaoEmpresa;
   final String? usuarioNome;
+  final String razaoSocial;
+  final String endereco;
+  final String telefone;
+  final String email;
+  final String redesSociais;
+  final String cnpj;
 
   PedidoCompraCotacaoPdfPage({
     required this.itens,
@@ -22,6 +28,12 @@ class PedidoCompraCotacaoPdfPage {
     required this.nomeEmpresa,
     required this.descricaoEmpresa,
     this.usuarioNome,
+    this.razaoSocial = '',
+    this.endereco = '',
+    this.telefone = '',
+    this.email = '',
+    this.redesSociais = '',
+    this.cnpj = '',
   });
 
   static final _azulEscuro = PdfColor.fromHex('#1E3A5F');
@@ -31,6 +43,10 @@ class PedidoCompraCotacaoPdfPage {
   static final _laranja = PdfColor.fromHex('#EA580C');
   static final _texto = PdfColor.fromHex('#1E293B');
   static final _subtexto = PdfColor.fromHex('#64748B');
+
+  /// Nome a exibir no cabeçalho — prioriza razão social, fallback para nome fantasia.
+  String get _nomeExibicao =>
+      razaoSocial.isNotEmpty ? razaoSocial : (nomeEmpresa.isNotEmpty ? nomeEmpresa : 'Empresa');
 
   Future<pw.Document> build(Uint8List logoBytes) async {
     final fontRegular = await PdfGoogleFonts.notoSansRegular();
@@ -55,8 +71,8 @@ class PedidoCompraCotacaoPdfPage {
           _buildDestinatario(),
           pw.SizedBox(height: 20),
           _buildTabela(),
-          pw.SizedBox(height: 20),
-          _buildObservacoes(),
+          pw.SizedBox(height: 32),
+          _buildAssinaturaResponsavel(),
         ],
       ),
     );
@@ -84,17 +100,22 @@ class PedidoCompraCotacaoPdfPage {
                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                 children: [
                   pw.Text(
-                    nomeEmpresa.isNotEmpty ? nomeEmpresa : 'Empresa',
+                    _nomeExibicao,
                     style: pw.TextStyle(
                       fontSize: 15,
                       fontWeight: pw.FontWeight.bold,
                       color: _azulEscuro,
                     ),
                   ),
-                  if (descricaoEmpresa.isNotEmpty)
+                  if (cnpj.isNotEmpty)
                     pw.Text(
-                      descricaoEmpresa,
-                      style: pw.TextStyle(fontSize: 9, color: _subtexto),
+                      'CNPJ: $cnpj',
+                      style: pw.TextStyle(fontSize: 8, color: _subtexto),
+                    ),
+                  if (endereco.isNotEmpty)
+                    pw.Text(
+                      endereco,
+                      style: pw.TextStyle(fontSize: 8, color: _subtexto),
                     ),
                 ],
               ),
@@ -103,25 +124,6 @@ class PedidoCompraCotacaoPdfPage {
           pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 5),
-                decoration: pw.BoxDecoration(
-                  color: _laranja,
-                  borderRadius: const pw.BorderRadius.all(
-                      pw.Radius.circular(4)),
-                ),
-                child: pw.Text(
-                  'PEDIDO DE COTAÇÃO',
-                  style: pw.TextStyle(
-                    color: PdfColors.white,
-                    fontSize: 11,
-                    fontWeight: pw.FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-              pw.SizedBox(height: 4),
               pw.Text(
                 'Data: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}',
                 style: pw.TextStyle(fontSize: 9, color: _subtexto),
@@ -249,17 +251,52 @@ class PedidoCompraCotacaoPdfPage {
                 ),
                 pw.SizedBox(height: 6),
                 pw.Text(
-                  nomeEmpresa.isNotEmpty ? nomeEmpresa : 'Nao configurado',
+                  _nomeExibicao,
                   style: pw.TextStyle(
                       fontSize: 12,
                       fontWeight: pw.FontWeight.bold,
                       color: _texto),
                 ),
-                if (descricaoEmpresa.isNotEmpty) ...[
+                if (razaoSocial.isNotEmpty && nomeEmpresa.isNotEmpty && razaoSocial != nomeEmpresa) ...[
+                  pw.SizedBox(height: 2),
+                  pw.Text(
+                    nomeEmpresa,
+                    style: pw.TextStyle(fontSize: 9, color: _subtexto),
+                  ),
+                ],
+                if (cnpj.isNotEmpty) ...[
+                  pw.SizedBox(height: 2),
+                  pw.Text(
+                    'CNPJ: $cnpj',
+                    style: pw.TextStyle(fontSize: 9, color: _subtexto),
+                  ),
+                ],
+                if (endereco.isNotEmpty) ...[
                   pw.SizedBox(height: 4),
                   pw.Text(
-                    descricaoEmpresa,
+                    endereco,
                     style: pw.TextStyle(fontSize: 9, color: _subtexto),
+                  ),
+                ],
+                if (telefone.isNotEmpty) ...[
+                  pw.SizedBox(height: 4),
+                  pw.Text(
+                    'Tel: $telefone',
+                    style: pw.TextStyle(fontSize: 9, color: _subtexto),
+                  ),
+                ],
+                if (email.isNotEmpty) ...[
+                  pw.SizedBox(height: 2),
+                  pw.Text(
+                    email,
+                    style: pw.TextStyle(fontSize: 9, color: _subtexto),
+                  ),
+                ],
+                if (redesSociais.isNotEmpty) ...[
+                  pw.SizedBox(height: 4),
+                  pw.Text(
+                    redesSociais,
+                    style: pw.TextStyle(fontSize: 8, color: _subtexto),
                   ),
                 ],
                 if (usuarioNome != null) ...[
@@ -291,11 +328,8 @@ class PedidoCompraCotacaoPdfPage {
       border: pw.TableBorder.all(color: _cinzaBorda, width: 0.5),
       columnWidths: {
         0: const pw.FixedColumnWidth(32),
-        1: const pw.FlexColumnWidth(3),
+        1: const pw.FlexColumnWidth(4),
         2: const pw.FlexColumnWidth(1.2),
-        3: const pw.FlexColumnWidth(1.5),
-        4: const pw.FlexColumnWidth(1.5),
-        5: const pw.FlexColumnWidth(1.5),
       },
       children: [
         // Header
@@ -305,9 +339,6 @@ class PedidoCompraCotacaoPdfPage {
             _cell('#', headerStyle, center: true),
             _cell('Produto / Bitola', headerStyle),
             _cell('Qtde (kg)', headerStyle, center: true),
-            _cell('Preço Unit.', headerStyle, center: true),
-            _cell('Total', headerStyle, center: true),
-            _cell('Prazo Entrega', headerStyle, center: true),
           ],
         ),
         // Linhas
@@ -326,9 +357,6 @@ class PedidoCompraCotacaoPdfPage {
                   itens[i].quantidade.toStringAsFixed(3),
                   i.isEven ? cellStyle : altStyle,
                   center: true),
-              _cell('', i.isEven ? cellStyle : altStyle, center: true),
-              _cell('', i.isEven ? cellStyle : altStyle, center: true),
-              _cell('', i.isEven ? cellStyle : altStyle, center: true),
             ],
           ),
         ],
@@ -348,91 +376,34 @@ class PedidoCompraCotacaoPdfPage {
                   color: PdfColors.white),
               center: true,
             ),
-            _cell('', headerStyle, center: true),
-            _cell('', headerStyle, center: true),
-            _cell('', headerStyle, center: true),
           ],
         ),
       ],
     );
   }
 
-  // ── Observações / Assinatura ─────────────────────────────────────────────
-  pw.Widget _buildObservacoes() {
-    return pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
+  // ── Assinatura do Responsável ─────────────────────────────────────────────
+  pw.Widget _buildAssinaturaResponsavel() {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.end,
       children: [
-        pw.Container(
-          padding: const pw.EdgeInsets.all(12),
-          decoration: pw.BoxDecoration(
-            color: _cinzaClaro,
-            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
-            border: pw.Border.all(color: _cinzaBorda),
-          ),
-          child: pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text(
-                'Condições de Pagamento:',
-                style: pw.TextStyle(
-                    fontSize: 9,
-                    fontWeight: pw.FontWeight.bold,
-                    color: _texto),
-              ),
-              pw.SizedBox(height: 16),
-              pw.Text(
-                'Validade da Proposta:',
-                style: pw.TextStyle(
-                    fontSize: 9,
-                    fontWeight: pw.FontWeight.bold,
-                    color: _texto),
-              ),
-              pw.SizedBox(height: 16),
-              pw.Text(
-                'Observações:',
-                style: pw.TextStyle(
-                    fontSize: 9,
-                    fontWeight: pw.FontWeight.bold,
-                    color: _texto),
-              ),
-              pw.SizedBox(height: 32),
-            ],
-          ),
-        ),
-        pw.SizedBox(height: 24),
-        pw.Row(
-          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        pw.Column(
           children: [
-            _assinatura(
-              'Assinatura do Fornecedor',
-              '${fabricante.nome}',
+            pw.Container(
+              width: 200,
+              height: 1,
+              color: _cinzaBorda,
             ),
-            _assinatura(
-              'Responsável pelo Pedido',
-              usuarioNome ?? nomeEmpresa,
-            ),
+            pw.SizedBox(height: 4),
+            pw.Text('Responsável pelo Pedido',
+                style: pw.TextStyle(fontSize: 8, color: _subtexto)),
+            pw.Text(usuarioNome ?? _nomeExibicao,
+                style: pw.TextStyle(
+                    fontSize: 8,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _texto)),
           ],
         ),
-      ],
-    );
-  }
-
-  pw.Widget _assinatura(String titulo, String nome) {
-    return pw.Column(
-      children: [
-        pw.Container(
-          width: 180,
-          height: 1,
-          color: _cinzaBorda,
-        ),
-        pw.SizedBox(height: 4),
-        pw.Text(titulo,
-            style: pw.TextStyle(fontSize: 8, color: _subtexto)),
-        pw.Text(nome,
-            style: pw.TextStyle(
-                fontSize: 8,
-                fontWeight: pw.FontWeight.bold,
-                color: _texto)),
       ],
     );
   }
@@ -476,3 +447,4 @@ class PedidoCompraCotacaoPdfPage {
     );
   }
 }
+

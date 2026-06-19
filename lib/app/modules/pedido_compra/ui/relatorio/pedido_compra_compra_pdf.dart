@@ -16,6 +16,12 @@ class PedidoCompraCompraPdfPage {
   final String descricaoEmpresa;
   final String? usuarioNome;
   final String numeroPedido;
+  final String razaoSocial;
+  final String endereco;
+  final String telefone;
+  final String email;
+  final String redesSociais;
+  final String cnpj;
 
   PedidoCompraCompraPdfPage({
     required this.itens,
@@ -24,7 +30,17 @@ class PedidoCompraCompraPdfPage {
     required this.descricaoEmpresa,
     this.usuarioNome,
     required this.numeroPedido,
+    this.razaoSocial = '',
+    this.endereco = '',
+    this.telefone = '',
+    this.email = '',
+    this.redesSociais = '',
+    this.cnpj = '',
   });
+
+  /// Nome a exibir no cabeçalho — prioriza razão social, fallback para nome fantasia.
+  String get _nomeExibicao =>
+      razaoSocial.isNotEmpty ? razaoSocial : (nomeEmpresa.isNotEmpty ? nomeEmpresa : 'Empresa');
 
   static final _azulEscuro = PdfColor.fromHex('#0F172A');
   static final _azulMedio = PdfColor.fromHex('#1D4ED8');
@@ -93,18 +109,24 @@ class PedidoCompraCompraPdfPage {
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Text(
-                          nomeEmpresa.isNotEmpty ? nomeEmpresa : 'Empresa',
+                          _nomeExibicao,
                           style: pw.TextStyle(
                             fontSize: 14,
                             fontWeight: pw.FontWeight.bold,
                             color: PdfColors.white,
                           ),
                         ),
-                        if (descricaoEmpresa.isNotEmpty)
+                        if (cnpj.isNotEmpty)
                           pw.Text(
-                            descricaoEmpresa,
+                            'CNPJ: $cnpj',
                             style: pw.TextStyle(
-                                fontSize: 9, color: PdfColors.grey300),
+                                fontSize: 8, color: PdfColors.grey300),
+                          ),
+                        if (endereco.isNotEmpty)
+                          pw.Text(
+                            endereco,
+                            style: pw.TextStyle(
+                                fontSize: 8, color: PdfColors.grey300),
                           ),
                       ],
                     ),
@@ -492,7 +514,7 @@ class PedidoCompraCompraPdfPage {
     return pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
       children: [
-        _assinaturaBloco('Autorizado por', usuarioNome ?? nomeEmpresa),
+        _assinaturaBloco('Autorizado por', usuarioNome ?? _nomeExibicao),
         _assinaturaBloco('Recebido por', fabricante.nome),
         _assinaturaBloco('Data do Aceite', '____/____/________'),
       ],

@@ -27,6 +27,12 @@ class PreferencesService implements Service {
   static final AppStream<String> modoMapa = AppStream<String>.seed('croqui');
   static final AppStream<String> nomeEmpresa = AppStream<String>.seed('');
   static final AppStream<String> descricaoEmpresa = AppStream<String>.seed('');
+  static final AppStream<String> empresaRazaoSocial = AppStream<String>.seed('');
+  static final AppStream<String> empresaEndereco = AppStream<String>.seed('');
+  static final AppStream<String> empresaTelefone = AppStream<String>.seed('');
+  static final AppStream<String> empresaEmail = AppStream<String>.seed('');
+  static final AppStream<String> empresaRedesSociais = AppStream<String>.seed('');
+  static final AppStream<String> empresaCnpj = AppStream<String>.seed('');
 
   @override
   Future<void> initialize() async {
@@ -384,6 +390,50 @@ class PreferencesService implements Service {
         log('Erro ao salvar descrição da empresa: $e');
       }
     });
+
+    // Recupera dados corporativos da empresa
+    try {
+      for (final entry in <String, AppStream<String>>{
+        'empresa_razao_social': empresaRazaoSocial,
+        'empresa_endereco': empresaEndereco,
+        'empresa_telefone': empresaTelefone,
+        'empresa_email': empresaEmail,
+        'empresa_redes_sociais': empresaRedesSociais,
+        'empresa_cnpj': empresaCnpj,
+      }.entries) {
+        final row = await SupabaseService.client
+            .from('configs')
+            .select()
+            .eq('key', entry.key)
+            .maybeSingle();
+        if (row != null) {
+          final val = row['value']?.toString() ?? '';
+          if (val.isNotEmpty) entry.value.add(val);
+        }
+      }
+    } catch (e) {
+      log('Erro ao carregar dados corporativos: $e');
+    }
+
+    // Listeners para salvar dados corporativos
+    for (final entry in <String, AppStream<String>>{
+      'empresa_razao_social': empresaRazaoSocial,
+      'empresa_endereco': empresaEndereco,
+      'empresa_telefone': empresaTelefone,
+      'empresa_email': empresaEmail,
+      'empresa_redes_sociais': empresaRedesSociais,
+      'empresa_cnpj': empresaCnpj,
+    }.entries) {
+      entry.value.listen.skip(1).listen((value) async {
+        try {
+          await SupabaseService.client.from('configs').upsert(
+              {'key': entry.key, 'value': value},
+              onConflict: 'key');
+        } catch (e) {
+          log('Erro ao salvar ${entry.key}: $e');
+        }
+      });
+    }
   }
 
   /// Escala fixa em 2.5x para manter nitidez em todos os níveis.
