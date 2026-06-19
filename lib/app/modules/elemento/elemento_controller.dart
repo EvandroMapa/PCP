@@ -898,9 +898,11 @@ class ElementoController {
             final pos = ElementoPosicaoCreateModel();
             pos.nome.text = posNome;
             pos.numeroOs.text = osNumber;
-            // O peso no CSV já é POR UNIDADE (1 elemento).
-            // O QR code confirma: n=qtde×qtdeElem e e=peso×qtdeElem.
-            pos.pesoKg.text = pesoLido.toStringAsFixed(2);
+            // O peso do CSV já vem multiplicado pela QTDE ELEM (peso total de todos os elementos).
+            // Divide pela qtde de elementos para obter o peso de 1 elemento.
+            final qtdeElem = int.tryParse(elQtdeStr) ?? 1;
+            final pesoUnitario = qtdeElem > 1 ? pesoLido / qtdeElem : pesoLido;
+            pos.pesoKg.text = pesoUnitario.toStringAsFixed(2);
             pos.qtde.text = totalQtdePosicao.toString();
             pos.produto = produtoEncontrado;
 
