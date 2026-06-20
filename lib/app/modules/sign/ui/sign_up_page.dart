@@ -83,28 +83,32 @@ class SignUpPageState extends State<SignUpPage>
             ],
           ),
         ),
-        child: Center(
-          child: FadeTransition(
-            opacity: _fadeAnim,
-            child: SlideTransition(
-              position: _slideAnim,
-              child: Container(
-                width: 400,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 40,
-                  vertical: 44,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.25),
-                      blurRadius: 40,
-                      offset: const Offset(0, 16),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
+          child: Center(
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: SlideTransition(
+                position: _slideAnim,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 44,
                     ),
-                  ],
-                ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.25),
+                          blurRadius: 40,
+                          offset: const Offset(0, 16),
+                        ),
+                      ],
+                    ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -267,7 +271,9 @@ class SignUpPageState extends State<SignUpPage>
                   ],
                 ),
               ),
+              ),
             ),
+          ),
           ),
         ),
       ),
