@@ -215,6 +215,20 @@ class _AppDrawerNotOperatorListState extends State<AppDrawerNotOperatorList> {
             notificacoes: widget.notificacoes,
           ),
         ),
+        // 1.5 Painel Gerencial (somente admin)
+        if (usuario.isAdmin)
+          Container(
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: AppColors.black.withValues(alpha: 0.1)),
+              ),
+            ),
+            child: AppDrawerItem(
+              item: AppModule.painelGerencial,
+              module: widget.module,
+              notificacoes: widget.notificacoes,
+            ),
+          ),
         // 2. Pedidos (Kanban + Listagem)
         AppDrawerDropdown(
           key: ValueKey('$_pedidos-${_expandedTitle == _pedidos}'),

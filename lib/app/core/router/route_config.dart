@@ -7,6 +7,7 @@ import 'package:aco_plus/app/core/router/flutter_web_plugins_shim.dart'
     if (dart.library.html) 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:aco_plus/app/modules/kanban/ui/kanban_page.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordens_page.dart';
+import 'package:aco_plus/app/modules/painel_gerencial/ui/painel_gerencial_page.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedidos_page.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_acompanhamento_page.dart';
 import 'package:aco_plus/app/modules/totem/ui/totem_box_page.dart';
@@ -46,6 +47,12 @@ class RouteConfig {
           path: '/ordens',
           pageBuilder: (context, state) => const NoTransitionPage(
             child: GlobalLoadingWrapper(child: OrdensPage(standalone: true)),
+          ),
+        ),
+        GoRoute(
+          path: '/gerencial',
+          pageBuilder: (context, state) => const NoTransitionPage(
+            child: GlobalLoadingWrapper(child: PainelGerencialPage(standalone: true)),
           ),
         ),
         GoRoute(

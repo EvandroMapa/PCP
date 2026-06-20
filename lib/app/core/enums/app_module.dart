@@ -5,6 +5,7 @@ import 'package:aco_plus/app/modules/fabricante/ui/fabricantes_page.dart';
 import 'package:aco_plus/app/modules/kanban/ui/kanban_page.dart';
 import 'package:aco_plus/app/modules/materia_prima/ui/materias_primas_page.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordens_page.dart';
+import 'package:aco_plus/app/modules/painel_gerencial/ui/painel_gerencial_page.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedidos_page.dart';
 import 'package:aco_plus/app/modules/bitola/ui/bitolas_page.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/estoque/relatorios_estoque_page.dart';
@@ -41,6 +42,7 @@ enum AppModule {
   estoqueSaldo,
   estoqueMovimentacao,
   pedidoCompra,
+  painelGerencial,
 }
 
 extension AppModuleExt on AppModule {
@@ -82,12 +84,14 @@ extension AppModuleExt on AppModule {
         return const EstoqueMovimentacaoPage();
       case AppModule.pedidoCompra:
         return const PedidoCompraPage();
+      case AppModule.painelGerencial:
+        return const PainelGerencialPage();
 
     }
   }
 
   PreferredSizeWidget? appBar(BuildContext context) {
-    if (this == AppModule.kanban || this == AppModule.dashboard) {
+    if (this == AppModule.kanban || this == AppModule.dashboard || this == AppModule.painelGerencial) {
       return PreferredSize(
         preferredSize: Size.zero,
         child: SizedBox.shrink(),
@@ -136,6 +140,8 @@ extension AppModuleExt on AppModule {
         return Icons.swap_vert_outlined;
       case AppModule.pedidoCompra:
         return Icons.shopping_cart_outlined;
+      case AppModule.painelGerencial:
+        return Icons.phone_android;
 
     }
   }
@@ -178,6 +184,8 @@ extension AppModuleExt on AppModule {
         return 'Movimentação de Estoque';
       case AppModule.pedidoCompra:
         return 'Pedidos de Compra';
+      case AppModule.painelGerencial:
+        return 'Painel Gerencial';
 
     }
   }
@@ -191,6 +199,8 @@ extension AppModuleExt on AppModule {
         return '/pedidos';
       case AppModule.ordens:
         return '/ordens';
+      case AppModule.painelGerencial:
+        return '/gerencial';
       default:
         return null;
     }
