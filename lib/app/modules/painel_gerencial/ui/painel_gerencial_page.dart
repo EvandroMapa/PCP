@@ -49,38 +49,41 @@ class _PainelGerencialPageState extends State<PainelGerencialPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _buildHeader(),
-        Expanded(
-          child: StreamOut(
-            stream: FirestoreClient.pedidos.pedidosUnarchivedsStream.listen,
-            builder: (_, pedidos) => StreamOut(
-              stream: FirestoreClient.ordens.dataStream.listen,
-              builder: (_, __) => RefreshIndicator(
-                onRefresh: _onRefresh,
-                color: AppColors.primaryMain,
-                child: ListView(
-                  padding: const EdgeInsets.all(12),
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    _totalProducaoCard(pedidos),
-                    const H(10),
-                    _secaoProducaoCD(),
-                    const H(10),
-                    _secaoArmacao(pedidos),
-                    const H(10),
-                    _secaoConsumo(),
-                    const H(10),
-                    _secaoEstoqueProjetado(),
-                    const H(20),
-                  ],
+    return Scaffold(
+      backgroundColor: AppColors.neutralLightest,
+      body: Column(
+        children: [
+          _buildHeader(),
+          Expanded(
+            child: StreamOut(
+              stream: FirestoreClient.pedidos.pedidosUnarchivedsStream.listen,
+              builder: (_, pedidos) => StreamOut(
+                stream: FirestoreClient.ordens.dataStream.listen,
+                builder: (_, __) => RefreshIndicator(
+                  onRefresh: _onRefresh,
+                  color: AppColors.primaryMain,
+                  child: ListView(
+                    padding: const EdgeInsets.all(12),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      _totalProducaoCard(pedidos),
+                      const H(10),
+                      _secaoProducaoCD(),
+                      const H(10),
+                      _secaoArmacao(pedidos),
+                      const H(10),
+                      _secaoConsumo(),
+                      const H(10),
+                      _secaoEstoqueProjetado(),
+                      const H(20),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
