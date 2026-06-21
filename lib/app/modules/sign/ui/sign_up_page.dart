@@ -6,6 +6,9 @@ import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:aco_plus/app/modules/sign/sign_controller.dart';
 import 'package:flutter/material.dart';
 
+// Atualize esta string a cada deploy para confirmar a versão em produção
+const String kBuildVersion = 'v21/06/2026 - 18:11';
+
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
 
@@ -105,7 +108,21 @@ class SignUpPageState extends State<SignUpPage>
                     child: Center(
                       child: ConstrainedBox(
                         constraints: const BoxConstraints(maxWidth: 400),
-                        child: _buildCard(),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildCard(),
+                            const SizedBox(height: 16),
+                            Text(
+                              kBuildVersion,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.white.withValues(alpha: 0.35),
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
