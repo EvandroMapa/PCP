@@ -204,6 +204,18 @@ class PedidoSupabaseCollection extends PedidoCollection {
   }) async {
     if (_isListen) return;
     _isListen = true;
+
+    // Registra callback para re-mapear pedidos quando elementos forem
+    // atualizados via Realtime. Corrige a race condition onde o Realtime de
+    // elementos atualizava o cache mas os pedidos em memória continuavam com
+    // os elementos antigos (sem kg, sem elementos nos cartões).
+    ElementoSupabaseCollection().onUpdated = () async {
+      if (!_optimisticCooldown && !ElementoSupabaseCollection.isImportando) {
+        log('PedidoSupabase: re-mapeando pedidos após atualização dos elementos.');
+        await start(lock: false);
+      }
+    };
+
     SupabaseService.client
         .from(name)
         .stream(primaryKey: ['id'])

@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
+import 'package:flutter/foundation.dart';
 
 class ElementoSupabaseCollection {
   static final ElementoSupabaseCollection _instance =
@@ -14,6 +15,11 @@ class ElementoSupabaseCollection {
 
   /// Flag global: bloqueia re-fetches automáticos durante importação SPE
   static bool isImportando = false;
+
+  /// Callback chamado após atualização dos elementos via Realtime.
+  /// Usado pelo PedidoSupabaseCollection para re-mapear pedidos
+  /// com os elementos atualizados e evitar a race condition.
+  VoidCallback? onUpdated;
 
   final String name = 'elementos';
   late final AppStream<List<ElementoModel>> dataStream;
@@ -124,14 +130,17 @@ class ElementoSupabaseCollection {
   Timer? _streamDebounce;
   void _updateStreams() {
     _streamDebounce?.cancel();
-    _streamDebounce = Timer(const Duration(milliseconds: 500), () {
+    _streamDebounce = Timer(const Duration(milliseconds: 500), () async {
       if (isImportando) {
         log('Supabase Realtime: Elementos ignorado (importação em andamento).');
         return;
       }
       _isStarted = false;
-      start();
+      await start();
       log('Supabase Realtime: Elementos e Arquivos reatualizados.');
+      // Notifica o PedidoSupabaseCollection para re-mapear pedidos
+      // com os elementos recém-atualizados (corrige race condition).
+      onUpdated?.call();
     });
   }
 }
