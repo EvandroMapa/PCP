@@ -180,12 +180,14 @@ class ArmacaoController {
       pedido.elementos.addAll(filtered);
       elementosStream.add(filtered);
 
-      // Atualizar resumo localmente
-      await updatePedidoSummary(pedido);
+      // Persiste o resumo em background — NÃO aguarda para não bloquear
+      // o loading spinner. A tela abre imediatamente com os dados do cache.
+      updatePedidoSummary(pedido);
     } catch (e) {
       log('ArmacaoController.onFetchElementos erro: $e');
     }
   }
+
 
 
   void onSearch(String val) {
