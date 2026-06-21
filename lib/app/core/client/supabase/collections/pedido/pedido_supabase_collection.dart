@@ -223,7 +223,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
         .listen((List<Map<String, dynamic>> data) {
           _realtimeDebounce?.cancel();
           _realtimeDebounce =
-              Timer(const Duration(milliseconds: 1200), () async {
+              Timer(const Duration(milliseconds: 400), () async {
             if (!kanbanCtrl.isDropLocked && !_optimisticCooldown && !ElementoSupabaseCollection.isImportando) {
               await start(lock: false);
             }

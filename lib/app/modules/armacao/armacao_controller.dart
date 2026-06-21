@@ -72,11 +72,21 @@ class ArmacaoController {
         filtered.sort((a, b) =>
             a.nome.toLowerCase().trim().compareTo(b.nome.toLowerCase().trim()));
         elementosStream.add(filtered);
+
+        // Recalcula o resumo do pedido corrente diretamente, sem esperar
+        // o ciclo completo de re-fetch de pedidos (reduz latência na tela).
+        if (_currentPedido != null) {
+          _currentPedido!.elementos
+            ..clear()
+            ..addAll(filtered);
+          updatePedidoSummary(_currentPedido!);
+        }
       }
     });
   }
 
   String? _currentPedidoId;
+  PedidoModel? _currentPedido;
 
   Future<void> _syncSummariesAndFilter(List<PedidoModel> all) async {
     loadingStream.add(true);
@@ -151,6 +161,7 @@ class ArmacaoController {
   Future<void> onFetchElementos(PedidoModel pedido) async {
     try {
       _currentPedidoId = pedido.id;
+      _currentPedido = pedido;
 
       // Garante que o listener reativo está registrado, mesmo que onInit()
       // não tenha sido chamado (ex: acesso via Painel Gerencial).

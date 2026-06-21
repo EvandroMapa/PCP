@@ -130,7 +130,7 @@ class ElementoSupabaseCollection {
   Timer? _streamDebounce;
   void _updateStreams() {
     _streamDebounce?.cancel();
-    _streamDebounce = Timer(const Duration(milliseconds: 500), () async {
+    _streamDebounce = Timer(const Duration(milliseconds: 150), () async {
       if (isImportando) {
         log('Supabase Realtime: Elementos ignorado (importação em andamento).');
         return;
