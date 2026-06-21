@@ -50,7 +50,19 @@ class ArmacaoController {
       _syncSummariesAndFilter(pedidos);
     });
 
-    // Listener reativo para elementos
+    _registerElementosListener();
+  }
+
+  bool _elementosListenerRegistrado = false;
+
+  /// Registra o listener reativo de elementos UMA única vez.
+  /// Chamado tanto no onInit() (via ArmacaoPage) quanto no onFetchElementos()
+  /// (via abertura direta pelo Painel Gerencial), garantindo que o Realtime
+  /// funcione em ambos os fluxos de navegação.
+  void _registerElementosListener() {
+    if (_elementosListenerRegistrado) return;
+    _elementosListenerRegistrado = true;
+
     AppSupabaseClient.elementos.dataStream.listen.listen((allElementos) {
       if (_currentPedidoId != null) {
         log('ArmacaoController: Recebendo atualização de elementos para Pedido $_currentPedidoId');
@@ -140,6 +152,10 @@ class ArmacaoController {
     try {
       _currentPedidoId = pedido.id;
 
+      // Garante que o listener reativo está registrado, mesmo que onInit()
+      // não tenha sido chamado (ex: acesso via Painel Gerencial).
+      _registerElementosListener();
+
       // Filtra o que já temos no AppSupabaseClient de forma reativa
       final filtered = AppSupabaseClient.elementos.data
           .where((e) => e.pedidoId == pedido.id)
@@ -159,6 +175,7 @@ class ArmacaoController {
       log('ArmacaoController.onFetchElementos erro: $e');
     }
   }
+
 
   void onSearch(String val) {
     _syncSummariesAndFilter(AppSupabaseClient.pedidos.data);
