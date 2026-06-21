@@ -60,7 +60,6 @@ class SignUpPageState extends State<SignUpPage>
   void _doLogin() async {
     FocusScope.of(context).unfocus();
     setState(() => _loading = true);
-    // Pequeno delay visual para feedback
     await Future.delayed(const Duration(milliseconds: 200));
     signCtrl.onClickLogin(email.text, senha.text, _rememberMe);
     if (mounted) setState(() => _loading = false);
@@ -68,6 +67,13 @@ class SignUpPageState extends State<SignUpPage>
 
   @override
   Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    final screenH = mq.size.height;
+    final topPad = mq.padding.top;
+    final bottomPad = mq.padding.bottom;
+    // Altura útil real (sem barras do sistema)
+    final usableH = screenH - topPad - bottomPad;
+
     return AppScaffold(
       resizeAvoid: true,
       body: Container(
@@ -83,28 +89,29 @@ class SignUpPageState extends State<SignUpPage>
           ),
         ),
         child: SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 32),
-                  child: FadeTransition(
-                    opacity: _fadeAnim,
-                    child: SlideTransition(
-                      position: _slideAnim,
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 400),
-                          child: _buildCard(),
-                        ),
+          child: SingleChildScrollView(
+            physics: const ClampingScrollPhysics(),
+            child: ConstrainedBox(
+              // Garante que o conteúdo ocupa no mínimo a altura útil da tela
+              // para centralizar verticalmente, mas nunca força mais do que isso
+              constraints: BoxConstraints(minHeight: usableH),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 32),
+                child: FadeTransition(
+                  opacity: _fadeAnim,
+                  child: SlideTransition(
+                    position: _slideAnim,
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 400),
+                        child: _buildCard(),
                       ),
                     ),
                   ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
