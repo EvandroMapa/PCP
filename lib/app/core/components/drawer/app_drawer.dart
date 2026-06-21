@@ -346,6 +346,24 @@ class AppDrawerHeader extends StatelessWidget {
                     ),
                   ),
                 if (kIsDev) const W(4),
+                // Versão sempre visível para admin
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'v1.0.0+425 · $kBuildHash',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                const W(4),
                 InkWell(
                   onTap: () {
                     Navigator.pop(context);

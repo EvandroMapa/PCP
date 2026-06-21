@@ -2,12 +2,10 @@ import 'package:aco_plus/app/app_repository.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
+import 'package:aco_plus/app/core/utils/app_env.dart';
 import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:aco_plus/app/modules/sign/sign_controller.dart';
 import 'package:flutter/material.dart';
-
-// Atualize esta string a cada deploy para confirmar a versão em produção
-const String kBuildVersion = 'v21/06/2026 - 18:11';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -114,7 +112,7 @@ class SignUpPageState extends State<SignUpPage>
                             _buildCard(),
                             const SizedBox(height: 16),
                             Text(
-                              kBuildVersion,
+                              'v1.0.0+425 · $kBuildHash',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.white.withValues(alpha: 0.35),
