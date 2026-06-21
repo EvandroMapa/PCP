@@ -13,6 +13,7 @@ import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/armacao/ui/armacao_elementos_page.dart';
 import 'package:aco_plus/app/modules/dashboard/dashboard_controller.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem/ordem_page.dart';
+import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -138,7 +139,7 @@ class _PainelGerencialPageState extends State<PainelGerencialPage> {
               ],
             ),
           ),
-          // Indicador de atualização
+          // Atualizar
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white, size: 20),
             onPressed: _onRefresh,
@@ -146,9 +147,48 @@ class _PainelGerencialPageState extends State<PainelGerencialPage> {
             constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             tooltip: 'Atualizar dados',
           ),
+          // Sair
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white, size: 20),
+            onPressed: _onLogout,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            tooltip: 'Sair',
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _onLogout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Sair'),
+        content: const Text('Deseja realmente sair da conta?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              foregroundColor: Colors.grey[700],
+            ),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryMain,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Sair'),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      await usuarioCtrl.clearCurrentUser();
+    }
   }
 
   // ═══════════════════════════════════════════════════
