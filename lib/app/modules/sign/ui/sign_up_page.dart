@@ -70,35 +70,30 @@ class SignUpPageState extends State<SignUpPage>
   Widget build(BuildContext context) {
     return AppScaffold(
       resizeAvoid: true,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return Container(
-            width: constraints.maxWidth,
-            height: constraints.maxHeight,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF0F172A),
-                  const Color(0xFF1E293B),
-                  const Color(0xFF334155),
-                ],
-              ),
-            ),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF0F172A),
+              const Color(0xFF1E293B),
+              const Color(0xFF334155),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight - 64,
-                ),
-                child: Center(
-                  child: FadeTransition(
-                    opacity: _fadeAnim,
-                    child: SlideTransition(
-                      position: _slideAnim,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 400),
+              child: FadeTransition(
+                opacity: _fadeAnim,
+                child: SlideTransition(
+                  position: _slideAnim,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 400),
                         child: Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(
@@ -276,16 +271,13 @@ class SignUpPageState extends State<SignUpPage>
                                 ),
                               ),
                             ],
-                          ),
-                        ),
-                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }
