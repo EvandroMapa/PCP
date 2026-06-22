@@ -284,22 +284,18 @@ class PedidoController {
     String search,
     List<PedidoModel> pedidos,
   ) {
-    pedidos = utilsArquiveds.steps.isEmpty
-        ? pedidos
-        : pedidos
-            .where(
-              (e) => utilsArquiveds.steps.map((e) => e.id).contains(e.step.id),
-            )
-            .toList();
-    if (search.length < 3) return pedidos;
-    List<PedidoModel> filtered = [];
-    for (final pedido in pedidos) {
-      if (pedido.filtro.toCompare.contains(search.toCompare)) {
-        filtered.add(pedido);
-      }
-    }
-    return filtered;
+    // Ordenar por arquivados mais recentes (último archive.createdAt)
+    pedidos.sort((a, b) {
+      final aDate = a.archives.isNotEmpty ? a.archives.last.createdAt : a.createdAt;
+      final bDate = b.archives.isNotEmpty ? b.archives.last.createdAt : b.createdAt;
+      return bDate.compareTo(aDate); // desc: mais recente primeiro
+    });
+    if (search.length < 2) return pedidos;
+    return pedidos
+        .where((e) => e.localizador.toCompare.contains(search.toCompare))
+        .toList();
   }
+
 
   Future<void> onConfirm(value, PedidoModel? pedido, bool isFromOrder) async {
     try {
@@ -320,7 +316,7 @@ class PedidoController {
           throw Exception('O pedido precisa ter pelo menos um membro responsável');
         }
         // Se NÃO é Mestre, qtdeOriginal deve acompanhar a qtde editada
-        if (edit.pedidosFilhos.isEmpty) {
+        if (!edit.isMestre) {
           for (int i = 0; i < edit.produtos.length; i++) {
             edit.produtos[i] = edit.produtos[i].copyWith(
               qtdeOriginal: edit.produtos[i].qtde,
@@ -333,10 +329,11 @@ class PedidoController {
         if (edit.isMestre && pedido != null) {
           final obraAnteriorId = pedido.obra.id;
           final obraNovaId = edit.obra.id;
-          if (obraAnteriorId != obraNovaId && edit.pedidosFilhos.isNotEmpty) {
+          final filhosReais = edit.getPedidosFilhos();
+          if (obraAnteriorId != obraNovaId && filhosReais.isNotEmpty) {
             final propagar = await _perguntarPropagacaoObra(
               value, // context
-              edit.pedidosFilhos.length,
+              filhosReais.length,
             );
             if (propagar) {
               await _propagarObraParaParciais(edit);
@@ -480,6 +477,10 @@ class PedidoController {
         final mestre = FirestoreClient.pedidos.getById(pedido.pai!);
         mestre.pedidosFilhos.remove(pedido.id);
 
+        // Limpar também quaisquer IDs fantasma remanescentes no mestre
+        final idsValidos = mestre.getPedidosFilhos().map((f) => f.id).toSet();
+        mestre.pedidosFilhos.retainWhere((id) => idsValidos.contains(id));
+
         // Devolver a quantidade do parcial de volta ao mestre
         for (final produtoFilho in pedido.produtos) {
           final idx = mestre.produtos.indexWhere(
@@ -541,13 +542,21 @@ class PedidoController {
     }
 
     // Regra 1: Pedido Mestre não pode ser excluído se tiver parciais
-    if (pedido.isMestre) {
+    // Usa getPedidosFilhos() para ignorar IDs fantasma de parciais já excluídos
+    final filhosReais = pedido.getPedidosFilhos();
+    if (filhosReais.isNotEmpty) {
       NotificationService.showNegative(
         'Exclusão bloqueada',
-        'O Pedido Mestre possui ${pedido.pedidosFilhos.length} parcial(is) vinculado(s). '
+        'O Pedido Mestre possui ${filhosReais.length} parcial(is) vinculado(s). '
         'Exclua os parciais antes de excluir o Mestre.',
       );
       return true;
+    }
+
+    // Limpar IDs fantasma (parciais já excluídos mas cujo ID ficou no array)
+    if (pedido.pedidosFilhos.isNotEmpty && filhosReais.isEmpty) {
+      pedido.pedidosFilhos.clear();
+      await BackendClient.pedidos.update(pedido);
     }
 
     // Regra 2: Pedido em produção não pode ser excluído
@@ -814,6 +823,47 @@ class PedidoController {
       },
     );
 
+    // Sugestão: se arquivou um parcial e agora todos os filhos do mestre estão arquivados
+    if (pedido.isParcial && pedido.pai != null && pedido.pai!.isNotEmpty) {
+      // IMPORTANTE: usar BackendClient (Supabase), não FirestoreClient (legado).
+      // Também busca após o fetch() para pegar o estado atualizado dos filhos.
+      final mestre = BackendClient.pedidos.getById(pedido.pai!);
+      if (!mestre.localizador.startsWith('NOTFOUND') &&
+          !mestre.isArchived &&
+          mestre.todosFilhosArquivados &&
+          contextGlobal.mounted) {
+        final arquivarMestre = await showDialog<bool>(
+          context: contextGlobal,
+          builder: (_) => AlertDialog(
+            icon: Icon(Icons.archive_outlined,
+                size: 40, color: Colors.green[700]),
+            title: const Text('Todos os parciais arquivados!'),
+            content: Text(
+              'Todos os pedidos parciais de "${mestre.localizador}" foram arquivados.\n\n'
+              'Deseja arquivar o Pedido Mestre também?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(_, false),
+                child: const Text('Agora não'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryMain,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(_, true),
+                child: const Text('Arquivar Mestre'),
+              ),
+            ],
+          ),
+        );
+        if (arquivarMestre == true && contextGlobal.mounted) {
+          await onArchive(contextGlobal, mestre, isPedido: false);
+        }
+      }
+    }
+
     return true;
   }
 
@@ -826,6 +876,15 @@ class PedidoController {
       showLoadingDialog();
       await BackendClient.pedidos.update(pedido);
       await BackendClient.pedidos.fetch();
+
+      // Remove o pedido da lista de arquivados diretamente no stream.
+      // Isso garante que o StreamBuilder receba o evento e atualize a UI
+      // imediatamente, sem depender de re-fetch ou timing de rebuild.
+      final arquivadosAtuais = BackendClient.pedidos.pedidosArchiveds
+          .where((p) => p.id != pedido.id)
+          .toList();
+      BackendClient.pedidos.pedidosArchivedsStream.add(arquivadosAtuais);
+
       if (contextGlobal.mounted) Navigator.pop(contextGlobal);
       for (var i = 0; i < pops; i++) {
         Navigator.pop(value);
@@ -966,43 +1025,7 @@ class PedidoController {
   }
 
   void onSortPedidosArchiveds(List<PedidoModel> pedidos) {
-    bool isAsc = utilsArquiveds.sortOrder == SortOrder.asc;
-    switch (utilsArquiveds.sortType) {
-      case SortType.localizator:
-        pedidos.sort(
-          (a, b) => isAsc
-              ? a.localizador.compareTo(b.localizador)
-              : b.localizador.compareTo(a.localizador),
-        );
-        break;
-      case SortType.alfabetic:
-        pedidos.sort(
-          (a, b) => isAsc
-              ? a.localizador.compareTo(b.localizador)
-              : b.localizador.compareTo(a.localizador),
-        );
-        break;
-      case SortType.deliveryAt:
-        pedidos.sort((a, b) {
-          final aDelivery = a.deliveryAt;
-          final bDelivery = b.deliveryAt;
-          if (aDelivery == null && bDelivery == null) return 0;
-          if (aDelivery == null) return 1;
-          if (bDelivery == null) return -1;
-          return isAsc
-              ? aDelivery.compareTo(bDelivery)
-              : bDelivery.compareTo(aDelivery);
-        });
-        break;
-      case SortType.createdAt:
-        pedidos.sort(
-          (a, b) => isAsc
-              ? a.createdAt.compareTo(b.createdAt)
-              : b.createdAt.compareTo(a.createdAt),
-        );
-        break;
-      default:
-    }
+    // Ordenação já feita em getPedidosArchivedsFiltered — sem ação extra.
   }
 
   Future<void> onUpdateObraEndereco(

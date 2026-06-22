@@ -58,8 +58,8 @@ class PedidoModel {
   final List<ElementoModel> elementos;
   bool isImportado;
 
-  /// true quando o pedido tem filhos — é só um container de informações da venda
-  bool get isMestre => pedidosFilhos.isNotEmpty;
+  /// true quando o pedido tem filhos REAIS (ignora IDs fantasma de parciais já excluídos)
+  bool get isMestre => getPedidosFilhos().isNotEmpty;
 
   /// true quando o pedido foi gerado como filho de outro
   bool get isParcial => pai != null && pai!.isNotEmpty;
@@ -268,6 +268,32 @@ class PedidoModel {
         .where((e) => !e.localizador.startsWith('NOTFOUND'))
         .toList();
   }
+
+  /// Retorna todos os filhos, incluindo os arquivados (para exibição na aba Bitolas)
+  List<PedidoModel> getTodosFilhos() {
+    return pedidosFilhos
+        .map<PedidoModel>((e) => FirestoreClient.pedidos.getById(e))
+        .where((e) => !e.localizador.startsWith('NOTFOUND'))
+        .toList();
+  }
+
+  /// true quando é Mestre, TODOS os filhos estão arquivados e o saldo está zerado
+  bool get todosFilhosArquivados {
+    if (!isMestre) return false;
+    // IMPORTANTE: usar BackendClient (Supabase) que inclui tanto ativos quanto arquivados.
+    // FirestoreClient (legado) não encontra os filhos após a migração.
+    final filhos = pedidosFilhos
+        .map<PedidoModel>((e) => BackendClient.pedidos.getById(e))
+        .where((e) => !e.localizador.startsWith('NOTFOUND'))
+        .toList();
+    if (filhos.isEmpty) return false;
+    if (!filhos.every((f) => f.isArchived)) return false;
+    // Saldo zerado = nenhum produto do mestre tem qtde disponível restante
+    // `qtde` do mestre já é o saldo após distribuição para os filhos
+    return !produtos.any((p) => p.qtde > 0.001);
+  }
+
+
 
   List<PedidoBitolaStatus> get getStatusess {
     List<PedidoBitolaStatus> statusess = [];

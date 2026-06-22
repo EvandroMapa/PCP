@@ -319,9 +319,10 @@ class _EditarObraDialogState extends State<_EditarObraDialog> {
 
     // Caso 2: editar dados da obra de pedido mestre
     // Como parciais compartilham a mesma obraId, a alteração reflete em todos
-    if (widget.pedido.isMestre && widget.pedido.pedidosFilhos.isNotEmpty) {
+    final filhosReais = widget.pedido.getPedidosFilhos();
+    if (widget.pedido.isMestre && filhosReais.isNotEmpty) {
       final continuar = await _avisarAlteracaoEmParciais(
-        widget.pedido.pedidosFilhos.length,
+        filhosReais.length,
       );
       if (continuar != true) return;
     }

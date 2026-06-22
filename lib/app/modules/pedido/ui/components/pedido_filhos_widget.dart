@@ -121,6 +121,241 @@ class _ParcialCardState extends State<_ParcialCard> {
   @override
   Widget build(BuildContext context) {
     final filho = widget.filho;
+    final isArquivado = filho.isArchived;
+
+    final card = AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: 264,
+      decoration: BoxDecoration(
+        color: isArquivado ? const Color(0xFFF8FAFC) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isArquivado
+              ? const Color(0xFFCBD5E1)
+              : Colors.black,
+          width: isArquivado ? 1.0 : 1.5,
+        ),
+        boxShadow: isArquivado
+            ? []
+            : [
+                BoxShadow(
+                  color:
+                      Colors.black.withValues(alpha: _isHovered ? 0.15 : 0.06),
+                  blurRadius: _isHovered ? 16 : 8,
+                  offset: Offset(0, _isHovered ? 6 : 3),
+                ),
+              ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ── Tarja (preta se ativo, cinza se arquivado) ──
+          Container(
+            width: double.infinity,
+            padding:
+                const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            decoration: BoxDecoration(
+              color: isArquivado
+                  ? const Color(0xFF64748B)
+                  : Colors.black,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(14),
+                topRight: Radius.circular(14),
+              ),
+            ),
+            child: Row(
+              children: [
+                if (isArquivado) ...[
+                  const Icon(Icons.archive_outlined,
+                      size: 13, color: Colors.white70),
+                  const SizedBox(width: 6),
+                ],
+                Expanded(
+                  child: Text(
+                    filho.localizador,
+                    style: AppCss.mediumBold
+                        .setSize(13)
+                        .setColor(isArquivado
+                            ? Colors.white70
+                            : Colors.white)
+                        .copyWith(letterSpacing: 0.5),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                // Badge CD/CDA ou ARQUIVADO
+                if (isArquivado)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.20),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.35),
+                          width: 0.5),
+                    ),
+                    child: Text(
+                      'ARQUIVADO',
+                      style: AppCss.minimumBold.copyWith(
+                          fontSize: 9, color: Colors.white70),
+                    ),
+                  )
+                else ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.3),
+                          width: 0.5),
+                    ),
+                    child: Text(
+                      filho.tipo.name.toUpperCase(),
+                      style: AppCss.minimumBold.copyWith(
+                          fontSize: 9, color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  // Botão excluir — oculto para arquivados
+                  InkWell(
+                    onTap: () async {
+                      final confirm = await showConfirmDialog(
+                        'Excluir Parcial',
+                        'Deseja excluir "${filho.localizador}"? O saldo será devolvido ao Mestre.',
+                      );
+                      if (confirm && context.mounted) {
+                        final excluiu = await pedidoCtrl.onDelete(
+                          context,
+                          filho,
+                          isPedido: false,
+                        );
+                        if (excluiu) {
+                          final mestreAtualizado =
+                              FirestoreClient.pedidos.getById(widget.mestre.id);
+                          pedidoCtrl.pedidoStream.add(mestreAtualizado);
+                        }
+                      }
+                    },
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Icon(Icons.delete_outline,
+                          size: 13, color: Colors.white70),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          // ── Corpo: cliente + total ──
+          Opacity(
+            opacity: isArquivado ? 0.6 : 1.0,
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    filho.descricao.isNotEmpty
+                        ? filho.descricao
+                        : 'Sem descrição',
+                    style: AppCss.minimumRegular.copyWith(
+                      fontSize: 11,
+                      color: Colors.grey[600],
+                      fontStyle: filho.descricao.isEmpty
+                          ? FontStyle.italic
+                          : FontStyle.normal,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.scale_outlined,
+                          size: 13, color: Colors.grey[500]),
+                      const SizedBox(width: 4),
+                      Text(
+                        filho.getQtdeTotal().toKg(),
+                        style: AppCss.minimumBold.copyWith(fontSize: 13),
+                      ),
+                      const Spacer(),
+                      if (!isArquivado)
+                        Icon(Icons.chevron_right,
+                            size: 16, color: Colors.grey[400]),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Produtos (hover) — não exibe para arquivados ──
+          if (!isArquivado)
+            AnimatedCrossFade(
+              firstChild: const SizedBox(width: double.infinity),
+              secondChild: Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  border: const Border(
+                    top: BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(14),
+                    bottomRight: Radius.circular(14),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final p in filho.produtos)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                p.produto.nome,
+                                style: AppCss.minimumRegular
+                                    .copyWith(fontSize: 10),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Text(
+                              p.qtde.toKg(),
+                              style: AppCss.minimumBold.copyWith(
+                                  fontSize: 10,
+                                  color: const Color(0xFF374151)),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              crossFadeState: _isHovered
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+              duration: const Duration(milliseconds: 200),
+            ),
+        ],
+      ),
+    );
+
+    // Arquivados: só visual, sem clique
+    if (isArquivado) return card;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -136,198 +371,7 @@ class _ParcialCardState extends State<_ParcialCard> {
           pedidoCtrl.pedidoStream.add(mestreAtualizado);
         },
         borderRadius: BorderRadius.circular(16),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: 264,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.black, width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: _isHovered ? 0.15 : 0.06),
-                blurRadius: _isHovered ? 16 : 8,
-                offset: Offset(0, _isHovered ? 6 : 3),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // ── Tarja preta ──
-              Container(
-                width: double.infinity,
-                padding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                decoration: const BoxDecoration(
-                  color: Colors.black,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(14),
-                    topRight: Radius.circular(14),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        filho.localizador,
-                        style: AppCss.mediumBold
-                            .setSize(13)
-                            .setColor(Colors.white)
-                            .copyWith(letterSpacing: 0.5),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    // Badge CD/CDA
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3),
-                            width: 0.5),
-                      ),
-                      child: Text(
-                        filho.tipo.name.toUpperCase(),
-                        style: AppCss.minimumBold.copyWith(
-                            fontSize: 9, color: Colors.white),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    // Botão excluir
-                    InkWell(
-                      onTap: () async {
-                        final confirm = await showConfirmDialog(
-                          'Excluir Parcial',
-                          'Deseja excluir "${filho.localizador}"? O saldo será devolvido ao Mestre.',
-                        );
-                        if (confirm && context.mounted) {
-                          // isPedido: false evita que o onDelete tente dar pop() na página
-                          // (o parcial é um card, não uma página separada)
-                          final excluiu = await pedidoCtrl.onDelete(
-                            context,
-                            filho,
-                            isPedido: false,
-                          );
-                          if (excluiu) {
-                            // Atualiza o stream do Mestre para refletir a remoção imediatamente
-                            final mestreAtualizado =
-                                FirestoreClient.pedidos.getById(pedido.id);
-                            pedidoCtrl.pedidoStream.add(mestreAtualizado);
-                          }
-                        }
-                      },
-                      child: Container(
-                        width: 22,
-                        height: 22,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Icon(Icons.delete_outline,
-                            size: 13, color: Colors.white70),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // ── Corpo: cliente + total ──
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      filho.descricao.isNotEmpty
-                          ? filho.descricao
-                          : 'Sem descrição',
-                      style: AppCss.minimumRegular.copyWith(
-                        fontSize: 11,
-                        color: Colors.grey[600],
-                        fontStyle: filho.descricao.isEmpty
-                            ? FontStyle.italic
-                            : FontStyle.normal,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.scale_outlined,
-                            size: 13, color: Colors.grey[500]),
-                        const SizedBox(width: 4),
-                        Text(
-                          filho.getQtdeTotal().toKg(),
-                          style: AppCss.minimumBold.copyWith(fontSize: 13),
-                        ),
-                        const Spacer(),
-                        Icon(Icons.chevron_right,
-                            size: 16, color: Colors.grey[400]),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // ── Produtos (hover) ──
-              AnimatedCrossFade(
-                firstChild: const SizedBox(width: double.infinity),
-                secondChild: Container(
-                  width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    border: const Border(
-                      top: BorderSide(color: Color(0xFFE2E8F0)),
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(14),
-                      bottomRight: Radius.circular(14),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      for (final p in filho.produtos)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 2),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  p.produto.nome,
-                                  style: AppCss.minimumRegular
-                                      .copyWith(fontSize: 10),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Text(
-                                p.qtde.toKg(),
-                                style: AppCss.minimumBold.copyWith(
-                                    fontSize: 10,
-                                    color: const Color(0xFF374151)),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                crossFadeState: _isHovered
-                    ? CrossFadeState.showSecond
-                    : CrossFadeState.showFirst,
-                duration: const Duration(milliseconds: 200),
-              ),
-            ],
-          ),
-        ),
+        child: card,
       ),
     );
   }

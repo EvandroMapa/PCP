@@ -210,8 +210,11 @@ class PedidoSupabaseCollection extends PedidoCollection {
     // elementos atualizava o cache mas os pedidos em memória continuavam com
     // os elementos antigos (sem kg, sem elementos nos cartões).
     ElementoSupabaseCollection().onUpdated = () async {
-      if (!_optimisticCooldown && !ElementoSupabaseCollection.isImportando) {
+      if (!ElementoSupabaseCollection.isImportando) {
         log('PedidoSupabase: re-mapeando pedidos após atualização dos elementos.');
+        // Não verifica _optimisticCooldown aqui: a atualização de elementos
+        // é uma fonte externa ao pedido e DEVE sempre re-mapear.
+        // Caso contrário, deletar o último elemento não atualiza o botão de parcial.
         await start(lock: false);
       }
     };
@@ -323,17 +326,23 @@ class PedidoSupabaseCollection extends PedidoCollection {
     try {
       if (pedidos.isEmpty) return [];
 
-      final payload = pedidos.map((e) => e.toSupabaseMap()).toList();
-      await SupabaseService.client.from(name).upsert(payload);
+      // Atualiza SOMENTE o campo index — sem re-sincronizar relacionamentos.
+      // Isso evita 409 Conflict causado por concorrência com o update() individual
+      // do pedido que foi movido (que já cuida de tags, status_history, etc.).
+      await Future.wait(
+        pedidos.map((p) => SupabaseService.client
+            .from(name)
+            .update({'index': p.index})
+            .eq('id', p.id)),
+      );
 
-      // O streaming cuidará de atualizar a UI local.
-      // Retornamos a lista original para consistência.
       return pedidos;
     } catch (e) {
       log('Supabase Error (Pedido.updateAll): $e');
       return [];
     }
   }
+
 
   @override
   Future<PedidoModel?> update(PedidoModel model) async {
@@ -418,9 +427,14 @@ class PedidoSupabaseCollection extends PedidoCollection {
           .delete()
           .eq('pedido_id', model.id);
       if (model.tags.isNotEmpty) {
-        await SupabaseService.client.from('pedido_tags').insert(model.tags
-            .map((t) => {'pedido_id': model.id, 'tag_id': t.id})
-            .toList());
+        // upsert + ignoreDuplicates evita 409 em race conditions concorrentes
+        await SupabaseService.client.from('pedido_tags').upsert(
+          model.tags
+              .map((t) => {'pedido_id': model.id, 'tag_id': t.id})
+              .toList(),
+          onConflict: 'pedido_id,tag_id',
+          ignoreDuplicates: true,
+        );
       }
     } catch (e) {
       syncErrors.add('Erro sincronia Tags: $e');
@@ -428,10 +442,13 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
     // 4. Insert history (already cleaned)
     try {
-      // Status History
+      // Status History — upsert + ignoreDuplicates evita 409 em race conditions
       if (model.statusess.isNotEmpty) {
-        await SupabaseService.client.from('pedido_status_history').insert(
-            model.statusess.map((s) => s.toSupabaseMap(model.id)).toList());
+        await SupabaseService.client.from('pedido_status_history').upsert(
+          model.statusess.map((s) => s.toSupabaseMap(model.id)).toList(),
+          onConflict: 'id',
+          ignoreDuplicates: true,
+        );
       }
     } catch (e) {
       syncErrors.add('Erro Status: $e');
@@ -449,12 +466,18 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
       if (stepsValidos.isNotEmpty) {
         // Tem steps válidos: deleta e recria
+        // upsert + ignoreDuplicates evita 409 em race conditions concorrentes
         await SupabaseService.client
             .from('pedido_steps_history')
             .delete()
             .eq('pedido_id', model.id);
-        await SupabaseService.client.from('pedido_steps_history').insert(
-            stepsValidos.map((st) => st.toSupabaseMap(model.id)).toList());
+        await SupabaseService.client.from('pedido_steps_history').upsert(
+          stepsValidos.map((st) => st.toSupabaseMap(model.id)).toList(),
+          onConflict: 'id',
+          ignoreDuplicates: true,
+        );
+
+
       }
       // Se não há steps válidos: não toca no banco (preserva o que já existe)
     } catch (e) {

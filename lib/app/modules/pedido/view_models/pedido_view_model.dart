@@ -31,9 +31,6 @@ class PedidoUtils {
 
 class PedidoArquivedUtils {
   final TextController search = TextController();
-  SortType sortType = SortType.localizator;
-  SortOrder sortOrder = SortOrder.asc;
-  List<StepModel> steps = [];
   bool showFilter = false;
 }
 

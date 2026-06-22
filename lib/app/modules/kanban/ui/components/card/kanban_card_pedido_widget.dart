@@ -120,6 +120,32 @@ class KanbanCardPedidoWidget extends StatelessWidget {
                           fontSize: 8, color: const Color(0xFF92400E)),
                     ),
                   ),
+                  if (pedido.todosFilhosArquivados) ...[
+                    const W(4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD1FAE5),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                            color: const Color(0xFF10B981), width: 0.5),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.archive_outlined,
+                              size: 8, color: Color(0xFF065F46)),
+                          const W(2),
+                          Text(
+                            'ARQUIVADOS',
+                            style: AppCss.minimumBold.copyWith(
+                                fontSize: 8, color: const Color(0xFF065F46)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
                 if (pedido.isParcial) ...[
                   const W(6),
@@ -172,14 +198,16 @@ class KanbanCardPedidoWidget extends StatelessWidget {
   }
 
   Color _getColor(PedidoModel pedido) {
+    if (pedido.todosFilhosArquivados) return const Color(0xFFECFDF5);
     if (pedido.comments.any((e) => e.isFixed)) {
       return const Color.fromARGB(255, 255, 227, 177);
     }
     return const Color(0xFFFFFFFF);
   }
 
-  /// Cor da borda lateral (stripe): âmbar p/ mestre, azul p/ parcial, nulo p/ normal
+  /// Cor da borda lateral (stripe): verde p/ todos arquivados, âmbar p/ mestre, azul p/ parcial
   Color? _getStripeColor(PedidoModel pedido) {
+    if (pedido.todosFilhosArquivados) return const Color(0xFF10B981);
     if (pedido.isMestre) return const Color(0xFFF59E0B);
     if (pedido.isParcial) return const Color(0xFF3B82F6);
     return null;

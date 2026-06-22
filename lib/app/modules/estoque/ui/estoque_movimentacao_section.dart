@@ -24,6 +24,9 @@ class _EstoqueMovimentacaoSectionState
   String? _chipId;
   bool _carregando = false;
 
+  /// Ordens expandidas — chave = ordemId, quando expandida mostra itens individuais
+  final Set<String> _ordensExpandidas = {};
+
   @override
   void initState() {
     super.initState();
@@ -363,6 +366,9 @@ class _EstoqueMovimentacaoSectionState
         .where((l) => !l.isEntrada)
         .fold(0.0, (s, l) => s + l.quantidade.abs());
 
+    // Agrupa linhas: baixas de produção com ordemId ficam agrupadas por ordem
+    final linhasAgrupadas = _agruparLinhasPorOrdem(linhas);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -428,7 +434,7 @@ class _EstoqueMovimentacaoSectionState
               ),
             )
           else
-            ...linhas.map((l) => _linhaEvento(l)),
+            ...linhasAgrupadas.map((item) => _linhaOuGrupo(item)),
 
           // ── Linha de saldo final ───────────────────────────────────────
           _linhaSaldo(
@@ -444,6 +450,292 @@ class _EstoqueMovimentacaoSectionState
           const SizedBox(height: 4),
         ],
       ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // AGRUPAMENTO POR ORDEM
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Agrupa linhas consecutivas de baixa_producao com o mesmo ordemId.
+  /// Linhas de outros tipos ou sem ordemId ficam individuais.
+  List<_LinhaOuGrupo> _agruparLinhasPorOrdem(
+      List<EstoqueLinhaMovimentacao> linhas) {
+    final resultado = <_LinhaOuGrupo>[];
+    final Map<String, List<EstoqueLinhaMovimentacao>> gruposBaixa = {};
+    final Map<String, double> grupoSaldoFinal = {};
+
+    for (final linha in linhas) {
+      final isBaixa = linha.tipoValue == 'baixa_producao';
+      if (isBaixa && linha.ordemId != null && linha.ordemId!.isNotEmpty) {
+        gruposBaixa.putIfAbsent(linha.ordemId!, () => []);
+        gruposBaixa[linha.ordemId!]!.add(linha);
+        grupoSaldoFinal[linha.ordemId!] = linha.saldoAcumulado;
+      }
+    }
+
+    // Set de ordens já emitidas para não duplicar
+    final ordensEmitidas = <String>{};
+
+    for (final linha in linhas) {
+      final isBaixa = linha.tipoValue == 'baixa_producao';
+      if (isBaixa && linha.ordemId != null && linha.ordemId!.isNotEmpty) {
+        if (ordensEmitidas.contains(linha.ordemId!)) continue;
+        ordensEmitidas.add(linha.ordemId!);
+
+        final grupo = gruposBaixa[linha.ordemId!]!;
+        if (grupo.length > 1) {
+          // Agrupa: soma quantidades
+          final totalQtde =
+              grupo.fold(0.0, (s, l) => s + l.quantidade);
+          resultado.add(_LinhaOuGrupo.grupo(
+            ordemId: linha.ordemId!,
+            totalQuantidade: totalQtde,
+            saldoAcumulado: grupoSaldoFinal[linha.ordemId!]!,
+            dataHora: grupo.first.dataHora,
+            linhas: grupo,
+          ));
+        } else {
+          // Apenas 1 baixa para essa ordem — mostra como individual
+          resultado.add(_LinhaOuGrupo.individual(linha));
+        }
+      } else {
+        resultado.add(_LinhaOuGrupo.individual(linha));
+      }
+    }
+
+    return resultado;
+  }
+
+  Widget _linhaOuGrupo(_LinhaOuGrupo item) {
+    if (item.isGrupo) {
+      return _linhaGrupoOrdem(item);
+    }
+    return _linhaEvento(item.linha!);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // LINHA AGRUPADA POR ORDEM (expandível)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  Widget _linhaGrupoOrdem(_LinhaOuGrupo grupo) {
+    final expandida = _ordensExpandidas.contains(grupo.ordemId);
+    final cor = Colors.orange[600]!;
+    final corSaldo =
+        grupo.saldoAcumulado < 0 ? Colors.red[700]! : Colors.grey[600]!;
+    final qtdeTxt = '-${grupo.totalQuantidade.abs().toKg()}';
+    final hora =
+        DateFormat("dd/MM/yyyy 'às' HH:mm").format(grupo.dataHora);
+
+    // Busca a referência da ordem
+    final ordem = BackendClient.ordens.data
+        .cast<dynamic>()
+        .firstWhere(
+          (o) => o.id == grupo.ordemId,
+          orElse: () => null,
+        );
+    // Extrai localizator: parte antes do '_' (mesmo padrão de OrdemModel)
+    final localizator = grupo.ordemId!.contains('_')
+        ? grupo.ordemId!.split('_').first
+        : grupo.ordemId!;
+    final ordemLabel =
+        ordem != null ? 'Ordem: ${ordem.localizator}' : 'Ordem: $localizator';
+
+    return Column(
+      children: [
+        // ── Linha consolidada ──────────────────────────────────────
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              if (expandida) {
+                _ordensExpandidas.remove(grupo.ordemId);
+              } else {
+                _ordensExpandidas.add(grupo.ordemId!);
+              }
+            });
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+            decoration: BoxDecoration(
+              color: expandida
+                  ? Colors.orange.withValues(alpha: 0.04)
+                  : const Color(0xFFFAFBFC),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: expandida
+                    ? Colors.orange.withValues(alpha: 0.30)
+                    : const Color(0xFFE2E8F0),
+              ),
+            ),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ── Faixa colorida lateral ────────────────────────
+                  Container(
+                    width: 4,
+                    decoration: BoxDecoration(
+                      color: cor,
+                      borderRadius: const BorderRadius.horizontal(
+                          left: Radius.circular(8)),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+
+                  // ── Ícone da ordem ────────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: cor.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                      child: Icon(
+                        Icons.precision_manufacturing_outlined,
+                        size: 14,
+                        color: cor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+
+                  // ── Conteúdo ──────────────────────────────────────
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 9),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              // Badge de tipo
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: cor.withValues(alpha: 0.10),
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                                child: Text('Baixa (Produção)',
+                                    style: AppCss.minimumBold
+                                        .setColor(cor)
+                                        .setSize(9)),
+                              ),
+                              const SizedBox(width: 6),
+                              // Quantidade total
+                              Text(qtdeTxt,
+                                  style: AppCss.minimumBold
+                                      .setColor(cor)
+                                      .setSize(12)),
+                              const Spacer(),
+                              // Saldo acumulado
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text('saldo',
+                                      style: AppCss.minimumRegular
+                                          .setColor(Colors.grey[400]!)
+                                          .setSize(9)),
+                                  Text(grupo.saldoAcumulado.toKg(),
+                                      style: AppCss.minimumBold
+                                          .setColor(corSaldo)
+                                          .setSize(11)),
+                                ],
+                              ),
+                              const SizedBox(width: 12),
+                            ],
+                          ),
+                          const SizedBox(height: 3),
+
+                          // Hora
+                          Text(hora,
+                              style: AppCss.minimumRegular
+                                  .setColor(Colors.grey[400]!)
+                                  .setSize(10)),
+
+                          // Referência da ordem
+                          Padding(
+                            padding: const EdgeInsets.only(top: 3),
+                            child: Row(
+                              children: [
+                                Icon(Icons.precision_manufacturing_outlined,
+                                    size: 11, color: Colors.orange[600]),
+                                const SizedBox(width: 4),
+                                Flexible(
+                                  child: Text(
+                                    ordemLabel,
+                                    style: AppCss.minimumBold
+                                        .setColor(Colors.orange[700]!)
+                                        .setSize(11),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                // Badge de quantidade de itens
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withValues(alpha: 0.10),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color:
+                                          Colors.orange.withValues(alpha: 0.25),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    '${grupo.linhas!.length} itens',
+                                    style: AppCss.minimumBold
+                                        .setColor(Colors.orange[700]!)
+                                        .setSize(9),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // ── Chevron expandir/colapsar ────────────────────
+                  Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: AnimatedRotation(
+                      turns: expandida ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 18,
+                        color: Colors.grey[400],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+
+        // ── Itens expandidos ───────────────────────────────────────
+        AnimatedCrossFade(
+          firstChild: const SizedBox.shrink(),
+          secondChild: Padding(
+            padding: const EdgeInsets.only(left: 24),
+            child: Column(
+              children: grupo.linhas!
+                  .map((l) => _linhaEvento(l, dentroDeGrupo: true))
+                  .toList(),
+            ),
+          ),
+          crossFadeState: expandida
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
+          duration: const Duration(milliseconds: 200),
+        ),
+      ],
     );
   }
 
@@ -534,7 +826,8 @@ class _EstoqueMovimentacaoSectionState
   // LINHA DE EVENTO (movimentação)
   // ─────────────────────────────────────────────────────────────────────────
 
-  Widget _linhaEvento(EstoqueLinhaMovimentacao linha) {
+  Widget _linhaEvento(EstoqueLinhaMovimentacao linha,
+      {bool dentroDeGrupo = false}) {
     final isEntrada = linha.isEntrada;
     final cor = isEntrada ? Colors.green[600]! : Colors.orange[600]!;
     final corSaldo = linha.saldoAcumulado < 0
@@ -548,11 +841,20 @@ class _EstoqueMovimentacaoSectionState
     final isBaixa = linha.tipoValue == 'baixa_producao';
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 3),
+      margin: EdgeInsets.symmetric(
+        horizontal: dentroDeGrupo ? 10 : 14,
+        vertical: dentroDeGrupo ? 2 : 3,
+      ),
       decoration: BoxDecoration(
-        color: const Color(0xFFFAFBFC),
+        color: dentroDeGrupo
+            ? Colors.orange.withValues(alpha: 0.02)
+            : const Color(0xFFFAFBFC),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: dentroDeGrupo
+              ? Colors.orange.withValues(alpha: 0.15)
+              : const Color(0xFFE2E8F0),
+        ),
       ),
       child: IntrinsicHeight(
         child: Row(
@@ -560,9 +862,11 @@ class _EstoqueMovimentacaoSectionState
           children: [
             // ── Faixa colorida lateral ─────────────────────────────────
             Container(
-              width: 4,
+              width: dentroDeGrupo ? 3 : 4,
               decoration: BoxDecoration(
-                color: cor,
+                color: dentroDeGrupo
+                    ? Colors.orange.withValues(alpha: 0.40)
+                    : cor,
                 borderRadius: const BorderRadius.horizontal(
                     left: Radius.circular(8)),
               ),
@@ -573,8 +877,8 @@ class _EstoqueMovimentacaoSectionState
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10),
               child: Container(
-                width: 28,
-                height: 28,
+                width: dentroDeGrupo ? 24 : 28,
+                height: dentroDeGrupo ? 24 : 28,
                 decoration: BoxDecoration(
                   color: cor.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(7),
@@ -583,7 +887,7 @@ class _EstoqueMovimentacaoSectionState
                   isEntrada
                       ? Icons.arrow_upward_rounded
                       : Icons.arrow_downward_rounded,
-                  size: 14,
+                  size: dentroDeGrupo ? 12 : 14,
                   color: cor,
                 ),
               ),
@@ -593,7 +897,8 @@ class _EstoqueMovimentacaoSectionState
             // ── Conteúdo ───────────────────────────────────────────────
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 9),
+                padding: EdgeInsets.symmetric(
+                    vertical: dentroDeGrupo ? 7 : 9),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -610,29 +915,30 @@ class _EstoqueMovimentacaoSectionState
                           child: Text(linha.tipoLabel,
                               style: AppCss.minimumBold
                                   .setColor(cor)
-                                  .setSize(9)),
+                                  .setSize(dentroDeGrupo ? 8 : 9)),
                         ),
                         const SizedBox(width: 6),
                         // Quantidade
                         Text(qtdeTxt,
                             style: AppCss.minimumBold
                                 .setColor(cor)
-                                .setSize(12)),
+                                .setSize(dentroDeGrupo ? 11 : 12)),
                         const Spacer(),
                         // Saldo acumulado
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text('saldo',
-                                style: AppCss.minimumRegular
-                                    .setColor(Colors.grey[400]!)
-                                    .setSize(9)),
-                            Text(linha.saldoAcumulado.toKg(),
-                                style: AppCss.minimumBold
-                                    .setColor(corSaldo)
-                                    .setSize(11)),
-                          ],
-                        ),
+                        if (!dentroDeGrupo)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text('saldo',
+                                  style: AppCss.minimumRegular
+                                      .setColor(Colors.grey[400]!)
+                                      .setSize(9)),
+                              Text(linha.saldoAcumulado.toKg(),
+                                  style: AppCss.minimumBold
+                                      .setColor(corSaldo)
+                                      .setSize(11)),
+                            ],
+                          ),
                         const SizedBox(width: 12),
                       ],
                     ),
@@ -644,8 +950,31 @@ class _EstoqueMovimentacaoSectionState
                             .setColor(Colors.grey[400]!)
                             .setSize(10)),
 
-                    // Referência da ordem (baixa de produção)
-                    if (isBaixa && linha.ordemId != null) ...{
+                    // Dentro de um grupo: mostra observação (referência ao pedido)
+                    if (dentroDeGrupo && linha.observacao != null &&
+                        linha.observacao!.isNotEmpty) ...{
+                      Padding(
+                        padding: const EdgeInsets.only(top: 3),
+                        child: Row(
+                          children: [
+                            Icon(Icons.description_outlined,
+                                size: 10, color: Colors.grey[400]),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                linha.observacao!,
+                                style: AppCss.minimumRegular
+                                    .setColor(Colors.grey[500]!)
+                                    .setSize(10),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    }
+                    // Fora do grupo: mostra referência da ordem (baixa de produção)
+                    else if (!dentroDeGrupo && isBaixa && linha.ordemId != null) ...{
                       Padding(
                         padding: const EdgeInsets.only(top: 3),
                         child: Builder(builder: (context) {
@@ -656,9 +985,12 @@ class _EstoqueMovimentacaoSectionState
                                 (o) => o.id == linha.ordemId,
                                 orElse: () => null,
                               );
+                          final loc = linha.ordemId!.contains('_')
+                              ? linha.ordemId!.split('_').first
+                              : linha.ordemId!;
                           final ordemLabel = ordem != null
-                              ? 'Ordem: ${ordem.id}'
-                              : linha.observacao ?? 'Baixa de produção';
+                              ? 'Ordem: ${ordem.localizator}'
+                              : 'Ordem: $loc';
                           return Row(
                             children: [
                               Icon(Icons.precision_manufacturing_outlined,
@@ -677,7 +1009,7 @@ class _EstoqueMovimentacaoSectionState
                           );
                         }),
                       ),
-                    } else if (linha.observacao != null &&
+                    } else if (!dentroDeGrupo && linha.observacao != null &&
                         linha.observacao!.isNotEmpty) ...{
                       Padding(
                         padding: const EdgeInsets.only(top: 3),
@@ -692,7 +1024,7 @@ class _EstoqueMovimentacaoSectionState
                     },
 
                     // Usuário
-                    if (linha.usuarioNome != null)
+                    if (linha.usuarioNome != null && !dentroDeGrupo)
                       Padding(
                         padding: const EdgeInsets.only(top: 2),
                         child: Row(
@@ -745,4 +1077,48 @@ class _EstoqueMovimentacaoSectionState
       ),
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MODELO AUXILIAR: LINHA OU GRUPO
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Representa uma linha individual ou um grupo de baixas agrupadas por ordem.
+class _LinhaOuGrupo {
+  final bool isGrupo;
+  final EstoqueLinhaMovimentacao? linha;
+  final String? ordemId;
+  final double totalQuantidade;
+  final double saldoAcumulado;
+  final DateTime dataHora;
+  final List<EstoqueLinhaMovimentacao>? linhas;
+
+  _LinhaOuGrupo._({
+    required this.isGrupo,
+    this.linha,
+    this.ordemId,
+    this.totalQuantidade = 0,
+    this.saldoAcumulado = 0,
+    DateTime? dataHora,
+    this.linhas,
+  }) : dataHora = dataHora ?? DateTime.now();
+
+  factory _LinhaOuGrupo.individual(EstoqueLinhaMovimentacao linha) =>
+      _LinhaOuGrupo._(isGrupo: false, linha: linha);
+
+  factory _LinhaOuGrupo.grupo({
+    required String ordemId,
+    required double totalQuantidade,
+    required double saldoAcumulado,
+    required DateTime dataHora,
+    required List<EstoqueLinhaMovimentacao> linhas,
+  }) =>
+      _LinhaOuGrupo._(
+        isGrupo: true,
+        ordemId: ordemId,
+        totalQuantidade: totalQuantidade,
+        saldoAcumulado: saldoAcumulado,
+        dataHora: dataHora,
+        linhas: linhas,
+      );
 }

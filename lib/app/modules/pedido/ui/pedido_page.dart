@@ -599,7 +599,7 @@ class _PedidoPageState extends State<PedidoPage>
                   ),
                   const H(16),
                   PedidoFilhosWidget(
-                      pedido: pedido, filhos: pedido.getPedidosFilhos()),
+                      pedido: pedido, filhos: pedido.getTodosFilhos()),
                 ],
 
                 // ── Produtos (Pedido Normal ou Parcial) ──

@@ -119,6 +119,18 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
 
   // ── Lista de botões de ação (mesma lógica nos dois modos) ────────────────
   List<Widget> _acoes(BuildContext context, {required bool isKanban}) {
+    // Pedido arquivado: exibe somente o botão de desarquivar (modo leitura)
+    if (pedido.isArchived) {
+      return [
+        _botaoAcao(
+          icon: Icons.unarchive,
+          tooltip: 'Desarquivar pedido',
+          onTap: () => pedidoCtrl.onUnArchivePedido(
+              context, pedido, isKanban ? 0 : 1),
+        ),
+      ];
+    }
+
     return [
       _botaoAcao(
         icon: Icons.cloud_download_rounded,
@@ -148,13 +160,6 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
                 })
               : pedidoCtrl.onArchive(context, pedido),
         ),
-      if (pedido.isArchived)
-        _botaoAcao(
-          icon: Icons.unarchive,
-          tooltip: 'Desarquivar pedido',
-          onTap: () => pedidoCtrl.onUnArchivePedido(
-              context, pedido, isKanban ? 0 : 2),
-        ),
       _botaoAcao(
         icon: Icons.edit,
         tooltip: 'Editar pedido',
@@ -173,6 +178,7 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
       ),
     ];
   }
+
 
   // ── Versão Kanban ─────────────────────────────────────────────────────────
   Widget _kanbanWidget(BuildContext context) => Container(
