@@ -1318,6 +1318,17 @@ class DashboardPageState extends State<DashboardPage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (pedido.descricao.isNotEmpty) ...[
+                    const H(2),
+                    Text(
+                      pedido.descricao,
+                      style: AppCss.minimumRegular
+                          .setSize(11)
+                          .setColor(Colors.grey[500]!),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ],
               ),
             ),

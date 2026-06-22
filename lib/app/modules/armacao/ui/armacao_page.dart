@@ -181,6 +181,18 @@ class _PedidoArmacaoCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
+          if (pedido.descricao.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              pedido.descricao,
+              style: AppCss.minimumRegular
+                  .setSize(12)
+                  .setColor(Colors.white.withValues(alpha: 0.45)),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ],
       ),
     );

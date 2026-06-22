@@ -586,6 +586,17 @@ class _PainelGerencialPageState extends State<PainelGerencialPage> {
                 ),
               ],
             ),
+            if (pedido.descricao.isNotEmpty) ...[
+              const H(3),
+              Text(
+                pedido.descricao,
+                style: AppCss.minimumRegular
+                    .setSize(10)
+                    .setColor(Colors.grey[500]!),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
             const H(6),
             // Barra de progresso empilhada
             Row(
@@ -639,6 +650,7 @@ class _PainelGerencialPageState extends State<PainelGerencialPage> {
       ),
     );
   }
+
 
   // ═══════════════════════════════════════════════════
   //  CONSUMO PREVISTO

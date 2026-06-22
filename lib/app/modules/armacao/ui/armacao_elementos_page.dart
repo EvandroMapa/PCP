@@ -100,6 +100,15 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
               style: AppCss.minimumRegular
                   .setColor(AppColors.white.withValues(alpha: 0.8)),
             ),
+            if (widget.pedido.descricao.isNotEmpty)
+              Text(
+                widget.pedido.descricao,
+                style: AppCss.minimumRegular
+                    .setSize(11)
+                    .setColor(AppColors.white.withValues(alpha: 0.65)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
           ],
         ),
         backgroundColor: AppColors.secondary,
