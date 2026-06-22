@@ -167,10 +167,21 @@ class ArmacaoController {
       // não tenha sido chamado (ex: acesso via Painel Gerencial).
       _registerElementosListener();
 
-      // Filtra o que já temos no AppSupabaseClient de forma reativa
-      final filtered = AppSupabaseClient.elementos.data
-          .where((e) => e.pedidoId == pedido.id)
-          .toList();
+      // Tenta usar o cache global de elementos.
+      // Quando acessado via Painel Gerencial (sem passar pelo ArmacaoPage),
+      // o ElementoSupabaseCollection pode não ter feito o fetch inicial ainda,
+      // resultando em cache vazio. Nesse caso, faz um fetch pontual APENAS dos
+      // elementos desse pedido — evitando o ciclo pesado de re-fetch global
+      // (todos elementos + posições em batches) que causava ~10s de atraso.
+      List<ElementoModel> filtered =
+          AppSupabaseClient.elementos.data
+              .where((e) => e.pedidoId == pedido.id)
+              .toList();
+
+      if (filtered.isEmpty) {
+        log('ArmacaoController.onFetchElementos: cache vazio para pedido ${pedido.id}, buscando diretamente do banco...');
+        filtered = await _fetchElementosDoPedido(pedido.id);
+      }
 
       // Ordenar alfabeticamente pelo nome A-Z
       filtered.sort((a, b) =>
@@ -185,6 +196,50 @@ class ArmacaoController {
       updatePedidoSummary(pedido);
     } catch (e) {
       log('ArmacaoController.onFetchElementos erro: $e');
+    }
+  }
+
+  /// Busca pontual dos elementos de um pedido específico, incluindo posições e arquivos.
+  /// Usado quando o cache global ainda não foi carregado (acesso via Painel Gerencial).
+  Future<List<ElementoModel>> _fetchElementosDoPedido(String pedidoId) async {
+    try {
+      final elementosRaw = await SupabaseService.client
+          .from('elementos')
+          .select()
+          .eq('pedido_id', pedidoId)
+          .order('nome');
+
+      if (elementosRaw.isEmpty) return [];
+
+      final eIds = elementosRaw.map((e) => e['id'].toString()).toList();
+
+      final results = await Future.wait([
+        SupabaseService.client
+            .from('elemento_posicoes')
+            .select()
+            .filter('elemento_id', 'in', eIds),
+        SupabaseService.client
+            .from('elemento_arquivos')
+            .select()
+            .filter('elemento_id', 'in', eIds),
+      ]);
+
+      final allPosicoes = List<Map<String, dynamic>>.from(results[0]);
+      final allArquivos = List<Map<String, dynamic>>.from(results[1]);
+
+      return elementosRaw.map((eMap) {
+        final eId = eMap['id'].toString();
+        return ElementoModel.fromSupabaseMap(
+          eMap,
+          posicoesRaw:
+              allPosicoes.where((p) => p['elemento_id'].toString() == eId).toList(),
+          arquivosRaw:
+              allArquivos.where((a) => a['elemento_id'].toString() == eId).toList(),
+        );
+      }).toList();
+    } catch (e) {
+      log('ArmacaoController._fetchElementosDoPedido erro: $e');
+      return [];
     }
   }
 
