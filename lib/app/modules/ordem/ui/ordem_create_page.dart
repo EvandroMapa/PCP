@@ -32,11 +32,9 @@ class OrdemCreatePage extends StatefulWidget {
   State<OrdemCreatePage> createState() => _OrdemCreatePageState();
 }
 
-class _OrdemCreatePageState extends State<OrdemCreatePage>
-    with SingleTickerProviderStateMixin {
+class _OrdemCreatePageState extends State<OrdemCreatePage> {
   bool _filtroExpandido = false;
   late bool _configExpandida;
-  late TabController _tabController;
 
   @override
   void initState() {
@@ -44,14 +42,7 @@ class _OrdemCreatePageState extends State<OrdemCreatePage>
     ordemCtrl.onInitCreatePage(widget.ordem);
     // Começa colapsada se editando (já tem produto), expandida se criando
     _configExpandida = widget.ordem == null;
-    _tabController = TabController(length: 2, vsync: this);
     super.initState();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   @override
@@ -114,21 +105,38 @@ class _OrdemCreatePageState extends State<OrdemCreatePage>
         // ── Configuração (sempre visível no topo) ──
         _secaoConfiguracao(form),
 
-        // ── TabBar + conteúdo (só aparece quando produto está selecionado) ──
-        if (form.produto != null) ...[
-          _buildTabBar(naOrdem, disponiveis),
+        // ── Duas colunas lado a lado ──
+        if (form.produto != null)
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
+            child: Row(
               children: [
-                // Aba 0: Na Ordem
-                _abaOrdem(form, naOrdem, pesoNaOrdem),
-                // Aba 1: Disponíveis
-                _abaDisponiveis(form, disponiveis, mpSelecionada),
+                // Coluna esquerda: Disponíveis
+                Expanded(
+                  child: _colunaDisponiveis(form, disponiveis, mpSelecionada),
+                ),
+                // Separador vertical
+                Container(
+                  width: 1,
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.06),
+                        blurRadius: 4,
+                        offset: const Offset(1, 0),
+                      ),
+                    ],
+                  ),
+                ),
+                // Coluna direita: Na Ordem
+                Expanded(
+                  child: _colunaOrdem(form, naOrdem, pesoNaOrdem),
+                ),
               ],
             ),
-          ),
-        ] else
+          )
+        else
           const Expanded(
             child: Center(
               child: Padding(
@@ -151,250 +159,279 @@ class _OrdemCreatePageState extends State<OrdemCreatePage>
               ),
             ),
           ),
-
-        // ── Bottom bar (resumo) ──
-        _bottomBar(naOrdem, pesoNaOrdem, form),
       ],
     );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // TAB BAR
+  // COLUNA: NA ORDEM (esquerda)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _buildTabBar(
-      List<PedidoBitolaModel> naOrdem, List<PedidoBitolaModel> disponiveis) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: const Color(0xFFE2E8F0), width: 1),
-        ),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 4,
-              offset: const Offset(0, 2)),
-        ],
-      ),
-      child: TabBar(
-        controller: _tabController,
-        labelPadding: EdgeInsets.zero,
-        indicatorColor: AppColors.primaryMain,
-        indicatorWeight: 3,
-        dividerColor: Colors.transparent,
-        tabs: [
-          _buildTab(
-            label: 'NA ORDEM',
-            count: naOrdem.length,
-          ),
-          _buildTab(
-            label: 'DISPONÍVEIS',
-            count: disponiveis.length,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTab({required String label, required int count}) {
-    return Tab(
-      height: 46,
-      child: AnimatedBuilder(
-        animation: _tabController,
-        builder: (_, __) {
-          final indice = label == 'NA ORDEM' ? 0 : 1;
-          final ativo = _tabController.index == indice;
-          final cor = ativo ? AppColors.primaryMain : Colors.grey[400]!;
-
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: ativo ? FontWeight.w800 : FontWeight.w600,
-                  letterSpacing: 0.6,
-                  color: cor,
-                ),
-              ),
-              const SizedBox(width: 8),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: ativo
-                      ? AppColors.primaryMain.withValues(alpha: 0.12)
-                      : Colors.grey[100],
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: ativo
-                        ? AppColors.primaryMain.withValues(alpha: 0.30)
-                        : Colors.grey[300]!,
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  '$count',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: cor,
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // ABA: NA ORDEM
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  Widget _abaOrdem(
+  Widget _colunaOrdem(
       OrdemCreateModel form, List<PedidoBitolaModel> naOrdem, double peso) {
-    if (naOrdem.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(40),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.inbox_outlined, size: 48, color: Colors.grey[300]),
-              const SizedBox(height: 12),
-              Text(
-                'Nenhum pedido na ordem',
-                style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[400]),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Vá para "Disponíveis" e adicione pedidos',
-                style: TextStyle(fontSize: 12, color: Colors.grey[350]),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return Column(
       children: [
-        // Header da aba com peso total e botão remover todos
+        // Header da coluna
         Container(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-          color: AppColors.primaryMain.withValues(alpha: 0.03),
+          height: 46,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border(
+              bottom: BorderSide(color: const Color(0xFFE2E8F0), width: 1),
+            ),
+          ),
           child: Row(
             children: [
               Icon(Icons.check_circle_outline_rounded,
-                  size: 14, color: AppColors.primaryMain),
-              const SizedBox(width: 6),
+                  size: 16, color: naOrdem.isNotEmpty ? Colors.grey[600] : Colors.grey[400]),
+              const SizedBox(width: 8),
               Text(
-                '${naOrdem.length} pedido${naOrdem.length > 1 ? 's' : ''} selecionado${naOrdem.length > 1 ? 's' : ''}',
+                'NA ORDEM',
                 style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryMain),
-              ),
-              const Spacer(),
-              // Peso total
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryMain.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  peso.toKg(),
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primaryMain),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.6,
+                  color: naOrdem.isNotEmpty ? Colors.grey[700] : Colors.grey[400],
                 ),
               ),
               const SizedBox(width: 8),
-              // Botão remover todos
-              Tooltip(
-                message: 'Remover todos os disponíveis',
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(7),
-                  onTap: () {
-                    final bloqueados = form.produtos
-                        .where((p) =>
-                            p.status.status == PedidoBitolaStatus.produzindo ||
-                            p.status.status == PedidoBitolaStatus.pronto)
-                        .length;
-                    form.produtos.removeWhere((p) =>
-                        p.status.status != PedidoBitolaStatus.produzindo &&
-                        p.status.status != PedidoBitolaStatus.pronto);
-                    ordemCtrl.formStream.update();
-                    if (bloqueados > 0) {
-                      showDialog(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          icon: Icon(Icons.info_outline,
-                              size: 40, color: Colors.orange[700]),
-                          title: const Text('Itens mantidos na ordem'),
-                          content: Text(
-                            '$bloqueados ${bloqueados == 1 ? 'item foi mantido pois já está' : 'itens foram mantidos pois já estão'} em produção ou prontos e não podem ser removidos.',
-                          ),
-                          actions: [
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primaryMain),
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Entendi',
-                                  style: TextStyle(color: Colors.white)),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(7),
-                    ),
-                    child: Icon(Icons.playlist_remove_rounded,
-                        size: 14, color: Colors.red[400]),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: naOrdem.isNotEmpty
+                      ? Colors.grey[100]
+                      : Colors.grey[50],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${naOrdem.length}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: naOrdem.isNotEmpty ? Colors.grey[600] : Colors.grey[400],
                   ),
+                ),
+              ),
+              const Spacer(),
+              // Botão remover todos
+              if (naOrdem.isNotEmpty)
+                Tooltip(
+                  message: 'Remover todos',
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(7),
+                    onTap: () {
+                      final bloqueados = form.produtos
+                          .where((p) =>
+                              p.status.status == PedidoBitolaStatus.produzindo ||
+                              p.status.status == PedidoBitolaStatus.pronto)
+                          .length;
+                      form.produtos.removeWhere((p) =>
+                          p.status.status != PedidoBitolaStatus.produzindo &&
+                          p.status.status != PedidoBitolaStatus.pronto);
+                      ordemCtrl.formStream.update();
+                      if (bloqueados > 0) {
+                        showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            icon: Icon(Icons.info_outline,
+                                size: 40, color: Colors.orange[700]),
+                            title: const Text('Itens mantidos na ordem'),
+                            content: Text(
+                              '$bloqueados ${bloqueados == 1 ? 'item foi mantido pois já está' : 'itens foram mantidos pois já estão'} em produção ou prontos e não podem ser removidos.',
+                            ),
+                            actions: [
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primaryMain),
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Entendi',
+                                    style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(7),
+                      ),
+                      child: Icon(Icons.delete_outline_rounded,
+                          size: 14, color: Colors.red[400]),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        // Somatório destacado
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B).withValues(alpha: 0.07),
+            border: Border(
+              bottom: BorderSide(color: const Color(0xFF1E293B).withValues(alpha: 0.10)),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.scale_rounded, size: 14, color: const Color(0xFF475569)),
+              const SizedBox(width: 6),
+              Text(
+                'Total:',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[500],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                peso.toKg(),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF1E293B),
                 ),
               ),
             ],
           ),
         ),
-        // Lista
+        // Lista ou vazio
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            children: [
-              ...naOrdem.map((produto) => _itemSelecionado(form, produto)),
-              const SizedBox(height: 8),
-            ],
-          ),
+          child: naOrdem.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.inbox_outlined, size: 40, color: Colors.grey[250]),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Nenhum pedido na ordem',
+                          style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[400]),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '← Clique nos itens disponíveis',
+                          style: TextStyle(fontSize: 11, color: Colors.grey[350]),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  children: [
+                    ...naOrdem.map((produto) => _itemSelecionado(form, produto)),
+                    const SizedBox(height: 8),
+                  ],
+                ),
         ),
       ],
     );
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // ABA: DISPONÍVEIS
+  // COLUNA: DISPONÍVEIS (esquerda)
   // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _abaDisponiveis(OrdemCreateModel form,
+  Widget _colunaDisponiveis(OrdemCreateModel form,
       List<PedidoBitolaModel> disponiveis, bool mpSelecionada) {
+    final pesoDisponivel = disponiveis.fold<double>(0, (s, p) => s + p.qtde);
+
     return Column(
       children: [
+        // Header da coluna
+        Container(
+          height: 46,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border(
+              bottom: BorderSide(color: const Color(0xFFE2E8F0), width: 1),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.inventory_2_outlined,
+                  size: 16, color: disponiveis.isNotEmpty ? Colors.grey[600] : Colors.grey[400]),
+              const SizedBox(width: 8),
+              Text(
+                'DISPONÍVEIS',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.6,
+                  color: disponiveis.isNotEmpty ? Colors.grey[700] : Colors.grey[400],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: disponiveis.isNotEmpty
+                      ? Colors.grey[100]
+                      : Colors.grey[50],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${disponiveis.length}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: disponiveis.isNotEmpty ? Colors.grey[600] : Colors.grey[400],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Somatório disponível
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B).withValues(alpha: 0.07),
+            border: Border(
+              bottom: BorderSide(color: const Color(0xFF1E293B).withValues(alpha: 0.10)),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.scale_rounded, size: 14, color: const Color(0xFF475569)),
+              const SizedBox(width: 6),
+              Text(
+                'Total:',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[500],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                pesoDisponivel.toKg(),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+            ],
+          ),
+        ),
+
         // Aviso: MP não selecionada
         if (!mpSelecionada)
           Container(
@@ -546,17 +583,17 @@ class _OrdemCreatePageState extends State<OrdemCreatePage>
           child: disponiveis.isEmpty
               ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(40),
+                    padding: const EdgeInsets.all(32),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.check_circle_outline_rounded,
-                            size: 48, color: Colors.green[200]),
-                        const SizedBox(height: 12),
+                            size: 40, color: Colors.green[200]),
+                        const SizedBox(height: 10),
                         Text(
-                          'Todos os pedidos já estão na ordem',
+                          'Todos na ordem',
                           style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: Colors.grey[400]),
                         ),
@@ -936,10 +973,12 @@ class _OrdemCreatePageState extends State<OrdemCreatePage>
                         Text(produto.pedido.localizador,
                             style: TextStyle(
                                 fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[700])),
+                                fontWeight: FontWeight.w700,
+                                color: Colors.grey[800])),
                         const SizedBox(width: 6),
                         _tipoBadge(produto),
+                        const SizedBox(width: 4),
+                        _statusBadge(produto.status.status),
                       ]),
                       if (produto.pedido.deliveryAt != null)
                         Padding(
@@ -960,7 +999,7 @@ class _OrdemCreatePageState extends State<OrdemCreatePage>
                       Text(
                         '${produto.cliente.nome} · ${produto.obra.descricao}',
                         style:
-                            TextStyle(fontSize: 12.5, color: Colors.grey[400]),
+                            TextStyle(fontSize: 12.5, color: Colors.grey[500]),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
@@ -968,11 +1007,22 @@ class _OrdemCreatePageState extends State<OrdemCreatePage>
                 ),
                 const SizedBox(width: 6),
                 // Peso
-                Text(produto.qtde.toKg(),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(5),
+                  ),
+                  child: Text(
+                    produto.qtde.toKg(),
                     style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[500])),
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ),
                 const SizedBox(width: 6),
                 // Ícone adicionar
                 Icon(Icons.add_circle_outline_rounded,
@@ -986,96 +1036,7 @@ class _OrdemCreatePageState extends State<OrdemCreatePage>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // BOTTOM BAR (resumo compacto)
-  // ═══════════════════════════════════════════════════════════════════════════
 
-  Widget _bottomBar(List<PedidoBitolaModel> naOrdem, double peso,
-      OrdemCreateModel form) {
-    if (form.produto == null) return const SizedBox.shrink();
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border:
-            Border(top: BorderSide(color: Colors.grey[200]!, width: 1)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, -2))
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(children: [
-          Icon(
-            naOrdem.isNotEmpty
-                ? Icons.check_circle_rounded
-                : Icons.radio_button_unchecked,
-            size: 18,
-            color:
-                naOrdem.isNotEmpty ? AppColors.primaryMain : Colors.grey[400],
-          ),
-          const SizedBox(width: 8),
-          Text(
-            naOrdem.isNotEmpty
-                ? '${naOrdem.length} pedido${naOrdem.length > 1 ? 's' : ''}'
-                : 'Nenhum pedido selecionado',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: naOrdem.isNotEmpty ? Colors.grey[800] : Colors.grey[400],
-            ),
-          ),
-          if (naOrdem.isNotEmpty) ...[
-            const SizedBox(width: 6),
-            Text('·', style: TextStyle(fontSize: 13, color: Colors.grey[400])),
-            const SizedBox(width: 6),
-            Text(peso.toKg(),
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primaryMain)),
-          ],
-          const Spacer(),
-          // Dica de navegação entre abas
-          GestureDetector(
-            onTap: () {
-              final proximo = _tabController.index == 0 ? 1 : 0;
-              _tabController.animateTo(proximo);
-            },
-            child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: AppColors.primaryMain.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                AnimatedBuilder(
-                  animation: _tabController,
-                  builder: (_, __) => Text(
-                    _tabController.index == 0
-                        ? 'Ver disponíveis'
-                        : 'Ver na ordem',
-                    style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primaryMain),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                Icon(Icons.swap_horiz_rounded,
-                    size: 14, color: AppColors.primaryMain),
-              ]),
-            ),
-          ),
-        ]),
-      ),
-    );
-  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // HELPERS
