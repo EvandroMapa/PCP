@@ -1021,3 +1021,4 @@ class _NivelEstoque {
     required this.label,
   });
 }
+

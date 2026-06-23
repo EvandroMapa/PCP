@@ -1,17 +1,23 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido_compra/pedido_compra_model.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
+import 'package:aco_plus/app/core/services/pdf_download_service/pdf_download_service_mobile.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
+import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_pedido_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 
 class RelatoriosEstoquePage extends StatefulWidget {
   const RelatoriosEstoquePage({super.key});
@@ -222,7 +228,11 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
       grupos.putIfAbsent(item.grupoId, () => []).add(item);
     }
 
-    return Container(
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: () => _showConsumoPrevisto(produto, saldoAtual, consumoPrevisto),
+        child: Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -434,6 +444,8 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
             ),
         ],
       ),
+      ),
+      ),
     );
   }
 
@@ -464,4 +476,550 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
           size: 10, color: Colors.grey[300]),
     );
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DIALOG 📊 — CONSUMO PREVISTO POR BITOLA
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  static const _vermelho = Color(0xFFDC2626);
+  static const _verde = Color(0xFF16A34A);
+
+  Future<void> _showConsumoPrevisto(
+    BitolaModel produto,
+    double saldoAtual,
+    double consumoPrevistoTotal,
+  ) async {
+    // Coleta os pedidos individuais que consomem esta bitola
+    final consumos = <_ConsumoPrevisto>[];
+    if (relatorioCtrl.pedidoViewModelStream.hasValue &&
+        relatorioCtrl.pedidoViewModel.relatorio != null) {
+      for (final pedido in relatorioCtrl.pedidoViewModel.relatorio!.pedidos) {
+        for (final prod in pedido.produtos) {
+          if (prod.produto.id != produto.id) continue;
+          if (prod.qtde <= 0) continue;
+          consumos.add(_ConsumoPrevisto(
+            localizador: pedido.localizador,
+            clienteNome: pedido.cliente.nome,
+            obraNome: pedido.obra.descricao,
+            quantidade: prod.qtde,
+            status: prod.statusView.status,
+          ));
+        }
+      }
+    }
+    consumos.sort((a, b) => a.localizador.compareTo(b.localizador));
+
+    final totalConsumo = consumos.fold(0.0, (s, e) => s + e.quantidade);
+    final saldoFinal = saldoAtual - totalConsumo;
+
+    // Pré-calcula saldo acumulado para cada linha
+    final saldosAcumulados = <double>[];
+    double saldoCorrente = saldoAtual;
+    for (final c in consumos) {
+      saldoCorrente -= c.quantidade;
+      saldosAcumulados.add(saldoCorrente);
+    }
+
+    if (!mounted) return;
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+        contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.primaryMain.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(Icons.analytics_outlined,
+                size: 18, color: AppColors.primaryMain),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Consumo Previsto', style: AppCss.mediumBold),
+                Text(produto.nome,
+                    style: AppCss.minimumRegular
+                        .setColor(Colors.grey[500]!)
+                        .setSize(12)),
+              ],
+            ),
+          ),
+        ]),
+        content: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.65,
+            maxWidth: 520,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ── Saldo Atual ──────────────────────────────────
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryMain.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                        color: AppColors.primaryMain.withValues(alpha: 0.15)),
+                  ),
+                  child: Row(children: [
+                    Icon(Icons.inventory_2_outlined,
+                        size: 16, color: AppColors.primaryMain),
+                    const SizedBox(width: 8),
+                    Text('Saldo Atual',
+                        style: AppCss.minimumRegular
+                            .setColor(Colors.grey[600]!)),
+                    const Spacer(),
+                    Text(saldoAtual.toKg(),
+                        style: AppCss.mediumBold
+                            .setColor(AppColors.primaryMain)),
+                  ]),
+                ),
+                const SizedBox(height: 12),
+
+                if (consumos.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Column(children: [
+                      Icon(Icons.check_circle_outline,
+                          size: 40, color: Colors.green[300]),
+                      const SizedBox(height: 8),
+                      Text('Nenhum pedido pendente',
+                          style: AppCss.minimumBold
+                              .setColor(Colors.grey[500]!)),
+                      Text('para esta bitola',
+                          style: AppCss.minimumRegular
+                              .setColor(Colors.grey[400]!)),
+                    ]),
+                  )
+                else ...[
+                  // ── Header da lista ──────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                    child: Row(children: [
+                      Icon(Icons.format_list_bulleted,
+                          size: 14, color: Colors.grey[500]),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${consumos.length} pedido${consumos.length > 1 ? 's' : ''} pendente${consumos.length > 1 ? 's' : ''}',
+                        style: AppCss.minimumBold
+                            .setColor(Colors.grey[600]!)
+                            .setSize(12),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '-${totalConsumo.toKg()}',
+                          style: AppCss.minimumBold
+                              .setColor(Colors.orange[700]!)
+                              .setSize(11),
+                        ),
+                      ),
+                    ]),
+                  ),
+                  const SizedBox(height: 4),
+
+                  // ── Lista de consumos ────────────────────────
+                  ...consumos.asMap().entries.map((entry) {
+                    final i = entry.key;
+                    final item = entry.value;
+                    final saldoAcum = saldosAcumulados[i];
+                    final isNegativo = saldoAcum < 0;
+
+                    return Column(
+                      children: [
+                        if (i > 0)
+                          Divider(
+                            height: 1,
+                            color: Colors.grey.withValues(alpha: 0.12),
+                          ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 4, vertical: 8),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: _corStatus(item.status)
+                                      .withValues(alpha: 0.10),
+                                  borderRadius: BorderRadius.circular(7),
+                                ),
+                                child: Icon(
+                                  _iconeStatus(item.status),
+                                  size: 14,
+                                  color: _corStatus(item.status),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.localizador,
+                                      style: AppCss.minimumBold.setSize(12),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      '${item.clienteNome} · ${item.obraNome}',
+                                      style: AppCss.minimumRegular
+                                          .setColor(Colors.grey[400]!)
+                                          .setSize(10),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '-${item.quantidade.toKg()}',
+                                    style: AppCss.minimumBold
+                                        .setColor(Colors.orange[700]!)
+                                        .setSize(12),
+                                  ),
+                                  Text(
+                                    'Saldo: ${saldoAcum.toKg()}',
+                                    style: AppCss.minimumRegular
+                                        .setColor(isNegativo
+                                            ? _vermelho
+                                            : Colors.grey[400]!)
+                                        .setSize(10),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
+                  const SizedBox(height: 12),
+
+                  // ── Saldo Final Projetado ────────────────────
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: saldoFinal < 0
+                          ? _vermelho.withValues(alpha: 0.06)
+                          : _verde.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: saldoFinal < 0
+                            ? _vermelho.withValues(alpha: 0.20)
+                            : _verde.withValues(alpha: 0.20),
+                      ),
+                    ),
+                    child: Row(children: [
+                      Icon(
+                        saldoFinal < 0
+                            ? Icons.warning_amber_rounded
+                            : Icons.check_circle_outline,
+                        size: 16,
+                        color: saldoFinal < 0 ? _vermelho : _verde,
+                      ),
+                      const SizedBox(width: 8),
+                      Text('Saldo Final Projetado',
+                          style: AppCss.minimumRegular
+                              .setColor(Colors.grey[600]!)),
+                      const Spacer(),
+                      Text(
+                        saldoFinal.toKg(),
+                        style: AppCss.mediumBold.setColor(
+                            saldoFinal < 0 ? _vermelho : _verde),
+                      ),
+                    ]),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton.icon(
+            onPressed: () => _exportarConsumoPrevistoPdf(
+              produto, saldoAtual, consumos, saldosAcumulados, totalConsumo, saldoFinal,
+            ),
+            icon: const Icon(Icons.picture_as_pdf_outlined, size: 16),
+            label: const Text('Exportar PDF'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PDF — EXPORTAR CONSUMO PREVISTO
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Future<void> _exportarConsumoPrevistoPdf(
+    BitolaModel produto,
+    double saldoAtual,
+    List<_ConsumoPrevisto> consumos,
+    List<double> saldosAcumulados,
+    double totalConsumo,
+    double saldoFinal,
+  ) async {
+    final logoBytes = await LogoHelper.logoBytesForPdf();
+    final pdf = pw.Document();
+    final agora = DateTime.now();
+    final fmtData = DateFormat('dd/MM/yyyy HH:mm');
+
+    pdf.addPage(pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+      margin: const pw.EdgeInsets.all(32),
+      theme: pw.ThemeData.withFont(
+        base: pw.Font.helvetica(),
+        bold: pw.Font.helveticaBold(),
+      ),
+      header: (_) => pw.Container(
+        margin: const pw.EdgeInsets.only(bottom: 20),
+        padding: const pw.EdgeInsets.only(bottom: 10),
+        decoration: const pw.BoxDecoration(
+          border: pw.Border(
+            bottom: pw.BorderSide(color: PdfColors.blueGrey800, width: 1.5),
+          ),
+        ),
+        child: pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Row(children: [
+              pw.Image(pw.MemoryImage(logoBytes), width: 45, height: 45),
+              pw.SizedBox(width: 15),
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text('CONSUMO PREVISTO — ${produto.nome}',
+                      style: pw.TextStyle(
+                          fontSize: 14,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.blueGrey800)),
+                  pw.Text('Projeção de consumo por pedido pendente',
+                      style: pw.TextStyle(
+                          fontSize: 9, color: PdfColors.grey700)),
+                ],
+              ),
+            ]),
+            pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.end,
+              children: [
+                pw.Text('Gerado em: ${fmtData.format(agora)}',
+                    style: pw.TextStyle(
+                        fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                pw.Text('Relatório Administrativo',
+                    style: pw.TextStyle(
+                        fontSize: 8,
+                        color: PdfColors.grey500,
+                        fontStyle: pw.FontStyle.italic)),
+              ],
+            ),
+          ],
+        ),
+      ),
+      footer: (ctx) => pw.Container(
+        margin: const pw.EdgeInsets.only(top: 20),
+        padding: const pw.EdgeInsets.only(top: 10),
+        decoration: const pw.BoxDecoration(
+          border: pw.Border(
+            top: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+          ),
+        ),
+        child: pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          children: [
+            pw.Text('Documento para análise de estoque',
+                style: pw.TextStyle(fontSize: 7, color: PdfColors.grey600)),
+            pw.Text('Página ${ctx.pageNumber} de ${ctx.pagesCount}',
+                style: pw.TextStyle(
+                    fontSize: 8,
+                    color: PdfColors.grey600,
+                    fontWeight: pw.FontWeight.bold)),
+          ],
+        ),
+      ),
+      build: (pw.Context context) => [
+        // ── KPIs ──────────────────────────────────────
+        pw.Container(
+          padding: const pw.EdgeInsets.all(12),
+          decoration: pw.BoxDecoration(
+            color: PdfColors.blue50,
+            borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+            border: pw.Border.all(color: PdfColors.blue100),
+          ),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+            children: [
+              _pdfKpi('SALDO ATUAL', saldoAtual.toKg()),
+              _pdfKpi('CONSUMO PREVISTO', '-${totalConsumo.toKg()}'),
+              _pdfKpi(
+                'SALDO PROJETADO',
+                saldoFinal.toKg(),
+                cor: saldoFinal < 0 ? PdfColors.red700 : PdfColors.green700,
+              ),
+            ],
+          ),
+        ),
+        pw.SizedBox(height: 20),
+
+        // ── Tabela ────────────────────────────────────
+        if (consumos.isEmpty)
+          pw.Center(
+            child: pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(vertical: 30),
+              child: pw.Text('Nenhum pedido pendente para esta bitola.',
+                  style: pw.TextStyle(
+                      fontSize: 11, color: PdfColors.grey600)),
+            ),
+          )
+        else ...[
+          pw.Text('DETALHAMENTO POR PEDIDO',
+              style: pw.TextStyle(
+                  fontSize: 11,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.blueGrey800)),
+          pw.SizedBox(height: 10),
+          pw.TableHelper.fromTextArray(
+            headers: ['LOCALIZADOR', 'CLIENTE', 'OBRA', 'STATUS', 'CONSUMO', 'SALDO'],
+            data: [
+              ...consumos.asMap().entries.map((entry) {
+                final item = entry.value;
+                final saldoAcum = saldosAcumulados[entry.key];
+                return [
+                  item.localizador,
+                  item.clienteNome,
+                  item.obraNome,
+                  _statusLabel(item.status),
+                  '-${item.quantidade.toKg()}',
+                  saldoAcum.toKg(),
+                ];
+              }),
+              // Linha de totais
+              ['', '', '', 'TOTAL', '-${totalConsumo.toKg()}', saldoFinal.toKg()],
+            ],
+            headerStyle: pw.TextStyle(
+                fontSize: 7,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.white),
+            headerDecoration:
+                const pw.BoxDecoration(color: PdfColors.blueGrey800),
+            cellStyle: const pw.TextStyle(fontSize: 7),
+            cellAlignment: pw.Alignment.centerLeft,
+            oddRowDecoration:
+                const pw.BoxDecoration(color: PdfColors.grey50),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(2.5),
+              1: const pw.FlexColumnWidth(2),
+              2: const pw.FlexColumnWidth(2),
+              3: const pw.FlexColumnWidth(1.5),
+              4: const pw.FlexColumnWidth(1.2),
+              5: const pw.FlexColumnWidth(1.2),
+            },
+          ),
+        ],
+      ],
+    ));
+
+    final nome =
+        'consumo_previsto_${produto.nome.toLowerCase().replaceAll(' ', '_')}${DateTime.now().toFileName()}.pdf';
+    await downloadPDF(nome, '/relatorio/estoque/', await pdf.save());
+  }
+
+  pw.Widget _pdfKpi(String titulo, String valor, {PdfColor? cor}) {
+    return pw.Column(children: [
+      pw.Text(titulo,
+          style: pw.TextStyle(
+              fontSize: 8,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.blueGrey600)),
+      pw.SizedBox(height: 4),
+      pw.Text(valor,
+          style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+              color: cor ?? PdfColors.blueGrey900)),
+    ]);
+  }
+
+  String _statusLabel(PedidoBitolaStatus status) {
+    switch (status) {
+      case PedidoBitolaStatus.separado:
+        return 'Separado';
+      case PedidoBitolaStatus.aguardandoProducao:
+        return 'Aguardando';
+      case PedidoBitolaStatus.produzindo:
+        return 'Produzindo';
+      case PedidoBitolaStatus.pronto:
+        return 'Pronto';
+    }
+  }
+
+  // ── Helpers de status ─────────────────────────────────────────────────────
+
+  Color _corStatus(PedidoBitolaStatus status) {
+    switch (status) {
+      case PedidoBitolaStatus.separado:
+        return Colors.amber[700]!;
+      case PedidoBitolaStatus.aguardandoProducao:
+        return Colors.blueGrey;
+      case PedidoBitolaStatus.produzindo:
+        return Colors.blue[600]!;
+      case PedidoBitolaStatus.pronto:
+        return _verde;
+    }
+  }
+
+  IconData _iconeStatus(PedidoBitolaStatus status) {
+    switch (status) {
+      case PedidoBitolaStatus.separado:
+        return Icons.content_cut;
+      case PedidoBitolaStatus.aguardandoProducao:
+        return Icons.access_time;
+      case PedidoBitolaStatus.produzindo:
+        return Icons.build_outlined;
+      case PedidoBitolaStatus.pronto:
+        return Icons.check;
+    }
+  }
+}
+
+// ── Modelo auxiliar de consumo previsto ───────────────────────────────────────
+class _ConsumoPrevisto {
+  final String localizador;
+  final String clienteNome;
+  final String obraNome;
+  final double quantidade;
+  final PedidoBitolaStatus status;
+
+  const _ConsumoPrevisto({
+    required this.localizador,
+    required this.clienteNome,
+    required this.obraNome,
+    required this.quantidade,
+    required this.status,
+  });
 }
