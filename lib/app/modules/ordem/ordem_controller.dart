@@ -833,16 +833,21 @@ class OrdemController {
     for (var i = 0; i < ordensNaoConcluidas.length; i++) {
       ordensNaoConcluidas[i].beltIndex = i;
     }
-    // Atualiza a UI imediatamente com os novos beltIndexes
-    FirestoreClient.ordens.dataStream.update();
-    FirestoreClient.ordens.ordensNaoArquivadasStream.update();
+    // Re-ordena a lista do stream por beltIndex e re-emite
+    final lista = FirestoreClient.ordens.ordensNaoArquivadasStream.value;
+    lista.sort((a, b) {
+      if (a.freezed.isFreezed && !b.freezed.isFreezed) return 1;
+      if (!a.freezed.isFreezed && b.freezed.isFreezed) return -1;
+      if (a.beltIndex == null || b.beltIndex == null) return 0;
+      return a.beltIndex!.compareTo(b.beltIndex!);
+    });
+    FirestoreClient.ordens.ordensNaoArquivadasStream.add(lista);
+    FirestoreClient.ordens.dataStream.add(lista);
 
-    // Persiste no banco de forma leve (apenas belt_index)
+    // Persiste no banco bloqueando o Realtime durante o batch
     if (FirestoreClient.ordens is OrdemSupabaseCollection) {
       final supabaseColl = FirestoreClient.ordens as OrdemSupabaseCollection;
-      for (var ordem in ordensNaoConcluidas) {
-        supabaseColl.updateBeltIndex(ordem);
-      }
+      supabaseColl.reorderAll(ordensNaoConcluidas);
     } else {
       for (var ordem in ordensNaoConcluidas) {
         FirestoreClient.ordens.update(ordem);

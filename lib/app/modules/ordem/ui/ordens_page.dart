@@ -2,6 +2,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/orde
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/equipamento/equipamento_model.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/ordem/view_models/ordem_view_model.dart';
@@ -435,66 +436,110 @@ class _OrdensPageState extends State<OrdensPage> {
                           ),
                         ],
                         const SizedBox(height: 8),
-                        // Footer: peso total + data + gráficos
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryMain
-                                    .withValues(alpha: 0.06),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                ordem.produtos
-                                    .fold(0.0, (prev, e) => prev + e.qtde)
-                                    .toKg(),
-                                style: AppCss.mediumBold
-                                    .setSize(13)
-                                    .setColor(AppColors.primaryMain),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              ordem.createdAt.textHour(),
-                              style: AppCss.minimumRegular
-                                  .setSize(11)
-                                  .setColor(Colors.grey[400]!),
-                            ),
-                            const Spacer(),
-                            if (ordem.produtos.isNotEmpty)
+                        // Footer: peso total + estoque antes/depois + gráficos
+                        Builder(builder: (context) {
+                          final pesoOrdem = ordem.produtos
+                              .fold(0.0, (prev, e) => prev + e.qtde);
+                          final estoque = BackendClient.estoques
+                              .getByProdutoId(ordem.produto.id);
+                          final estoqueAntes = estoque?.quantidade ?? 0.0;
+                          final estoqueDepois = estoqueAntes - pesoOrdem;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Row(
                                 children: [
-                                  _progressChartWidget(
-                                      PedidoBitolaStatus.aguardandoProducao,
-                                      ordem.getPrcntgAguardando(),
-                                      isFreezed),
-                                  const SizedBox(width: 12),
-                                  _progressChartWidget(
-                                      PedidoBitolaStatus.produzindo,
-                                      ordem.getPrcntgProduzindo(),
-                                      isFreezed),
-                                  const SizedBox(width: 12),
-                                  _progressChartWidget(
-                                      PedidoBitolaStatus.pronto,
-                                      ordem.getPrcntgPronto(),
-                                      isFreezed),
-                                ],
-                              ),
-                            if (ordem.produtos.isEmpty)
-                              Row(
-                                children: [
-                                  Icon(Symbols.brightness_empty,
-                                      size: 18, color: Colors.grey[400]),
-                                  const SizedBox(width: 4),
-                                  Text('Vazia',
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryMain
+                                          .withValues(alpha: 0.06),
+                                      borderRadius:
+                                          BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      pesoOrdem.toKg(),
+                                      style: AppCss.mediumBold
+                                          .setSize(13)
+                                          .setColor(AppColors.primaryMain),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF1F5F9),
+                                      borderRadius:
+                                          BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: const Color(0xFFE2E8F0),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      'Estoque: ${estoqueAntes.toKg()} → ${estoqueDepois.toKg()}',
                                       style: AppCss.minimumRegular
-                                          .setColor(Colors.grey[400]!)),
+                                          .setSize(10)
+                                          .setColor(estoqueDepois < 0
+                                              ? Colors.red[400]!
+                                              : Colors.grey[600]!),
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  if (ordem.produtos.isNotEmpty)
+                                    Row(
+                                      children: [
+                                        _progressChartWidget(
+                                            PedidoBitolaStatus
+                                                .aguardandoProducao,
+                                            ordem.getPrcntgAguardando(),
+                                            isFreezed),
+                                        const SizedBox(width: 12),
+                                        _progressChartWidget(
+                                            PedidoBitolaStatus.produzindo,
+                                            ordem.getPrcntgProduzindo(),
+                                            isFreezed),
+                                        const SizedBox(width: 12),
+                                        _progressChartWidget(
+                                            PedidoBitolaStatus.pronto,
+                                            ordem.getPrcntgPronto(),
+                                            isFreezed),
+                                      ],
+                                    ),
+                                  if (ordem.produtos.isEmpty)
+                                    Row(
+                                      children: [
+                                        Icon(Symbols.brightness_empty,
+                                            size: 18,
+                                            color: Colors.grey[400]),
+                                        const SizedBox(width: 4),
+                                        Text('Vazia',
+                                            style: AppCss.minimumRegular
+                                                .setColor(
+                                                    Colors.grey[400]!)),
+                                      ],
+                                    ),
                                 ],
                               ),
-                          ],
-                        ),
+                              const SizedBox(height: 4),
+                              // Data de criação da ordem
+                              Row(
+                                children: [
+                                  Icon(Icons.calendar_today_outlined,
+                                      size: 12, color: Colors.grey[400]),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Criada em ${ordem.createdAt.textHour()}',
+                                    style: AppCss.minimumRegular
+                                        .setSize(11)
+                                        .setColor(Colors.grey[400]!),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        }),
                       ],
                     ),
                   ),

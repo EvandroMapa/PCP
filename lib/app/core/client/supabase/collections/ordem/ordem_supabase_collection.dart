@@ -17,6 +17,7 @@ class OrdemSupabaseCollection extends OrdemCollection {
   factory OrdemSupabaseCollection() => _instance;
 
   Timer? _streamDebounce;
+  bool _isReordering = false;
 
   @override
   final String name = 'ordens';
@@ -118,6 +119,9 @@ class OrdemSupabaseCollection extends OrdemCollection {
         .stream(primaryKey: ['id'])
         .eq('is_archived', false)
         .listen((List<Map<String, dynamic>> data) {
+          // Ignora eventos do Realtime durante reorder para evitar
+          // que a UI reverta antes de todos os belt_index serem persistidos
+          if (_isReordering) return;
           // Debounce para evitar rebuilds rápidos que acessam pedidos
           // ainda não carregados (ex: durante onReorder batch updates)
           _streamDebounce?.cancel();
@@ -149,6 +153,24 @@ class OrdemSupabaseCollection extends OrdemCollection {
     await SupabaseService.client
         .from(name)
         .update({'belt_index': model.beltIndex}).eq('id', model.id);
+  }
+
+  /// Atualiza todos os beltIndex de uma vez, bloqueando o Realtime durante o processo.
+  Future<void> reorderAll(List<OrdemModel> ordens) async {
+    _isReordering = true;
+    try {
+      final futures = ordens.map((ordem) => SupabaseService.client
+          .from(name)
+          .update({'belt_index': ordem.beltIndex}).eq('id', ordem.id));
+      await Future.wait(futures);
+    } finally {
+      // Mantém o bloqueio por 2s para absorver eventos Realtime
+      // que chegam após os updates serem persistidos.
+      // O estado local já está correto (atualizado no onReorder).
+      Timer(const Duration(milliseconds: 2000), () {
+        _isReordering = false;
+      });
+    }
   }
 
   @override
