@@ -373,6 +373,9 @@ class OrdemController {
     if (form.materiaPrima == null) {
       throw Exception('Selecione a matéria prima');
     }
+    if (form.equipamento == null) {
+      throw Exception('Selecione o equipamento');
+    }
   }
 
   Future<void> onDelete(value, OrdemModel ordem) async {

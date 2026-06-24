@@ -8,6 +8,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/equipamento/equipamento_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/enums/sort_type.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
@@ -47,6 +48,7 @@ class OrdemUtils {
     PedidoBitolaStatus.pronto,
   ];
   BitolaModel? produto;
+  EquipamentoModel? equipamento;
 }
 
 class OrdemArquivadasUtils {
@@ -57,6 +59,7 @@ class OrdemArquivadasUtils {
     PedidoBitolaStatus.produzindo,
   ];
   BitolaModel? produto;
+  EquipamentoModel? equipamento;
 }
 
 class OrdemCreateModel {
@@ -70,6 +73,7 @@ class OrdemCreateModel {
   DateTime? createdAt;
   OrdemFreezedCreateModel freezed = OrdemFreezedCreateModel();
   MateriaPrimaModel? materiaPrima;
+  EquipamentoModel? equipamento;
   int? beltIndex;
 
   late bool isEdit;
@@ -105,6 +109,11 @@ class OrdemCreateModel {
         ordem.materiaPrima!.id,
       );
     }
+    if (ordem.equipamento != null) {
+      equipamento = FirestoreClient.equipamentos.getById(
+        ordem.equipamento!.id,
+      );
+    }
   }
 
   OrdemModel toOrdemModelCreate() {
@@ -133,6 +142,7 @@ class OrdemCreateModel {
       freezed: OrdemFreezedModel.static(),
       beltIndex: FirestoreClient.ordens.ordensNaoCongeladas.length,
       materiaPrima: materiaPrima,
+      equipamento: equipamento,
       updatedAt: DateTime.now(),
       history: [
         OrdemHistoryModel(
@@ -175,6 +185,7 @@ class OrdemCreateModel {
       freezed: freezed.toOrdemFreeze(),
       beltIndex: beltIndex,
       materiaPrima: materiaPrima,
+      equipamento: equipamento,
       updatedAt: DateTime.now(),
       history: ordem.history,
     );

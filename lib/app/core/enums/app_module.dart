@@ -17,6 +17,7 @@ import 'package:aco_plus/app/modules/tag/ui/tags_page.dart';
 import 'package:aco_plus/app/modules/estoque/ui/estoque_movimentacao_page.dart';
 import 'package:aco_plus/app/modules/estoque/ui/estoque_page.dart';
 import 'package:aco_plus/app/modules/pedido_compra/ui/pedido_compra_page.dart';
+import 'package:aco_plus/app/modules/equipamento/ui/equipamentos_page.dart';
 
 
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
@@ -43,6 +44,7 @@ enum AppModule {
   estoqueMovimentacao,
   pedidoCompra,
   painelGerencial,
+  equipamentos,
 }
 
 extension AppModuleExt on AppModule {
@@ -86,6 +88,8 @@ extension AppModuleExt on AppModule {
         return const PedidoCompraPage();
       case AppModule.painelGerencial:
         return const PainelGerencialPage();
+      case AppModule.equipamentos:
+        return const EquipamentosPage();
 
     }
   }
@@ -142,6 +146,8 @@ extension AppModuleExt on AppModule {
         return Icons.shopping_cart_outlined;
       case AppModule.painelGerencial:
         return Icons.phone_android;
+      case AppModule.equipamentos:
+        return Icons.precision_manufacturing_outlined;
 
     }
   }
@@ -186,6 +192,8 @@ extension AppModuleExt on AppModule {
         return 'Pedidos de Compra';
       case AppModule.painelGerencial:
         return 'Painel Gerencial';
+      case AppModule.equipamentos:
+        return 'Equipamentos';
 
     }
   }

@@ -89,7 +89,8 @@ class DashboardController {
   ///  - Usa FirestoreClient.steps para considerarConsumoRelatorioPedidos
   ///  - Não filtra por isArchived
   ///  - Inclui apenas itens com status em [separado, aguardandoProducao, produzindo]
-  Map<String, double> getConsumoEstimado() {
+  ///  - Se [considerarPedidoSemData] = false, ignora pedidos sem data de entrega
+  Map<String, double> getConsumoEstimado({bool considerarPedidoSemData = true}) {
     const statusValidos = [
       PedidoBitolaStatus.separado,
       PedidoBitolaStatus.aguardandoProducao,
@@ -99,6 +100,9 @@ class DashboardController {
     final Map<String, double> consumo = {};
 
     for (var pedido in FirestoreClient.pedidos.data) {
+      // Filtro: pedidos sem data de entrega
+      if (!considerarPedidoSemData && pedido.deliveryAt == null) continue;
+
       final stepAtual = FirestoreClient.steps.data
           .where((step) => step.id == pedido.step.id)
           .firstOrNull;

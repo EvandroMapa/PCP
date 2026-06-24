@@ -42,6 +42,7 @@ class DashboardPageState extends State<DashboardPage> {
   bool _pontasCarregando = true;
   int _modoDash = 0; // 0 = Gestão a Vista, 1 = Mapa Pátio, 2 = Mapa de Obras
   bool _mostrarGraficoEstoque = false;
+  bool _considerarPedidoSemData = true;
 
   @override
   void initState() {
@@ -620,7 +621,7 @@ class DashboardPageState extends State<DashboardPage> {
     );
   }
   Widget _consumoBitolaWidget() {
-    final consumoMap = dashCtrl.getConsumoEstimado();
+    final consumoMap = dashCtrl.getConsumoEstimado(considerarPedidoSemData: _considerarPedidoSemData);
     final produtos = FirestoreClient.bitolas.data
         .where((p) => consumoMap.containsKey(p.id))
         .toList();
@@ -722,11 +723,19 @@ class DashboardPageState extends State<DashboardPage> {
                   ],
                 ),
                 const H(8),
-                Text(
-                  _mostrarGraficoEstoque
-                      ? 'Saldo fisico + pedidos em aberto vs. consumo previsto'
-                      : 'Materia-prima que ainda sera baixada do estoque para concluir os pedidos em aberto',
-                  style: AppCss.minimumRegular.setColor(Colors.grey[600]!),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _mostrarGraficoEstoque
+                            ? 'Saldo + pedidos em aberto vs. consumo'
+                            : 'Matéria-prima que será baixada do estoque',
+                        style: AppCss.minimumRegular.setSize(11).setColor(Colors.grey[500]!),
+                      ),
+                    ),
+                    const W(8),
+                    _checkboxSemData(),
+                  ],
                 ),
               ],
             ),
@@ -745,6 +754,39 @@ class DashboardPageState extends State<DashboardPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _checkboxSemData() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.grey.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(Icons.event_outlined, size: 14, color: Colors.grey[500]),
+        const SizedBox(width: 4),
+        Text('Considerar pedido sem data',
+            style: AppCss.minimumBold
+                .setColor(_considerarPedidoSemData
+                    ? Colors.grey[700]!
+                    : Colors.grey[400]!)
+                .setSize(11)),
+        SizedBox(
+          height: 24,
+          child: Checkbox(
+            value: _considerarPedidoSemData,
+            activeColor: const Color(0xFF2563EB),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            visualDensity: VisualDensity.compact,
+            onChanged: (v) {
+              setState(() => _considerarPedidoSemData = v ?? true);
+            },
+          ),
+        ),
+      ]),
     );
   }
 
@@ -800,8 +842,7 @@ class DashboardPageState extends State<DashboardPage> {
   Widget _estoqueChartContent({required Key key}) {
     final todosProdutos = BackendClient.bitolas.data.toList()
       ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
-
-    final consumoMap = dashCtrl.getConsumoEstimado();
+    final consumoMap = dashCtrl.getConsumoEstimado(considerarPedidoSemData: _considerarPedidoSemData);
     final List<_DashEstoqueData> data = [];
     double tSaldo = 0, tPedido = 0, tConsumo = 0;
 

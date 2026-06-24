@@ -5,6 +5,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedi
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/equipamento/equipamento_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/user_permission_type.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/app_drop_down.dart';
@@ -714,6 +715,25 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
                         ),
                       ),
                     ],
+                    if (form.equipamento != null) ...[
+                      const SizedBox(width: 4),
+                      Container(
+                        constraints: const BoxConstraints(maxWidth: 100),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.teal.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          form.equipamento!.descricao,
+                          style: AppCss.minimumBold
+                              .setSize(10)
+                              .setColor(Colors.teal[700]!),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ],
                   const SizedBox(width: 6),
                   AnimatedRotation(
@@ -780,6 +800,17 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
                       },
                     );
                   }),
+                  const SizedBox(height: 12),
+                  AppDropDown<EquipamentoModel?>(
+                    label: 'Equipamento',
+                    item: form.equipamento,
+                    itens: FirestoreClient.equipamentos.data.toList(),
+                    itemLabel: (e) => e!.label,
+                    onSelect: (e) {
+                      form.equipamento = e;
+                      ordemCtrl.formStream.update();
+                    },
+                  ),
                 ],
               ),
             ),

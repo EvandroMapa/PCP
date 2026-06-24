@@ -33,6 +33,7 @@ class _PainelGerencialPageState extends State<PainelGerencialPage> {
     'consumo': true,
     'estoque': true,
   };
+  bool _considerarPedidoSemData = true;
 
   @override
   void initState() {
@@ -656,7 +657,7 @@ class _PainelGerencialPageState extends State<PainelGerencialPage> {
   //  CONSUMO PREVISTO
   // ═══════════════════════════════════════════════════
   Widget _secaoConsumo() {
-    final consumoMap = dashCtrl.getConsumoEstimado();
+    final consumoMap = dashCtrl.getConsumoEstimado(considerarPedidoSemData: _considerarPedidoSemData);
     final produtos = FirestoreClient.bitolas.data
         .where((p) => consumoMap.containsKey(p.id))
         .toList();
@@ -673,8 +674,45 @@ class _PainelGerencialPageState extends State<PainelGerencialPage> {
       icone: Symbols.analytics,
       cor: const Color(0xFFE65100),
       badge: totalGeral.toKg(),
-      child: produtos.isEmpty
-          ? Padding(
+      child: Column(
+        children: [
+          // Checkbox sem data
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 8, 14, 4),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.event_outlined, size: 14, color: Colors.grey[500]),
+                const SizedBox(width: 4),
+                Text('Considerar pedido sem data',
+                    style: AppCss.minimumBold
+                        .setColor(_considerarPedidoSemData
+                            ? Colors.grey[700]!
+                            : Colors.grey[400]!)
+                        .setSize(11)),
+                SizedBox(
+                  height: 24,
+                  child: Checkbox(
+                    value: _considerarPedidoSemData,
+                    activeColor: const Color(0xFF2563EB),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                    onChanged: (v) {
+                      setState(() => _considerarPedidoSemData = v ?? true);
+                    },
+                  ),
+                ),
+              ]),
+            ),
+          ),
+          // Lista de consumo
+          if (produtos.isEmpty)
+            Padding(
               padding: const EdgeInsets.all(20),
               child: Center(
                 child: Text(
@@ -683,7 +721,8 @@ class _PainelGerencialPageState extends State<PainelGerencialPage> {
                 ),
               ),
             )
-          : Padding(
+          else
+            Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
               child: Column(
                 children: produtos.map((p) {
@@ -732,6 +771,8 @@ class _PainelGerencialPageState extends State<PainelGerencialPage> {
                 }).toList(),
               ),
             ),
+        ],
+      ),
     );
   }
 
@@ -742,7 +783,7 @@ class _PainelGerencialPageState extends State<PainelGerencialPage> {
     final todosProdutos = BackendClient.bitolas.data.toList()
       ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
 
-    final consumoMap = dashCtrl.getConsumoEstimado();
+    final consumoMap = dashCtrl.getConsumoEstimado(considerarPedidoSemData: _considerarPedidoSemData);
     final List<_EstoqueProjetadoItem> itens = [];
     double tSaldo = 0, tPedido = 0, tConsumo = 0;
 

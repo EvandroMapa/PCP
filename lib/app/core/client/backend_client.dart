@@ -21,6 +21,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/notificacao/notif
 import 'package:aco_plus/app/core/client/firestore/collections/checklist/checklist_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/materia_prima_collection.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/equipamento/equipamento_collection.dart';
 
 enum BackendType { firestore, supabase }
 
@@ -101,4 +102,9 @@ class BackendClient {
 
   static PedidoCompraSupabaseCollection get pedidosCompra =>
       AppSupabaseClient.pedidosCompra;
+
+  static EquipamentoCollection get equipamentos =>
+      type == BackendType.firestore
+          ? EquipamentoCollection()
+          : AppSupabaseClient.equipamentos;
 }

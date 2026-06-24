@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/models/materia_prima_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/ordem_history_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/equipamento/equipamento_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/history/ordem_history_type_enum.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_durations_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
@@ -20,6 +21,7 @@ class OrdemModel {
   final DateTime createdAt;
   DateTime updatedAt;
   MateriaPrimaModel? materiaPrima;
+  EquipamentoModel? equipamento;
   DateTime? endAt;
   List<Map<String, String>> idPedidosProdutosRefs = [];
   List<PedidoBitolaModel>? _produtosIniciais;
@@ -231,6 +233,7 @@ class OrdemModel {
     required this.updatedAt,
     this.isArchived = false,
     this.materiaPrima,
+    this.equipamento,
     this.beltIndex,
     this.endAt,
     required this.history,
@@ -254,6 +257,7 @@ class OrdemModel {
         'freezed': freezed.toMap(),
         'beltIndex': beltIndex,
         'materiaPrima': materiaPrima?.toMap(),
+        'equipamento': equipamento?.toMap(),
         'isArchived': isArchived,
         'updatedAt': updatedAt.millisecondsSinceEpoch,
         'history': history.map((e) => e.toJson()).toList(),
@@ -276,6 +280,8 @@ class OrdemModel {
         tryDecode(map['materiaPrima'] ?? map['materia_prima_raw']);
     final freezedRaw = tryDecode(map['freezed']);
     final historyRaw = tryDecode(map['history']);
+    final equipamentoRaw =
+        tryDecode(map['equipamento'] ?? map['equipamento_raw']);
     final idPedidosProdutosRaw =
         tryDecode(map['idPedidosProdutos'] ?? map['id_pedidos_bitolas']);
 
@@ -291,6 +297,14 @@ class OrdemModel {
       materiaPrima = BackendClient.materiaPrima.data.isNotEmpty
           ? BackendClient.materiaPrima.getById(mpSnapshot.id)
           : mpSnapshot;
+    }
+
+    EquipamentoModel? equipamento;
+    if (equipamentoRaw != null) {
+      final eqSnapshot = EquipamentoModel.fromMap(equipamentoRaw);
+      equipamento = BackendClient.equipamentos.data.isNotEmpty
+          ? BackendClient.equipamentos.getById(eqSnapshot.id)
+          : eqSnapshot;
     }
 
     return OrdemModel(
@@ -337,6 +351,7 @@ class OrdemModel {
       isArchived: map['isArchived'] ?? map['is_archived'] ?? false,
       beltIndex: map['beltIndex'] ?? map['belt_index'],
       materiaPrima: materiaPrima,
+      equipamento: equipamento,
       history: () {
         if (historyRaw == null) return <OrdemHistoryModel>[];
         try {
@@ -360,6 +375,7 @@ class OrdemModel {
         produtos: [],
         freezed: OrdemFreezedModel.static(),
         history: [],
+        equipamento: null,
       );
 
   Map<String, dynamic> toSupabaseMap() => {
@@ -373,6 +389,7 @@ class OrdemModel {
         'is_archived': isArchived,
         'belt_index': beltIndex,
         'materia_prima_raw': materiaPrima?.toMap(),
+        'equipamento_raw': equipamento?.toMap(),
         'history': history.map((e) => e.toJson()).toList(),
       };
 
@@ -389,6 +406,7 @@ class OrdemModel {
     List<PedidoBitolaModel>? produtos,
     OrdemFreezedModel? freezed,
     MateriaPrimaModel? materiaPrima,
+    EquipamentoModel? equipamento,
     DateTime? updatedAt,
     List<OrdemHistoryModel>? history,
   }) {
@@ -400,6 +418,7 @@ class OrdemModel {
       produtos: produtos ?? this.produtos,
       freezed: freezed ?? this.freezed,
       materiaPrima: materiaPrima ?? this.materiaPrima,
+      equipamento: equipamento ?? this.equipamento,
       updatedAt: updatedAt ?? this.updatedAt,
       history: history ?? this.history,
     );

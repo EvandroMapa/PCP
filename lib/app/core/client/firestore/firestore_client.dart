@@ -14,6 +14,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/box/box_collectio
 import 'package:aco_plus/app/core/client/firestore/collections/pedido_box/pedido_box_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/usuario_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/version/version_collection.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/equipamento/equipamento_collection.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 
 class FirestoreClient {
@@ -35,6 +36,8 @@ class FirestoreClient {
   static PedidoBoxCollection get pedidoBoxes => BackendClient.pedidoBoxes;
 
   static NotificacaoCollection get notificacoes => BackendClient.notificacoes;
+
+  static EquipamentoCollection get equipamentos => BackendClient.equipamentos;
 
   static init() async {
     if (BackendClient.type == BackendType.supabase) return;

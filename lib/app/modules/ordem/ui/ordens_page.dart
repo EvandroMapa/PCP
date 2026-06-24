@@ -1,6 +1,7 @@
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/equipamento/equipamento_model.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/ordem/view_models/ordem_view_model.dart';
@@ -145,6 +146,11 @@ class _OrdensPageState extends State<OrdensPage> {
                   .where((e) => e.produto.id == utils.produto!.id)
                   .toList();
             }
+            if (utils.equipamento != null) {
+              ordens = ordens
+                  .where((e) => e.equipamento?.id == utils.equipamento!.id)
+                  .toList();
+            }
             if (usuario.isOperador) {
               ordens = ordens
                   .where(
@@ -202,6 +208,19 @@ class _OrdensPageState extends State<OrdensPage> {
                             itemLabel: (e) => e.label,
                             itemColor: (e) => e.color,
                             onChanged: () {
+                              ordemCtrl.utilsStream.update();
+                            },
+                          ),
+                          const H(16),
+                          AppDropDown<EquipamentoModel?>(
+                            label: 'Equipamento',
+                            item: utils.equipamento,
+                            itens: FirestoreClient.equipamentos.data.toList(),
+                            itemLabel: (e) => e != null
+                                ? e.label
+                                : 'Todos os equipamentos',
+                            onSelect: (e) {
+                              utils.equipamento = e;
                               ordemCtrl.utilsStream.update();
                             },
                           ),
