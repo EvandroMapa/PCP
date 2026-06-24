@@ -46,7 +46,7 @@ class FabricanteSupabaseCollection extends FabricanteCollection {
   @override
   Future<FabricanteModel?> add(FabricanteModel model) async {
     await SupabaseService.client.from(name).insert(model.toSupabaseMap());
-    await fetch();
+    // fetch() removido — o Realtime já dispara atualização automaticamente
     return model;
   }
 
@@ -56,7 +56,7 @@ class FabricanteSupabaseCollection extends FabricanteCollection {
         .from(name)
         .update(model.toSupabaseMap())
         .eq('id', model.id);
-    await fetch();
+    // fetch() removido — o Realtime já dispara atualização automaticamente
     return model;
   }
 
@@ -64,7 +64,7 @@ class FabricanteSupabaseCollection extends FabricanteCollection {
   Future<void> delete(FabricanteModel model) async {
     try {
       await SupabaseService.client.from(name).delete().eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
     } catch (e) {
       log('Supabase Error (Fabricante.delete): $e');
     }

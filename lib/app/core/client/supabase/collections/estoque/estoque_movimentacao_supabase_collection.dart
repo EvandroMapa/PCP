@@ -44,7 +44,7 @@ class EstoqueMovimentacaoSupabaseCollection {
   Future<void> add(EstoqueMovimentacaoModel model) async {
     try {
       await SupabaseService.client.from(name).insert(model.toSupabaseMap());
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
     } catch (e) {
       log('Supabase Error (EstoqueMovimentacao.add): $e');
       rethrow;

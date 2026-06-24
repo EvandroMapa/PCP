@@ -1,4 +1,5 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido_compra/pedido_compra_model.dart';
 import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
@@ -32,6 +33,9 @@ class SimuladorCompraController {
     }
     relatorioCtrl.onCreateRelatorioPedido();
 
+    // Preserva configuração anterior
+    final considerarSemData = model?.considerarPedidoSemData ?? true;
+
     final produtos = BackendClient.bitolas.data.toList()
       ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
 
@@ -46,10 +50,16 @@ class SimuladorCompraController {
       // Nível alvo: usa estoqueIdeal se definido, senão estoqueMinimo
       final nivelAlvo = estoqueIdeal > 0 ? estoqueIdeal : estoqueMinimo;
 
-      // Consumo previsto = total de kg em pedidos ativos (ordens não finalizadas)
+      // Consumo previsto = total de kg em pedidos ativos
       double consumoPrevisto = 0.0;
       try {
-        consumoPrevisto = relatorioCtrl.getPedidosTotalPorBitola(produto);
+        if (considerarSemData) {
+          // Usa todos os pedidos (comportamento padrão)
+          consumoPrevisto = relatorioCtrl.getPedidosTotalPorBitola(produto);
+        } else {
+          // Filtra: só pedidos com data de entrega definida
+          consumoPrevisto = _getConsumoPorBitolaComData(produto);
+        }
       } catch (_) {
         // Se o relatório não estiver pronto, usa 0
       }
@@ -78,6 +88,7 @@ class SimuladorCompraController {
     // Preserva config de carga do model anterior
     final oldModel = model;
     final newModel = SimuladorCompraModel(itens: itens);
+    newModel.considerarPedidoSemData = considerarSemData;
     if (oldModel != null) {
       // Preserva config de múltiplo e peso-alvo, mas formatarCarga começa OFF
       newModel.pesoAlvoCarga.text = oldModel.pesoAlvoCarga.text;
@@ -99,6 +110,30 @@ class SimuladorCompraController {
     }
 
     modelStream.add(newModel);
+  }
+
+  /// Calcula consumo previsto por bitola, considerando APENAS pedidos com data de entrega
+  double _getConsumoPorBitolaComData(BitolaModel produto) {
+    double qtde = 0;
+    final relatorio = relatorioCtrl.pedidoViewModel.relatorio;
+    if (relatorio == null) return 0;
+    for (var pedido in relatorio.pedidos) {
+      // Filtra: ignora pedidos sem data de entrega
+      if (pedido.deliveryAt == null) continue;
+      for (var prod in pedido.produtos
+          .where((e) => e.produto.id == produto.id)
+          .toList()) {
+        qtde = qtde + prod.qtde;
+      }
+    }
+    return double.parse(qtde.toStringAsFixed(2));
+  }
+
+  /// Toggle considerar pedidos sem data de entrega
+  void onToggleConsiderarPedidoSemData(bool valor) {
+    if (model == null) return;
+    model!.considerarPedidoSemData = valor;
+    calcularNecessidades();
   }
 
   /// Toggle incluir/excluir item

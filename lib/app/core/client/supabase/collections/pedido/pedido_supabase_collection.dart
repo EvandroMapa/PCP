@@ -226,7 +226,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
         .listen((List<Map<String, dynamic>> data) {
           _realtimeDebounce?.cancel();
           _realtimeDebounce =
-              Timer(const Duration(milliseconds: 400), () async {
+              Timer(const Duration(milliseconds: 1000), () async {
             if (!kanbanCtrl.isDropLocked && !_optimisticCooldown && !ElementoSupabaseCollection.isImportando) {
               await start(lock: false);
             }
@@ -535,14 +535,14 @@ class PedidoSupabaseCollection extends PedidoCollection {
             .upsert(payload, onConflict: 'id');
       }
 
-      // Gatilho: atualiza a tabela pai 'pedidos' para os pedidos afetados
+      // Gatilho: atualiza a tabela pai 'pedidos' para os pedidos afetados (em paralelo)
       if (pedidoIds.isNotEmpty) {
-        for (var pId in pedidoIds) {
+        await Future.wait(pedidoIds.map((pId) {
           final pedido = getById(pId);
-          await SupabaseService.client
+          return SupabaseService.client
               .from(name)
               .update({'index': pedido.index}).eq('id', pId);
-        }
+        }));
       }
 
       // await fetch(lock: false);
@@ -627,14 +627,14 @@ class PedidoSupabaseCollection extends PedidoCollection {
             .upsert(payload, onConflict: 'id');
       }
 
-      // Gatilho: atualiza a tabela pai 'pedidos' para os pedidos afetados
+      // Gatilho: atualiza a tabela pai 'pedidos' para os pedidos afetados (em paralelo)
       if (pedidoIds.isNotEmpty) {
-        for (var pId in pedidoIds) {
+        await Future.wait(pedidoIds.map((pId) {
           final pedido = getById(pId);
-          await SupabaseService.client
+          return SupabaseService.client
               .from(name)
               .update({'index': pedido.index}).eq('id', pId);
-        }
+        }));
       }
 
       // await fetch(lock: false);

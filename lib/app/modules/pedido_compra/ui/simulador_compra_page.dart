@@ -179,6 +179,35 @@ class _SimuladorCompraPageState extends State<SimuladorCompraPage> {
           ]),
         ),
 
+        const SizedBox(width: 8),
+
+        // ─── 2.5. Considerar pedido sem data ──────────────────────
+        _headerSection(
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.event_outlined, size: 15, color: Colors.grey[500]),
+            const SizedBox(width: 6),
+            Text('Considerar pedido sem data',
+                style: AppCss.minimumBold
+                    .setColor(model.considerarPedidoSemData
+                        ? Colors.grey[700]!
+                        : Colors.grey[400]!)
+                    .setSize(11)),
+            SizedBox(
+              height: 28,
+              child: Checkbox(
+                value: model.considerarPedidoSemData,
+                activeColor: const Color(0xFF2563EB),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+                onChanged: (v) {
+                  simuladorCompraCtrl.onToggleConsiderarPedidoSemData(v ?? true);
+                  setState(() {});
+                },
+              ),
+            ),
+          ]),
+        ),
+
         const Spacer(),
 
         // ─── 3. Resumo do pedido ─────────────────────────────────

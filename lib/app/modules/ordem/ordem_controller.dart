@@ -226,14 +226,11 @@ class OrdemController {
 
     if (FirestoreClient.pedidos is PedidoSupabaseCollection) {
       final supabaseColl = FirestoreClient.pedidos as PedidoSupabaseCollection;
-      if (mpUpdates.isNotEmpty) {
-        await supabaseColl.updateProdutosMateriaPrima(mpUpdates);
-      }
-      if (statusUpdates.isNotEmpty) {
-        await supabaseColl.updateProdutosStatus(statusUpdates);
-      }
+      await Future.wait([
+        if (mpUpdates.isNotEmpty) supabaseColl.updateProdutosMateriaPrima(mpUpdates),
+        if (statusUpdates.isNotEmpty) supabaseColl.updateProdutosStatus(statusUpdates),
+      ]);
     } else {
-      // Fallback para Firestore (Legado)
       for (var update in mpUpdates) {
         await FirestoreClient.pedidos
             .updateProdutoMateriaPrima(update.$1, update.$2);
@@ -245,23 +242,24 @@ class OrdemController {
 
     await FirestoreClient.ordens.add(ordemCriada);
 
-    // Atualiza status dos pedidos pai de forma otimizada
-    for (var pedidoId in pedidosAfetados) {
+    await Future.wait(pedidosAfetados.map((pedidoId) async {
       final pedido = FirestoreClient.pedidos.getById(pedidoId);
       if (pedido.produtos.isNotEmpty) {
         await FirestoreClient.pedidos.updatePedidoStatus(pedido.produtos.first);
       }
-    }
+    }));
 
-    // Ordens PRIMEIRO — garante que ordens.data está atualizado antes de pedidos.fetch()
-    await FirestoreClient.ordens.fetch();
-    await FirestoreClient.pedidos.fetch();
+    await Future.wait([
+      FirestoreClient.ordens.fetch(),
+      FirestoreClient.pedidos.fetch(),
+    ]);
     onReorder(FirestoreClient.ordens.ordensNaoCongeladas);
-    await automatizacaoCtrl.onSetStepByPedidoStatus(
+    automatizacaoCtrl.onSetStepByPedidoStatus(
       ordemCriada.pedidos
           .map<PedidoModel>((e) => BackendClient.pedidos.getById(e.id))
           .toList(),
     );
+
     Navigator.pop(value);
     NotificationService.showPositive(
       'Ordem Adicionada',
@@ -280,7 +278,6 @@ class OrdemController {
   }
 
   Future<void> onEdit(value, OrdemModel ordem) async {
-    await FirestoreClient.pedidos.fetch();
     onValid();
     final ordemEditada = form.toOrdemModelEdit(ordem);
     if (ordemEditada.produtos.isEmpty) {
@@ -293,51 +290,40 @@ class OrdemController {
     final List<(PedidoBitolaModel, MateriaPrimaModel?)> mpUpdates = [];
     final Set<String> pedidosAfetados = {};
 
-    // Produtos removidos da ordem
     for (PedidoBitolaModel produto in ordem.produtos) {
       if (!ordemEditada.produtos.any((e) => e.id == produto.id)) {
-        // Se o item foi removido da Ordem, ele volta a ficar 'separado'
         statusUpdates.add((produto, PedidoBitolaStatus.separado));
         pedidosAfetados.add(produto.pedidoId);
-        // Limpa a matéria-prima vinculada ao produto removido
         if (produto.materiaPrima != null) {
           mpUpdates.add((produto, null));
         }
       }
     }
 
-    // Produtos na ordem editada
     for (PedidoBitolaModel produto in ordemEditada.produtos) {
       pedidosAfetados.add(produto.pedidoId);
 
-      // Atualizar Matéria-Prima se necessário
       if (produto.status.status != PedidoBitolaStatus.pronto) {
         if (ordemEditada.materiaPrima?.id != produto.materiaPrima?.id) {
           mpUpdates.add((produto, ordemEditada.materiaPrima!));
         }
       }
 
-      // Atualizar Status
       PedidoBitolaStatus newStatus = produto.status.status;
       if (newStatus == PedidoBitolaStatus.separado) {
         newStatus = PedidoBitolaStatus.aguardandoProducao;
-        produto.statusess.add(PedidoBitolaStatusModel.create(
-            newStatus)); // Atualiza na memória pra UI não piscar
+        produto.statusess.add(PedidoBitolaStatusModel.create(newStatus));
       }
       statusUpdates.add((produto, newStatus));
     }
 
-    // Executa atualizações em massa (Status e MP)
     if (FirestoreClient.pedidos is PedidoSupabaseCollection) {
       final supabaseColl = FirestoreClient.pedidos as PedidoSupabaseCollection;
-      if (mpUpdates.isNotEmpty) {
-        await supabaseColl.updateProdutosMateriaPrima(mpUpdates);
-      }
-      if (statusUpdates.isNotEmpty) {
-        await supabaseColl.updateProdutosStatus(statusUpdates);
-      }
+      await Future.wait([
+        if (mpUpdates.isNotEmpty) supabaseColl.updateProdutosMateriaPrima(mpUpdates),
+        if (statusUpdates.isNotEmpty) supabaseColl.updateProdutosStatus(statusUpdates),
+      ]);
     } else {
-      // Fallback para Firestore (Legado)
       for (var update in mpUpdates) {
         await FirestoreClient.pedidos
             .updateProdutoMateriaPrima(update.$1, update.$2);
@@ -347,24 +333,21 @@ class OrdemController {
       }
     }
 
-    // Sem removeWhere! Se era para deletar, não deveria estar no array para começar.
-    // Além disso, se ele acabou de entrar na ordem, não será deletado.
     await FirestoreClient.ordens.update(ordemEditada);
 
-    // Atualiza status dos pedidos pai de forma otimizada
-    for (var pedidoId in pedidosAfetados) {
+    await Future.wait(pedidosAfetados.map((pedidoId) async {
       final pedido = FirestoreClient.pedidos.getById(pedidoId);
       if (pedido.produtos.isNotEmpty) {
         await FirestoreClient.pedidos.updatePedidoStatus(pedido.produtos.first);
       }
-    }
+    }));
 
-    // Ordens PRIMEIRO — garante que ordens.data está atualizado antes de pedidos.fetch()
-    // disparar _listenGlobalPedidos. Evita que getOrdemByProduto retorne null no rebuild.
-    await FirestoreClient.ordens.fetch();
-    await FirestoreClient.pedidos.fetch();
-    await automatizacaoCtrl.onSetStepByPedidoStatus(ordemEditada.pedidos);
-    await OrdemTimelineRegister.editada(ordemEditada, ordem);
+    await Future.wait([
+      FirestoreClient.ordens.fetch(),
+      FirestoreClient.pedidos.fetch(),
+      OrdemTimelineRegister.editada(ordemEditada, ordem),
+    ]);
+    automatizacaoCtrl.onSetStepByPedidoStatus(ordemEditada.pedidos);
 
     Navigator.pop(value);
     Navigator.pop(value);
@@ -411,14 +394,19 @@ class OrdemController {
     } catch (_) {}
 
     if (await _isDeleteUnavailable(ordem)) return;
-    for (var pedidoProduto in ordem.produtos
+
+    // Coleta todos os pedidos afetados e atualiza em paralelo
+    final pedidosProdutos = ordem.produtos
         .map<PedidoBitolaModel>(
           (e) => FirestoreClient.pedidos.getProdutoByPedidoId(
             e.pedidoId,
             e.id,
           ),
         )
-        .toList()) {
+        .toList();
+
+    // Prepara status locais
+    for (var pedidoProduto in pedidosProdutos) {
       pedidoProduto.statusess.clear();
       pedidoProduto.statusess.add(
         PedidoBitolaStatusModel(
@@ -427,14 +415,18 @@ class OrdemController {
           createdAt: DateTime.now(),
         ),
       );
-      await FirestoreClient.pedidos.update(
-        FirestoreClient.pedidos.getById(pedidoProduto.pedidoId),
-      );
     }
+
+    // Persiste em paralelo — antes era sequencial (1 por 1)
+    await Future.wait(pedidosProdutos.map((pp) =>
+        FirestoreClient.pedidos.update(
+            FirestoreClient.pedidos.getById(pp.pedidoId))));
+
     ordem.produtos.clear();
     await FirestoreClient.ordens.delete(ordem);
-    await FirestoreClient.ordens.fetch();
-    await automatizacaoCtrl.onSetStepByPedidoStatus(ordem.pedidos);
+    // ordens.fetch() removido — Realtime já cuida
+    // Automatização em background
+    automatizacaoCtrl.onSetStepByPedidoStatus(ordem.pedidos);
     pop(value);
 
     onReorder(FirestoreClient.ordens.ordensNaoCongeladas);

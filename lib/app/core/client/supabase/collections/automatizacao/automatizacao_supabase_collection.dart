@@ -57,7 +57,7 @@ class AutomatizacaoSupabaseCollection extends AutomatizacaoCollection {
       payload['id'] = 'instance';
 
       await SupabaseService.client.from(tableName).upsert(payload);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
     } catch (e) {
       print('Supabase Error (Automatizacao.update): $e');
     }

@@ -89,7 +89,7 @@ class PedidoCompraSupabaseCollection {
   Future<void> add(PedidoCompraModel model) async {
     try {
       await SupabaseService.client.from(name).insert(model.toSupabaseMap());
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
     } catch (e) {
       log('Supabase Error (PedidoCompra.add): $e');
       rethrow;
@@ -102,7 +102,7 @@ class PedidoCompraSupabaseCollection {
           .from(name)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
     } catch (e) {
       log('Supabase Error (PedidoCompra.update): $e');
       rethrow;
@@ -112,7 +112,7 @@ class PedidoCompraSupabaseCollection {
   Future<void> delete(PedidoCompraModel model) async {
     try {
       await SupabaseService.client.from(name).delete().eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
     } catch (e) {
       log('Supabase Error (PedidoCompra.delete): $e');
       rethrow;

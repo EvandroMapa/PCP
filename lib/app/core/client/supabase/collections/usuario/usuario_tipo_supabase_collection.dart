@@ -59,7 +59,7 @@ class UsuarioTipoSupabaseCollection {
       await SupabaseService.client
           .from(tableName)
           .insert(model.toSupabaseMap());
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
       return model;
     } catch (e) {
       print('Supabase Error (UsuarioTipo.add): $e');
@@ -73,7 +73,7 @@ class UsuarioTipoSupabaseCollection {
           .from(tableName)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
       return model;
     } catch (e) {
       print('Supabase Error (UsuarioTipo.update): $e');
@@ -84,7 +84,7 @@ class UsuarioTipoSupabaseCollection {
   Future<void> delete(UsuarioTipoModel model) async {
     try {
       await SupabaseService.client.from(tableName).delete().eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
     } catch (e) {
       print('Supabase Error (UsuarioTipo.delete): $e');
       rethrow;

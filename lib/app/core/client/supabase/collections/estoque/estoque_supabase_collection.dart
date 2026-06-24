@@ -52,7 +52,7 @@ class EstoqueSupabaseCollection {
             model.toSupabaseMap(),
             onConflict: 'bitola_id',
           );
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
     } catch (e) {
       log('Supabase Error (Estoque.upsert): $e');
       rethrow;

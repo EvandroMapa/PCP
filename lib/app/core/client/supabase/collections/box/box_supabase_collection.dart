@@ -46,7 +46,7 @@ class BoxSupabaseCollection extends BoxCollection {
   Future<BoxModel?> add(BoxModel model) async {
     try {
       await SupabaseService.client.from(tableName).insert(model.toSupabaseMap());
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
       return model;
     } catch (e) {
       print('Supabase Error (Box.add): $e');
@@ -61,7 +61,7 @@ class BoxSupabaseCollection extends BoxCollection {
           .from(tableName)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
       return model;
     } catch (e) {
       print('Supabase Error (Box.update): $e');
@@ -73,7 +73,7 @@ class BoxSupabaseCollection extends BoxCollection {
   Future<void> delete(BoxModel model) async {
     try {
       await SupabaseService.client.from(tableName).delete().eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
     } catch (e) {
       print('Supabase Error (Box.delete): $e');
     }

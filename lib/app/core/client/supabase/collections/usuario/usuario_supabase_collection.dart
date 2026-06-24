@@ -84,7 +84,7 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
   Future<UsuarioModel?> add(UsuarioModel model) async {
     try {
       await SupabaseService.client.from(name).insert(model.toSupabaseMap());
-      await fetch();
+      // fetch() removido — o Realtime já dispara start() automaticamente (debounce 500ms)
       return model;
     } catch (e) {
       log('Supabase Error (Usuario.add): $e');
@@ -99,7 +99,7 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
           .from(name)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara start() automaticamente (debounce 500ms)
       return model;
     } catch (e) {
       log('Supabase Error (Usuario.update): $e');
@@ -111,7 +111,7 @@ class UsuarioSupabaseCollection extends UsuarioCollection {
   Future<void> delete(UsuarioModel model) async {
     try {
       await SupabaseService.client.from(name).delete().eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara start() automaticamente (debounce 500ms)
     } catch (e) {
       log('Supabase Error (Usuario.delete): $e');
     }

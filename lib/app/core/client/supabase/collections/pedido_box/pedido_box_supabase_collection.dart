@@ -48,7 +48,7 @@ class PedidoBoxSupabaseCollection extends PedidoBoxCollection {
       await SupabaseService.client
           .from(tableName)
           .insert(model.toSupabaseMap());
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
       return model;
     } catch (e) {
       print('Supabase Error (PedidoBox.add): $e');
@@ -63,7 +63,7 @@ class PedidoBoxSupabaseCollection extends PedidoBoxCollection {
           .from(tableName)
           .delete()
           .eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
     } catch (e) {
       print('Supabase Error (PedidoBox.delete): $e');
     }
@@ -76,7 +76,7 @@ class PedidoBoxSupabaseCollection extends PedidoBoxCollection {
           .from(tableName)
           .delete()
           .eq('pedido_id', pedidoId);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
     } catch (e) {
       print('Supabase Error (PedidoBox.deleteByPedidoId): $e');
     }

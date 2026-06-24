@@ -46,7 +46,7 @@ class BitolaSupabaseCollection extends BitolaCollection {
   @override
   Future<BitolaModel?> add(BitolaModel model) async {
     await SupabaseService.client.from(name).insert(model.toSupabaseMap());
-    await fetch();
+    // fetch() removido — o Realtime já dispara atualização automaticamente
     return model;
   }
 
@@ -56,14 +56,14 @@ class BitolaSupabaseCollection extends BitolaCollection {
         .from(name)
         .update(model.toSupabaseMap())
         .eq('id', model.id);
-    await fetch();
+    // fetch() removido — o Realtime já dispara atualização automaticamente
     return model;
   }
 
   @override
   Future<void> delete(BitolaModel model) async {
     await SupabaseService.client.from(name).delete().eq('id', model.id);
-    await fetch();
+    // fetch() removido — o Realtime já dispara atualização automaticamente
   }
 
   bool _isListen = false;

@@ -48,7 +48,7 @@ class PatioSupabaseCollection extends PatioCollection {
       await SupabaseService.client
           .from(tableName)
           .insert(model.toSupabaseMap());
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
       return model;
     } catch (e) {
       print('Supabase Error (Patio.add): $e');
@@ -63,7 +63,7 @@ class PatioSupabaseCollection extends PatioCollection {
           .from(tableName)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
       return model;
     } catch (e) {
       print('Supabase Error (Patio.update): $e');
@@ -78,7 +78,7 @@ class PatioSupabaseCollection extends PatioCollection {
           .from(tableName)
           .delete()
           .eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
     } catch (e) {
       print('Supabase Error (Patio.delete): $e');
     }

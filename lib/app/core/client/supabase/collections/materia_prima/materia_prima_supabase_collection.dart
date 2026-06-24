@@ -47,7 +47,7 @@ class MateriaPrimaSupabaseCollection extends MateriaPrimaCollection {
   Future<MateriaPrimaModel?> add(MateriaPrimaModel model) async {
     try {
       await SupabaseService.client.from(name).insert(model.toSupabaseMap());
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
       return model;
     } catch (e) {
       log('Supabase Error (MateriaPrima.add): $e');
@@ -62,7 +62,7 @@ class MateriaPrimaSupabaseCollection extends MateriaPrimaCollection {
           .from(name)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
       return model;
     } catch (e) {
       log('Supabase Error (MateriaPrima.update): $e');
@@ -74,7 +74,7 @@ class MateriaPrimaSupabaseCollection extends MateriaPrimaCollection {
   Future<void> delete(MateriaPrimaModel model) async {
     try {
       await SupabaseService.client.from(name).delete().eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
     } catch (e) {
       log('Supabase Error (MateriaPrima.delete): $e');
     }

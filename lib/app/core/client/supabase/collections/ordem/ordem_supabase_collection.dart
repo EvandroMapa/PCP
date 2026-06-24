@@ -130,8 +130,8 @@ class OrdemSupabaseCollection extends OrdemCollection {
   @override
   Future<OrdemModel?> add(OrdemModel model) async {
     await SupabaseService.client.from(name).insert(model.toSupabaseMap());
-    // Após adicionar ordem, forçar atualização de pedidos (pois eles agora estão vinculados)
-    await BackendClient.pedidos.fetch();
+    // pedidos.fetch() removido — o Realtime de pedidos já cuida da sincronização.
+    // Antes: cada add de ordem disparava SELECT + 4 JOINs em todos os pedidos.
     return model;
   }
 
@@ -154,8 +154,7 @@ class OrdemSupabaseCollection extends OrdemCollection {
   @override
   Future<void> delete(OrdemModel model) async {
     await SupabaseService.client.from(name).delete().eq('id', model.id);
-    // Após deletar ordem, forçar atualização de pedidos
-    await BackendClient.pedidos.fetch();
+    // pedidos.fetch() removido — o Realtime de pedidos já cuida da sincronização.
   }
 
   @override

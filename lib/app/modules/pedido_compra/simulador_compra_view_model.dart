@@ -64,6 +64,10 @@ class SimuladorCompraModel {
   final TextController pesoAlvoCarga = TextController(text: '30000');
   final TextController multiploArredondamento = TextController(text: '1000');
 
+  /// Se true, considera todos os pedidos no cálculo de consumo.
+  /// Se false, só considera pedidos que possuem data de entrega definida.
+  bool considerarPedidoSemData = true;
+
   SimuladorCompraModel({required this.itens});
 
   /// Peso-alvo em kg

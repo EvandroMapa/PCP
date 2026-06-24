@@ -112,39 +112,9 @@ class PedidoController {
       }
     });
 
-    // Manutenção periódica a cada 3 segundos
-    _pagePollingTimer =
-        Timer.periodic(const Duration(seconds: 3), (timer) async {
-      if (pedidoStream.hasValue) {
-        // Verifica ANTES do await
-        if (_estaProtegido()) return;
-
-        final updated =
-            await BackendClient.pedidos.getByIdSupabase(pedidoStream.value.id);
-
-        // Verifica DEPOIS do await também — o usuário pode ter editado durante a busca
-        if (_estaProtegido()) return;
-
-        if (updated != null) {
-          // Só atualiza se houver mudança real
-          final current = pedidoStream.value;
-          final hasChanged = updated.localizador != current.localizador ||
-              updated.statusess.length != current.statusess.length ||
-              updated.steps.length != current.steps.length ||
-              updated.comments.length != current.comments.length ||
-              updated.histories.length != current.histories.length ||
-              updated.deliveryAt != current.deliveryAt ||
-              updated.isArchived != current.isArchived;
-
-          if (hasChanged) {
-            await BackendClient.ordens.fetch();
-            await BackendClient.ordens.startOnlyArquivadas();
-            pedidoStream.add(updated);
-            SchedulerBinding.instance.scheduleFrame();
-          }
-        }
-      }
-    });
+    // Polling de 3s REMOVIDO — o Realtime já cuida da sincronização.
+    // O polling antigo causava queries pesadas a cada 3s conflitando
+    // com o Realtime e gerando congelamentos de 5-20s.
   }
 
   /// Retorna true se houve gravação local recente (< 5s).

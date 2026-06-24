@@ -849,11 +849,14 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(children: [
-                      Text(produto.pedido.localizador,
-                          style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.grey[800])),
+                      Flexible(
+                        child: Text(produto.pedido.localizador,
+                            style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.grey[800]),
+                            overflow: TextOverflow.ellipsis),
+                      ),
                       const SizedBox(width: 6),
                       _tipoBadge(produto),
                       const SizedBox(width: 4),
@@ -876,7 +879,7 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
                         ]),
                       ),
                     Text(
-                      '${produto.cliente.nome} · ${produto.obra.descricao}',
+                      '${produto.obra.descricao} - ${produto.pedido.descricao}',
                       style:
                           TextStyle(fontSize: 12.5, color: Colors.grey[500]),
                       overflow: TextOverflow.ellipsis,
@@ -970,11 +973,14 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(children: [
-                        Text(produto.pedido.localizador,
-                            style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.grey[800])),
+                        Flexible(
+                          child: Text(produto.pedido.localizador,
+                              style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.grey[800]),
+                              overflow: TextOverflow.ellipsis),
+                        ),
                         const SizedBox(width: 6),
                         _tipoBadge(produto),
                         const SizedBox(width: 4),
@@ -997,7 +1003,7 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
                           ]),
                         ),
                       Text(
-                        '${produto.cliente.nome} · ${produto.obra.descricao}',
+                        '${produto.obra.descricao} - ${produto.pedido.descricao}',
                         style:
                             TextStyle(fontSize: 12.5, color: Colors.grey[500]),
                         overflow: TextOverflow.ellipsis,

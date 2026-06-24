@@ -66,7 +66,7 @@ class AppController {
 
   void _triggerFullCascade() {
     _cascadeDebounce?.cancel();
-    _cascadeDebounce = Timer(const Duration(milliseconds: 300), () async {
+    _cascadeDebounce = Timer(const Duration(milliseconds: 2000), () async {
       try {
         await BackendClient.materiaPrima.fetch();
         await BackendClient.ordens.fetch();
@@ -81,7 +81,7 @@ class AppController {
 
   void _triggerOrdensCascade() {
     _ordensDebounce?.cancel();
-    _ordensDebounce = Timer(const Duration(milliseconds: 300), () async {
+    _ordensDebounce = Timer(const Duration(milliseconds: 2000), () async {
       try {
         await BackendClient.ordens.fetch();
         log('AppController: Ordens cascade concluído (mp → ordens)');

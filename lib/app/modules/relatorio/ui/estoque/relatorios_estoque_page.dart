@@ -29,6 +29,7 @@ class RelatoriosEstoquePage extends StatefulWidget {
 class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
   // Controla quais produtos estão expandidos
   final Map<String, bool> _expandedPedidos = {};
+  bool _considerarPedidoSemData = true;
 
   @override
   void initState() {
@@ -67,7 +68,12 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
     // Consumo previsto por produto
     final Map<String, double> consumoMap = {};
     for (final produto in produtos) {
-      final total = relatorioCtrl.getPedidosTotalPorBitola(produto);
+      double total;
+      if (_considerarPedidoSemData) {
+        total = relatorioCtrl.getPedidosTotalPorBitola(produto);
+      } else {
+        total = _getConsumoPorBitolaComData(produto);
+      }
       if (total > 0) consumoMap[produto.id] = total;
     }
 
@@ -140,7 +146,39 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
             const SizedBox(width: 6),
             Text('Previsão de Consumo vs. Estoque',
                 style: AppCss.minimumBold.setColor(AppColors.primaryMain)),
-
+            const Spacer(),
+            // ── Checkbox: considerar pedido sem data ──
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.event_outlined, size: 14, color: Colors.grey[500]),
+                const SizedBox(width: 4),
+                Text('Considerar pedido sem data',
+                    style: AppCss.minimumBold
+                        .setColor(_considerarPedidoSemData
+                            ? Colors.grey[700]!
+                            : Colors.grey[400]!)
+                        .setSize(11)),
+                SizedBox(
+                  height: 24,
+                  child: Checkbox(
+                    value: _considerarPedidoSemData,
+                    activeColor: const Color(0xFF2563EB),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                    onChanged: (v) {
+                      setState(() => _considerarPedidoSemData = v ?? true);
+                      relatorioCtrl.onCreateRelatorioPedido();
+                    },
+                  ),
+                ),
+              ]),
+            ),
           ]),
           const SizedBox(height: 4),
           Text(
@@ -205,6 +243,23 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
         ]),
       ),
     );
+  }
+
+  /// Calcula consumo previsto por bitola, considerando APENAS pedidos com data de entrega
+  double _getConsumoPorBitolaComData(BitolaModel produto) {
+    double qtde = 0;
+    if (!relatorioCtrl.pedidoViewModelStream.hasValue) return 0;
+    final relatorio = relatorioCtrl.pedidoViewModel.relatorio;
+    if (relatorio == null) return 0;
+    for (var pedido in relatorio.pedidos) {
+      if (pedido.deliveryAt == null) continue;
+      for (var prod in pedido.produtos
+          .where((e) => e.produto.id == produto.id)
+          .toList()) {
+        qtde = qtde + prod.qtde;
+      }
+    }
+    return double.parse(qtde.toStringAsFixed(2));
   }
 
   // ── Card por produto ───────────────────────────────────────────────────────

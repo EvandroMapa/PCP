@@ -49,19 +49,32 @@ class ElementoSupabaseCollection {
       final List<String> eIds =
           elementosRaw.map((e) => e['id'].toString()).toList();
 
-      // 2. Buscar tabelas auxiliares em lotes (evita URL too long)
+      // 2. Buscar tabelas auxiliares em lotes PARALELOS (evita URL too long)
       Future<List<Map<String, dynamic>>> safeFetch(String table) async {
         try {
-          final resultados = <Map<String, dynamic>>[];
           const batchSize = 50;
+          const parallelLimit = 10; // Executa 10 batches em paralelo
+          final resultados = <Map<String, dynamic>>[];
+
+          // Monta todos os batches de IDs
+          final batches = <List<String>>[];
           for (int i = 0; i < eIds.length; i += batchSize) {
-            final batch = eIds.sublist(
-                i, i + batchSize > eIds.length ? eIds.length : i + batchSize);
-            final res = await SupabaseService.client
+            batches.add(eIds.sublist(
+                i, i + batchSize > eIds.length ? eIds.length : i + batchSize));
+          }
+
+          // Executa em blocos de parallelLimit
+          for (int i = 0; i < batches.length; i += parallelLimit) {
+            final chunk = batches.sublist(
+                i, i + parallelLimit > batches.length ? batches.length : i + parallelLimit);
+            final futures = chunk.map((batch) => SupabaseService.client
                 .from(table)
                 .select()
-                .filter('elemento_id', 'in', batch);
-            resultados.addAll(List<Map<String, dynamic>>.from(res));
+                .filter('elemento_id', 'in', batch));
+            final results = await Future.wait(futures);
+            for (final res in results) {
+              resultados.addAll(List<Map<String, dynamic>>.from(res));
+            }
           }
           return resultados;
         } catch (_) {
@@ -130,7 +143,9 @@ class ElementoSupabaseCollection {
   Timer? _streamDebounce;
   void _updateStreams() {
     _streamDebounce?.cancel();
-    _streamDebounce = Timer(const Duration(milliseconds: 150), () async {
+    // Debounce alto (1.5s): esta operação faz ~8 rodadas de queries paralelas
+    // para 11k+ posições. Não faz sentido executar a cada mudança individual.
+    _streamDebounce = Timer(const Duration(milliseconds: 1500), () async {
       if (isImportando) {
         log('Supabase Realtime: Elementos ignorado (importação em andamento).');
         return;

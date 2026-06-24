@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart' show GetOptions;
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
@@ -13,6 +14,8 @@ class ClienteSupabaseCollection extends ClienteCollection {
     dataStream = AppStream.seed([]);
   }
   factory ClienteSupabaseCollection() => _instance;
+
+  Timer? _streamDebounce;
 
   @override
   final String name = 'clientes';
@@ -109,7 +112,12 @@ class ClienteSupabaseCollection extends ClienteCollection {
     _isListen = true;
     SupabaseService.client
         .from(name)
-        .stream(primaryKey: ['id']).listen((_) => start(lock: false));
+        .stream(primaryKey: ['id']).listen((_) {
+          _streamDebounce?.cancel();
+          _streamDebounce = Timer(const Duration(milliseconds: 800), () {
+            start(lock: false);
+          });
+        });
   }
 
   @override
@@ -130,7 +138,7 @@ class ClienteSupabaseCollection extends ClienteCollection {
           .from(obraTableName)
           .upsert(model.obras.map((e) => e.toSupabaseMap(model.id)).toList());
     }
-    await fetch();
+    // fetch() removido — o Realtime já dispara start() automaticamente
     return model;
   }
 
@@ -140,7 +148,7 @@ class ClienteSupabaseCollection extends ClienteCollection {
         .from(name)
         .update(model.toSupabaseMap())
         .eq('id', model.id);
-    await fetch();
+    // fetch() removido — o Realtime já dispara start() automaticamente
     return model;
   }
 
@@ -152,7 +160,7 @@ class ClienteSupabaseCollection extends ClienteCollection {
           .delete()
           .eq('cliente_id', model.id);
       await SupabaseService.client.from(name).delete().eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara start() automaticamente
     } catch (e) {
       log('Supabase Error (Cliente.delete): $e');
       rethrow;
@@ -166,14 +174,14 @@ class ClienteSupabaseCollection extends ClienteCollection {
     log('[ClienteSupabase] addObra clienteId=$clienteId map=$map');
     await SupabaseService.client.from(obraTableName).insert(map);
     log('[ClienteSupabase] addObra INSERT OK');
-    await fetch();
+    // fetch() removido — o Realtime já dispara start() automaticamente
   }
 
   Future<void> updateObra(ObraModel obra, String clienteId) async {
     await SupabaseService.client
         .from(obraTableName)
         .upsert(obra.toSupabaseMap(clienteId));
-    await fetch();
+    // fetch() removido — o Realtime já dispara start() automaticamente
   }
 
   Future<void> deleteObra(String obraId) async {
@@ -181,7 +189,7 @@ class ClienteSupabaseCollection extends ClienteCollection {
         .from(obraTableName)
         .delete()
         .eq('id', obraId);
-    await fetch();
+    // fetch() removido — o Realtime já dispara start() automaticamente
   }
 
   /// Atualiza SOMENTE o endereço da obra (campo JSONB)
@@ -190,7 +198,7 @@ class ClienteSupabaseCollection extends ClienteCollection {
     await SupabaseService.client.from(obraTableName).update({
       'endereco': endereco.toMap(),
     }).eq('id', obraId);
-    await fetch();
+    // fetch() removido — o Realtime já dispara start() automaticamente
   }
 
   /// Atualiza SOMENTE o nome/descrição da obra
@@ -198,6 +206,6 @@ class ClienteSupabaseCollection extends ClienteCollection {
     await SupabaseService.client.from(obraTableName).update({
       'nome': descricao,
     }).eq('id', obraId);
-    await fetch();
+    // fetch() removido — o Realtime já dispara start() automaticamente
   }
 }

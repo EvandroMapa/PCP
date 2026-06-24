@@ -53,7 +53,7 @@ class NotificacaoSupabaseCollection extends NotificacaoCollection {
       await SupabaseService.client
           .from(tableName)
           .insert(model.toSupabaseMap());
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
       return model;
     } catch (e) {
       print('Supabase Error (Notificacao.add): $e');
@@ -68,7 +68,7 @@ class NotificacaoSupabaseCollection extends NotificacaoCollection {
           .from(tableName)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
       return model;
     } catch (e) {
       print('Supabase Error (Notificacao.update): $e');
@@ -80,7 +80,7 @@ class NotificacaoSupabaseCollection extends NotificacaoCollection {
   Future<void> delete(NotificacaoModel model) async {
     try {
       await SupabaseService.client.from(tableName).delete().eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
     } catch (e) {
       print('Supabase Error (Notificacao.delete): $e');
     }

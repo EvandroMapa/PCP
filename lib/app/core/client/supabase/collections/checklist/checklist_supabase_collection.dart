@@ -51,7 +51,7 @@ class ChecklistSupabaseCollection extends ChecklistCollection {
       await SupabaseService.client
           .from(tableName)
           .insert(model.toSupabaseMap());
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
       return model;
     } catch (e) {
       print('Supabase Error (Checklist.add): $e');
@@ -66,7 +66,7 @@ class ChecklistSupabaseCollection extends ChecklistCollection {
           .from(tableName)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
       return model;
     } catch (e) {
       print('Supabase Error (Checklist.update): $e');
@@ -78,7 +78,7 @@ class ChecklistSupabaseCollection extends ChecklistCollection {
   Future<void> delete(ChecklistModel model) async {
     try {
       await SupabaseService.client.from(tableName).delete().eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
     } catch (e) {
       print('Supabase Error (Checklist.delete): $e');
     }

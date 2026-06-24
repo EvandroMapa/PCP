@@ -48,7 +48,7 @@ class TagSupabaseCollection extends TagCollection {
       await SupabaseService.client
           .from(tableName)
           .insert(model.toSupabaseMap());
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
       return model;
     } catch (e) {
       print('Supabase Error (Tag.add): $e');
@@ -63,7 +63,7 @@ class TagSupabaseCollection extends TagCollection {
           .from(tableName)
           .update(model.toSupabaseMap())
           .eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
       return model;
     } catch (e) {
       print('Supabase Error (Tag.update): $e');
@@ -75,7 +75,7 @@ class TagSupabaseCollection extends TagCollection {
   Future<void> delete(TagModel model) async {
     try {
       await SupabaseService.client.from(tableName).delete().eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara atualização automaticamente
     } catch (e) {
       print('Supabase Error (Tag.delete): $e');
     }

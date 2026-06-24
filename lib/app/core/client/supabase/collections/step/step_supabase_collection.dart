@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart' show GetOptions;
 import 'package:aco_plus/app/core/services/notification_service.dart';
@@ -13,6 +14,8 @@ class StepSupabaseCollection extends StepCollection {
     dataStream = AppStream.seed([]);
   }
   factory StepSupabaseCollection() => _instance;
+
+  Timer? _streamDebounce;
 
   @override
   final String name = 'steps';
@@ -98,7 +101,12 @@ class StepSupabaseCollection extends StepCollection {
     _isListen = true;
     SupabaseService.client
         .from(name)
-        .stream(primaryKey: ['id']).listen((_) => start(lock: false));
+        .stream(primaryKey: ['id']).listen((_) {
+          _streamDebounce?.cancel();
+          _streamDebounce = Timer(const Duration(milliseconds: 800), () {
+            start(lock: false);
+          });
+        });
   }
 
   @override
@@ -111,7 +119,7 @@ class StepSupabaseCollection extends StepCollection {
       final map = model.toSupabaseMap();
       await SupabaseService.client.from(name).insert(map);
       await _syncRelationships(model);
-      await fetch();
+      // fetch() removido — o Realtime já dispara start() automaticamente
       return model;
     } catch (e) {
       log('Supabase Error (Step.add): $e');
@@ -125,7 +133,7 @@ class StepSupabaseCollection extends StepCollection {
       final map = model.toSupabaseMap();
       await SupabaseService.client.from(name).update(map).eq('id', model.id);
       await _syncRelationships(model);
-      await fetch();
+      // fetch() removido — o Realtime já dispara start() automaticamente
       return model;
     } catch (e) {
       log('Supabase Error (Step.update): $e');
@@ -176,7 +184,7 @@ class StepSupabaseCollection extends StepCollection {
   Future<void> delete(StepModel model) async {
     try {
       await SupabaseService.client.from(name).delete().eq('id', model.id);
-      await fetch();
+      // fetch() removido — o Realtime já dispara start() automaticamente
     } catch (e) {
       log('Supabase Error (Step.delete): $e');
     }
