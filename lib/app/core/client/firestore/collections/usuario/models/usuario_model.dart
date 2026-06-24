@@ -28,14 +28,14 @@ class UsuarioModel {
   bool get isNotOperador => isAdmin || (!isOperador && !isArmador);
 
   bool get temAcessoElementos =>
-      isAdmin || (tipo?.isPermitirElementos ?? false);
+      tipo?.isPermitirElementos ?? false;
   bool get podeEditarElementos =>
-      isAdmin || (tipo?.isPermitirEditarElementos ?? false);
+      tipo?.isPermitirEditarElementos ?? false;
   bool get podeExcluirPedido =>
-      isAdmin || (tipo?.isPermitirExcluirPedido ?? false);
+      tipo?.isPermitirExcluirPedido ?? false;
 
   bool get podeAjustarEstoque =>
-      isAdmin || (tipo?.isPermitirAjusteEstoque ?? false);
+      tipo?.isPermitirAjusteEstoque ?? false;
 
   static UsuarioModel get system => UsuarioModel(
         id: 'system',

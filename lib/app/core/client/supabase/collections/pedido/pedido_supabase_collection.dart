@@ -16,6 +16,7 @@ import 'package:collection/collection.dart';
 
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/pedido_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/elemento/elemento_supabase_collection.dart';
+import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 
 class PedidoSupabaseCollection extends PedidoCollection {
@@ -59,6 +60,17 @@ class PedidoSupabaseCollection extends PedidoCollection {
     pedido_tags (*)
   ''';
 
+  /// Índice de elementos por pedidoId — evita O(n×m) no _mapPedido
+  Map<String, List<ElementoModel>> _elementosPorPedido = {};
+
+  /// Reconstrói o índice a partir do cache de elementos
+  void _rebuildElementosIndex() {
+    _elementosPorPedido = {};
+    for (final e in ElementoSupabaseCollection().data) {
+      (_elementosPorPedido[e.pedidoId] ??= []).add(e);
+    }
+  }
+
   @override
   Future<void> start({bool lock = true, GetOptions? options}) async {
     if (_isStarted && lock) return;
@@ -83,6 +95,10 @@ class PedidoSupabaseCollection extends PedidoCollection {
       }
 
       log('Supabase (Pedido.start): ${response.length} pedidos carregados.');
+
+      // Reconstrói índice de elementos ANTES de mapear pedidos
+      _rebuildElementosIndex();
+
       final pedidos = response.map((pMap) => _mapPedido(pMap)).toList();
 
       pedidosUnarchivedsStream.add(pedidos);
@@ -101,6 +117,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
           .select(_selectCompleto)
           .eq('is_archived', true);
 
+      _rebuildElementosIndex();
       final pedidos = response.map((pMap) => _mapPedido(pMap)).toList();
       pedidosArchivedsStream.add(pedidos);
     } catch (e) {
@@ -134,6 +151,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
           .select(_selectCompleto)
           .filter('id', 'in', '(${ids.join(",")})');
 
+      _rebuildElementosIndex();
       final newPedidos = response.map((pMap) => _mapPedido(pMap)).toList();
 
       // Merge com dados locais
@@ -168,10 +186,8 @@ class PedidoSupabaseCollection extends PedidoCollection {
       elementosRaw: null,
     );
 
-    // Injeta os elementos já instanciados do cache em memória
-    final elementosDoPedido = ElementoSupabaseCollection().data
-        .where((e) => e.pedidoId == pedidoId)
-        .toList();
+    // Injeta os elementos do índice (O(1) lookup em vez de O(n) scan)
+    final elementosDoPedido = _elementosPorPedido[pedidoId] ?? [];
     pedido.elementos
       ..clear()
       ..addAll(elementosDoPedido);

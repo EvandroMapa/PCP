@@ -862,14 +862,16 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
                           IconButton(
                             icon: const Icon(Icons.delete_outline_rounded,
                                 color: Colors.red, size: 20),
-                            onPressed: () async {
-                              if (await showConfirmDialog('Apagar anexo?',
-                                  'Deseja remover este arquivo permanentemente?')) {
-                                await elementoCtrl.onDeleteArquivo(
-                                    arq, widget.pedido.id);
-                                setState(() {});
-                              }
-                            },
+                            onPressed: (usuarioCtrl.usuario?.podeEditarElementos ?? false)
+                                ? () async {
+                                    if (await showConfirmDialog('Apagar anexo?',
+                                        'Deseja remover este arquivo permanentemente?')) {
+                                      await elementoCtrl.onDeleteArquivo(
+                                          arq, widget.pedido.id);
+                                      setState(() {});
+                                    }
+                                  }
+                                : null,
                             tooltip: 'Excluir',
                           ),
                         ],
@@ -881,24 +883,27 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _onUpload,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
-                  foregroundColor: AppColors.secondary,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                icon: const Icon(Icons.upload_file_rounded),
-                label: const Text('Adicionar Foto ou PDF',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
+              child: (usuarioCtrl.usuario?.podeEditarElementos ?? false)
+                  ? ElevatedButton.icon(
+                      onPressed: _onUpload,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
+                        foregroundColor: AppColors.secondary,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: const Icon(Icons.upload_file_rounded),
+                      label: const Text('Adicionar Foto ou PDF',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                    )
+                  : const SizedBox.shrink(),
             ),
           ],
         ),
       ),
       actions: [
-        if (elementoSync.arquivos.isNotEmpty)
+        if (elementoSync.arquivos.isNotEmpty &&
+            (usuarioCtrl.usuario?.podeEditarElementos ?? false))
           TextButton.icon(
             icon: const Icon(Icons.delete_sweep_rounded,
                 color: Colors.red, size: 18),

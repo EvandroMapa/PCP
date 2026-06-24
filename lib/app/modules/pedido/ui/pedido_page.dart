@@ -61,7 +61,7 @@ class _PedidoPageState extends State<PedidoPage>
   late bool _lastShowElementos;
 
   bool _computeShowElementos(PedidoModel pedido) =>
-      usuario.temAcessoElementos && !pedido.isMestre;
+      !pedido.isMestre;
 
   @override
   void initState() {

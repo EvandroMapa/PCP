@@ -90,17 +90,25 @@ class ElementoSupabaseCollection {
       final allPosicoes = results[0];
       final allArquivos = results[1];
 
-      // 3. Montar modelos
+      // 3. Indexar por elemento_id — evita O(n×m) = 42M iterações
+      final posicoesIndex = <String, List<Map<String, dynamic>>>{};
+      for (final p in allPosicoes) {
+        final eId = p['elemento_id'].toString();
+        (posicoesIndex[eId] ??= []).add(p);
+      }
+      final arquivosIndex = <String, List<Map<String, dynamic>>>{};
+      for (final a in allArquivos) {
+        final eId = a['elemento_id'].toString();
+        (arquivosIndex[eId] ??= []).add(a);
+      }
+
+      // 4. Montar modelos com lookup O(1)
       final elementos = elementosRaw.map((eMap) {
         final eId = eMap['id'].toString();
         return ElementoModel.fromSupabaseMap(
           eMap,
-          posicoesRaw: allPosicoes
-              .where((p) => p['elemento_id'].toString() == eId)
-              .toList(),
-          arquivosRaw: allArquivos
-              .where((a) => a['elemento_id'].toString() == eId)
-              .toList(),
+          posicoesRaw: posicoesIndex[eId] ?? [],
+          arquivosRaw: arquivosIndex[eId] ?? [],
         );
       }).toList();
 

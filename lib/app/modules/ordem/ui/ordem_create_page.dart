@@ -36,12 +36,30 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
   bool _filtroExpandido = false;
   late bool _configExpandida;
 
+  // Snapshot do estado original para detectar mudanças
+  Set<String> _produtosOriginais = {};
+  String? _materiaPrimaOriginal;
+
+  bool get _houveMudanca {
+    if (!ordemCtrl.form.isEdit) return true; // criação sempre pergunta
+    final produtosAtuais = ordemCtrl.form.produtos.map((e) => e.id).toSet();
+    final mpAtual = ordemCtrl.form.materiaPrima?.id;
+    return !_produtosOriginais.containsAll(produtosAtuais) ||
+        !produtosAtuais.containsAll(_produtosOriginais) ||
+        mpAtual != _materiaPrimaOriginal;
+  }
+
   @override
   void initState() {
     setWebTitle(widget.ordem != null ? 'Editar Ordem' : 'Nova Ordem');
     ordemCtrl.onInitCreatePage(widget.ordem);
     // Começa colapsada se editando (já tem produto), expandida se criando
     _configExpandida = widget.ordem == null;
+    // Salva snapshot do estado original
+    if (widget.ordem != null) {
+      _produtosOriginais = widget.ordem!.produtos.map((e) => e.id).toSet();
+      _materiaPrimaOriginal = widget.ordem!.materiaPrima?.id;
+    }
     super.initState();
   }
 
@@ -52,6 +70,10 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () async {
+            if (!_houveMudanca) {
+              pop(context);
+              return;
+            }
             if (await showConfirmDialog(
               'Deseja realmente sair?',
               'Os dados da ordem serão perdidos.',
