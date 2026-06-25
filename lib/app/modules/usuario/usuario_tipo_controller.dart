@@ -101,6 +101,8 @@ class UsuarioTipoCreateModel {
   bool isPermitirAjusteEstoque = false;
   bool isOperador = false;
   bool isArmador = false;
+  bool isAdministrador = false;
+  bool isExclusivo = false;
   bool isEdit = false;
 
   UsuarioTipoCreateModel()
@@ -117,6 +119,8 @@ class UsuarioTipoCreateModel {
     isPermitirAjusteEstoque = m.isPermitirAjusteEstoque;
     isOperador = m.isOperador;
     isArmador = m.isArmador;
+    isAdministrador = m.isAdministrador;
+    isExclusivo = m.isExclusivo;
   }
 
   UsuarioTipoModel toModel() => UsuarioTipoModel(
@@ -128,6 +132,8 @@ class UsuarioTipoCreateModel {
         isPermitirAjusteEstoque: isPermitirAjusteEstoque,
         isOperador: isOperador,
         isArmador: isArmador,
+        isAdministrador: isAdministrador,
+        isExclusivo: isExclusivo,
         createdAt: DateTime.now(),
       );
 }

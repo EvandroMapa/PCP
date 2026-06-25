@@ -33,26 +33,12 @@ class _BasePageState extends State<BasePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) BackupSchedulerService().start(context);
     });
-    if (kIsWeb && usuario.isOperador) {
-      // Escuta mudanças de fullscreen (inclusive saída por ESC)
-      html.document.onFullscreenChange.listen((_) {
-        final estaFullscreen = html.document.fullscreenElement != null;
-        if (mounted) setState(() => _emFullscreen = estaFullscreen);
-      });
-      // Entra em fullscreen automaticamente
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _entrarFullscreen();
-      });
-    }
     super.initState();
   }
 
   @override
   void dispose() {
     BackupSchedulerService().stop();
-    if (kIsWeb && usuario.isOperador) {
-      _sairFullscreen();
-    }
     super.dispose();
   }
 
@@ -91,26 +77,12 @@ class _BasePageState extends State<BasePage> {
       builder: (context, module) => Scaffold(
         key: _scaffoldKey,
         drawer: const AppDrawer(),
-        bottomNavigationBar: usuario.isOperador ? const AppBottomNav() : null,
+        bottomNavigationBar: null,
         appBar: module.appBar(context) ??
             AppBar(
               iconTheme: const IconThemeData(color: Colors.white, size: 20),
               // Botão toggle fullscreen para operadores
-              leading: usuario.isOperador
-                  ? IconButton(
-                      tooltip: _emFullscreen
-                          ? 'Sair do modo tela cheia'
-                          : 'Entrar em tela cheia',
-                      onPressed: _toggleFullscreen,
-                      icon: Icon(
-                        _emFullscreen
-                            ? Icons.fullscreen_exit_rounded
-                            : Icons.fullscreen_rounded,
-                        color: Colors.white,
-                        size: 22,
-                      ),
-                    )
-                  : null,
+              leading: null,
               title: Text(
                 module.label,
                 style: const TextStyle(color: Colors.white),

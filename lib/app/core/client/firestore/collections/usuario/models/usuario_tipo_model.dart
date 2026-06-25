@@ -7,6 +7,8 @@ class UsuarioTipoModel {
   final bool isPermitirAjusteEstoque;
   final bool isOperador;
   final bool isArmador;
+  final bool isAdministrador;
+  final bool isExclusivo;
   final DateTime createdAt;
 
   UsuarioTipoModel({
@@ -18,6 +20,8 @@ class UsuarioTipoModel {
     required this.isPermitirAjusteEstoque,
     required this.isOperador,
     required this.isArmador,
+    required this.isAdministrador,
+    required this.isExclusivo,
     required this.createdAt,
   });
 
@@ -30,6 +34,8 @@ class UsuarioTipoModel {
         isPermitirAjusteEstoque: false,
         isOperador: false,
         isArmador: false,
+        isAdministrador: false,
+        isExclusivo: false,
         createdAt: DateTime.now(),
       );
 
@@ -43,6 +49,8 @@ class UsuarioTipoModel {
       isPermitirAjusteEstoque: map['permitir_ajuste_estoque'] ?? false,
       isOperador: map['is_operador'] ?? false,
       isArmador: map['is_armador'] ?? false,
+      isAdministrador: map['is_administrador'] ?? false,
+      isExclusivo: map['is_exclusivo'] ?? false,
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -58,6 +66,8 @@ class UsuarioTipoModel {
       'permitir_ajuste_estoque': isPermitirAjusteEstoque,
       'is_operador': isOperador,
       'is_armador': isArmador,
+      'is_administrador': isAdministrador,
+      'is_exclusivo': isExclusivo,
     };
     if (id.isNotEmpty) {
       map['id'] = id;
@@ -67,7 +77,7 @@ class UsuarioTipoModel {
 
   @override
   String toString() {
-    return 'UsuarioTipoModel(id: $id, nome: $nome, isPermitirElementos: $isPermitirElementos, isPermitirEditarElementos: $isPermitirEditarElementos, isPermitirExcluirPedido: $isPermitirExcluirPedido, isPermitirAjusteEstoque: $isPermitirAjusteEstoque, isOperador: $isOperador, isArmador: $isArmador)';
+    return 'UsuarioTipoModel(id: $id, nome: $nome, isPermitirElementos: $isPermitirElementos, isPermitirEditarElementos: $isPermitirEditarElementos, isPermitirExcluirPedido: $isPermitirExcluirPedido, isPermitirAjusteEstoque: $isPermitirAjusteEstoque, isOperador: $isOperador, isArmador: $isArmador, isAdministrador: $isAdministrador)';
   }
 
   @override

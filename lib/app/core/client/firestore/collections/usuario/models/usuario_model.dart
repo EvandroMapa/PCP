@@ -19,6 +19,7 @@ class UsuarioModel {
   final List<String> deviceTokens;
 
   bool get isAdmin =>
+      (tipo?.isAdministrador ?? false) ||
       (tipo?.nome.toLowerCase() == 'administrador') ||
       role == UsuarioRole.administrador;
 
@@ -26,6 +27,16 @@ class UsuarioModel {
       !isAdmin && (tipo?.isOperador ?? role == UsuarioRole.operador);
   bool get isArmador => !isAdmin && (tipo?.isArmador ?? false);
   bool get isNotOperador => isAdmin || (!isOperador && !isArmador);
+
+  /// Flags de acesso bruto (sem exclusividade com admin).
+  /// Usados APENAS para validação de acesso às rotas standalone.
+  bool get temAcessoOperador => tipo?.isOperador ?? false;
+  bool get temAcessoArmador => tipo?.isArmador ?? false;
+  bool get temAcessoGerencial => isAdmin;
+
+  /// Se true, o usuário NÃO pode acessar a rota / (app principal).
+  /// Deve usar apenas as rotas dedicadas (/operador, /armador).
+  bool get isExclusivo => tipo?.isExclusivo ?? false;
 
   bool get temAcessoElementos =>
       tipo?.isPermitirElementos ?? false;

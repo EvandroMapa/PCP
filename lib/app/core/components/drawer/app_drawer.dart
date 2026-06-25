@@ -48,18 +48,7 @@ class AppDrawer extends StatelessWidget {
                     child: ListView(
                       children: [
                         AppDrawerHeader(notificacoes: notificacoes),
-                        if (usuario.isArmador)
-                          AppDrawerArmadorList(
-                            module: module,
-                            notificacoes: notificacoes,
-                          )
-                        else if (usuario.isOperador)
-                          AppDrawerOperatorList(
-                            module: module,
-                            notificacoes: notificacoes,
-                          )
-                        else
-                          AppDrawerNotOperatorList(
+                        AppDrawerNotOperatorList(
                             module: module,
                             notificacoes: notificacoes,
                           ),

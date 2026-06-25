@@ -75,11 +75,23 @@ class _UsuarioTipoFormDialogState extends State<UsuarioTipoFormDialog> {
                 contentPadding: EdgeInsets.zero,
               ),
               CheckboxListTile(
+                title: const Text('Acessa como administrador'),
+                value: form.isAdministrador,
+                onChanged: (v) => setState(() {
+                  form.isAdministrador = v ?? false;
+                }),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+              ),
+              CheckboxListTile(
                 title: const Text('Acessa como operador'),
                 value: form.isOperador,
                 onChanged: (v) => setState(() {
                   form.isOperador = v ?? false;
-                  if (form.isOperador) form.isArmador = false;
+                  // Se exclusivo, só pode ter um
+                  if (form.isExclusivo && form.isOperador) {
+                    form.isArmador = false;
+                  }
                 }),
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
@@ -89,11 +101,37 @@ class _UsuarioTipoFormDialogState extends State<UsuarioTipoFormDialog> {
                 value: form.isArmador,
                 onChanged: (v) => setState(() {
                   form.isArmador = v ?? false;
-                  if (form.isArmador) form.isOperador = false;
+                  // Se exclusivo, só pode ter um
+                  if (form.isExclusivo && form.isArmador) {
+                    form.isOperador = false;
+                  }
                 }),
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
               ),
+              if (form.isOperador || form.isArmador) ...[
+                const Divider(height: 8),
+                CheckboxListTile(
+                  title: const Text('Acesso exclusivo'),
+                  subtitle: Text(
+                    'Bloqueia o acesso à tela principal.\n'
+                    'Permite apenas a rota dedicada'
+                    '${form.isOperador ? " (/operador)" : ""}'
+                    '${form.isArmador ? " (/armador)" : ""}.',
+                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                  ),
+                  value: form.isExclusivo,
+                  onChanged: (v) => setState(() {
+                    form.isExclusivo = v ?? false;
+                    // Ao marcar exclusivo com ambos, mantém só operador
+                    if (form.isExclusivo && form.isOperador && form.isArmador) {
+                      form.isArmador = false;
+                    }
+                  }),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ],
             ],
           ),
         ),

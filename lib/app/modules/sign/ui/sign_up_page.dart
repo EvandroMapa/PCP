@@ -8,7 +8,8 @@ import 'package:aco_plus/app/modules/sign/sign_controller.dart';
 import 'package:flutter/material.dart';
 
 class SignUpPage extends StatefulWidget {
-  const SignUpPage({super.key});
+  final String subtitulo;
+  const SignUpPage({super.key, this.subtitulo = 'Controle de Produção'});
 
   @override
   State<SignUpPage> createState() => SignUpPageState();
@@ -182,7 +183,7 @@ class SignUpPageState extends State<SignUpPage>
           ),
           const SizedBox(height: 4),
           Text(
-            'Controle de Produção',
+            widget.subtitulo,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w400,
