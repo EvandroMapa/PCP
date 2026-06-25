@@ -60,19 +60,38 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
             builder: (_, pedidos) => pedidos.isEmpty
                 ? const EmptyData(
                     message: 'Nenhum lote para armação encontrado!')
-                : GridView.builder(
-                    padding: const EdgeInsets.all(24),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      mainAxisExtent: 290, // Reduzido para caber sem rolar
-                      crossAxisSpacing: 24,
-                      mainAxisSpacing: 24,
-                    ),
-                    itemCount: pedidos.length,
-                    itemBuilder: (context, index) {
-                      final pedido = pedidos[index];
-                      return _PedidoArmacaoCard(pedido: pedido);
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      final largura = constraints.maxWidth;
+                      final isRetrato = MediaQuery.of(context).orientation ==
+                          Orientation.portrait;
+
+                      // Retrato: 2 colunas, cards menores
+                      // Paisagem: 3 colunas, cards maiores
+                      final colunas = isRetrato
+                          ? (largura < 500 ? 1 : 2)
+                          : (largura < 600 ? 2 : 3);
+                      final alturaCard = isRetrato ? 240.0 : 290.0;
+                      final spacing = isRetrato ? 16.0 : 24.0;
+
+                      return GridView.builder(
+                        padding: EdgeInsets.all(spacing),
+                        gridDelegate:
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: colunas,
+                          mainAxisExtent: alturaCard,
+                          crossAxisSpacing: spacing,
+                          mainAxisSpacing: spacing,
+                        ),
+                        itemCount: pedidos.length,
+                        itemBuilder: (context, index) {
+                          final pedido = pedidos[index];
+                          return _PedidoArmacaoCard(
+                            pedido: pedido,
+                            compacto: isRetrato,
+                          );
+                        },
+                      );
                     },
                   ),
           );
@@ -84,8 +103,12 @@ class _ArmacaoPageState extends State<ArmacaoPage> {
 
 class _PedidoArmacaoCard extends StatelessWidget {
   final PedidoModel pedido;
+  final bool compacto;
 
-  const _PedidoArmacaoCard({required this.pedido});
+  const _PedidoArmacaoCard({
+    required this.pedido,
+    this.compacto = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -93,11 +116,11 @@ class _PedidoArmacaoCard extends StatelessWidget {
 
     return InkWell(
       onTap: () => push(context, ArmacaoElementosPage(pedido: pedido)),
-      borderRadius: BorderRadius.circular(25),
+      borderRadius: BorderRadius.circular(compacto ? 16 : 25),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.white,
-          borderRadius: BorderRadius.circular(25),
+          borderRadius: BorderRadius.circular(compacto ? 16 : 25),
           border: Border.all(color: Colors.black, width: 2),
           boxShadow: [
             BoxShadow(
@@ -112,7 +135,12 @@ class _PedidoArmacaoCard extends StatelessWidget {
             _buildHeader(),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                padding: EdgeInsets.fromLTRB(
+                  compacto ? 10 : 16,
+                  compacto ? 8 : 12,
+                  compacto ? 10 : 16,
+                  compacto ? 12 : 20,
+                ),
                 child: Row(
                   children: [
                     _buildColumn(
@@ -148,40 +176,49 @@ class _PedidoArmacaoCard extends StatelessWidget {
   Widget _vDivider() {
     return Container(
       width: 1.5,
-      height: 60,
+      height: compacto ? 45 : 60,
       color: Colors.black.withValues(alpha: 0.08),
     );
   }
 
   Widget _buildHeader() {
+    final paddingV = compacto ? 12.0 : 20.0;
+    final paddingH = compacto ? 12.0 : 16.0;
+    final localizadorSize = compacto ? 18.0 : 25.0;
+    final clienteSize = compacto ? 12.0 : 15.0;
+
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.all(12),
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      margin: EdgeInsets.all(compacto ? 8 : 12),
+      padding: EdgeInsets.symmetric(vertical: paddingV, horizontal: paddingH),
       decoration: BoxDecoration(
         color: Colors.black,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(compacto ? 10 : 15),
       ),
       child: Column(
         children: [
-          Text(
-            pedido.localizador,
-            style: AppCss.largeBold
-                .setSize(25)
-                .setColor(Colors.white)
-                .copyWith(letterSpacing: 2),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              pedido.localizador,
+              style: AppCss.largeBold
+                  .setSize(localizadorSize)
+                  .setColor(Colors.white)
+                  .copyWith(letterSpacing: 2),
+              maxLines: 1,
+            ),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: compacto ? 4 : 6),
           Text(
             pedido.cliente.nome.toUpperCase(),
             style: AppCss.largeBold
-                .setSize(15)
+                .setSize(clienteSize)
                 .setColor(Colors.white.withValues(alpha: 0.6)),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          if (pedido.descricao.isNotEmpty) ...[
+          if (pedido.descricao.isNotEmpty && !compacto) ...[
             const SizedBox(height: 4),
             Text(
               pedido.descricao,
@@ -199,29 +236,41 @@ class _PedidoArmacaoCard extends StatelessWidget {
   }
 
   Widget _buildColumn(String title, String pc, String kg, Color color) {
+    final titleSize = compacto ? 10.0 : 12.0;
+    final pcSize = compacto ? 18.0 : 24.0;
+    final kgSize = compacto ? 13.0 : 16.0;
+
     return Expanded(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
             title,
-            style: AppCss.largeBold.setSize(12).setColor(color),
+            style: AppCss.largeBold.setSize(titleSize).setColor(color),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 16),
-          Text(
-            pc,
-            style: AppCss.largeBold
-                .setSize(24)
-                .setColor(Colors.black)
-                .copyWith(letterSpacing: -0.5),
+          SizedBox(height: compacto ? 8 : 16),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              pc,
+              style: AppCss.largeBold
+                  .setSize(pcSize)
+                  .setColor(Colors.black)
+                  .copyWith(letterSpacing: -0.5),
+            ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            kg,
-            style: AppCss.largeBold
-                .setSize(16)
-                .setColor(Colors.black)
-                .copyWith(letterSpacing: -0.3),
+          SizedBox(height: compacto ? 4 : 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              kg,
+              style: AppCss.largeBold
+                  .setSize(kgSize)
+                  .setColor(Colors.black)
+                  .copyWith(letterSpacing: -0.3),
+            ),
           ),
         ],
       ),
