@@ -1,3 +1,4 @@
+import 'dart:html' as html;
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
@@ -14,6 +15,7 @@ import 'package:aco_plus/app/modules/armacao/ui/armacao_elementos_page.dart';
 import 'package:aco_plus/app/modules/dashboard/dashboard_controller.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem/ordem_page.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -34,11 +36,50 @@ class _PainelGerencialPageState extends State<PainelGerencialPage> {
     'estoque': true,
   };
   bool _considerarPedidoSemData = true;
+  bool _emFullscreen = false;
 
   @override
   void initState() {
     super.initState();
     setWebTitle('AçoPlus - Painel Gerencial');
+    if (widget.standalone && kIsWeb) {
+      html.document.onFullscreenChange.listen((_) {
+        final estaFullscreen = html.document.fullscreenElement != null;
+        if (mounted) setState(() => _emFullscreen = estaFullscreen);
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _entrarFullscreen();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    if (widget.standalone && kIsWeb) _sairFullscreen();
+    super.dispose();
+  }
+
+  void _entrarFullscreen() {
+    try {
+      final el = html.document.documentElement ?? html.document.body;
+      el?.requestFullscreen();
+      if (mounted) setState(() => _emFullscreen = true);
+    } catch (e) {
+      debugPrint('Fullscreen error: $e');
+    }
+  }
+
+  void _sairFullscreen() {
+    try {
+      html.document.exitFullscreen();
+      if (mounted) setState(() => _emFullscreen = false);
+    } catch (e) {
+      debugPrint('Exit fullscreen error: $e');
+    }
+  }
+
+  void _toggleFullscreen() {
+    _emFullscreen ? _sairFullscreen() : _entrarFullscreen();
   }
 
   Future<void> _onRefresh() async {
@@ -116,6 +157,22 @@ class _PainelGerencialPageState extends State<PainelGerencialPage> {
             IconButton(
               icon: const Icon(Icons.menu, color: Colors.white, size: 22),
               onPressed: () => Scaffold.of(context).openDrawer(),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+            ),
+          if (widget.standalone)
+            IconButton(
+              tooltip: _emFullscreen
+                  ? 'Sair do modo tela cheia'
+                  : 'Entrar em tela cheia',
+              onPressed: _toggleFullscreen,
+              icon: Icon(
+                _emFullscreen
+                    ? Icons.fullscreen_exit_rounded
+                    : Icons.fullscreen_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
             ),

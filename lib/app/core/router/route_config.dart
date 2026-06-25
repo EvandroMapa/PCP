@@ -82,11 +82,7 @@ class RouteConfig {
               subtitulo: 'Operador',
               validarAcesso: _validarOperador,
               mensagemAcessoNegado: 'Apenas operadores podem acessar esta tela.',
-              child: StandaloneScaffold(
-                titulo: 'Ordens de Produção',
-                icone: Icons.work_outline,
-                child: OrdensPage(standalone: true),
-              ),
+              child: OrdensPage(standalone: true),
             ),
           ),
         ),

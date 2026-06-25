@@ -138,7 +138,7 @@ class _UsuarioFormDialogState extends State<UsuarioFormDialog> {
                 // ── Área de Permissões ou Banner de Operador ──
                 if (!BackendClient.usuarioTipos
                     .getById(form.usuarioTipoId)
-                    .isOperador) ...[
+                    .isExclusivo) ...[
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -185,7 +185,7 @@ class _UsuarioFormDialogState extends State<UsuarioFormDialog> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'Operadores podem visualizar apenas ordens pendentes',
+                            'Este perfil possui acesso exclusivo. Permissões individuais não se aplicam.',
                             style: TextStyle(
                                 color: Colors.amber[900], fontSize: 13),
                           ),

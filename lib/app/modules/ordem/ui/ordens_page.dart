@@ -1,4 +1,6 @@
+import 'dart:html' as html;
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
+import 'package:aco_plus/app/modules/materia_prima/ui/materias_primas_page.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/equipamento/equipamento_model.dart';
@@ -26,6 +28,7 @@ import 'package:aco_plus/app/modules/ordem/ui/ordem/ordem_page.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordem_create_page.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordens_arquivadas_page.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -38,12 +41,25 @@ class OrdensPage extends StatefulWidget {
 }
 
 class _OrdensPageState extends State<OrdensPage> {
+  bool _emFullscreen = false;
+  int _standaloneTabIndex = 0;
+
   @override
   void initState() {
     setWebTitle(widget.standalone
         ? 'AçoPlus - Ordens de Produção'
         : 'AçoPlus - Planejamento e controle de Produção');
     ordemCtrl.onInit();
+    if (widget.standalone && kIsWeb) {
+      // Fullscreen automático para rotas standalone
+      html.document.onFullscreenChange.listen((_) {
+        final estaFullscreen = html.document.fullscreenElement != null;
+        if (mounted) setState(() => _emFullscreen = estaFullscreen);
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _entrarFullscreen();
+      });
+    }
     if (!widget.standalone) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         baseCtrl.appBarActionsStream.add(usuario.isOperador
@@ -91,38 +107,97 @@ class _OrdensPageState extends State<OrdensPage> {
   }
 
   @override
+  void dispose() {
+    if (widget.standalone && kIsWeb) {
+      _sairFullscreen();
+    }
+    super.dispose();
+  }
+
+  void _entrarFullscreen() {
+    try {
+      final el = html.document.documentElement ?? html.document.body;
+      el?.requestFullscreen();
+      if (mounted) setState(() => _emFullscreen = true);
+    } catch (e) {
+      debugPrint('Fullscreen error: $e');
+    }
+  }
+
+  void _sairFullscreen() {
+    try {
+      html.document.exitFullscreen();
+      if (mounted) setState(() => _emFullscreen = false);
+    } catch (e) {
+      debugPrint('Exit fullscreen error: $e');
+    }
+  }
+
+  void _toggleFullscreen() {
+    _emFullscreen ? _sairFullscreen() : _entrarFullscreen();
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (widget.standalone) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Ordens de Produção',
-              style: TextStyle(color: Colors.white)),
+          automaticallyImplyLeading: false,
+          leading: IconButton(
+            tooltip: _emFullscreen
+                ? 'Sair do modo tela cheia'
+                : 'Entrar em tela cheia',
+            onPressed: _toggleFullscreen,
+            icon: Icon(
+              _emFullscreen
+                  ? Icons.fullscreen_exit_rounded
+                  : Icons.fullscreen_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
+          ),
+          title: Row(
+            children: [
+              Text(
+                _standaloneTabIndex == 0 ? 'Ordens de Produção' : 'Matéria Prima',
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                usuario.nome,
+                style: TextStyle(
+                  color: Colors.white.withAlpha(180),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
           backgroundColor: AppColors.primaryMain,
           actions: [
-            if (!usuario.isOperador) ...[
-              IconButton(
-                onPressed: () => push(context, const OrdensArquivadasPage()),
-                icon: const Icon(
-                  Icons.domain_verification,
-                  color: Colors.white,
-                ),
-              ),
-              IconButton(
-                onPressed: () {
-                  ordemCtrl.utils.showFilter = !ordemCtrl.utils.showFilter;
-                  ordemCtrl.utilsStream.update();
-                },
-                icon: const Icon(Icons.sort, color: Colors.white),
-              ),
-              if (usuario.permission.ordem.contains(UserPermissionType.create))
-                IconButton(
-                  onPressed: () => push(context, const OrdemCreatePage()),
-                  icon: const Icon(Icons.add, color: Colors.white),
-                ),
-            ],
+            IconButton(
+              onPressed: () => usuarioCtrl.clearCurrentUser(),
+              icon: const Icon(Icons.logout, color: Colors.white, size: 20),
+              tooltip: 'Sair',
+            ),
           ],
         ),
-        body: body(),
+        body: _standaloneTabIndex == 0
+            ? body()
+            : const MateriasPrimasPage(),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _standaloneTabIndex,
+          onTap: (index) => setState(() => _standaloneTabIndex = index),
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.assignment_outlined),
+              label: 'Ordens',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.inventory_2_outlined),
+              label: 'Matéria Prima',
+            ),
+          ],
+        ),
       );
     }
     return body();

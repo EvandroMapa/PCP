@@ -1,11 +1,14 @@
+import 'dart:html' as html;
+
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-/// Scaffold para rotas standalone (/operador, /armador, etc.)
-/// Adiciona um header com título, nome do usuário e botão de logout.
-class StandaloneScaffold extends StatelessWidget {
+/// Scaffold para rotas standalone (/operador, /armador, /gerencial, etc.)
+/// Adiciona um header com título, nome do usuário, botão de fullscreen e logout.
+class StandaloneScaffold extends StatefulWidget {
   final String titulo;
   final IconData icone;
   final Widget child;
@@ -20,13 +23,63 @@ class StandaloneScaffold extends StatelessWidget {
   });
 
   @override
+  State<StandaloneScaffold> createState() => _StandaloneScaffoldState();
+}
+
+class _StandaloneScaffoldState extends State<StandaloneScaffold> {
+  bool _emFullscreen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (kIsWeb) {
+      html.document.onFullscreenChange.listen((_) {
+        final estaFullscreen = html.document.fullscreenElement != null;
+        if (mounted) setState(() => _emFullscreen = estaFullscreen);
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _entrarFullscreen();
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    if (kIsWeb) _sairFullscreen();
+    super.dispose();
+  }
+
+  void _entrarFullscreen() {
+    try {
+      final el = html.document.documentElement ?? html.document.body;
+      el?.requestFullscreen();
+      if (mounted) setState(() => _emFullscreen = true);
+    } catch (e) {
+      debugPrint('Fullscreen error: $e');
+    }
+  }
+
+  void _sairFullscreen() {
+    try {
+      html.document.exitFullscreen();
+      if (mounted) setState(() => _emFullscreen = false);
+    } catch (e) {
+      debugPrint('Exit fullscreen error: $e');
+    }
+  }
+
+  void _toggleFullscreen() {
+    _emFullscreen ? _sairFullscreen() : _entrarFullscreen();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.neutralLightest,
       body: Column(
         children: [
           _buildHeader(context),
-          Expanded(child: child),
+          Expanded(child: widget.child),
         ],
       ),
     );
@@ -37,7 +90,7 @@ class StandaloneScaffold extends StatelessWidget {
     return Container(
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 8,
-        left: 16,
+        left: 8,
         right: 8,
         bottom: 10,
       ),
@@ -53,7 +106,23 @@ class StandaloneScaffold extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icone, color: Colors.white.withAlpha(200), size: 20),
+          IconButton(
+            tooltip: _emFullscreen
+                ? 'Sair do modo tela cheia'
+                : 'Entrar em tela cheia',
+            onPressed: _toggleFullscreen,
+            icon: Icon(
+              _emFullscreen
+                  ? Icons.fullscreen_exit_rounded
+                  : Icons.fullscreen_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          ),
+          const SizedBox(width: 4),
+          Icon(widget.icone, color: Colors.white.withAlpha(200), size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -61,7 +130,7 @@ class StandaloneScaffold extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  titulo,
+                  widget.titulo,
                   style: AppCss.mediumBold.setSize(16).setColor(Colors.white),
                 ),
                 if (usuario != null)
@@ -74,10 +143,10 @@ class StandaloneScaffold extends StatelessWidget {
               ],
             ),
           ),
-          if (onRefresh != null)
+          if (widget.onRefresh != null)
             IconButton(
               icon: const Icon(Icons.refresh, color: Colors.white, size: 20),
-              onPressed: onRefresh,
+              onPressed: widget.onRefresh,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
               tooltip: 'Atualizar dados',
