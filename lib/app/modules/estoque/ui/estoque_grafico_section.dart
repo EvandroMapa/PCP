@@ -12,14 +12,20 @@ import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 class EstoqueGraficoSection extends StatefulWidget {
-  const EstoqueGraficoSection({super.key});
+  final bool considerarPedidoSemData;
+  final ValueChanged<bool> onConsiderarChanged;
+
+  const EstoqueGraficoSection({
+    super.key,
+    required this.considerarPedidoSemData,
+    required this.onConsiderarChanged,
+  });
 
   @override
   State<EstoqueGraficoSection> createState() => _EstoqueGraficoSectionState();
 }
 
 class _EstoqueGraficoSectionState extends State<EstoqueGraficoSection> {
-  bool _considerarPedidoSemData = true;
 
   @override
   void initState() {
@@ -53,7 +59,7 @@ class _EstoqueGraficoSectionState extends State<EstoqueGraficoSection> {
     final Map<String, double> consumoMap = {};
     for (final p in produtos) {
       double total;
-      if (_considerarPedidoSemData) {
+      if (widget.considerarPedidoSemData) {
         total = relatorioCtrl.getPedidosTotalPorBitola(p);
       } else {
         total = _getConsumoPorBitolaComData(p);
@@ -338,12 +344,12 @@ class _EstoqueGraficoSectionState extends State<EstoqueGraficoSection> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            color: _considerarPedidoSemData
+            color: widget.considerarPedidoSemData
                 ? AppColors.primaryMain.withValues(alpha: 0.08)
                 : Colors.grey[100],
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
-              color: _considerarPedidoSemData
+              color: widget.considerarPedidoSemData
                   ? AppColors.primaryMain.withValues(alpha: 0.25)
                   : Colors.grey[300]!,
             ),
@@ -353,7 +359,7 @@ class _EstoqueGraficoSectionState extends State<EstoqueGraficoSection> {
               'Pedidos s/ data',
               style: AppCss.minimumRegular
                   .setSize(10)
-                  .setColor(_considerarPedidoSemData
+                  .setColor(widget.considerarPedidoSemData
                       ? AppColors.primaryMain
                       : Colors.grey[500]!),
             ),
@@ -361,11 +367,11 @@ class _EstoqueGraficoSectionState extends State<EstoqueGraficoSection> {
               width: 28,
               height: 20,
               child: Checkbox(
-                value: _considerarPedidoSemData,
+                value: widget.considerarPedidoSemData,
                 visualDensity: VisualDensity.compact,
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 onChanged: (v) =>
-                    setState(() => _considerarPedidoSemData = v ?? true),
+                    widget.onConsiderarChanged(v ?? true),
               ),
             ),
           ]),

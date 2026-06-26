@@ -18,6 +18,7 @@ class EstoquePage extends StatefulWidget {
 
 class _EstoquePageState extends State<EstoquePage> {
   int _selected = 0;
+  bool _considerarPedidoSemData = true;
 
   @override
   void initState() {
@@ -112,9 +113,17 @@ class _EstoquePageState extends State<EstoquePage> {
       case 0:
         return const EstoqueSaldoSection();
       case 1:
-        return const RelatoriosEstoquePage();
+        return RelatoriosEstoquePage(
+          considerarPedidoSemData: _considerarPedidoSemData,
+          onConsiderarChanged: (v) =>
+              setState(() => _considerarPedidoSemData = v),
+        );
       case 2:
-        return const EstoqueGraficoSection();
+        return EstoqueGraficoSection(
+          considerarPedidoSemData: _considerarPedidoSemData,
+          onConsiderarChanged: (v) =>
+              setState(() => _considerarPedidoSemData = v),
+        );
       case 3:
         return const EstoqueMovimentacaoSection();
       default:

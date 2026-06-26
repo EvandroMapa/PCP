@@ -20,7 +20,14 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 class RelatoriosEstoquePage extends StatefulWidget {
-  const RelatoriosEstoquePage({super.key});
+  final bool? considerarPedidoSemData;
+  final ValueChanged<bool>? onConsiderarChanged;
+
+  const RelatoriosEstoquePage({
+    super.key,
+    this.considerarPedidoSemData,
+    this.onConsiderarChanged,
+  });
 
   @override
   State<RelatoriosEstoquePage> createState() => _RelatoriosEstoquePageState();
@@ -29,10 +36,22 @@ class RelatoriosEstoquePage extends StatefulWidget {
 class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
   // Controla quais produtos estão expandidos
   final Map<String, bool> _expandedPedidos = {};
-  bool _considerarPedidoSemData = true;
+  late bool _localConsiderarPedidoSemData;
+
+  bool get _considerarPedidoSemData =>
+      widget.considerarPedidoSemData ?? _localConsiderarPedidoSemData;
+
+  void _setConsiderarPedidoSemData(bool v) {
+    if (widget.onConsiderarChanged != null) {
+      widget.onConsiderarChanged!(v);
+    } else {
+      setState(() => _localConsiderarPedidoSemData = v);
+    }
+  }
 
   @override
   void initState() {
+    _localConsiderarPedidoSemData = widget.considerarPedidoSemData ?? true;
     setWebTitle('Relatório de Estoque');
     baseCtrl.appBarActionsStream.add(<Widget>[]);
     relatorioCtrl.pedidoViewModelStream.add(RelatorioPedidoViewModel());
@@ -181,7 +200,7 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       visualDensity: VisualDensity.compact,
                       onChanged: (v) {
-                        setState(() => _considerarPedidoSemData = v ?? true);
+                        _setConsiderarPedidoSemData(v ?? true);
                         relatorioCtrl.onCreateRelatorioPedido();
                       },
                     ),
