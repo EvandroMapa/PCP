@@ -53,7 +53,6 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
 
           return Row(
             children: [
-              // ── Sidebar ──
               Container(
                 width: 60,
                 decoration: BoxDecoration(
@@ -65,10 +64,17 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
                 child: Column(
                   children: [
                     const SizedBox(height: 16),
-                    for (int i = 0; i < _sections.length; i++) ...[
-                      _sidebarTile(i),
-                    ],
-                    const Spacer(),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            for (int i = 0; i < _sections.length; i++) ...[
+                              _sidebarTile(i),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Text(
