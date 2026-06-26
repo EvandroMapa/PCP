@@ -44,50 +44,59 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
         title: const Text('Configurações Gerais',
             style: TextStyle(color: Colors.white)),
       ),
-      body: Row(
-        children: [
-          // ── Sidebar ──
-          Container(
-            width: 60,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              border: Border(
-                right: BorderSide(color: Color(0xFFE2E8F0)),
-              ),
-            ),
-            child: Column(
-              children: [
-                const SizedBox(height: 16),
-                for (int i = 0; i < _sections.length; i++) ...[
-                  _sidebarTile(i),
-                ],
-                const Spacer(),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    '71cc',
-                    style: TextStyle(color: Colors.grey[300], fontSize: 9),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isSmall = constraints.maxWidth < 500;
+          final contentPadding = isSmall
+              ? const EdgeInsets.all(12)
+              : const EdgeInsets.all(32);
+
+          return Row(
+            children: [
+              // ── Sidebar ──
+              Container(
+                width: 60,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  border: Border(
+                    right: BorderSide(color: Color(0xFFE2E8F0)),
                   ),
                 ),
-              ],
-            ),
-          ),
-
-          // ── Conteúdo ──
-          Expanded(
-            child: Container(
-              color: Colors.white,
-              child: ListView(
-                padding: const EdgeInsets.all(32),
-                children: [
-                  _sectionTitle(),
-                  const SizedBox(height: 24),
-                  _sectionContent(),
-                ],
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
+                    for (int i = 0; i < _sections.length; i++) ...[
+                      _sidebarTile(i),
+                    ],
+                    const Spacer(),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        '71cc',
+                        style: TextStyle(color: Colors.grey[300], fontSize: 9),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ),
-        ],
+
+              // ── Conteúdo ──
+              Expanded(
+                child: Container(
+                  color: Colors.white,
+                  child: ListView(
+                    padding: contentPadding,
+                    children: [
+                      _sectionTitle(),
+                      const SizedBox(height: 24),
+                      _sectionContent(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -322,9 +331,11 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
               const Icon(Icons.picture_as_pdf_outlined,
                   color: Colors.deepOrange),
               const SizedBox(width: 12),
-              const Text(
-                'Nível de Otimização de PDF',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              const Flexible(
+                child: Text(
+                  'Nível de Otimização de PDF',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -416,9 +427,11 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
               const Icon(Icons.dashboard_customize_outlined,
                   color: Colors.blue),
               const SizedBox(width: 12),
-              const Text(
-                'Largura das Colunas do Kanban',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              const Flexible(
+                child: Text(
+                  'Largura das Colunas do Kanban',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -820,9 +833,11 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
             children: [
               const Icon(Icons.business_outlined, color: Colors.indigo),
               const SizedBox(width: 12),
-              const Text(
-                'Identificação da Empresa',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              const Flexible(
+                child: Text(
+                  'Identificação da Empresa',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -1189,16 +1204,21 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
   //  WIDGETS UTILITÁRIOS
   // ═══════════════════════════════════════════════════
   Widget _settingsCard({required Widget child}) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey[200]!),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: child,
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isSmall = constraints.maxWidth < 400;
+        return Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: Colors.grey[200]!),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(isSmall ? 14.0 : 24.0),
+            child: child,
+          ),
+        );
+      },
     );
   }
 

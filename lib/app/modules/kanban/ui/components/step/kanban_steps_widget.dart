@@ -20,9 +20,10 @@ class KanbanStepsWidget extends StatelessWidget {
       controller: utils.scroll,
       trackVisibility: true,
       thumbVisibility: true,
+      padding: const EdgeInsets.only(left: 16, right: 16),
       child: ListView.separated(
         controller: utils.scroll,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
         itemCount: steps.length,
         scrollDirection: Axis.horizontal,
         cacheExtent: 500,
