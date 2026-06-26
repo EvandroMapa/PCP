@@ -277,7 +277,9 @@ class StepController {
         return;
       }
       final admin = FirestoreClient.usuarios.data.firstWhereOrNull(
-        (u) => u.isAdmin && u.email == email && u.senha == senha,
+        (u) => u.isAdmin &&
+            u.email.toLowerCase().trim() == email.toLowerCase().trim() &&
+            u.senha == senha,
       );
       if (admin != null) {
         Navigator.pop(ctx, true);
