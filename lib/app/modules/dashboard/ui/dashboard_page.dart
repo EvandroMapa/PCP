@@ -650,94 +650,112 @@ class DashboardPageState extends State<DashboardPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isSmall = constraints.maxWidth < 400;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      _mostrarGraficoEstoque
-                          ? Icons.bar_chart_rounded
-                          : Symbols.analytics,
-                      color: AppColors.primaryMain,
-                    ),
-                    const W(12),
-                    Text(
-                      _mostrarGraficoEstoque
-                          ? 'POSICAO DE ESTOQUE'
-                          : 'CONSUMO ESTIMADO',
-                      style: AppCss.mediumBold.setSize(18),
-                    ),
-                    const Spacer(),
-                    if (!_mostrarGraficoEstoque)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryMain.withAlpha(25),
-                          borderRadius: BorderRadius.circular(20),
+                    Row(
+                      children: [
+                        Icon(
+                          _mostrarGraficoEstoque
+                              ? Icons.bar_chart_rounded
+                              : Symbols.analytics,
+                          color: AppColors.primaryMain,
+                          size: 20,
                         ),
-                        child: Text(
-                          totalGeral.toKg(),
-                          style: AppCss.minimumBold
-                              .setSize(13)
-                              .setColor(AppColors.primaryMain),
+                        const W(8),
+                        Expanded(
+                          child: Text(
+                            _mostrarGraficoEstoque
+                                ? 'POSIÇÃO DE ESTOQUE'
+                                : 'CONSUMO ESTIMADO',
+                            style: AppCss.mediumBold.setSize(isSmall ? 14 : 18),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                    const W(8),
-                    Tooltip(
-                      message: _mostrarGraficoEstoque
-                          ? 'Ver consumo estimado'
-                          : 'Ver grafico de estoque',
-                      preferBelow: false,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(8),
-                        onTap: () => setState(
-                            () => _mostrarGraficoEstoque = !_mostrarGraficoEstoque),
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: _mostrarGraficoEstoque
-                                ? AppColors.primaryMain.withAlpha(20)
-                                : Colors.grey[100],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: _mostrarGraficoEstoque
-                                  ? AppColors.primaryMain.withAlpha(50)
-                                  : Colors.grey[300]!,
+                        if (!_mostrarGraficoEstoque)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryMain.withAlpha(25),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              totalGeral.toKg(),
+                              style: AppCss.minimumBold
+                                  .setSize(12)
+                                  .setColor(AppColors.primaryMain),
                             ),
                           ),
-                          child: Icon(
-                            _mostrarGraficoEstoque
-                                ? Icons.list_alt_rounded
-                                : Icons.bar_chart_rounded,
-                            size: 16,
-                            color: _mostrarGraficoEstoque
-                                ? AppColors.primaryMain
-                                : Colors.grey[600],
+                        const W(6),
+                        Tooltip(
+                          message: _mostrarGraficoEstoque
+                              ? 'Ver consumo estimado'
+                              : 'Ver gráfico de estoque',
+                          preferBelow: false,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: () => setState(
+                                () => _mostrarGraficoEstoque = !_mostrarGraficoEstoque),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: _mostrarGraficoEstoque
+                                    ? AppColors.primaryMain.withAlpha(20)
+                                    : Colors.grey[100],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: _mostrarGraficoEstoque
+                                      ? AppColors.primaryMain.withAlpha(50)
+                                      : Colors.grey[300]!,
+                                ),
+                              ),
+                              child: Icon(
+                                _mostrarGraficoEstoque
+                                    ? Icons.list_alt_rounded
+                                    : Icons.bar_chart_rounded,
+                                size: 16,
+                                color: _mostrarGraficoEstoque
+                                    ? AppColors.primaryMain
+                                    : Colors.grey[600],
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-                const H(8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
+                    const H(8),
+                    if (isSmall) ...[
+                      Text(
                         _mostrarGraficoEstoque
                             ? 'Saldo + pedidos em aberto vs. consumo'
                             : 'Matéria-prima que será baixada do estoque',
                         style: AppCss.minimumRegular.setSize(11).setColor(Colors.grey[500]!),
                       ),
-                    ),
-                    const W(8),
-                    _checkboxSemData(),
+                      const H(6),
+                      _checkboxSemData(),
+                    ] else
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _mostrarGraficoEstoque
+                                  ? 'Saldo + pedidos em aberto vs. consumo'
+                                  : 'Matéria-prima que será baixada do estoque',
+                              style: AppCss.minimumRegular.setSize(11).setColor(Colors.grey[500]!),
+                            ),
+                          ),
+                          const W(8),
+                          _checkboxSemData(),
+                        ],
+                      ),
                   ],
-                ),
-              ],
+                );
+              },
             ),
           ),
           Expanded(
@@ -1052,21 +1070,24 @@ class DashboardPageState extends State<DashboardPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   child: Row(
                     children: [
-                      Icon(Symbols.reorder, color: AppColors.primaryMain),
-                      const W(12),
-                      Text('ESTEIRA DE PRODUÇÃO',
-                          style: AppCss.mediumBold.setSize(18)),
-                      const Spacer(),
+                      Icon(Symbols.reorder, color: AppColors.primaryMain, size: 20),
+                      const W(8),
+                      Expanded(
+                        child: Text('ESTEIRA DE PRODUÇÃO',
+                            style: AppCss.mediumBold.setSize(16),
+                            overflow: TextOverflow.ellipsis),
+                      ),
+                      const W(8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 4),
+                            horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                             color: AppColors.primaryMain.withAlpha(25),
                             borderRadius: BorderRadius.circular(20)),
-                        child: Text('${ordensFiltradas.length} ORDENS ATIVAS',
+                        child: Text('${ordensFiltradas.length} ORDENS',
                             style: AppCss.minimumBold
                                 .setSize(11)
                                 .setColor(AppColors.primaryMain)),
@@ -1097,83 +1118,126 @@ class DashboardPageState extends State<DashboardPage> {
     BuildContext context,
     OrdemModel ordem,
     int index,
-  ) =>
-      InkWell(
-        onTap: () => push(context, OrdemPage(ordem.id)),
-        child: Container(
-          margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey[300]!, width: 1.0),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                    color: Colors.grey[100], shape: BoxShape.circle),
-                child: Center(
-                    child: Text('${index + 1}º',
-                        style: AppCss.minimumBold.setSize(12))),
-              ),
-              const W(16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      ordem.localizator,
-                      style: AppCss.mediumBold.setSize(14),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const H(4),
-                    Text(
-                      ordem.produto.nome,
-                      style: AppCss.mediumBold
-                          .setSize(12)
-                          .setColor(AppColors.primaryMain),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const H(2),
-                    Text(
-                      ordem.produtos.fold(0.0, (sum, p) => sum + p.qtde).toKg(),
-                      style: AppCss.mediumBold
-                          .setSize(12)
-                          .setColor(AppColors.primaryMain),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              LayoutBuilder(builder: (context, c) {
-                // Se o espaço for muito curto (menos de 280px para o item), esconde os gráficos
-                if (c.maxWidth < 180) return const SizedBox();
+  ) {
+    final aneis = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _progressChartWidget(PedidoBitolaStatus.aguardandoProducao,
+            ordem.getPrcntgAguardando(), ordem.freezed.isFreezed),
+        const W(8),
+        _progressChartWidget(PedidoBitolaStatus.produzindo,
+            ordem.getPrcntgProduzindo(), ordem.freezed.isFreezed),
+        const W(8),
+        _progressChartWidget(PedidoBitolaStatus.pronto,
+            ordem.getPrcntgPronto(), ordem.freezed.isFreezed),
+      ],
+    );
 
-                return Row(
-                  children: [
-                    const W(16),
-                    _progressChartWidget(PedidoBitolaStatus.aguardandoProducao,
-                        ordem.getPrcntgAguardando(), ordem.freezed.isFreezed),
-                    const W(8),
-                    _progressChartWidget(PedidoBitolaStatus.produzindo,
-                        ordem.getPrcntgProduzindo(), ordem.freezed.isFreezed),
-                    const W(8),
-                    _progressChartWidget(PedidoBitolaStatus.pronto,
-                        ordem.getPrcntgPronto(), ordem.freezed.isFreezed),
-                  ],
-                );
-              }),
-            ],
-          ),
+    return InkWell(
+      onTap: () => push(context, OrdemPage(ordem.id)),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey[300]!, width: 1.0),
         ),
-      );
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isNarrow = constraints.maxWidth < 340;
+            if (isNarrow) {
+              // Layout vertical para celular
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                            color: Colors.grey[100], shape: BoxShape.circle),
+                        child: Center(
+                            child: Text('${index + 1}º',
+                                style: AppCss.minimumBold.setSize(11))),
+                      ),
+                      const W(10),
+                      Expanded(
+                        child: Text(
+                          ordem.localizator,
+                          style: AppCss.mediumBold.setSize(13),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        ordem.produtos.fold(0.0, (sum, p) => sum + p.qtde).toKg(),
+                        style: AppCss.minimumBold
+                            .setSize(11)
+                            .setColor(AppColors.primaryMain),
+                      ),
+                    ],
+                  ),
+                  const H(10),
+                  Center(child: aneis),
+                ],
+              );
+            }
+            // Layout horizontal (tablet/desktop)
+            return Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                      color: Colors.grey[100], shape: BoxShape.circle),
+                  child: Center(
+                      child: Text('${index + 1}º',
+                          style: AppCss.minimumBold.setSize(12))),
+                ),
+                const W(16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        ordem.localizator,
+                        style: AppCss.mediumBold.setSize(14),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const H(4),
+                      Text(
+                        ordem.produto.nome,
+                        style: AppCss.mediumBold
+                            .setSize(12)
+                            .setColor(AppColors.primaryMain),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const H(2),
+                      Text(
+                        ordem.produtos.fold(0.0, (sum, p) => sum + p.qtde).toKg(),
+                        style: AppCss.mediumBold
+                            .setSize(12)
+                            .setColor(AppColors.primaryMain),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const W(16),
+                aneis,
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
 
   Widget _progressChartWidget(
     PedidoBitolaStatus status,
@@ -1235,16 +1299,19 @@ class DashboardPageState extends State<DashboardPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: Row(
               children: [
-                Icon(Symbols.construction, color: Colors.orange[800]),
-                const W(12),
-                Text('ARMAÇÃO', style: AppCss.mediumBold.setSize(18)),
-                const Spacer(),
+                Icon(Symbols.construction, color: Colors.orange[800], size: 20),
+                const W(8),
+                Expanded(
+                  child: Text('ARMAÇÃO', style: AppCss.mediumBold.setSize(16),
+                      overflow: TextOverflow.ellipsis),
+                ),
+                const W(8),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.orange.withAlpha(25),
                     borderRadius: BorderRadius.circular(20),
@@ -1299,108 +1366,156 @@ class DashboardPageState extends State<DashboardPage> {
     return InkWell(
       onTap: () => push(context, ArmacaoElementosPage(pedido: pedido)),
       child: Container(
-        margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.grey[300]!, width: 1.0),
         ),
-        child: Row(
-          children: [
-            // Índice
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: Colors.orange.withAlpha(25),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  '${index + 1}',
-                  style: AppCss.minimumBold
-                      .setSize(12)
-                      .setColor(Colors.orange[800]!),
-                ),
-              ),
-            ),
-            const W(16),
-            // Info do pedido
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Tooltip(
-                    message: pedido.cliente.nome,
-                    child: Text(
-                      pedido.localizador,
-                      style: AppCss.mediumBold.setSize(14),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const H(4),
-                  Text(
-                    '$totalQtd elementos',
-                    style: AppCss.minimumRegular
-                        .setSize(12)
-                        .setColor(Colors.grey[600]!),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const H(2),
-                  Text(
-                    '${totalPeso.toStringAsFixed(1)} kg',
-                    style: AppCss.mediumBold
-                        .setSize(12)
-                        .setColor(AppColors.primaryMain),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (pedido.descricao.isNotEmpty) ...[
-                    const H(2),
-                    Text(
-                      pedido.descricao,
-                      style: AppCss.minimumRegular
-                          .setSize(11)
-                          .setColor(Colors.grey[500]!),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            LayoutBuilder(builder: (context, c) {
-              // Se o espaço for muito curto, esconde os gráficos circulares
-              if (c.maxWidth < 220) return const SizedBox();
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final aneis = Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _armacaoCircle(
+                    prcAguardando,
+                    Colors.blue.shade700,
+                    '${((aguardando['qtd'] ?? 0.0).toDouble()).round()} pc',
+                    '${((aguardando['peso'] ?? 0.0).toDouble()).toStringAsFixed(0)} kg'),
+                const W(6),
+                _armacaoCircle(
+                    prcArmando,
+                    Colors.orange.shade800,
+                    '${((armando['qtd'] ?? 0.0).toDouble()).round()} pc',
+                    '${((armando['peso'] ?? 0.0).toDouble()).toStringAsFixed(0)} kg'),
+                const W(6),
+                _armacaoCircle(
+                    prcPronto,
+                    Colors.green.shade700,
+                    '${((pronto['qtd'] ?? 0.0).toDouble()).round()} pc',
+                    '${((pronto['peso'] ?? 0.0).toDouble()).toStringAsFixed(0)} kg'),
+              ],
+            );
 
-              return Row(
+            final isNarrow = constraints.maxWidth < 340;
+            if (isNarrow) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const W(8),
-                  _armacaoCircle(
-                      prcAguardando,
-                      Colors.blue.shade700,
-                      '${((aguardando['qtd'] ?? 0.0).toDouble()).round()} pc',
-                      '${((aguardando['peso'] ?? 0.0).toDouble()).toStringAsFixed(0)} kg'),
-                  const W(6),
-                  _armacaoCircle(
-                      prcArmando,
-                      Colors.orange.shade800,
-                      '${((armando['qtd'] ?? 0.0).toDouble()).round()} pc',
-                      '${((armando['peso'] ?? 0.0).toDouble()).toStringAsFixed(0)} kg'),
-                  const W(6),
-                  _armacaoCircle(
-                      prcPronto,
-                      Colors.green.shade700,
-                      '${((pronto['qtd'] ?? 0.0).toDouble()).round()} pc',
-                      '${((pronto['peso'] ?? 0.0).toDouble()).toStringAsFixed(0)} kg'),
+                  Row(
+                    children: [
+                      Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withAlpha(25),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${index + 1}',
+                            style: AppCss.minimumBold
+                                .setSize(11)
+                                .setColor(Colors.orange[800]!),
+                          ),
+                        ),
+                      ),
+                      const W(10),
+                      Expanded(
+                        child: Tooltip(
+                          message: pedido.cliente.nome,
+                          child: Text(
+                            pedido.localizador,
+                            style: AppCss.mediumBold.setSize(13),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${totalPeso.toStringAsFixed(0)} kg',
+                        style: AppCss.minimumBold
+                            .setSize(11)
+                            .setColor(AppColors.primaryMain),
+                      ),
+                    ],
+                  ),
+                  const H(10),
+                  Center(child: aneis),
                 ],
               );
-            }),
-          ],
+            }
+            return Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withAlpha(25),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${index + 1}',
+                      style: AppCss.minimumBold
+                          .setSize(12)
+                          .setColor(Colors.orange[800]!),
+                    ),
+                  ),
+                ),
+                const W(16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Tooltip(
+                        message: pedido.cliente.nome,
+                        child: Text(
+                          pedido.localizador,
+                          style: AppCss.mediumBold.setSize(14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const H(4),
+                      Text(
+                        '$totalQtd elementos',
+                        style: AppCss.minimumRegular
+                            .setSize(12)
+                            .setColor(Colors.grey[600]!),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const H(2),
+                      Text(
+                        '${totalPeso.toStringAsFixed(1)} kg',
+                        style: AppCss.mediumBold
+                            .setSize(12)
+                            .setColor(AppColors.primaryMain),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (pedido.descricao.isNotEmpty) ...[
+                        const H(2),
+                        Text(
+                          pedido.descricao,
+                          style: AppCss.minimumRegular
+                              .setSize(11)
+                              .setColor(Colors.grey[500]!),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const W(8),
+                aneis,
+              ],
+            );
+          },
         ),
       ),
     );
