@@ -405,15 +405,74 @@ class StepController {
     return result ?? false;
   }
 
-  /// Tenta autorizar override: se já é admin, autoriza direto com aviso.
+  /// Tenta autorizar override: se já é admin, mostra dialog de confirmação.
   /// Se não é admin, pede credenciais de admin.
   Future<bool> _tentarOverrideAdmin(String motivoBloqueio) async {
     if (usuario.isAdmin) {
-      NotificationService.showPending(
-        'Movimentação forçada',
-        motivoBloqueio,
+      final confirmado = await showDialog<bool>(
+        context: contextGlobal,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(children: [
+            Icon(Icons.warning_amber_rounded, size: 28, color: Colors.orange[700]),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text('Movimentação forçada',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ),
+          ]),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 360),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                        color: Colors.orange.withValues(alpha: 0.20)),
+                  ),
+                  child: Row(children: [
+                    Icon(Icons.info_outline,
+                        size: 16, color: Colors.orange[700]),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        motivoBloqueio,
+                        style: TextStyle(
+                            fontSize: 12, color: Colors.orange[800]),
+                      ),
+                    ),
+                  ]),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Deseja forçar esta movimentação?',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange[700],
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Confirmar'),
+            ),
+          ],
+        ),
       );
-      return true;
+      return confirmado ?? false;
     }
     return _pedirSenhaAdmin(motivoBloqueio);
   }
