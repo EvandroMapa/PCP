@@ -1,7 +1,5 @@
-import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/user_permission_type.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/usuario_role.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_permission_model.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 
@@ -14,7 +12,6 @@ class UsuarioCreateModel {
   TextController nome = TextController();
   TextController email = TextController();
   TextController senha = TextController();
-  UsuarioPermissionCreateModel permission = UsuarioPermissionCreateModel();
   UsuarioRole? role;
   String usuarioTipoId = '';
   late bool isEdit;
@@ -31,7 +28,6 @@ class UsuarioCreateModel {
     role = user.role;
     usuarioTipoId = user.usuarioTipoId;
     senha.text = user.senha;
-    permission = UsuarioPermissionCreateModel.edit(user);
   }
 
   UsuarioModel toUsuarioModel() => UsuarioModel(
@@ -41,31 +37,7 @@ class UsuarioCreateModel {
         role: role ?? UsuarioRole.operador,
         usuarioTipoId: usuarioTipoId,
         senha: senha.text,
-        permission: permission.toUserPermissionModel(),
         steps: [],
         deviceTokens: [],
       );
-}
-
-class UsuarioPermissionCreateModel {
-  final String id;
-  List<UserPermissionType> cliente = UserPermissionType.values.toList();
-  List<UserPermissionType> pedido = UserPermissionType.values.toList();
-  List<UserPermissionType> ordem = UserPermissionType.values.toList();
-  late bool isEdit;
-
-  UsuarioPermissionCreateModel()
-      : id = HashService.get,
-        isEdit = false;
-
-  UsuarioPermissionCreateModel.edit(UsuarioModel user)
-      : id = user.id,
-        isEdit = true {
-    cliente = List<UserPermissionType>.from(user.permission.cliente);
-    pedido = List<UserPermissionType>.from(user.permission.pedido);
-    ordem = List<UserPermissionType>.from(user.permission.ordem);
-  }
-
-  UserPermissionModel toUserPermissionModel() =>
-      UserPermissionModel(cliente: cliente, pedido: pedido, ordem: ordem);
 }

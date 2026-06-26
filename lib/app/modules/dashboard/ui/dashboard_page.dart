@@ -1455,78 +1455,92 @@ class DashboardPageState extends State<DashboardPage> {
   //  APP BAR COM TOGGLE
   // ═══════════════════════════════════════════════════
   Widget _buildAppBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.primaryMain,
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white, size: 20),
-            onPressed: () => Scaffold.of(context).openDrawer(),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isSmall = constraints.maxWidth < 600;
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: isSmall ? 8 : 20, vertical: isSmall ? 8 : 12),
+          decoration: BoxDecoration(
+            color: AppColors.primaryMain,
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  switch (_modoDash) {
-                    1 => 'Mapa Pátio',
-                    2 => 'Mapa de Obras',
-                    _ => 'Gestão a Vista',
-                  },
-                  style: AppCss.mediumBold.setSize(20).setColor(Colors.white),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.menu, color: Colors.white, size: 20),
+                onPressed: () => Scaffold.of(context).openDrawer(),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              ),
+              SizedBox(width: isSmall ? 4 : 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      switch (_modoDash) {
+                        1 => 'Mapa Pátio',
+                        2 => 'Mapa de Obras',
+                        _ => 'Gestão a Vista',
+                      },
+                      style: AppCss.mediumBold.setSize(isSmall ? 15 : 20).setColor(Colors.white),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (!isSmall)
+                      Text(
+                        switch (_modoDash) {
+                          1 => 'Visão geral do parque logístico',
+                          2 => 'Obras com pedidos ativos no mapa',
+                          _ => 'Monitoramento em tempo real de produção e consumo',
+                        },
+                        style: AppCss.minimumRegular.setSize(12).setColor(Colors.white.withValues(alpha: 0.8)),
+                      ),
+                  ],
                 ),
-                Text(
-                  switch (_modoDash) {
-                    1 => 'Visão geral do parque logístico',
-                    2 => 'Obras com pedidos ativos no mapa',
-                    _ => 'Monitoramento em tempo real de produção e consumo',
-                  },
-                  style: AppCss.minimumRegular.setSize(12).setColor(Colors.white.withValues(alpha: 0.8)),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ],
-            ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _toggleBtn(0, Icons.dashboard_outlined, 'Gestão', isSmall),
+                    _toggleBtn(1, Icons.map_outlined, 'Pátio', isSmall),
+                    _toggleBtn(2, Icons.location_on_outlined, 'Obras', isSmall),
+                  ],
+                ),
+              ),
+            ],
           ),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _toggleBtn(0, Icons.dashboard_outlined, 'Gestão'),
-                _toggleBtn(1, Icons.map_outlined, 'Mapa Pátio'),
-                _toggleBtn(2, Icons.location_on_outlined, 'Mapa Obras'),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _toggleBtn(int modo, IconData icon, String label) {
+  Widget _toggleBtn(int modo, IconData icon, String label, [bool isSmall = false]) {
     final sel = _modoDash == modo;
-    return GestureDetector(
-      onTap: () => setState(() => _modoDash = modo),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: sel ? Colors.white.withValues(alpha: 0.25) : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: sel ? Colors.white : Colors.white.withValues(alpha: 0.5)),
-            const SizedBox(width: 6),
-            Text(label, style: TextStyle(fontSize: 13, fontWeight: sel ? FontWeight.w700 : FontWeight.w400, color: sel ? Colors.white : Colors.white.withValues(alpha: 0.5))),
-          ],
+    return Tooltip(
+      message: label,
+      child: GestureDetector(
+        onTap: () => setState(() => _modoDash = modo),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: EdgeInsets.symmetric(horizontal: isSmall ? 10 : 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: sel ? Colors.white.withValues(alpha: 0.25) : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: sel ? Colors.white : Colors.white.withValues(alpha: 0.5)),
+              if (!isSmall) ...[
+                const SizedBox(width: 6),
+                Text(label, style: TextStyle(fontSize: 13, fontWeight: sel ? FontWeight.w700 : FontWeight.w400, color: sel ? Colors.white : Colors.white.withValues(alpha: 0.5))),
+              ],
+            ],
+          ),
         ),
       ),
     );

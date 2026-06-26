@@ -1,8 +1,13 @@
+import 'dart:developer';
+
 import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/user_permission_type.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_tipo_model.dart';
+import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/audit_service.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
+import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:flutter/material.dart';
 import 'package:overlay_support/overlay_support.dart';
@@ -36,10 +41,16 @@ class UsuarioTipoController {
         throw Exception('O nome do tipo é obrigatório');
       }
 
+      final modelo = form.toModel();
+
       if (form.isEdit) {
-        await BackendClient.usuarioTipos.update(form.toModel());
+        await BackendClient.usuarioTipos.update(modelo);
       } else {
-        await BackendClient.usuarioTipos.add(form.toModel());
+        final resultado = await BackendClient.usuarioTipos.add(modelo);
+        // Habilitar o novo perfil em todas as etapas do kanban
+        if (resultado != null) {
+          await _habilitarPerfilEmTodasEtapas(resultado.id);
+        }
       }
 
       if (context.mounted) pop(context);
@@ -54,6 +65,28 @@ class UsuarioTipoController {
         e.toString(),
         position: NotificationPosition.bottom,
       );
+    }
+  }
+
+  /// Insere o perfil na tabela `step_roles` para todas as etapas existentes,
+  /// garantindo que o perfil recém-criado já tenha acesso a todo o kanban.
+  Future<void> _habilitarPerfilEmTodasEtapas(String perfilId) async {
+    try {
+      final etapas = FirestoreClient.steps.data;
+      if (etapas.isEmpty) return;
+
+      final registros = etapas
+          .map((etapa) => {
+                'step_id': etapa.id,
+                'perfil_id': perfilId,
+              })
+          .toList();
+
+      await SupabaseService.client.from('step_roles').insert(registros);
+      // Recarregar etapas para refletir o novo perfil
+      await FirestoreClient.steps.fetch();
+    } catch (e) {
+      log('Erro ao habilitar perfil nas etapas: $e');
     }
   }
 
@@ -104,6 +137,9 @@ class UsuarioTipoCreateModel {
   bool isAdministrador = false;
   bool isExclusivo = false;
   bool isEdit = false;
+  List<UserPermissionType> permissaoCliente = UserPermissionType.values.toList();
+  List<UserPermissionType> permissaoPedido = UserPermissionType.values.toList();
+  List<UserPermissionType> permissaoOrdem = UserPermissionType.values.toList();
 
   UsuarioTipoCreateModel()
       : id = '',
@@ -121,6 +157,9 @@ class UsuarioTipoCreateModel {
     isArmador = m.isArmador;
     isAdministrador = m.isAdministrador;
     isExclusivo = m.isExclusivo;
+    permissaoCliente = List<UserPermissionType>.from(m.permissaoCliente);
+    permissaoPedido = List<UserPermissionType>.from(m.permissaoPedido);
+    permissaoOrdem = List<UserPermissionType>.from(m.permissaoOrdem);
   }
 
   UsuarioTipoModel toModel() => UsuarioTipoModel(
@@ -135,5 +174,8 @@ class UsuarioTipoCreateModel {
         isAdministrador: isAdministrador,
         isExclusivo: isExclusivo,
         createdAt: DateTime.now(),
+        permissaoCliente: permissaoCliente,
+        permissaoPedido: permissaoPedido,
+        permissaoOrdem: permissaoOrdem,
       );
 }

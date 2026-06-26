@@ -413,101 +413,120 @@ class ArmacaoController {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          title: Text('Quantas peças prontas?\n${elemento.nome}'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Total de peças: ${elemento.qtde}\nAtualmente prontas: ${elemento.qtdePronto}',
-                style: const TextStyle(fontSize: 13, color: Colors.grey),
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    onPressed: selecionado > 0
-                        ? () => setState(() => selecionado--)
-                        : null,
-                    icon: const Icon(Icons.remove_circle_outline),
-                    iconSize: 32,
-                    color: Colors.red,
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.green, width: 2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      '$selecionado / ${elemento.qtde}',
-                      style: const TextStyle(
-                          fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: selecionado < elemento.qtde
-                        ? () => setState(() => selecionado++)
-                        : null,
-                    icon: const Icon(Icons.add_circle_outline),
-                    iconSize: 32,
-                    color: Colors.green,
-                  ),
-                ],
-              ),
-              if (selecionado == 0)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(
-                    'O elemento voltará para AGUARDANDO.',
-                    style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.blueGrey,
-                        fontStyle: FontStyle.italic),
-                    textAlign: TextAlign.center,
-                  ),
-                )
-              else if (selecionado < elemento.qtde)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(
-                    'As ${elemento.qtde - selecionado} peças restantes ficarão em ARMANDO.',
-                    style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.orange,
-                        fontStyle: FontStyle.italic),
-                    textAlign: TextAlign.center,
-                  ),
+        builder: (ctx, setState) {
+          final screenWidth = MediaQuery.of(ctx).size.width;
+          final isSmall = screenWidth < 400;
+          final iconSize = isSmall ? 28.0 : 32.0;
+          final fontSize = isSmall ? 20.0 : 24.0;
+          final hPad = isSmall ? 12.0 : 20.0;
+
+          return AlertDialog(
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            title: Text('Quantas peças prontas?\n${elemento.nome}'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Total de peças: ${elemento.qtde}\nAtualmente prontas: ${elemento.qtdePronto}',
+                  style: const TextStyle(fontSize: 13, color: Colors.grey),
                 ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: selecionado > 0
+                          ? () => setState(() => selecionado--)
+                          : null,
+                      icon: const Icon(Icons.remove_circle_outline),
+                      iconSize: iconSize,
+                      color: Colors.red,
+                      padding: EdgeInsets.zero,
+                      constraints: BoxConstraints(
+                        minWidth: iconSize + 8,
+                        minHeight: iconSize + 8,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: hPad, vertical: 8),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.green, width: 2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '$selecionado / ${elemento.qtde}',
+                        style: TextStyle(
+                            fontSize: fontSize, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: selecionado < elemento.qtde
+                          ? () => setState(() => selecionado++)
+                          : null,
+                      icon: const Icon(Icons.add_circle_outline),
+                      iconSize: iconSize,
+                      color: Colors.green,
+                      padding: EdgeInsets.zero,
+                      constraints: BoxConstraints(
+                        minWidth: iconSize + 8,
+                        minHeight: iconSize + 8,
+                      ),
+                    ),
+                  ],
+                ),
+                if (selecionado == 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(
+                      'O elemento voltará para AGUARDANDO.',
+                      style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.blueGrey,
+                          fontStyle: FontStyle.italic),
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                else if (selecionado < elemento.qtde)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Text(
+                      'As ${elemento.qtde - selecionado} peças restantes ficarão em ARMANDO.',
+                      style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.orange,
+                          fontStyle: FontStyle.italic),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child:
+                    const Text('CANCELAR', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                      selecionado == 0 ? Colors.blueGrey : Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.pop(ctx, selecionado),
+                child: Text(
+                  selecionado == 0
+                      ? 'P/ AGUARDANDO'
+                      : (selecionado == elemento.qtde
+                          ? 'CONFIRMAR PRONTO'
+                          : 'SALVAR PROGRESSO'),
+                ),
+              ),
             ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child:
-                  const Text('CANCELAR', style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    selecionado == 0 ? Colors.blueGrey : Colors.green,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () => Navigator.pop(ctx, selecionado),
-              child: Text(
-                selecionado == 0
-                    ? 'P/ AGUARDANDO'
-                    : (selecionado == elemento.qtde
-                        ? 'CONFIRMAR PRONTO'
-                        : 'SALVAR PROGRESSO'),
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

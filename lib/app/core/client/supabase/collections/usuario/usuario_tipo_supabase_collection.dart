@@ -56,11 +56,13 @@ class UsuarioTipoSupabaseCollection {
 
   Future<UsuarioTipoModel?> add(UsuarioTipoModel model) async {
     try {
-      await SupabaseService.client
+      final response = await SupabaseService.client
           .from(tableName)
-          .insert(model.toSupabaseMap());
-      // fetch() removido — o Realtime já dispara atualização automaticamente
-      return model;
+          .insert(model.toSupabaseMap())
+          .select()
+          .single();
+      // Retorna o modelo com o ID real gerado pelo Supabase
+      return UsuarioTipoModel.fromSupabaseMap(response);
     } catch (e) {
       print('Supabase Error (UsuarioTipo.add): $e');
       return null;

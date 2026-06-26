@@ -170,33 +170,44 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                             controller: _scrollController,
                             thumbVisibility: true,
                             trackVisibility: true,
-                            child: GridView.builder(
-                              controller: _scrollController,
-                              padding: const EdgeInsets.all(24),
-                              gridDelegate:
-                                  const SliverGridDelegateWithMaxCrossAxisExtent(
-                                maxCrossAxisExtent: 350,
-                                mainAxisExtent: 160,
-                                crossAxisSpacing: 20,
-                                mainAxisSpacing: 20,
-                              ),
-                              itemCount: filtrados.length,
-                              itemBuilder: (context, index) {
-                                final elemento = filtrados[index];
-                                return _ElementoArmacaoCard(
-                                  key: ValueKey(elemento.id),
-                                  elemento: elemento,
-                                  onStatusPressed: () async {
-                                    if (elemento.qtde > 1) {
-                                      await armacaoCtrl
-                                          .openProgressoParcialDirect(
-                                              currentPedido, elemento);
-                                    } else {
-                                      await _showStatusPicker(elemento);
-                                    }
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final screenWidth = constraints.maxWidth;
+                                final isSmall = screenWidth < 400;
+                                final padding = isSmall ? 12.0 : 24.0;
+                                final spacing = isSmall ? 12.0 : 20.0;
+                                final maxExtent = isSmall ? 300.0 : 350.0;
+                                final mainExtent = isSmall ? 150.0 : 160.0;
+
+                                return GridView.builder(
+                                  controller: _scrollController,
+                                  padding: EdgeInsets.all(padding),
+                                  gridDelegate:
+                                      SliverGridDelegateWithMaxCrossAxisExtent(
+                                    maxCrossAxisExtent: maxExtent,
+                                    mainAxisExtent: mainExtent,
+                                    crossAxisSpacing: spacing,
+                                    mainAxisSpacing: spacing,
+                                  ),
+                                  itemCount: filtrados.length,
+                                  itemBuilder: (context, index) {
+                                    final elemento = filtrados[index];
+                                    return _ElementoArmacaoCard(
+                                      key: ValueKey(elemento.id),
+                                      elemento: elemento,
+                                      onStatusPressed: () async {
+                                        if (elemento.qtde > 1) {
+                                          await armacaoCtrl
+                                              .openProgressoParcialDirect(
+                                                  currentPedido, elemento);
+                                        } else {
+                                          await _showStatusPicker(elemento);
+                                        }
+                                      },
+                                      onImagePressed: () =>
+                                          _showImageDialog(elemento),
+                                    );
                                   },
-                                  onImagePressed: () =>
-                                      _showImageDialog(elemento),
                                 );
                               },
                             ),
@@ -229,9 +240,10 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
     await showDialog(
       context: context,
       builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Container(
-          width: 400,
+          constraints: const BoxConstraints(maxWidth: 400),
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,

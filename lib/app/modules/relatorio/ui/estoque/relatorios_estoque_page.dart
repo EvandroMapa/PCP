@@ -549,6 +549,8 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
     if (relatorioCtrl.pedidoViewModelStream.hasValue &&
         relatorioCtrl.pedidoViewModel.relatorio != null) {
       for (final pedido in relatorioCtrl.pedidoViewModel.relatorio!.pedidos) {
+        // Respeita o estado do checkbox "Considerar pedido sem data"
+        if (!_considerarPedidoSemData && pedido.deliveryAt == null) continue;
         for (final prod in pedido.produtos) {
           if (prod.produto.id != produto.id) continue;
           if (prod.qtde <= 0) continue;

@@ -1,3 +1,5 @@
+import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/user_permission_type.dart';
+
 class UsuarioTipoModel {
   final String id;
   final String nome;
@@ -10,6 +12,9 @@ class UsuarioTipoModel {
   final bool isAdministrador;
   final bool isExclusivo;
   final DateTime createdAt;
+  final List<UserPermissionType> permissaoCliente;
+  final List<UserPermissionType> permissaoPedido;
+  final List<UserPermissionType> permissaoOrdem;
 
   UsuarioTipoModel({
     required this.id,
@@ -23,6 +28,9 @@ class UsuarioTipoModel {
     required this.isAdministrador,
     required this.isExclusivo,
     required this.createdAt,
+    required this.permissaoCliente,
+    required this.permissaoPedido,
+    required this.permissaoOrdem,
   });
 
   factory UsuarioTipoModel.empty() => UsuarioTipoModel(
@@ -37,7 +45,27 @@ class UsuarioTipoModel {
         isAdministrador: false,
         isExclusivo: false,
         createdAt: DateTime.now(),
+        permissaoCliente: UserPermissionType.values.toList(),
+        permissaoPedido: UserPermissionType.values.toList(),
+        permissaoOrdem: UserPermissionType.values.toList(),
       );
+
+  static List<UserPermissionType> _parsePermissionList(dynamic list) {
+    if (list == null || list is! List) {
+      return UserPermissionType.values.toList();
+    }
+    return list
+        .map((x) {
+          if (x is int) return UserPermissionType.values[x];
+          if (x is String) {
+            final idx = int.tryParse(x);
+            if (idx != null) return UserPermissionType.values[idx];
+          }
+          return null;
+        })
+        .whereType<UserPermissionType>()
+        .toList();
+  }
 
   factory UsuarioTipoModel.fromSupabaseMap(Map<String, dynamic> map) {
     return UsuarioTipoModel(
@@ -54,11 +82,14 @@ class UsuarioTipoModel {
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
+      permissaoCliente: _parsePermissionList(map['permissao_cliente']),
+      permissaoPedido: _parsePermissionList(map['permissao_pedido']),
+      permissaoOrdem: _parsePermissionList(map['permissao_ordem']),
     );
   }
 
   Map<String, dynamic> toSupabaseMap() {
-    final map = {
+    final map = <String, dynamic>{
       'nome': nome,
       'permitir_elementos': isPermitirElementos,
       'permitir_editar_elementos': isPermitirEditarElementos,
@@ -68,6 +99,9 @@ class UsuarioTipoModel {
       'is_armador': isArmador,
       'is_administrador': isAdministrador,
       'is_exclusivo': isExclusivo,
+      'permissao_cliente': permissaoCliente.map((e) => e.index).toList(),
+      'permissao_pedido': permissaoPedido.map((e) => e.index).toList(),
+      'permissao_ordem': permissaoOrdem.map((e) => e.index).toList(),
     };
     if (id.isNotEmpty) {
       map['id'] = id;
@@ -77,7 +111,7 @@ class UsuarioTipoModel {
 
   @override
   String toString() {
-    return 'UsuarioTipoModel(id: $id, nome: $nome, isPermitirElementos: $isPermitirElementos, isPermitirEditarElementos: $isPermitirEditarElementos, isPermitirExcluirPedido: $isPermitirExcluirPedido, isPermitirAjusteEstoque: $isPermitirAjusteEstoque, isOperador: $isOperador, isArmador: $isArmador, isAdministrador: $isAdministrador)';
+    return 'UsuarioTipoModel(id: $id, nome: $nome, isPermitirElementos: $isPermitirElementos, isPermitirEditarElementos: $isPermitirEditarElementos, isPermitirExcluirPedido: $isPermitirExcluirPedido, isPermitirAjusteEstoque: $isPermitirAjusteEstoque, isOperador: $isOperador, isArmador: $isArmador, isAdministrador: $isAdministrador, permissaoCliente: $permissaoCliente, permissaoPedido: $permissaoPedido, permissaoOrdem: $permissaoOrdem)';
   }
 
   @override

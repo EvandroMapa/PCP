@@ -14,9 +14,18 @@ class UsuarioModel {
   final UsuarioRole role; // Temporário para retrocompatibilidade
   final String usuarioTipoId;
   final UsuarioTipoModel? tipo;
-  final UserPermissionModel permission;
   final List<StepModel> steps;
   final List<String> deviceTokens;
+
+  /// Permissões CRUD agora derivam do perfil (tipo).
+  /// Se não há perfil vinculado, libera tudo por segurança (fallback).
+  UserPermissionModel get permission => tipo != null
+      ? UserPermissionModel(
+          cliente: tipo!.permissaoCliente,
+          pedido: tipo!.permissaoPedido,
+          ordem: tipo!.permissaoOrdem,
+        )
+      : UserPermissionModel.all();
 
   bool get isAdmin =>
       (tipo?.isAdministrador ?? false) ||
@@ -56,7 +65,6 @@ class UsuarioModel {
         role: UsuarioRole.administrador,
         usuarioTipoId: '',
         tipo: null,
-        permission: UserPermissionModel.all(),
         steps: FirestoreClient.steps.data.map((e) => e.copyWith()).toList(),
         deviceTokens: [],
       );
@@ -69,7 +77,6 @@ class UsuarioModel {
     required this.role,
     required this.usuarioTipoId,
     this.tipo,
-    required this.permission,
     required this.steps,
     required this.deviceTokens,
   });
@@ -82,7 +89,6 @@ class UsuarioModel {
     UsuarioRole? role,
     String? usuarioTipoId,
     UsuarioTipoModel? tipo,
-    UserPermissionModel? permission,
     List<StepModel>? steps,
     List<String>? deviceTokens,
   }) {
@@ -94,7 +100,6 @@ class UsuarioModel {
       role: role ?? this.role,
       usuarioTipoId: usuarioTipoId ?? this.usuarioTipoId,
       tipo: tipo ?? this.tipo,
-      permission: permission ?? this.permission,
       steps: steps ?? this.steps,
       deviceTokens: deviceTokens ?? this.deviceTokens,
     );
@@ -108,7 +113,6 @@ class UsuarioModel {
       'senha': senha,
       'role': role.index,
       'perfil_id': usuarioTipoId,
-      'permission': permission.toMap(),
       'steps': steps.map((x) => x.toMap()).toList(),
       'deviceTokens': deviceTokens,
     };
@@ -129,7 +133,6 @@ class UsuarioModel {
         role: UsuarioRole.operador,
         usuarioTipoId: '',
         tipo: null,
-        permission: UserPermissionModel.all(),
         steps: [],
         deviceTokens: [],
       );
@@ -142,9 +145,6 @@ class UsuarioModel {
       senha: map['senha'] ?? '',
       role: UsuarioRole.values[map['role'] is int ? map['role'] : 0],
       usuarioTipoId: (map['perfil_id'] ?? map['usuario_tipo_id'] ?? '').toString(),
-      permission: map['permission'] != null
-          ? UserPermissionModel.fromMap(map['permission'])
-          : UserPermissionModel.all(),
       steps: [],
       deviceTokens: map['deviceTokens'] != null
           ? List<String>.from(map['deviceTokens'])
@@ -157,9 +157,6 @@ class UsuarioModel {
         ? UsuarioTipoModel.fromSupabaseMap(map['perfis'])
         : null;
 
-    final isAdmin = tipo?.nome.toLowerCase() == 'administrador' ||
-        _parseRole(map['role']) == UsuarioRole.administrador;
-
     return UsuarioModel(
       id: map['id'] ?? '',
       nome: map['nome'] ?? '',
@@ -168,13 +165,6 @@ class UsuarioModel {
       role: _parseRole(map['role']),
       usuarioTipoId: (map['perfil_id'] ?? '').toString(),
       tipo: tipo,
-      permission: isAdmin
-          ? UserPermissionModel.all()
-          : (map['permission'] != null
-              ? UserPermissionModel.fromMap(map['permission'] is String
-                  ? json.decode(map['permission'])
-                  : map['permission'])
-              : UserPermissionModel.all()),
       steps: map['steps'] != null
           ? List<Map<String, dynamic>>.from(map['steps'] is String
                   ? json.decode(map['steps'])
@@ -210,7 +200,6 @@ class UsuarioModel {
         'senha': senha,
         'role': role.index,
         'perfil_id': usuarioTipoId.isEmpty ? null : usuarioTipoId,
-        'permission': json.encode(permission.toMap()),
         'steps': json.encode(steps.map((x) => x.toMap()).toList()),
         'deviceTokens': json.encode(deviceTokens),
       };
@@ -222,7 +211,7 @@ class UsuarioModel {
 
   @override
   String toString() {
-    return 'UsuarioModel(id: $id, nome: $nome, email: $email, senha: $senha, role: $role, permission: $permission)';
+    return 'UsuarioModel(id: $id, nome: $nome, email: $email, senha: $senha, role: $role)';
   }
 
   @override
@@ -234,8 +223,7 @@ class UsuarioModel {
         other.nome == nome &&
         other.email == email &&
         other.senha == senha &&
-        other.role == role &&
-        other.permission == permission;
+        other.role == role;
   }
 
   @override
@@ -244,7 +232,6 @@ class UsuarioModel {
         nome.hashCode ^
         email.hashCode ^
         senha.hashCode ^
-        role.hashCode ^
-        permission.hashCode;
+        role.hashCode;
   }
 }
