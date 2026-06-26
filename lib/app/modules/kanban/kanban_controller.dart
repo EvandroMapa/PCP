@@ -221,12 +221,29 @@ class StepController {
     int index, {
     bool auto = false,
   }) async {
-    if (!await onWillAccept(pedido, step, auto: auto)) return;
+    // Renova o lock para cobrir o gap do await
+    _dropTimer?.cancel();
+    _pendingDrop = true;
+
+    if (!await onWillAccept(pedido, step, auto: auto)) {
+      // Validação falhou — inicia timer para liberar lock
+      _dropTimer?.cancel();
+      _dropTimer = Timer(const Duration(milliseconds: 3000), () {
+        _pendingDrop = false;
+      });
+      return;
+    }
 
     final stepAnterior = pedido.step;
 
     _onMovePedido(pedido, step, index);
     utilsStream.update();
+
+    // Renova timer após o move otimista
+    _dropTimer?.cancel();
+    _dropTimer = Timer(const Duration(milliseconds: 3000), () {
+      _pendingDrop = false;
+    });
 
     // Process secondary actions in background
     _onAddStep(pedido, step);
