@@ -405,6 +405,19 @@ class StepController {
     return result ?? false;
   }
 
+  /// Tenta autorizar override: se já é admin, autoriza direto com aviso.
+  /// Se não é admin, pede credenciais de admin.
+  Future<bool> _tentarOverrideAdmin(String motivoBloqueio) async {
+    if (usuario.isAdmin) {
+      NotificationService.showPending(
+        'Movimentação forçada',
+        motivoBloqueio,
+      );
+      return true;
+    }
+    return _pedirSenhaAdmin(motivoBloqueio);
+  }
+
   Future<bool> onWillAccept(PedidoModel pedido, StepModel step, {bool auto = false}) async {
     if (pedido.step.id != step.id) {
       // Regra de Aceite sem Elementos (válida para CD e CDA)
@@ -413,7 +426,7 @@ class StepController {
 
       if (isCDorCDA && !step.isAcceptWithoutElements && pedido.elementos.isEmpty) {
         if (_isShiftPressed) {
-          final autorizado = await _pedirSenhaAdmin(
+          final autorizado = await _tentarOverrideAdmin(
             'Etapa não aceita pedidos CD/CDA sem elementos.');
           if (!autorizado) return false;
         } else {
@@ -435,7 +448,7 @@ class StepController {
 
         if (!temCoordenadas && !temEnderecoValidado) {
           if (_isShiftPressed) {
-            final autorizado = await _pedirSenhaAdmin(
+            final autorizado = await _tentarOverrideAdmin(
               'Etapa exige endereço ou coordenadas na obra.');
             if (!autorizado) return false;
           } else {
@@ -451,7 +464,7 @@ class StepController {
       // Regra de Aceite sem Data de Entrega (todos os tipos de pedido)
       if (!step.isAcceptSemDataEntrega && pedido.deliveryAt == null) {
         if (_isShiftPressed) {
-          final autorizado = await _pedirSenhaAdmin(
+          final autorizado = await _tentarOverrideAdmin(
             'Etapa exige data de entrega cadastrada.');
           if (!autorizado) return false;
         } else {
@@ -467,7 +480,7 @@ class StepController {
       if (!step.isAcceptSemPedidoFinanceiro &&
           pedido.pedidoFinanceiro.trim().isEmpty) {
         if (_isShiftPressed) {
-          final autorizado = await _pedirSenhaAdmin(
+          final autorizado = await _tentarOverrideAdmin(
             'Etapa exige pedido financeiro preenchido.');
           if (!autorizado) return false;
         } else {
@@ -483,7 +496,7 @@ class StepController {
           step.fromSteps.map((e) => e.id).contains(pedido.step.id);
       if (!isStepAvailable) {
         if (_isShiftPressed) {
-          final autorizado = await _pedirSenhaAdmin(
+          final autorizado = await _tentarOverrideAdmin(
             'Etapa de origem não permite mover para esta etapa.');
           if (!autorizado) return false;
         } else {
@@ -503,7 +516,7 @@ class StepController {
 
       if (!destAllowed || !origAllowed) {
         if (_isShiftPressed) {
-          final autorizado = await _pedirSenhaAdmin(
+          final autorizado = await _tentarOverrideAdmin(
             'Usuário sem permissão para mover nesta etapa.');
           if (!autorizado) return false;
         } else {
