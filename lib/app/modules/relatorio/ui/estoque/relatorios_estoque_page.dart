@@ -134,85 +134,124 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
   Widget _totaisHeader(
       double saldo, double consumo, double emPedido, double saldoFinal) {
     final negativo = saldoFinal < 0;
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            Icon(Icons.inventory_2_outlined,
-                size: 16, color: AppColors.primaryMain),
-            const SizedBox(width: 6),
-            Text('Previsão de Consumo vs. Estoque',
-                style: AppCss.minimumBold.setColor(AppColors.primaryMain)),
-            const Spacer(),
-            // ── Checkbox: considerar pedido sem data ──
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
-              ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.event_outlined, size: 14, color: Colors.grey[500]),
-                const SizedBox(width: 4),
-                Text('Considerar pedido sem data',
-                    style: AppCss.minimumBold
-                        .setColor(_considerarPedidoSemData
-                            ? Colors.grey[700]!
-                            : Colors.grey[400]!)
-                        .setSize(11)),
-                SizedBox(
-                  height: 24,
-                  child: Checkbox(
-                    value: _considerarPedidoSemData,
-                    activeColor: const Color(0xFF2563EB),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    visualDensity: VisualDensity.compact,
-                    onChanged: (v) {
-                      setState(() => _considerarPedidoSemData = v ?? true);
-                      relatorioCtrl.onCreateRelatorioPedido();
-                    },
-                  ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isSmall = constraints.maxWidth < 500;
+        return Container(
+          color: Colors.white,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Título
+              Row(children: [
+                Icon(Icons.inventory_2_outlined,
+                    size: 16, color: AppColors.primaryMain),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text('Previsão de Consumo vs. Estoque',
+                      style: AppCss.minimumBold.setColor(AppColors.primaryMain)),
                 ),
               ]),
-            ),
-          ]),
-          const SizedBox(height: 4),
-          Text(
-            'Saldo físico, abatido do consumo previsto nas ordens, '
-            'acrescido dos pedidos de compra em aberto.',
-            style: AppCss.minimumRegular.setColor(Colors.grey[500]!),
+              const SizedBox(height: 6),
+              // ── Checkbox: considerar pedido sem data ──
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.event_outlined, size: 14, color: Colors.grey[500]),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text('Considerar pedido sem data',
+                        style: AppCss.minimumBold
+                            .setColor(_considerarPedidoSemData
+                                ? Colors.grey[700]!
+                                : Colors.grey[400]!)
+                            .setSize(11)),
+                  ),
+                  SizedBox(
+                    height: 24,
+                    child: Checkbox(
+                      value: _considerarPedidoSemData,
+                      activeColor: const Color(0xFF2563EB),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                      onChanged: (v) {
+                        setState(() => _considerarPedidoSemData = v ?? true);
+                        relatorioCtrl.onCreateRelatorioPedido();
+                      },
+                    ),
+                  ),
+                ]),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Saldo físico, abatido do consumo previsto nas ordens, '
+                'acrescido dos pedidos de compra em aberto.',
+                style: AppCss.minimumRegular.setColor(Colors.grey[500]!),
+              ),
+              const SizedBox(height: 10),
+              // KPIs — 2x2 no mobile, 4 em linha no desktop
+              if (isSmall)
+                Column(children: [
+                  Row(children: [
+                    _kpi('Saldo Físico', saldo.toKg(), Colors.blue[700]!,
+                        Icons.account_balance_outlined),
+                    const SizedBox(width: 6),
+                    _kpi('Consumo Previsto', '-${consumo.toKg()}',
+                        Colors.orange[700]!, Icons.arrow_downward_rounded),
+                  ]),
+                  const SizedBox(height: 6),
+                  Row(children: [
+                    _kpi(
+                      'Em Pedido',
+                      emPedido > 0 ? '+${emPedido.toKg()}' : '—',
+                      Colors.blue[600]!,
+                      Icons.shopping_cart_outlined,
+                    ),
+                    const SizedBox(width: 6),
+                    _kpi(
+                      'Projetado',
+                      saldoFinal.toKg(),
+                      negativo ? Colors.red[700]! : Colors.green[700]!,
+                      negativo
+                          ? Icons.warning_amber_rounded
+                          : Icons.check_circle_outline,
+                    ),
+                  ]),
+                ])
+              else
+                Row(children: [
+                  _kpi('Saldo Físico', saldo.toKg(), Colors.blue[700]!,
+                      Icons.account_balance_outlined),
+                  const SizedBox(width: 6),
+                  _kpi('Consumo Previsto', '-${consumo.toKg()}',
+                      Colors.orange[700]!, Icons.arrow_downward_rounded),
+                  const SizedBox(width: 6),
+                  _kpi(
+                    'Em Pedido',
+                    emPedido > 0 ? '+${emPedido.toKg()}' : '—',
+                    Colors.blue[600]!,
+                    Icons.shopping_cart_outlined,
+                  ),
+                  const SizedBox(width: 6),
+                  _kpi(
+                    'Projetado',
+                    saldoFinal.toKg(),
+                    negativo ? Colors.red[700]! : Colors.green[700]!,
+                    negativo
+                        ? Icons.warning_amber_rounded
+                        : Icons.check_circle_outline,
+                  ),
+                ]),
+            ],
           ),
-          const SizedBox(height: 10),
-          // 4 KPIs em uma única linha
-          Row(children: [
-            _kpi('Saldo Físico', saldo.toKg(), Colors.blue[700]!,
-                Icons.account_balance_outlined),
-            const SizedBox(width: 6),
-            _kpi('Consumo Previsto', '-${consumo.toKg()}',
-                Colors.orange[700]!, Icons.arrow_downward_rounded),
-            const SizedBox(width: 6),
-            _kpi(
-              'Em Pedido',
-              emPedido > 0 ? '+${emPedido.toKg()}' : '—',
-              Colors.blue[600]!,
-              Icons.shopping_cart_outlined,
-            ),
-            const SizedBox(width: 6),
-            _kpi(
-              'Projetado',
-              saldoFinal.toKg(),
-              negativo ? Colors.red[700]! : Colors.green[700]!,
-              negativo
-                  ? Icons.warning_amber_rounded
-                  : Icons.check_circle_outline,
-            ),
-          ]),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -307,61 +346,97 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
       child: Column(
         children: [
           // ── Linha principal ──────────────────────────────────────────
-          Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(children: [
-              // Ícone
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: negativo
-                      ? Colors.red.withValues(alpha: 0.08)
-                      : AppColors.primaryMain.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.inventory_2_outlined,
-                  size: 16,
-                  color: negativo ? Colors.red[700]! : AppColors.primaryMain,
-                ),
-              ),
-              const SizedBox(width: 10),
-              // Nome
-              Expanded(
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isSmall = constraints.maxWidth < 450;
+              return Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(produto.nome, style: AppCss.minimumBold),
-                      Text(produto.descricao,
-                          style: AppCss.minimumRegular
-                              .setColor(Colors.grey[500]!)),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      // Ícone
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: negativo
+                              ? Colors.red.withValues(alpha: 0.08)
+                              : AppColors.primaryMain.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.inventory_2_outlined,
+                          size: 16,
+                          color: negativo ? Colors.red[700]! : AppColors.primaryMain,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      // Nome
+                      Expanded(
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(produto.nome, style: AppCss.minimumBold),
+                              Text(produto.descricao,
+                                  style: AppCss.minimumRegular
+                                      .setColor(Colors.grey[500]!)),
+                            ]),
+                      ),
+                      if (!isSmall) ...[
+                        const SizedBox(width: 8),
+                        _valorCol('Saldo', saldoAtual.toKg(), Colors.blue[700]!),
+                        _seta(),
+                        _valorCol(
+                          'Consumo',
+                          semConsumo ? '—' : '-${consumoPrevisto.toKg()}',
+                          semConsumo ? Colors.grey[400]! : Colors.orange[700]!,
+                        ),
+                        _seta(),
+                        _valorCol(
+                          '+Pedido',
+                          temPedidos ? '+${totalEmPedido.toKg()}' : '—',
+                          temPedidos ? Colors.blue[600]! : Colors.grey[350]!,
+                        ),
+                        _seta(),
+                        _valorCol(
+                          'Projetado',
+                          saldoFinal.toKg(),
+                          negativo ? Colors.red[700]! : Colors.green[700]!,
+                          bold: true,
+                        ),
+                      ],
                     ]),
-              ),
-              const SizedBox(width: 8),
-              // Colunas de valores — sempre 4 colunas para alinhar
-              _valorCol('Saldo', saldoAtual.toKg(), Colors.blue[700]!),
-              _seta(),
-              _valorCol(
-                'Consumo',
-                semConsumo ? '—' : '-${consumoPrevisto.toKg()}',
-                semConsumo ? Colors.grey[400]! : Colors.orange[700]!,
-              ),
-              _seta(),
-              _valorCol(
-                '+Pedido',
-                temPedidos ? '+${totalEmPedido.toKg()}' : '—',
-                temPedidos ? Colors.blue[600]! : Colors.grey[350]!,
-              ),
-              _seta(),
-              _valorCol(
-                'Projetado',
-                saldoFinal.toKg(),
-                negativo ? Colors.red[700]! : Colors.green[700]!,
-                bold: true,
-              ),
-            ]),
+                    if (isSmall) ...[
+                      const SizedBox(height: 10),
+                      Row(children: [
+                        _valorCol('Saldo', saldoAtual.toKg(), Colors.blue[700]!),
+                        _seta(),
+                        _valorCol(
+                          'Consumo',
+                          semConsumo ? '—' : '-${consumoPrevisto.toKg()}',
+                          semConsumo ? Colors.grey[400]! : Colors.orange[700]!,
+                        ),
+                        _seta(),
+                        _valorCol(
+                          '+Pedido',
+                          temPedidos ? '+${totalEmPedido.toKg()}' : '—',
+                          temPedidos ? Colors.blue[600]! : Colors.grey[350]!,
+                        ),
+                        _seta(),
+                        _valorCol(
+                          'Projetado',
+                          saldoFinal.toKg(),
+                          negativo ? Colors.red[700]! : Colors.green[700]!,
+                          bold: true,
+                        ),
+                      ]),
+                    ],
+                  ],
+                ),
+              );
+            },
           ),
 
           // ── Linha "Em pedido" expansível ─────────────────────────────
@@ -506,8 +581,7 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
 
   Widget _valorCol(String label, String valor, Color cor,
       {bool bold = false}) {
-    return SizedBox(
-      width: 72,
+    return Expanded(
       child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Text(label,
             style: AppCss.minimumRegular
@@ -519,6 +593,7 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
               ? AppCss.minimumBold.setColor(cor)
               : AppCss.minimumRegular.setColor(cor),
           textAlign: TextAlign.right,
+          overflow: TextOverflow.ellipsis,
         ),
       ]),
     );
