@@ -44,17 +44,26 @@ class StepController {
   bool get isDropLocked => isDragging || _pendingDrop;
   StreamSubscription? _pedidosSubscription;
   Timer? _mountDebounce;
+  Timer? _dropTimer;
 
-  void startDrag() => isDragging = true;
+  void startDrag() {
+    _dropTimer?.cancel();
+    _pendingDrop = false;
+    isDragging = true;
+  }
+
   void endDrag() {
-    isDragging = false;
-    // NÃƒO faz fetch imediato â€” o estado local jÃ¡ estÃ¡ correto (optimistic).
-    // Agenda um fetch com delay para dar tempo do update() no Supabase terminar
-    // antes de re-sincronizar os dados com o backend.
+    if (!isDragging && !_pendingDrop) return; // guard: já processado
+    // Ativa _pendingDrop ANTES de desligar isDragging para não abrir janela
     _pendingDrop = true;
-    Future.delayed(const Duration(milliseconds: 1500), () {
+    isDragging = false;
+    // Cancela timer anterior caso endDrag seja chamado múltiplas vezes
+    _dropTimer?.cancel();
+    _dropTimer = Timer(const Duration(milliseconds: 3000), () {
       _pendingDrop = false;
-      BackendClient.pedidos.fetch();
+      // Não faz fetch: o Realtime já trouxe o estado correto.
+      // Se precisar forçar sincronia, descomente:
+      // BackendClient.pedidos.fetch();
     });
   }
 
