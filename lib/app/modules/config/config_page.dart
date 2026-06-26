@@ -38,7 +38,7 @@ class _ConfigPageState extends State<ConfigPage> {
           style: TextStyle(color: Colors.white),
         ),
       ),
-      body: Column(
+      body: ListView(
         children: [
           ListTile(
             onTap: () => push(context, const UsuariosPage()),
