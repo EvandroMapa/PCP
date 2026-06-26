@@ -396,6 +396,12 @@ class StepController {
         ],
       ),
     );
+    if (result == true) {
+      NotificationService.showPending(
+        'Movimentação forçada',
+        motivoBloqueio,
+      );
+    }
     return result ?? false;
   }
 
