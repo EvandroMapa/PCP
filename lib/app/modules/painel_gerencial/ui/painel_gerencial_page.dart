@@ -596,6 +596,13 @@ class _PainelGerencialPageState extends State<PainelGerencialPage> {
     final prcPronto =
         ((resumo['pronto'] ?? {})['prcnt_qtd'] ?? 0.0).toDouble();
 
+    final qtdAguardando =
+        ((resumo['aguardando'] ?? {})['qtd'] ?? 0).toInt();
+    final qtdArmando =
+        ((resumo['armando'] ?? {})['qtd'] ?? 0).toInt();
+    final qtdPronto =
+        ((resumo['pronto'] ?? {})['qtd'] ?? 0).toInt();
+
     return InkWell(
       onTap: () => push(context, ArmacaoElementosPage(pedido: pedido)),
       child: Container(
@@ -703,9 +710,43 @@ class _PainelGerencialPageState extends State<PainelGerencialPage> {
                 ),
               ],
             ),
+            // Legenda com qtdes por status
+            const H(5),
+            Row(
+              children: [
+                _armacaoLegendaItem(Colors.green[700]!, 'Pronto', qtdPronto),
+                const W(10),
+                _armacaoLegendaItem(Colors.orange[700]!, 'Armando', qtdArmando),
+                const W(10),
+                _armacaoLegendaItem(Colors.blue[200]!, 'Aguardando', qtdAguardando),
+              ],
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _armacaoLegendaItem(Color cor, String label, int qtd) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: cor,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const W(4),
+        Text(
+          '$label: $qtd',
+          style: AppCss.minimumRegular
+              .setSize(9)
+              .setColor(Colors.grey[600]!),
+        ),
+      ],
     );
   }
 
