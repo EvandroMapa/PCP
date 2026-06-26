@@ -260,9 +260,35 @@ class StepController {
       HardwareKeyboard.instance.logicalKeysPressed
           .contains(LogicalKeyboardKey.shiftRight);
 
-  /// Exibe dialog pedindo senha de um usuário administrador
+  /// Exibe dialog pedindo e-mail e senha de um usuário administrador
   Future<bool> _pedirSenhaAdmin(String motivoBloqueio) async {
+    final emailController = TextEditingController();
     final senhaController = TextEditingController();
+    final focusSenha = FocusNode();
+
+    void tentarAutorizar(BuildContext ctx) {
+      final email = emailController.text.trim();
+      final senha = senhaController.text.trim();
+      if (email.isEmpty || senha.isEmpty) {
+        NotificationService.showNegative(
+          'Campos obrigatórios',
+          'Preencha e-mail e senha.',
+        );
+        return;
+      }
+      final admin = FirestoreClient.usuarios.data.firstWhereOrNull(
+        (u) => u.isAdmin && u.email == email && u.senha == senha,
+      );
+      if (admin != null) {
+        Navigator.pop(ctx, true);
+      } else {
+        NotificationService.showNegative(
+          'Credenciais inválidas',
+          'E-mail ou senha incorretos, ou o usuário não é administrador.',
+        );
+      }
+    }
+
     final result = await showDialog<bool>(
       context: contextGlobal,
       barrierDismissible: false,
@@ -291,6 +317,7 @@ class StepController {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Motivo do bloqueio
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
@@ -313,34 +340,39 @@ class StepController {
                 ]),
               ),
               const SizedBox(height: 16),
-              Text('Digite a senha de um administrador para prosseguir:',
+              Text('Entre com as credenciais de um administrador:',
                   style: TextStyle(fontSize: 13, color: Colors.grey[600])),
               const SizedBox(height: 12),
+              // Campo E-mail
+              TextField(
+                controller: emailController,
+                autofocus: true,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                decoration: InputDecoration(
+                  labelText: 'E-mail',
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onSubmitted: (_) => focusSenha.requestFocus(),
+              ),
+              const SizedBox(height: 12),
+              // Campo Senha
               TextField(
                 controller: senhaController,
+                focusNode: focusSenha,
                 obscureText: true,
-                autofocus: true,
+                textInputAction: TextInputAction.done,
                 decoration: InputDecoration(
-                  labelText: 'Senha do Admin',
+                  labelText: 'Senha',
                   prefixIcon: const Icon(Icons.lock_outline),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                onSubmitted: (_) {
-                  final senha = senhaController.text.trim();
-                  final admins = FirestoreClient.usuarios.data
-                      .where((u) => u.isAdmin && u.senha == senha)
-                      .toList();
-                  if (admins.isNotEmpty) {
-                    Navigator.pop(ctx, true);
-                  } else {
-                    NotificationService.showNegative(
-                      'Senha incorreta',
-                      'Nenhum administrador encontrado com essa senha.',
-                    );
-                  }
-                },
+                onSubmitted: (_) => tentarAutorizar(ctx),
               ),
             ],
           ),
@@ -350,26 +382,14 @@ class StepController {
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Cancelar'),
           ),
-          ElevatedButton(
+          ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryMain,
               foregroundColor: Colors.white,
             ),
-            onPressed: () {
-              final senha = senhaController.text.trim();
-              final admins = FirestoreClient.usuarios.data
-                  .where((u) => u.isAdmin && u.senha == senha)
-                  .toList();
-              if (admins.isNotEmpty) {
-                Navigator.pop(ctx, true);
-              } else {
-                NotificationService.showNegative(
-                  'Senha incorreta',
-                  'Nenhum administrador encontrado com essa senha.',
-                );
-              }
-            },
-            child: const Text('Autorizar'),
+            icon: const Icon(Icons.verified_user_outlined, size: 18),
+            onPressed: () => tentarAutorizar(ctx),
+            label: const Text('Autorizar'),
           ),
         ],
       ),
