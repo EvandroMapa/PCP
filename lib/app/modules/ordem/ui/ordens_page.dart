@@ -1,6 +1,7 @@
 import 'dart:html' as html;
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/modules/materia_prima/ui/materias_primas_page.dart';
+import 'package:aco_plus/app/modules/materia_prima/ui/materias_primas_create_page.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/equipamento/equipamento_model.dart';
@@ -174,6 +175,12 @@ class _OrdensPageState extends State<OrdensPage> {
           ),
           backgroundColor: AppColors.primaryMain,
           actions: [
+            if (_standaloneTabIndex == 1)
+              IconButton(
+                onPressed: () => push(context, const MateriaPrimaCreatePage()),
+                icon: const Icon(Icons.add, color: Colors.white, size: 20),
+                tooltip: 'Adicionar Matéria Prima',
+              ),
             IconButton(
               onPressed: () => usuarioCtrl.clearCurrentUser(),
               icon: const Icon(Icons.logout, color: Colors.white, size: 20),
