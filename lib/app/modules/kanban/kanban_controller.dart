@@ -17,7 +17,11 @@ import 'package:aco_plus/app/modules/kanban/kanban_view_model.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedidos_vinculados_move_select_dialog.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
+import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
+import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
 
@@ -217,7 +221,7 @@ class StepController {
     int index, {
     bool auto = false,
   }) async {
-    if (!onWillAccept(pedido, step, auto: auto)) return;
+    if (!await onWillAccept(pedido, step, auto: auto)) return;
 
     final stepAnterior = pedido.step;
 
@@ -249,18 +253,148 @@ class StepController {
     }
   }
 
-  bool onWillAccept(PedidoModel pedido, StepModel step, {bool auto = false}) {
+  /// Verifica se o Shift está pressionado no momento
+  bool get _isShiftPressed =>
+      HardwareKeyboard.instance.logicalKeysPressed
+          .contains(LogicalKeyboardKey.shiftLeft) ||
+      HardwareKeyboard.instance.logicalKeysPressed
+          .contains(LogicalKeyboardKey.shiftRight);
+
+  /// Exibe dialog pedindo senha de um usuário administrador
+  Future<bool> _pedirSenhaAdmin(String motivoBloqueio) async {
+    final senhaController = TextEditingController();
+    final result = await showDialog<bool>(
+      context: contextGlobal,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.orange.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(Icons.admin_panel_settings,
+                size: 22, color: Colors.orange[700]),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text('Autenticação Admin',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ),
+        ]),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: Colors.orange.withValues(alpha: 0.20)),
+                ),
+                child: Row(children: [
+                  Icon(Icons.info_outline,
+                      size: 16, color: Colors.orange[700]),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      motivoBloqueio,
+                      style: TextStyle(
+                          fontSize: 12, color: Colors.orange[800]),
+                    ),
+                  ),
+                ]),
+              ),
+              const SizedBox(height: 16),
+              Text('Digite a senha de um administrador para prosseguir:',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+              const SizedBox(height: 12),
+              TextField(
+                controller: senhaController,
+                obscureText: true,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'Senha do Admin',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onSubmitted: (_) {
+                  final senha = senhaController.text.trim();
+                  final admins = FirestoreClient.usuarios.data
+                      .where((u) => u.isAdmin && u.senha == senha)
+                      .toList();
+                  if (admins.isNotEmpty) {
+                    Navigator.pop(ctx, true);
+                  } else {
+                    NotificationService.showNegative(
+                      'Senha incorreta',
+                      'Nenhum administrador encontrado com essa senha.',
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryMain,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              final senha = senhaController.text.trim();
+              final admins = FirestoreClient.usuarios.data
+                  .where((u) => u.isAdmin && u.senha == senha)
+                  .toList();
+              if (admins.isNotEmpty) {
+                Navigator.pop(ctx, true);
+              } else {
+                NotificationService.showNegative(
+                  'Senha incorreta',
+                  'Nenhum administrador encontrado com essa senha.',
+                );
+              }
+            },
+            child: const Text('Autorizar'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
+  Future<bool> onWillAccept(PedidoModel pedido, StepModel step, {bool auto = false}) async {
     if (pedido.step.id != step.id) {
       // Regra de Aceite sem Elementos (válida para CD e CDA)
       final isCDorCDA =
           pedido.tipo == PedidoTipo.cd || pedido.tipo == PedidoTipo.cda;
 
       if (isCDorCDA && !step.isAcceptWithoutElements && pedido.elementos.isEmpty) {
-        NotificationService.showNegative(
-          'Operação não permitida',
-          'Esta etapa não aceita pedidos CD/CDA sem elementos cadastrados.',
-        );
-        return false;
+        if (_isShiftPressed) {
+          final autorizado = await _pedirSenhaAdmin(
+            'Etapa não aceita pedidos CD/CDA sem elementos.');
+          if (!autorizado) return false;
+        } else {
+          NotificationService.showNegative(
+            'Operação não permitida',
+            'Esta etapa não aceita pedidos CD/CDA sem elementos cadastrados.',
+          );
+          return false;
+        }
       }
 
       // Regra de Aceite sem Endereço (todos os tipos de pedido)
@@ -272,41 +406,65 @@ class StepController {
             endereco != null && endereco.localidade.isNotEmpty;
 
         if (!temCoordenadas && !temEnderecoValidado) {
-          NotificationService.showNegative(
-            'Endereço obrigatório',
-            'Esta etapa exige endereço ou coordenadas na obra do pedido.',
-          );
-          return false;
+          if (_isShiftPressed) {
+            final autorizado = await _pedirSenhaAdmin(
+              'Etapa exige endereço ou coordenadas na obra.');
+            if (!autorizado) return false;
+          } else {
+            NotificationService.showNegative(
+              'Endereço obrigatório',
+              'Esta etapa exige endereço ou coordenadas na obra do pedido.',
+            );
+            return false;
+          }
         }
       }
 
       // Regra de Aceite sem Data de Entrega (todos os tipos de pedido)
       if (!step.isAcceptSemDataEntrega && pedido.deliveryAt == null) {
-        NotificationService.showNegative(
-          'Data de entrega obrigatória',
-          'Esta etapa exige uma data de entrega cadastrada no pedido.',
-        );
-        return false;
+        if (_isShiftPressed) {
+          final autorizado = await _pedirSenhaAdmin(
+            'Etapa exige data de entrega cadastrada.');
+          if (!autorizado) return false;
+        } else {
+          NotificationService.showNegative(
+            'Data de entrega obrigatória',
+            'Esta etapa exige uma data de entrega cadastrada no pedido.',
+          );
+          return false;
+        }
       }
 
       // Regra de Aceite sem Pedido Financeiro (todos os tipos de pedido)
       if (!step.isAcceptSemPedidoFinanceiro &&
           pedido.pedidoFinanceiro.trim().isEmpty) {
-        NotificationService.showNegative(
-          'Pedido financeiro obrigatório',
-          'Esta etapa exige o número do pedido financeiro preenchido no pedido.',
-        );
-        return false;
+        if (_isShiftPressed) {
+          final autorizado = await _pedirSenhaAdmin(
+            'Etapa exige pedido financeiro preenchido.');
+          if (!autorizado) return false;
+        } else {
+          NotificationService.showNegative(
+            'Pedido financeiro obrigatório',
+            'Esta etapa exige o número do pedido financeiro preenchido no pedido.',
+          );
+          return false;
+        }
       }
 
       final isStepAvailable =
           step.fromSteps.map((e) => e.id).contains(pedido.step.id);
       if (!isStepAvailable) {
-        NotificationService.showNegative(
-          'OperaÃ§Ã£o nÃ£o permitida',
-          'Etapa nÃ£o aceita esta operaÃ§Ã£o',
-        );
-        return false;
+        if (_isShiftPressed) {
+          final autorizado = await _pedirSenhaAdmin(
+            'Etapa de origem não permite mover para esta etapa.');
+          if (!autorizado) return false;
+        } else {
+          NotificationService.showNegative(
+            'Operação não permitida',
+            'Etapa não aceita esta operação',
+          );
+          return false;
+        }
       }
     }
     if (!auto) {
@@ -316,11 +474,17 @@ class StepController {
           pedido.step.moveRoles.contains(usuario.usuarioTipoId);
 
       if (!destAllowed || !origAllowed) {
-        NotificationService.showNegative(
-          'Operação não permitida',
-          'Usuário não tem permissão para alterar essa etapa',
-        );
-        return false;
+        if (_isShiftPressed) {
+          final autorizado = await _pedirSenhaAdmin(
+            'Usuário sem permissão para mover nesta etapa.');
+          if (!autorizado) return false;
+        } else {
+          NotificationService.showNegative(
+            'Operação não permitida',
+            'Usuário não tem permissão para alterar essa etapa',
+          );
+          return false;
+        }
       }
     }
     return true;
