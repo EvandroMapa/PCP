@@ -1,4 +1,5 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
@@ -18,6 +19,8 @@ class EstoqueGraficoSection extends StatefulWidget {
 }
 
 class _EstoqueGraficoSectionState extends State<EstoqueGraficoSection> {
+  bool _considerarPedidoSemData = true;
+
   @override
   void initState() {
     setWebTitle('Estoque - Gráfico');
@@ -49,7 +52,12 @@ class _EstoqueGraficoSectionState extends State<EstoqueGraficoSection> {
 
     final Map<String, double> consumoMap = {};
     for (final p in produtos) {
-      final total = relatorioCtrl.getPedidosTotalPorBitola(p);
+      double total;
+      if (_considerarPedidoSemData) {
+        total = relatorioCtrl.getPedidosTotalPorBitola(p);
+      } else {
+        total = _getConsumoPorBitolaComData(p);
+      }
       if (total > 0) consumoMap[p.id] = total;
     }
 
@@ -326,6 +334,42 @@ class _EstoqueGraficoSectionState extends State<EstoqueGraficoSection> {
         const SizedBox(width: 6),
         Text('Gráfico de Posição',
             style: AppCss.minimumBold.setColor(AppColors.primaryMain)),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: _considerarPedidoSemData
+                ? AppColors.primaryMain.withValues(alpha: 0.08)
+                : Colors.grey[100],
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: _considerarPedidoSemData
+                  ? AppColors.primaryMain.withValues(alpha: 0.25)
+                  : Colors.grey[300]!,
+            ),
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Text(
+              'Pedidos s/ data',
+              style: AppCss.minimumRegular
+                  .setSize(10)
+                  .setColor(_considerarPedidoSemData
+                      ? AppColors.primaryMain
+                      : Colors.grey[500]!),
+            ),
+            SizedBox(
+              width: 28,
+              height: 20,
+              child: Checkbox(
+                value: _considerarPedidoSemData,
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                onChanged: (v) =>
+                    setState(() => _considerarPedidoSemData = v ?? true),
+              ),
+            ),
+          ]),
+        ),
         const Spacer(),
         _kpi('Saldo', saldo.toKg(), Colors.blue[700]!),
         const SizedBox(width: 8),
@@ -371,6 +415,22 @@ class _EstoqueGraficoSectionState extends State<EstoqueGraficoSection> {
               .setSize(9)),
       Text(valor, style: AppCss.minimumBold.setColor(cor).setSize(13)),
     ]);
+  }
+
+  double _getConsumoPorBitolaComData(BitolaModel produto) {
+    double qtde = 0;
+    if (!relatorioCtrl.pedidoViewModelStream.hasValue) return 0;
+    final relatorio = relatorioCtrl.pedidoViewModel.relatorio;
+    if (relatorio == null) return 0;
+    for (var pedido in relatorio.pedidos) {
+      if (pedido.deliveryAt == null) continue;
+      for (var prod in pedido.produtos
+          .where((e) => e.produto.id == produto.id)
+          .toList()) {
+        qtde = qtde + prod.qtde;
+      }
+    }
+    return double.parse(qtde.toStringAsFixed(2));
   }
 }
 

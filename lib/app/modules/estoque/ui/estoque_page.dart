@@ -29,8 +29,8 @@ class _EstoquePageState extends State<EstoquePage> {
   final _menuItems = const [
     (Icons.inventory_2_outlined, 'Saldo'),
     (Icons.analytics_outlined, 'Posição'),
-    (Icons.swap_vert_outlined, 'Movimentação'),
     (Icons.bar_chart_rounded, 'Gráfico'),
+    (Icons.swap_vert_outlined, 'Movimentação'),
   ];
 
   @override
@@ -114,9 +114,9 @@ class _EstoquePageState extends State<EstoquePage> {
       case 1:
         return const RelatoriosEstoquePage();
       case 2:
-        return const EstoqueMovimentacaoSection();
-      case 3:
         return const EstoqueGraficoSection();
+      case 3:
+        return const EstoqueMovimentacaoSection();
       default:
         return const EstoqueSaldoSection();
     }
