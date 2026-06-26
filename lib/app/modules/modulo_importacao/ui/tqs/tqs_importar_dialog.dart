@@ -123,8 +123,8 @@ class _TqsImportarDialogState extends State<TqsImportarDialog> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         titlePadding: EdgeInsets.zero,
         contentPadding: const EdgeInsets.all(24),
-        content: SizedBox(
-          width: 550,
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 550),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,9 +247,9 @@ class _TqsImportarDialogState extends State<TqsImportarDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: AppCss.radius12),
       child: Container(
-        width: 520,
-        constraints:
-            BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.7),
+        constraints: BoxConstraints(
+            maxWidth: 520,
+            maxHeight: MediaQuery.of(context).size.height * 0.7),
         decoration: BoxDecoration(
           color: const Color(0xFFF8F9FB),
           borderRadius: AppCss.radius12,

@@ -779,8 +779,8 @@ class _ConfirmarGrupoDialogState extends State<_ConfirmarGrupoDialog> {
           Text('Confirmar Pedido'),
         ],
       ),
-      content: SizedBox(
-        width: 420,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

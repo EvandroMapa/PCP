@@ -624,8 +624,8 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
                     style: AppCss.mediumBold),
               ),
             ]),
-            content: SizedBox(
-              width: 380,
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 380),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,

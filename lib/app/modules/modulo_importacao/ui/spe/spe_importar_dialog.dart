@@ -195,9 +195,9 @@ class _SpeImportarDialogState extends State<SpeImportarDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: AppCss.radius12),
       child: Container(
-        width: 780,
-        constraints:
-            BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
+        constraints: BoxConstraints(
+            maxWidth: 780,
+            maxHeight: MediaQuery.of(context).size.height * 0.9),
         decoration: BoxDecoration(
           color: const Color(0xFFF8F9FB),
           borderRadius: AppCss.radius12,

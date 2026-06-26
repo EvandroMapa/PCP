@@ -344,8 +344,7 @@ class DashboardPageState extends State<DashboardPage> {
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Container(
-          width: 560,
-          constraints: const BoxConstraints(maxHeight: 620),
+          constraints: const BoxConstraints(maxWidth: 560, maxHeight: 620),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

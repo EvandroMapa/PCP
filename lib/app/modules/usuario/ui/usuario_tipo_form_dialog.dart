@@ -29,8 +29,8 @@ class _UsuarioTipoFormDialogState extends State<UsuarioTipoFormDialog> {
       stream: usuarioTipoCtrl.formStream.listen,
       builder: (_, form) => AlertDialog(
         title: Text('${form.isEdit ? 'Editar' : 'Novo'} Perfil de Usuário'),
-        content: SizedBox(
-          width: 500,
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,

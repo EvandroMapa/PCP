@@ -112,8 +112,8 @@ class _BackupScheduleDialogState extends State<BackupScheduleDialog> {
           ),
         ],
       ),
-      content: SizedBox(
-        width: 400,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

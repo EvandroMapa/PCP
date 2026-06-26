@@ -2403,8 +2403,8 @@ class _DialogSelecionarPontasState extends State<_DialogSelecionarPontas> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Selecionar Pontas'),
-      content: SizedBox(
-        width: 400,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

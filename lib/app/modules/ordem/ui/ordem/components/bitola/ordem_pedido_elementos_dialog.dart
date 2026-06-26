@@ -205,7 +205,7 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Container(
-          width: 360,
+          constraints: const BoxConstraints(maxWidth: 360),
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,

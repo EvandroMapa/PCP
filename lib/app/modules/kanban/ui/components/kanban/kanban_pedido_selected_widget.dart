@@ -17,7 +17,8 @@ class KanbanPedidoSelectedWidget extends StatelessWidget {
           ? const SizedBox()
           : Container(
               padding: const EdgeInsets.all(16),
-              width: 800,
+              constraints: const BoxConstraints(maxWidth: 800),
+              width: double.infinity,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: PedidoPage(

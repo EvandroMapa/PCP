@@ -55,8 +55,8 @@ class _UsuarioFormDialogState extends State<UsuarioFormDialog> {
               ),
           ],
         ),
-        content: SizedBox(
-          width: 500,
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,

@@ -577,8 +577,8 @@ class _DiagnosticoDialog extends StatelessWidget {
           ),
         ],
       ),
-      content: SizedBox(
-        width: 450,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 450),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

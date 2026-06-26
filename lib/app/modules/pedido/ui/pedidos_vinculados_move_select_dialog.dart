@@ -71,7 +71,7 @@ class _PedidosVinculadosMoveSelectDialogState
   Widget build(BuildContext context) {
     return Dialog(
       child: Container(
-        width: 600,
+        constraints: const BoxConstraints(maxWidth: 600),
         height: 500,
         decoration: BoxDecoration(
           color: Colors.white,

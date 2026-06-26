@@ -85,104 +85,140 @@ class _KanbanFilterPanelState extends State<KanbanFilterPanel> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ── Filtros: 3 campos iguais à direita ──
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-            child: Row(
-              children: [
-                const Spacer(),
-                // Campo de busca
-                SizedBox(
-                  width: 300,
-                  height: 34,
-                  child: TextField(
-                    focusNode: _searchFocus,
-                    controller: utils.search.controller,
-                    style: AppCss.smallRegular,
-                    cursorColor: AppColors.primaryMain,
-                    onChanged: (_) => kanbanCtrl.utilsStream.update(),
-                    decoration: InputDecoration(
-                      hintText: 'Buscar localizador...',
-                      hintStyle: AppCss.minimumRegular
-                          .setColor(Colors.grey[400]!),
-                      prefixIcon: Icon(
-                        Icons.search_rounded,
-                        size: 16,
-                        color: AppColors.primaryMain,
+          // ── Filtros: responsivo ──
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isSmall = constraints.maxWidth < 700;
+
+              final searchField = SizedBox(
+                height: 34,
+                child: TextField(
+                  focusNode: _searchFocus,
+                  controller: utils.search.controller,
+                  style: AppCss.smallRegular,
+                  cursorColor: AppColors.primaryMain,
+                  onChanged: (_) => kanbanCtrl.utilsStream.update(),
+                  decoration: InputDecoration(
+                    hintText: 'Buscar localizador...',
+                    hintStyle: AppCss.minimumRegular
+                        .setColor(Colors.grey[400]!),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      size: 16,
+                      color: AppColors.primaryMain,
+                    ),
+                    prefixIconConstraints: const BoxConstraints(
+                      minWidth: 34,
+                    ),
+                    suffixIcon: utils.search.text.isNotEmpty
+                        ? GestureDetector(
+                            onTap: () {
+                              utils.search.text = '';
+                              kanbanCtrl.utilsStream.update();
+                              _searchFocus.requestFocus();
+                            },
+                            child: Icon(
+                              Icons.close_rounded,
+                              size: 14,
+                              color: Colors.grey[400],
+                            ),
+                          )
+                        : null,
+                    suffixIconConstraints: const BoxConstraints(
+                      minWidth: 28,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 0,
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFF1F5F9),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: Color(0xFFE2E8F0),
+                        width: 1,
                       ),
-                      prefixIconConstraints: const BoxConstraints(
-                        minWidth: 34,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: Color(0xFFE2E8F0),
+                        width: 1,
                       ),
-                      suffixIcon: utils.search.text.isNotEmpty
-                          ? GestureDetector(
-                              onTap: () {
-                                utils.search.text = '';
-                                kanbanCtrl.utilsStream.update();
-                                _searchFocus.requestFocus();
-                              },
-                              child: Icon(
-                                Icons.close_rounded,
-                                size: 14,
-                                color: Colors.grey[400],
-                              ),
-                            )
-                          : null,
-                      suffixIconConstraints: const BoxConstraints(
-                        minWidth: 28,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 0,
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFF1F5F9),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFE2E8F0),
-                          width: 1,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFE2E8F0),
-                          width: 1,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                          color: AppColors.primaryMain.withValues(alpha: 0.5),
-                          width: 1.5,
-                        ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(
+                        color: AppColors.primaryMain.withValues(alpha: 0.5),
+                        width: 1.5,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                // Etiqueta
-                SizedBox(width: 300, child: _buildEtiquetaSelector()),
-                const SizedBox(width: 8),
-                // Usuário
-                SizedBox(width: 300, child: _buildUsuarioSelector()),
-                const SizedBox(width: 4),
-                // Botão limpar tudo
-                if (utils.hasFilter())
+              );
+
+              final actionButtons = Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (utils.hasFilter())
+                    _buildIconBtn(
+                      icon: Icons.filter_list_off_rounded,
+                      tooltip: 'Limpar filtros',
+                      onTap: _limparFiltros,
+                      color: Colors.redAccent,
+                    ),
                   _buildIconBtn(
-                    icon: Icons.filter_list_off_rounded,
-                    tooltip: 'Limpar filtros',
-                    onTap: _limparFiltros,
-                    color: Colors.redAccent,
+                    icon: Icons.keyboard_arrow_up_rounded,
+                    tooltip: 'Fechar filtros',
+                    onTap: widget.onClose,
                   ),
-                // Botão fechar
-                _buildIconBtn(
-                  icon: Icons.keyboard_arrow_up_rounded,
-                  tooltip: 'Fechar filtros',
-                  onTap: widget.onClose,
+                ],
+              );
+
+              if (isSmall) {
+                // Layout vertical para celular
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: searchField),
+                          const SizedBox(width: 4),
+                          actionButtons,
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Expanded(child: _buildEtiquetaSelector()),
+                          const SizedBox(width: 8),
+                          Expanded(child: _buildUsuarioSelector()),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              // Layout horizontal (desktop)
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+                child: Row(
+                  children: [
+                    const Spacer(),
+                    SizedBox(width: 300, child: searchField),
+                    const SizedBox(width: 8),
+                    SizedBox(width: 300, child: _buildEtiquetaSelector()),
+                    const SizedBox(width: 8),
+                    SizedBox(width: 300, child: _buildUsuarioSelector()),
+                    const SizedBox(width: 4),
+                    actionButtons,
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
 
           // ── Pedidos arquivados (se houver) ──

@@ -554,8 +554,8 @@ class _DialogSeletorMesState extends State<_DialogSeletorMes> {
     return AlertDialog(
       title: const Text('Selecionar período'),
       contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-      content: SizedBox(
-        width: 300,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 300),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

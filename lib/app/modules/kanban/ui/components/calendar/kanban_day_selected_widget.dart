@@ -33,7 +33,8 @@ class _KanbanDaySelectedWidgetState extends State<KanbanDaySelectedWidget> {
                   final DateTime date = utils.day!.keys.first;
                   final List<PedidoModel> pedidos = utils.day![date]!;
                   return Container(
-                    width: 768,
+                    constraints: const BoxConstraints(maxWidth: 768),
+                    width: double.infinity,
                     margin: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,

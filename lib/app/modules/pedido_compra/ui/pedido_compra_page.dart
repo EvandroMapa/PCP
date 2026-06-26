@@ -452,8 +452,8 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
                                     Text('Pedido de Cotação'),
                                   ],
                                 ),
-                                content: SizedBox(
-                                  width: 360,
+                                content: ConstrainedBox(
+                                  constraints: const BoxConstraints(maxWidth: 360),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [

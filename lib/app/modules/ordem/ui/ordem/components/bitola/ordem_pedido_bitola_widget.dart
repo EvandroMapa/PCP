@@ -476,7 +476,7 @@ class _OperadorStatusDialogState extends State<_OperadorStatusDialog> {
       child: Material(
         color: Colors.transparent,
         child: Container(
-          width: 480,
+          constraints: const BoxConstraints(maxWidth: 480),
           margin: const EdgeInsets.symmetric(horizontal: 24),
           decoration: BoxDecoration(
             color: const Color(0xFF1A1A2E),

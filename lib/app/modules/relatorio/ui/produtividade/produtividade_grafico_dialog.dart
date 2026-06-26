@@ -195,8 +195,8 @@ class _ProdutividadeGraficoDialogState
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
-        width: 680,
         constraints: BoxConstraints(
+          maxWidth: 680,
           maxHeight: MediaQuery.of(context).size.height * 0.85,
         ),
         decoration: BoxDecoration(

@@ -814,8 +814,8 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
           Expanded(child: Text('Anexos: ${elementoSync.nome}')),
         ],
       ),
-      content: SizedBox(
-        width: 500,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 500),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

@@ -629,8 +629,9 @@ class _DialogSelecionarBitola extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Selecionar Bitola'),
-      content: SizedBox(
-        width: 400,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: SizedBox(
         height: 300,
         child: ListView.separated(
           itemCount: produtos.length,
@@ -644,6 +645,7 @@ class _DialogSelecionarBitola extends StatelessWidget {
               onTap: () => Navigator.of(context).pop(p),
             );
           },
+        ),
         ),
       ),
       actions: [
@@ -723,8 +725,8 @@ class _DialogPontaState extends State<_DialogPonta> {
       title: Text(_editando
           ? 'Editar Ponta — ${widget.bitolaDescricao}'
           : 'Nova Ponta — ${widget.bitolaDescricao}'),
-      content: SizedBox(
-        width: 400,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
