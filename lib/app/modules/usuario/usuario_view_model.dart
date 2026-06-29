@@ -5,6 +5,7 @@ import 'package:aco_plus/app/core/services/hash_service.dart';
 
 class UsuarioUtils {
   final TextController search = TextController();
+  bool mostrarInativos = false;
 }
 
 class UsuarioCreateModel {
@@ -14,6 +15,7 @@ class UsuarioCreateModel {
   TextController senha = TextController();
   UsuarioRole? role;
   String usuarioTipoId = '';
+  bool isAtivo = true;
   late bool isEdit;
 
   UsuarioCreateModel()
@@ -28,6 +30,7 @@ class UsuarioCreateModel {
     role = user.role;
     usuarioTipoId = user.usuarioTipoId;
     senha.text = user.senha;
+    isAtivo = user.isAtivo;
   }
 
   UsuarioModel toUsuarioModel() => UsuarioModel(
@@ -39,5 +42,6 @@ class UsuarioCreateModel {
         senha: senha.text,
         steps: [],
         deviceTokens: [],
+        isAtivo: isAtivo,
       );
 }

@@ -16,6 +16,7 @@ class UsuarioModel {
   final UsuarioTipoModel? tipo;
   final List<StepModel> steps;
   final List<String> deviceTokens;
+  final bool isAtivo;
 
   /// Permissões CRUD agora derivam do perfil (tipo).
   /// Se não há perfil vinculado, libera tudo por segurança (fallback).
@@ -67,6 +68,7 @@ class UsuarioModel {
         tipo: null,
         steps: FirestoreClient.steps.data.map((e) => e.copyWith()).toList(),
         deviceTokens: [],
+        isAtivo: true,
       );
 
   UsuarioModel({
@@ -79,6 +81,7 @@ class UsuarioModel {
     this.tipo,
     required this.steps,
     required this.deviceTokens,
+    this.isAtivo = true,
   });
 
   UsuarioModel copyWith({
@@ -91,6 +94,7 @@ class UsuarioModel {
     UsuarioTipoModel? tipo,
     List<StepModel>? steps,
     List<String>? deviceTokens,
+    bool? isAtivo,
   }) {
     return UsuarioModel(
       id: id ?? this.id,
@@ -102,6 +106,7 @@ class UsuarioModel {
       tipo: tipo ?? this.tipo,
       steps: steps ?? this.steps,
       deviceTokens: deviceTokens ?? this.deviceTokens,
+      isAtivo: isAtivo ?? this.isAtivo,
     );
   }
 
@@ -115,6 +120,7 @@ class UsuarioModel {
       'perfil_id': usuarioTipoId,
       'steps': steps.map((x) => x.toMap()).toList(),
       'deviceTokens': deviceTokens,
+      'is_ativo': isAtivo,
     };
   }
 
@@ -135,6 +141,7 @@ class UsuarioModel {
         tipo: null,
         steps: [],
         deviceTokens: [],
+        isAtivo: true,
       );
 
   factory UsuarioModel.fromMap(Map<String, dynamic> map) {
@@ -149,6 +156,7 @@ class UsuarioModel {
       deviceTokens: map['deviceTokens'] != null
           ? List<String>.from(map['deviceTokens'])
           : [],
+      isAtivo: map['is_ativo'] ?? true,
     );
   }
 
@@ -177,6 +185,7 @@ class UsuarioModel {
               ? json.decode(map['deviceTokens'])
               : map['deviceTokens'])
           : [],
+      isAtivo: map['is_ativo'] ?? true,
     );
   }
 
@@ -202,6 +211,7 @@ class UsuarioModel {
         'perfil_id': usuarioTipoId.isEmpty ? null : usuarioTipoId,
         'steps': json.encode(steps.map((x) => x.toMap()).toList()),
         'deviceTokens': json.encode(deviceTokens),
+        'is_ativo': isAtivo,
       };
 
   String toJson() => json.encode(toMap());
@@ -211,7 +221,7 @@ class UsuarioModel {
 
   @override
   String toString() {
-    return 'UsuarioModel(id: $id, nome: $nome, email: $email, senha: $senha, role: $role)';
+    return 'UsuarioModel(id: $id, nome: $nome, email: $email, senha: $senha, role: $role, isAtivo: $isAtivo)';
   }
 
   @override
@@ -223,7 +233,8 @@ class UsuarioModel {
         other.nome == nome &&
         other.email == email &&
         other.senha == senha &&
-        other.role == role;
+        other.role == role &&
+        other.isAtivo == isAtivo;
   }
 
   @override
@@ -232,6 +243,7 @@ class UsuarioModel {
         nome.hashCode ^
         email.hashCode ^
         senha.hashCode ^
-        role.hashCode;
+        role.hashCode ^
+        isAtivo.hashCode;
   }
 }

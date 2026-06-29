@@ -42,17 +42,62 @@ class _UsuariosPageState extends State<UsuariosPage> {
             final usuarios = usuarioCtrl.getUsuariosFiltered(
               utils.search.text,
               __,
+              mostrarInativos: utils.mostrarInativos,
             );
 
             return Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16),
-                  child: AppField(
-                    hint: 'Pesquisar Login / Nome',
-                    controller: utils.search,
-                    suffixIcon: Icons.search,
-                    onChanged: (_) => usuarioCtrl.utilsStream.update(),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: AppField(
+                          hint: 'Pesquisar Login / Nome',
+                          controller: utils.search,
+                          suffixIcon: Icons.search,
+                          onChanged: (_) => usuarioCtrl.utilsStream.update(),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      InkWell(
+                        onTap: () {
+                          utils.mostrarInativos = !utils.mostrarInativos;
+                          usuarioCtrl.utilsStream.update();
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 6),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: Checkbox(
+                                  value: utils.mostrarInativos,
+                                  activeColor: AppColors.primaryMain,
+                                  onChanged: (v) {
+                                    utils.mostrarInativos = v ?? false;
+                                    usuarioCtrl.utilsStream.update();
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Mostrar inativos',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 Expanded(
@@ -82,11 +127,64 @@ class _UsuariosPageState extends State<UsuariosPage> {
     return ListTile(
       onTap: () => showUsuarioFormDialog(context, usuario: usuario),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      title: Text(usuario.nome, style: AppCss.mediumBold),
-      subtitle: usuario.tipo != null ? Text(usuario.tipo!.nome) : null,
+      title: Row(
+        children: [
+          Flexible(
+            child: Text(
+              usuario.nome,
+              style: AppCss.mediumBold.copyWith(
+                color: usuario.isAtivo ? null : Colors.grey[400],
+              ),
+            ),
+          ),
+          if (!usuario.isAtivo) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'Inativo',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.red,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+      subtitle: usuario.tipo != null
+          ? Text(
+              usuario.tipo!.nome,
+              style: TextStyle(
+                color: usuario.isAtivo ? null : Colors.grey[400],
+              ),
+            )
+          : null,
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Botão ativar/inativar
+          Tooltip(
+            message: usuario.isAtivo ? 'Inativar usuário' : 'Ativar usuário',
+            child: IconButton(
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              icon: Icon(
+                usuario.isAtivo
+                    ? Icons.toggle_on_outlined
+                    : Icons.toggle_off_outlined,
+                size: 28,
+                color: usuario.isAtivo ? Colors.green : Colors.grey[400],
+              ),
+              onPressed: () => _confirmToggleAtivo(context, usuario),
+            ),
+          ),
+          const SizedBox(width: 4),
           IconButton(
             visualDensity: VisualDensity.compact,
             padding: EdgeInsets.zero,
@@ -105,6 +203,39 @@ class _UsuariosPageState extends State<UsuariosPage> {
     );
   }
 
+  void _confirmToggleAtivo(BuildContext context, UsuarioModel usuario) {
+    final novoStatus = !usuario.isAtivo;
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(novoStatus ? 'Ativar Usuário' : 'Inativar Usuário'),
+        content: Text(
+          novoStatus
+              ? 'Deseja reativar o acesso de "${usuario.nome}" ao sistema?'
+              : 'Deseja inativar "${usuario.nome}"? Ele não poderá mais acessar o sistema.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  novoStatus ? Colors.green : Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              pop(_);
+              usuarioCtrl.toggleAtivo(usuario);
+            },
+            child: Text(novoStatus ? 'Ativar' : 'Inativar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _confirmDelete(BuildContext context, UsuarioModel usuario) {
     showDialog(
       context: context,
@@ -116,9 +247,13 @@ class _UsuariosPageState extends State<UsuariosPage> {
             onPressed: () => pop(context),
             child: const Text('Cancelar'),
           ),
-          TextButton(
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => usuarioCtrl.onDelete(context, usuario),
-            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
+            child: const Text('Excluir'),
           ),
         ],
       ),

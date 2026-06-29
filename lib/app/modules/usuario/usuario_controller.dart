@@ -10,9 +10,11 @@ import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/services/push_notification_service.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_view_model.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/material.dart';
 import 'package:overlay_support/overlay_support.dart';
 
 final usuarioCtrl = UsuarioController();
@@ -58,8 +60,9 @@ class UsuarioController {
 
   List<UsuarioModel> getUsuariosFiltered(
     String search,
-    List<UsuarioModel> usuarios,
-  ) {
+    List<UsuarioModel> usuarios, {
+    bool mostrarInativos = false,
+  }) {
     List<UsuarioModel> filtered = [];
     if (search.length < 3) {
       filtered = List.from(usuarios);
@@ -69,6 +72,11 @@ class UsuarioController {
           filtered.add(usuario);
         }
       }
+    }
+    
+    // Filtrar inativos quando checkbox desmarcada
+    if (!mostrarInativos) {
+      filtered = filtered.where((u) => u.isAtivo).toList();
     }
     
     filtered.sort((a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
@@ -100,15 +108,82 @@ class UsuarioController {
     }
   }
 
-  Future<void> onDelete(value, UsuarioModel usuario) async {
+  /// Verifica se o usuário pode ser excluído (sem registros no audit_logs).
+  Future<bool> verificarPodeExcluir(UsuarioModel usuario) async {
+    try {
+      final result = await SupabaseService.client
+          .from('audit_logs')
+          .select('id')
+          .eq('usuario_id', usuario.id)
+          .limit(1);
+      return (result as List).isEmpty;
+    } catch (e) {
+      log('Erro ao verificar audit_logs: $e');
+      return false; // Em caso de erro, bloqueia exclusão por segurança
+    }
+  }
+
+  Future<void> onDelete(dynamic value, UsuarioModel usuario) async {
+    // Verificar se o usuário tem histórico no audit_logs
+    final podeExcluir = await verificarPodeExcluir(usuario);
+    if (!podeExcluir) {
+      // Não fecha o dialog anterior, mostra bloqueio informativo
+      if (value is BuildContext) {
+        pop(value); // Fecha dialog de confirmação
+        showDialog(
+          context: value,
+          builder: (_) => AlertDialog(
+            icon: Icon(Icons.info_outline, size: 40, color: Colors.orange[700]),
+            title: const Text('Exclusão Bloqueada'),
+            content: const Text(
+              'Este usuário possui registros no log de auditoria e não pode ser excluído.\n\n'
+              'Para impedir o acesso, utilize a opção de inativar o usuário.',
+            ),
+            actions: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryMain,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => pop(_),
+                child: const Text('Entendi'),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+
     await BackendClient.usuarios.delete(usuario);
     await BackendClient.usuarios.fetch();
     pop(value);
     NotificationService.showPositive(
-      'Usuario Excluido',
+      'Usuário Excluído',
       'Operação realizada com sucesso',
       position: NotificationPosition.bottom,
     );
+  }
+
+  /// Alterna o status ativo/inativo de um usuário.
+  Future<void> toggleAtivo(UsuarioModel usuario) async {
+    try {
+      final novoStatus = !usuario.isAtivo;
+      final atualizado = usuario.copyWith(isAtivo: novoStatus);
+      await BackendClient.usuarios.update(atualizado);
+      await BackendClient.usuarios.fetch();
+      NotificationService.showPositive(
+        novoStatus ? 'Usuário Ativado' : 'Usuário Inativado',
+        '"${usuario.nome}" foi ${novoStatus ? 'ativado' : 'inativado'} com sucesso',
+        position: NotificationPosition.bottom,
+      );
+    } catch (e) {
+      NotificationService.showNegative(
+        'Erro ao alterar status',
+        e.toString(),
+        position: NotificationPosition.bottom,
+      );
+    }
   }
 
   void onValid() {
@@ -146,7 +221,14 @@ class UsuarioController {
           // Dados carregados — valida se o usuário ainda existe
           if (usuariosData.any((e) => e.id == user!.id)) {
             user = BackendClient.usuarios.getById(user.id);
-            AppRepository.add(user);
+            // Verificar se o usuário está ativo
+            if (!user.isAtivo) {
+              log('UsuarioController: Usuário inativo, limpando sessão');
+              user = null;
+              await AppRepository.clear();
+            } else {
+              AppRepository.add(user);
+            }
           } else {
             // Usuário não existe mais no banco
             user = null;

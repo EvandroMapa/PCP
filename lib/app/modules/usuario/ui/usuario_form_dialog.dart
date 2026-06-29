@@ -50,7 +50,62 @@ class _UsuarioFormDialogState extends State<UsuarioFormDialog> {
             if (form.isEdit)
               IconButton(
                 icon: const Icon(Icons.delete_outline, color: Colors.red),
-                onPressed: () => usuarioCtrl.onDelete(context, widget.usuario!),
+                onPressed: () async {
+                  final podeExcluir = await usuarioCtrl.verificarPodeExcluir(widget.usuario!);
+                  if (!podeExcluir) {
+                    if (context.mounted) {
+                      showDialog(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          icon: Icon(Icons.info_outline, size: 40, color: Colors.orange[700]),
+                          title: const Text('Exclusão Bloqueada'),
+                          content: const Text(
+                            'Este usuário possui registros no log de auditoria e não pode ser excluído.\n\n'
+                            'Para impedir o acesso, utilize a opção de inativar o usuário.',
+                          ),
+                          actions: [
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryMain,
+                                foregroundColor: Colors.white,
+                              ),
+                              onPressed: () => pop(_),
+                              child: const Text('Entendi'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    return;
+                  }
+                  if (context.mounted) {
+                    // Confirmar exclusão
+                    final confirmar = await showDialog<bool>(
+                      context: context,
+                      builder: (_) => AlertDialog(
+                        title: const Text('Excluir Usuário'),
+                        content: Text('Deseja realmente excluir o usuário "${widget.usuario!.nome}"?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(_, false),
+                            child: const Text('Cancelar'),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                            ),
+                            onPressed: () => Navigator.pop(_, true),
+                            child: const Text('Excluir'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmar == true && context.mounted) {
+                      usuarioCtrl.onDelete(context, widget.usuario!);
+                    }
+                  }
+                },
                 tooltip: 'Excluir Usuário',
               ),
           ],
@@ -118,6 +173,49 @@ class _UsuarioFormDialogState extends State<UsuarioFormDialog> {
                     ),
                   ],
                 ),
+                const H(16),
+                // ── Linha 3: Ativo/Inativo (só na edição) ──
+                if (form.isEdit)
+                  Row(
+                    children: [
+                      Text(
+                        'Status: ',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Switch(
+                        value: form.isAtivo,
+                        activeColor: AppColors.primaryMain,
+                        onChanged: (v) {
+                          form.isAtivo = v;
+                          usuarioCtrl.formStream.update();
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: form.isAtivo
+                              ? Colors.green.withValues(alpha: 0.1)
+                              : Colors.red.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          form.isAtivo ? 'Ativo' : 'Inativo',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: form.isAtivo ? Colors.green : Colors.red,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 const H(16),
               ],
             ),

@@ -26,6 +26,9 @@ class SignController {
             e.senha.toCompare == senha.toCompare,
       );
       if (user == null) throw Exception('Usuário não encontrado');
+      if (!user.isAtivo) {
+        throw Exception('Seu acesso foi desativado. Procure o administrador.');
+      }
 
       // Salva ou limpa credenciais conforme "Manter conectado"
       if (rememberMe) {
