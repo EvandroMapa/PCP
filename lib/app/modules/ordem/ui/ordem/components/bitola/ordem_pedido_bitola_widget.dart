@@ -40,12 +40,12 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
     final statusColor = produto.isPaused ? Colors.orange : status.color;
 
     // Modo "por OS": operador com elementos cadastrados
-    final isModoPorOS = usuario.isOperador &&
+    final isModoPorOS = ordemCtrl.isEmModoOperador &&
         PreferencesService.apontamentoProducaoCD.value == 'por_os' &&
         _pedidoTemElementos();
 
     // Modo "por pedido": operador que não está no modo por OS
-    final isModoPorPedido = usuario.isOperador && !isModoPorOS;
+    final isModoPorPedido = ordemCtrl.isEmModoOperador && !isModoPorOS;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -84,7 +84,7 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Header: localizador + tags + badge status (modo por pedido)
+                        // Header: localizador + tags + badge status
                         Row(
                           children: [
                             if (produto.isPaused) _pauseTagWidget(),
@@ -94,7 +94,7 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
                               produto.pedido.localizador,
                               style: AppCss.mediumBold.setSize(15),
                             ),
-                            if (isModoPorPedido) ...[
+                            if (isModoPorPedido || isModoPorOS) ...[
                               const Spacer(),
                               // Badge de status clicável
                               Container(
@@ -212,28 +212,16 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Botões de status laterais (somente quando NÃO é modo por pedido)
-                if (!isModoPorPedido)
+                // Botões de status laterais (somente quando NÃO é modo operador)
+                if (!isModoPorPedido && !isModoPorOS)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        _statusWidget(readOnly: isModoPorOS),
-                        if (!isModoPorOS &&
-                            produto.statusView.status ==
-                                PedidoBitolaStatus.produzindo)
-                          OrdemPedidoProdutoPauseWidget(
-                              ordem: ordem, produto: produto),
-                        if (isModoPorOS) _buildMiniProgressOS(),
+                        _statusWidget(),
                       ],
                     ),
-                  ),
-                // Mini progress (modo por OS)
-                if (isModoPorOS)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: _buildMiniProgressOS(),
                   ),
               ],
             ),
@@ -364,7 +352,7 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
   }
 
   Widget _statusWidget({bool readOnly = false}) {
-    return usuario.isOperador
+    return ordemCtrl.isEmModoOperador
         ? OrdemPedidoStatusOperatorWidget(
             produto: produto, ordem: ordem, readOnly: readOnly)
         : OrdemPedidoStatusNormalWidget(produto: produto, ordem: ordem);

@@ -45,6 +45,7 @@ import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_ordem_view_
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:overlay_support/overlay_support.dart';
+import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 final ordemCtrl = OrdemController();
@@ -55,6 +56,18 @@ class OrdemController {
   OrdemController._();
 
   factory OrdemController() => _instance;
+
+  /// Flag que indica quando o usuário está acessando pelo modo operador
+  /// (rota /operador standalone). Permite que admins com acesso operador
+  /// usem a interface de operador sem depender de `usuario.isOperador`.
+  bool modoOperadorAtivo = false;
+
+  /// Verifica se deve usar a interface de operador.
+  /// Retorna true quando:
+  /// - O usuário é operador puro (não-admin), OU
+  /// - O admin está acessando pela rota standalone de operador
+  bool get isEmModoOperador =>
+      usuario.isOperador || (modoOperadorAtivo && usuario.temAcessoOperador);
 
   final AppStream<OrdemUtils> utilsStream = AppStream<OrdemUtils>.seed(
     OrdemUtils(),

@@ -174,14 +174,8 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
   bool _canTransition(PosicaoStatus target, PosicaoStatus current) {
     if (target == current) return false;
 
-    // Se houver qualquer item PRONTO, ninguém mais pode voltar/ficar em AGUARDANDO
-    final existeAlgumPronto =
-        _posicoes.any((p) => p.posicao.status == PosicaoStatus.pronto);
-
     switch (target) {
       case PosicaoStatus.aguardando:
-        // Bloqueia retorno a aguardando se houver algum item já pronto
-        if (existeAlgumPronto) return false;
         // Pode voltar 1 etapa: apenas de produzindo
         return current == PosicaoStatus.produzindo;
 
@@ -192,118 +186,29 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
 
       case PosicaoStatus.pronto:
         // Só pode avançar de produzindo
-        if (current != PosicaoStatus.produzindo) return false;
-        // Só permite ficar Pronto se TODOS os outros já saíram do 'Aguardando'
-        return _posicoes
-            .every((p) => p.posicao.status != PosicaoStatus.aguardando);
+        return current == PosicaoStatus.produzindo;
     }
   }
 
   Future<PosicaoStatus?> _showStatusPicker(_PosicaoItem item) async {
-    return showDialog<PosicaoStatus>(
+    return showGeneralDialog<PosicaoStatus>(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 360),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'ALTERAR STATUS',
-                style: AppCss.mediumBold
-                    .setSize(16)
-                    .setColor(AppColors.primaryMain),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'OS - ${item.posicao.numeroOs}',
-                style: AppCss.largeBold.setSize(20),
-                textAlign: TextAlign.center,
-              ),
-              Text(
-                item.posicao.nome,
-                style: AppCss.mediumRegular
-                    .setSize(14)
-                    .setColor(Colors.grey[600]!),
-              ),
-              const SizedBox(height: 20),
-              ...PosicaoStatus.values.map((status) {
-                final isActive = status == item.posicao.status;
-                final canSelect =
-                    isActive || _canTransition(status, item.posicao.status);
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Opacity(
-                    opacity: canSelect ? 1.0 : 0.3,
-                    child: IgnorePointer(
-                      ignoring: !canSelect,
-                      child: InkWell(
-                        onTap: () => Navigator.pop(context, status),
-                        borderRadius: BorderRadius.circular(14),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 14),
-                          decoration: BoxDecoration(
-                            color: isActive
-                                ? status.color.withValues(alpha: 0.15)
-                                : Colors.grey[50],
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color:
-                                  isActive ? status.color : Colors.grey[300]!,
-                              width: isActive ? 2.5 : 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                backgroundColor: status.color,
-                                radius: 14,
-                                child: isActive
-                                    ? const Icon(Icons.check,
-                                        size: 16, color: Colors.white)
-                                    : !canSelect
-                                        ? Icon(Icons.lock,
-                                            size: 12, color: Colors.grey[400])
-                                        : null,
-                              ),
-                              const SizedBox(width: 14),
-                              Text(
-                                status.label.toUpperCase(),
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: isActive
-                                      ? FontWeight.w800
-                                      : FontWeight.w500,
-                                  color: isActive
-                                      ? Colors.black87
-                                      : canSelect
-                                          ? Colors.grey[600]
-                                          : Colors.grey[400],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('CANCELAR',
-                    style: AppCss.mediumBold
-                        .setSize(14)
-                        .setColor(Colors.grey[400]!)),
-              ),
-            ],
+      barrierDismissible: true,
+      barrierLabel: 'Fechar',
+      barrierColor: Colors.black.withValues(alpha: 0.75),
+      transitionDuration: const Duration(milliseconds: 280),
+      transitionBuilder: (ctx, anim, _, child) => FadeTransition(
+        opacity: CurvedAnimation(parent: anim, curve: Curves.easeOut),
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.93, end: 1.0).animate(
+            CurvedAnimation(parent: anim, curve: Curves.easeOutCubic),
           ),
+          child: child,
         ),
+      ),
+      pageBuilder: (ctx, _, __) => _PosicaoStatusDialog(
+        item: item,
+        canTransition: _canTransition,
       ),
     );
   }
@@ -758,6 +663,242 @@ class _ElementoOSCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── DIALOG PREMIUM DE STATUS DA POSIÇÃO/OS ──────────────────────────────────
+
+class _PosicaoStatusDialog extends StatelessWidget {
+  final _PosicaoItem item;
+  final bool Function(PosicaoStatus novo, PosicaoStatus atual) canTransition;
+
+  const _PosicaoStatusDialog({
+    required this.item,
+    required this.canTransition,
+  });
+
+  IconData _iconFor(PosicaoStatus status) {
+    switch (status) {
+      case PosicaoStatus.aguardando:
+        return Icons.hourglass_bottom_rounded;
+      case PosicaoStatus.produzindo:
+        return Icons.construction_rounded;
+      case PosicaoStatus.pronto:
+        return Icons.check_circle_rounded;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final statusAtual = item.posicao.status;
+
+    return Center(
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 480),
+          margin: const EdgeInsets.symmetric(horizontal: 24),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1A1A2E),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.08),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.6),
+                blurRadius: 40,
+                spreadRadius: 10,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ─── HEADER ───────────────────────────────────────────────
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(28, 28, 28, 24),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.04),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(28)),
+                  border: Border(
+                    bottom: BorderSide(
+                        color: Colors.white.withValues(alpha: 0.07)),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      'OS - ${item.posicao.numeroOs}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item.posicao.nome,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${item.posicao.qtde} peça(s)',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ─── BOTÕES DE STATUS ─────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                child: Column(
+                  children: PosicaoStatus.values.map((status) {
+                    final isAtivo = status == statusAtual;
+                    final canSelect =
+                        isAtivo || canTransition(status, statusAtual);
+                    final color = status.color;
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Opacity(
+                        opacity: canSelect ? 1.0 : 0.3,
+                        child: IgnorePointer(
+                          ignoring: !canSelect,
+                          child: GestureDetector(
+                            onTap: () => Navigator.pop(context, status),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 20),
+                              decoration: BoxDecoration(
+                                color: isAtivo
+                                    ? color.withValues(alpha: 0.18)
+                                    : Colors.white.withValues(alpha: 0.04),
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(
+                                  color: isAtivo
+                                      ? color.withValues(alpha: 0.7)
+                                      : Colors.white.withValues(alpha: 0.10),
+                                  width: isAtivo ? 2.5 : 1.5,
+                                ),
+                                boxShadow: isAtivo
+                                    ? [
+                                        BoxShadow(
+                                          color: color.withValues(alpha: 0.25),
+                                          blurRadius: 20,
+                                          spreadRadius: 2,
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: BoxDecoration(
+                                      color: color.withValues(
+                                          alpha: isAtivo ? 0.25 : 0.10),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      _iconFor(status),
+                                      size: 24,
+                                      color: color,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Text(
+                                      status.label.toUpperCase(),
+                                      style: TextStyle(
+                                        color: isAtivo
+                                            ? Colors.white
+                                            : Colors.white
+                                                .withValues(alpha: 0.75),
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 1,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isAtivo)
+                                    Icon(Icons.check_circle_rounded,
+                                        color: color, size: 26),
+                                  if (!canSelect && !isAtivo)
+                                    Icon(Icons.lock_rounded,
+                                        color: Colors.white
+                                            .withValues(alpha: 0.2),
+                                        size: 20),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+
+              // ─── BOTÃO FECHAR ─────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                child: Container(
+                  height: 1,
+                  color: Colors.white.withValues(alpha: 0.07),
+                  margin: const EdgeInsets.only(bottom: 16),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.12)),
+                    ),
+                    child: const Text(
+                      'FECHAR',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

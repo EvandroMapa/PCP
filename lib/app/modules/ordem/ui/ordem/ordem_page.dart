@@ -67,18 +67,13 @@ class _OrdemPageState extends State<OrdemPage> {
             resizeAvoid: true,
             appBar: AppBar(
               iconTheme: const IconThemeData(color: Colors.white, size: 20),
-              actions: usuario.isOperador
+              actions: ordemCtrl.isEmModoOperador
                   ? () {
-                      final isModoPorPedido =
-                          PreferencesService.apontamentoProducaoCD.value !=
-                              'por_os';
-                      final qtdeProntos = isModoPorPedido
-                          ? ordem.produtos
+                      final qtdeProntos = ordem.produtos
                               .where((p) =>
                                   p.statusView.status ==
                                   PedidoBitolaStatus.pronto)
-                              .length
-                          : 0;
+                              .length;
                       return qtdeProntos == 0
                           ? <Widget>[]
                           : [
@@ -184,18 +179,17 @@ class _OrdemPageState extends State<OrdemPage> {
   }
 
   Widget body(List<PedidoModel> pedidos, OrdemModel ordem) {
-    // Modo operador + apontamento por pedido: ocultar prontos
-    final isModoPorPedido = usuario.isOperador &&
-        PreferencesService.apontamentoProducaoCD.value != 'por_os';
+    // Modo operador: ocultar prontos e ordenar
+    final isModoOperador = ordemCtrl.isEmModoOperador;
 
     final produtos = () {
-      final lista = isModoPorPedido && !_mostrarProntos
+      final lista = isModoOperador && !_mostrarProntos
           ? ordem.produtos
               .where((p) => p.statusView.status != PedidoBitolaStatus.pronto)
               .toList()
           : List.of(ordem.produtos);
       // Prontos sempre por último
-      if (isModoPorPedido) {
+      if (isModoOperador) {
         lista.sort((a, b) {
           final aProto = a.statusView.status == PedidoBitolaStatus.pronto;
           final bProto = b.statusView.status == PedidoBitolaStatus.pronto;

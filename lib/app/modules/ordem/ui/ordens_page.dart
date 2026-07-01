@@ -51,6 +51,7 @@ class _OrdensPageState extends State<OrdensPage> {
         ? 'AçoPlus - Ordens de Produção'
         : 'AçoPlus - Planejamento e controle de Produção');
     ordemCtrl.onInit();
+    if (widget.standalone) ordemCtrl.modoOperadorAtivo = true;
     if (widget.standalone && kIsWeb) {
       // Fullscreen automático para rotas standalone
       html.document.onFullscreenChange.listen((_) {
@@ -63,7 +64,7 @@ class _OrdensPageState extends State<OrdensPage> {
     }
     if (!widget.standalone) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        baseCtrl.appBarActionsStream.add(usuario.isOperador
+        baseCtrl.appBarActionsStream.add(ordemCtrl.isEmModoOperador
             ? []
             : [
                 IconButton(
@@ -109,8 +110,9 @@ class _OrdensPageState extends State<OrdensPage> {
 
   @override
   void dispose() {
-    if (widget.standalone && kIsWeb) {
-      _sairFullscreen();
+    if (widget.standalone) {
+      ordemCtrl.modoOperadorAtivo = false;
+      if (kIsWeb) _sairFullscreen();
     }
     super.dispose();
   }
@@ -234,7 +236,7 @@ class _OrdensPageState extends State<OrdensPage> {
                   .where((e) => e.equipamento?.id == utils.equipamento!.id)
                   .toList();
             }
-            if (usuario.isOperador) {
+            if (ordemCtrl.isEmModoOperador) {
               ordens = ordens
                   .where(
                     (e) => [
@@ -322,7 +324,7 @@ class _OrdensPageState extends State<OrdensPage> {
                             child: EmptyData(),
                           );
                         }
-                        if (usuario.isOperador) {
+                        if (ordemCtrl.isEmModoOperador) {
                           return ListView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
@@ -407,7 +409,7 @@ class _OrdensPageState extends State<OrdensPage> {
             children: [
               // Borda lateral colorida pelo status
               Container(width: 5, color: statusColor),
-              if (usuario.isNotOperador && !isFreezed)
+              if (!ordemCtrl.isEmModoOperador && !isFreezed)
                 ReorderableDragStartListener(
                   index: index,
                   child: Container(
@@ -441,7 +443,7 @@ class _OrdensPageState extends State<OrdensPage> {
                             ),
                             if (!isFreezed &&
                                 ordem.beltIndex != null &&
-                                usuario.isNotOperador)
+                                !ordemCtrl.isEmModoOperador)
                               Container(
                                 margin: const EdgeInsets.only(left: 8),
                                 padding: const EdgeInsets.symmetric(
