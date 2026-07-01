@@ -370,13 +370,6 @@ class EstoqueController {
         ),
       );
 
-      // Aviso se saldo ficou negativo
-      if (novaQtde < 0) {
-        NotificationService.showPending(
-          'Estoque negativo',
-          'Produto ${estoque.produto.nome} com saldo negativo: ${novaQtde.toStringAsFixed(3)} kg',
-        );
-      }
     } catch (e) {
       // Não bloqueia a produção em caso de erro no estoque
       NotificationService.showNegative(
@@ -416,11 +409,6 @@ class EstoqueController {
         ),
       );
 
-      NotificationService.showNeutral(
-        'Estoque estornado',
-        'Quantidade devolvida: ${quantidade.toStringAsFixed(3)} kg',
-        position: NotificationPosition.bottom,
-      );
     } catch (e) {
       // Não bloqueia a operação em caso de erro
       NotificationService.showNegative(
