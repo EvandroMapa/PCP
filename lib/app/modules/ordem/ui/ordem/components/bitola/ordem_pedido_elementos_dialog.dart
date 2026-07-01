@@ -9,11 +9,13 @@ import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
+import 'package:aco_plus/app/core/services/preferences_service.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
+import 'package:aco_plus/app/modules/estoque/estoque_controller.dart';
 import 'package:aco_plus/app/modules/ordem/ordem_controller.dart';
 import 'package:flutter/material.dart';
 
@@ -113,10 +115,54 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     });
   }
 
-  Future<void> _onPosicaoTap(_PosicaoItem item) async {
-    final newStatus = await _showStatusPicker(item);
-    if (newStatus == null || newStatus == item.posicao.status) return;
+  bool get _isAlternarToque =>
+      PreferencesService.alternarToqueCD.value;
 
+  /// Próximo status (avançar)
+  PosicaoStatus? _proximoPosicaoStatus(PosicaoStatus atual) {
+    switch (atual) {
+      case PosicaoStatus.aguardando:
+        return PosicaoStatus.produzindo;
+      case PosicaoStatus.produzindo:
+        return PosicaoStatus.pronto;
+      case PosicaoStatus.pronto:
+        return null;
+    }
+  }
+
+  /// Status anterior (voltar)
+  PosicaoStatus? _anteriorPosicaoStatus(PosicaoStatus atual) {
+    switch (atual) {
+      case PosicaoStatus.pronto:
+        return PosicaoStatus.produzindo;
+      case PosicaoStatus.produzindo:
+        return PosicaoStatus.aguardando;
+      case PosicaoStatus.aguardando:
+        return null;
+    }
+  }
+
+  Future<void> _onPosicaoAlternar(_PosicaoItem item, {required bool avancar}) async {
+    final oldStatus = item.posicao.status;
+    final newStatus = avancar
+        ? _proximoPosicaoStatus(oldStatus)
+        : _anteriorPosicaoStatus(oldStatus);
+    if (newStatus == null) return;
+    await _aplicarNovoStatus(item, oldStatus, newStatus);
+  }
+
+  Future<void> _onPosicaoTap(_PosicaoItem item) async {
+    final oldStatus = item.posicao.status;
+    final newStatus = await _showStatusPicker(item);
+    if (newStatus == null || newStatus == oldStatus) return;
+    await _aplicarNovoStatus(item, oldStatus, newStatus);
+  }
+
+  Future<void> _aplicarNovoStatus(
+    _PosicaoItem item,
+    PosicaoStatus oldStatus,
+    PosicaoStatus newStatus,
+  ) async {
     // Atualização instantânea na UI
     setState(() {
       item.posicao.status = newStatus;
@@ -130,6 +176,22 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
       await SupabaseService.client
           .from('elemento_posicoes')
           .update({'status': newStatus.name}).eq('id', item.posicao.id);
+
+      // Baixa/estorno de estoque por posição (OS)
+      final pesoPosicao = item.posicao.pesoKg * item.elemento.qtde;
+      if (newStatus == PosicaoStatus.pronto && oldStatus != PosicaoStatus.pronto) {
+        await estoqueCtrl.baixarEstoque(
+          produtoId: _ordemProdutoId,
+          quantidade: pesoPosicao,
+          ordem: widget.ordem,
+        );
+      } else if (oldStatus == PosicaoStatus.pronto && newStatus != PosicaoStatus.pronto) {
+        await estoqueCtrl.estornarBaixa(
+          produtoId: _ordemProdutoId,
+          quantidade: pesoPosicao,
+          ordem: widget.ordem,
+        );
+      }
 
       // Sincroniza status do pedido/ordem
       await _checkAutoUpdatePedidoStatus();
@@ -479,7 +541,12 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
                             key: ValueKey(
                                 '${item.elemento.id}_${item.posicao.id}'),
                             item: item,
-                            onTap: () => _onPosicaoTap(item),
+                            onTap: _isAlternarToque
+                                ? () => _onPosicaoAlternar(item, avancar: true)
+                                : () => _onPosicaoTap(item),
+                            onLongPress: _isAlternarToque
+                                ? () => _onPosicaoAlternar(item, avancar: false)
+                                : null,
                           );
                         },
                       ),
@@ -504,11 +571,13 @@ class _PosicaoItem {
 class _ElementoOSCard extends StatelessWidget {
   final _PosicaoItem item;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
 
   const _ElementoOSCard({
     super.key,
     required this.item,
     required this.onTap,
+    this.onLongPress,
   });
 
   ElementoModel get elemento => item.elemento;
@@ -541,7 +610,9 @@ class _ElementoOSCard extends StatelessWidget {
     final status = posicao.status;
     final statusColor = status.color;
 
-    return InkWell(
+    return GestureDetector(
+      onLongPress: onLongPress,
+      child: InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
       child: AnimatedContainer(
@@ -637,6 +708,7 @@ class _ElementoOSCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

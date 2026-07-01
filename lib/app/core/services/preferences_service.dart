@@ -15,6 +15,8 @@ class PreferencesService implements Service {
   static final AppStream<int> pdfOptimizationLevel = AppStream<int>.seed(5);
   static final AppStream<String> apontamentoProducaoCD =
       AppStream<String>.seed('por_pedido');
+  static final AppStream<bool> alternarToqueCD =
+      AppStream<bool>.seed(false);
   static final AppStream<String> logoUrl = AppStream<String>.seed('');
   static final AppStream<List<String>> stepsAcompanhamento =
       AppStream<List<String>>.seed([]);
@@ -97,6 +99,20 @@ class PreferencesService implements Service {
       log('Erro ao carregar apontamento CD: $e');
     }
 
+    // Recupera toggle de alternar com um toque
+    try {
+      final alternarConfig = await SupabaseService.client
+          .from('configs')
+          .select()
+          .eq('key', 'alternar_toque_cd')
+          .maybeSingle();
+      if (alternarConfig != null) {
+        alternarToqueCD.add(alternarConfig['value'].toString() == 'true');
+      }
+    } catch (e) {
+      log('Erro ao carregar alternar toque CD: $e');
+    }
+
     // Recupera max pedidos por box
     try {
       final maxBoxConfig = await SupabaseService.client
@@ -164,6 +180,16 @@ class PreferencesService implements Service {
             onConflict: 'key');
       } catch (e) {
         log('Erro ao salvar apontamento CD: $e');
+      }
+    });
+
+    alternarToqueCD.listen.skip(1).listen((value) async {
+      try {
+        await SupabaseService.client.from('configs').upsert(
+            {'key': 'alternar_toque_cd', 'value': value.toString()},
+            onConflict: 'key');
+      } catch (e) {
+        log('Erro ao salvar alternar toque CD: $e');
       }
     });
 
@@ -462,6 +488,20 @@ class PreferencesService implements Service {
       }
     } catch (e) {
       log('Erro ao atualizar apontamento CD: $e');
+    }
+
+    // Refresh toggle alternar toque
+    try {
+      final alternarConfig = await SupabaseService.client
+          .from('configs')
+          .select()
+          .eq('key', 'alternar_toque_cd')
+          .maybeSingle();
+      if (alternarConfig != null) {
+        alternarToqueCD.add(alternarConfig['value'].toString() == 'true');
+      }
+    } catch (e) {
+      log('Erro ao atualizar alternar toque CD: $e');
     }
   }
 }

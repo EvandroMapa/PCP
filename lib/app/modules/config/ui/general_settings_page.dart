@@ -534,6 +534,77 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
               );
             },
           ),
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 16),
+          StreamOut<bool>(
+            stream: PreferencesService.alternarToqueCD.listen,
+            builder: (_, isAtivo) {
+              return InkWell(
+                onTap: () => PreferencesService.alternarToqueCD.add(!isAtivo),
+                borderRadius: BorderRadius.circular(12),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isAtivo
+                        ? AppColors.secondary.withValues(alpha: 0.08)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isAtivo
+                          ? AppColors.secondary
+                          : Colors.grey[300]!,
+                      width: isAtivo ? 2 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.touch_app_outlined,
+                        color: isAtivo
+                            ? AppColors.secondary
+                            : Colors.grey[400],
+                        size: 28,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Alternar status com um toque',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: isAtivo
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: isAtivo
+                                    ? AppColors.secondary
+                                    : Colors.grey[700],
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Toque avança (Aguardando→Produzindo→Pronto), toque longo volta',
+                              style: TextStyle(
+                                  fontSize: 12, color: Colors.grey[500]),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: isAtivo,
+                        onChanged: (v) =>
+                            PreferencesService.alternarToqueCD.add(v),
+                        activeColor: AppColors.secondary,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );

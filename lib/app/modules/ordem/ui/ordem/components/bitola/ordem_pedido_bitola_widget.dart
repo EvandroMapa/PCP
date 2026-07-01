@@ -22,7 +22,7 @@ import 'package:aco_plus/app/modules/ordem/ordem_controller.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 
-class OrdemPedidoProdutoWidget extends StatelessWidget {
+class OrdemPedidoProdutoWidget extends StatefulWidget {
   final PedidoBitolaModel produto;
   final OrdemModel ordem;
   final MateriaPrimaModel? materiaPrima;
@@ -35,195 +35,286 @@ class OrdemPedidoProdutoWidget extends StatelessWidget {
   });
 
   @override
+  State<OrdemPedidoProdutoWidget> createState() =>
+      _OrdemPedidoProdutoWidgetState();
+}
+
+class _OrdemPedidoProdutoWidgetState extends State<OrdemPedidoProdutoWidget> {
+  bool _isProcessando = false;
+
+  PedidoBitolaModel get produto => widget.produto;
+  OrdemModel get ordem => widget.ordem;
+  MateriaPrimaModel? get materiaPrima => widget.materiaPrima;
+
+  /// Modo de apontamento atual
+  String get _modoApontamento =>
+      PreferencesService.apontamentoProducaoCD.value;
+
+  bool get _isAlternarToque =>
+      ordemCtrl.isEmModoOperador && PreferencesService.alternarToqueCD.value;
+
+  bool get _isModoPorOS =>
+      ordemCtrl.isEmModoOperador &&
+      _modoApontamento == 'por_os' &&
+      _pedidoTemElementos();
+
+  bool get _isModoPorPedido =>
+      ordemCtrl.isEmModoOperador && !_isModoPorOS && !_isAlternarToque;
+
+  bool get _isOperador => _isModoPorPedido || _isModoPorOS || _isAlternarToque;
+
+  /// Próximo status ao avançar (toque)
+  PedidoBitolaStatus? _proximoStatus(PedidoBitolaStatus atual) {
+    switch (atual) {
+      case PedidoBitolaStatus.aguardandoProducao:
+        return PedidoBitolaStatus.produzindo;
+      case PedidoBitolaStatus.produzindo:
+        return PedidoBitolaStatus.pronto;
+      default:
+        return null;
+    }
+  }
+
+  /// Status anterior ao voltar (long press)
+  PedidoBitolaStatus? _statusAnterior(PedidoBitolaStatus atual) {
+    switch (atual) {
+      case PedidoBitolaStatus.pronto:
+        return PedidoBitolaStatus.produzindo;
+      case PedidoBitolaStatus.produzindo:
+        return PedidoBitolaStatus.aguardandoProducao;
+      default:
+        return null;
+    }
+  }
+
+  Future<void> _alternarStatus({required bool avancar}) async {
+    if (_isProcessando || produto.isPaused) return;
+    final statusAtual = produto.statusView.status;
+    final novoStatus =
+        avancar ? _proximoStatus(statusAtual) : _statusAnterior(statusAtual);
+    if (novoStatus == null) return;
+
+    setState(() => _isProcessando = true);
+    try {
+      await ordemCtrl.onSelectProdutoStatus(ordem, produto, novoStatus);
+    } finally {
+      if (mounted) setState(() => _isProcessando = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final status = produto.statusView.status;
     final statusColor = produto.isPaused ? Colors.orange : status.color;
 
-    // Modo "por OS": operador com elementos cadastrados
-    final isModoPorOS = ordemCtrl.isEmModoOperador &&
-        PreferencesService.apontamentoProducaoCD.value == 'por_os' &&
-        _pedidoTemElementos();
-
-    // Modo "por pedido": operador que não está no modo por OS
-    final isModoPorPedido = ordemCtrl.isEmModoOperador && !isModoPorOS;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: InkWell(
-        onTap: isModoPorOS
-            ? () => _openElementosDialog(context)
-            : isModoPorPedido
-                ? () => _openStatusDialog(context)
-                : null,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          decoration: BoxDecoration(
-            color: produto.isPaused
-                ? Colors.orange.withValues(alpha: 0.04)
-                : Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: statusColor.withValues(alpha: 0.2)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
+      child: GestureDetector(
+        onLongPress: _isAlternarToque && !_isModoPorOS && !_isProcessando
+            ? () => _alternarStatus(avancar: false)
+            : null,
+        child: InkWell(
+          onTap: _isModoPorOS
+              ? () => _openElementosDialog(context)
+              : _isAlternarToque
+                  ? () => _alternarStatus(avancar: true)
+                  : _isModoPorPedido
+                      ? () => _openStatusDialog(context)
+                      : null,
+          borderRadius: BorderRadius.circular(14),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            decoration: BoxDecoration(
+              color: produto.isPaused
+                  ? Colors.orange.withValues(alpha: 0.04)
+                  : _isProcessando
+                      ? statusColor.withValues(alpha: 0.06)
+                      : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: _isProcessando
+                    ? statusColor.withValues(alpha: 0.5)
+                    : statusColor.withValues(alpha: 0.2),
+                width: _isProcessando ? 2 : 1,
               ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: IntrinsicHeight(
-            child: Row(
-              children: [
-                // Borda lateral colorida pelo status
-                Container(width: 4, color: statusColor),
-                // Conteúdo principal
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Header: localizador + tags + badge status
-                        Row(
-                          children: [
-                            if (produto.isPaused) _pauseTagWidget(),
-                            if (produto.pedido.tags.isNotEmpty)
-                              _tagWidget(produto.pedido.tags.first),
-                            Text(
-                              produto.pedido.localizador,
-                              style: AppCss.mediumBold.setSize(15),
-                            ),
-                            if (isModoPorPedido || isModoPorOS) ...[
-                              const Spacer(),
-                              // Badge de status clicável
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: statusColor.withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                      color:
-                                          statusColor.withValues(alpha: 0.4)),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      status ==
-                                              PedidoBitolaStatus
-                                                  .aguardandoProducao
-                                          ? 'AGUARDANDO'
-                                          : status.label.toUpperCase(),
-                                      style: AppCss.minimumBold
-                                          .setSize(11)
-                                          .setColor(statusColor),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Icon(Icons.touch_app_rounded,
-                                        size: 13, color: statusColor),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        // Peso + cliente/obra
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryMain
-                                    .withValues(alpha: 0.07),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                produto.qtde.toKg(),
-                                style: AppCss.minimumBold
-                                    .setSize(12)
-                                    .setColor(AppColors.primaryMain),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '${produto.cliente.nome} · ${produto.obra.descricao}',
-                                style: AppCss.minimumRegular
-                                    .setSize(12)
-                                    .setColor(Colors.grey[600]!),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (produto.pedido.deliveryAt != null) ...[
-                          const SizedBox(height: 4),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: IntrinsicHeight(
+              child: Row(
+                children: [
+                  // Borda lateral colorida pelo status
+                  Container(width: 4, color: statusColor),
+                  // Conteúdo principal
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header: localizador + tags + badge status
                           Row(
                             children: [
-                              Icon(Icons.event_outlined,
-                                  size: 12, color: Colors.grey[400]),
-                              const SizedBox(width: 4),
+                              if (produto.isPaused) _pauseTagWidget(),
+                              if (produto.pedido.tags.isNotEmpty)
+                                _tagWidget(produto.pedido.tags.first),
                               Text(
-                                'Entrega: ${produto.pedido.deliveryAt?.text()}',
-                                style: AppCss.minimumRegular
-                                    .setSize(11)
-                                    .setColor(Colors.grey[500]!),
+                                produto.pedido.localizador,
+                                style: AppCss.mediumBold.setSize(15),
+                              ),
+                              if (_isOperador) ...[
+                                const Spacer(),
+                                // Badge de status / spinner
+                                _isProcessando
+                                    ? SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: statusColor,
+                                        ),
+                                      )
+                                    : Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: statusColor
+                                              .withValues(alpha: 0.12),
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                          border: Border.all(
+                                              color: statusColor
+                                                  .withValues(alpha: 0.4)),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              status ==
+                                                      PedidoBitolaStatus
+                                                          .aguardandoProducao
+                                                  ? 'AGUARDANDO'
+                                                  : status.label.toUpperCase(),
+                                              style: AppCss.minimumBold
+                                                  .setSize(11)
+                                                  .setColor(statusColor),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Icon(
+                                              _isAlternarToque
+                                                  ? Icons.swap_vert_rounded
+                                                  : Icons.touch_app_rounded,
+                                              size: 13,
+                                              color: statusColor,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          // Peso + cliente/obra
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryMain
+                                      .withValues(alpha: 0.07),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  produto.qtde.toKg(),
+                                  style: AppCss.minimumBold
+                                      .setSize(12)
+                                      .setColor(AppColors.primaryMain),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '${produto.cliente.nome} · ${produto.obra.descricao}',
+                                  style: AppCss.minimumRegular
+                                      .setSize(12)
+                                      .setColor(Colors.grey[600]!),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                             ],
                           ),
-                        ],
-                        if (materiaPrima != null) ...[
-                          const SizedBox(height: 4),
-                          InkWell(
-                            onTap: () async {
-                              final result =
-                                  await showMateriaPrimaBottom(materiaPrima!);
-                              if (result != null) {
-                                push(
-                                    context,
-                                    MateriaPrimaCreatePage(
-                                        materiaPrima: materiaPrima));
-                              }
-                            },
-                            borderRadius: BorderRadius.circular(6),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
+                          if (produto.pedido.deliveryAt != null) ...[
+                            const SizedBox(height: 4),
+                            Row(
                               children: [
-                                Icon(Icons.inventory_2_outlined,
-                                    size: 12, color: Colors.orange[400]),
+                                Icon(Icons.event_outlined,
+                                    size: 12, color: Colors.grey[400]),
                                 const SizedBox(width: 4),
                                 Text(
-                                  materiaPrima!.label,
+                                  'Entrega: ${produto.pedido.deliveryAt?.text()}',
                                   style: AppCss.minimumRegular
                                       .setSize(11)
-                                      .setColor(Colors.orange[700]!)
-                                      .copyWith(
-                                          decoration: TextDecoration.underline),
+                                      .setColor(Colors.grey[500]!),
                                 ),
                               ],
                             ),
-                          ),
+                          ],
+                          if (materiaPrima != null) ...[
+                            const SizedBox(height: 4),
+                            InkWell(
+                              onTap: () async {
+                                final result =
+                                    await showMateriaPrimaBottom(materiaPrima!);
+                                if (result != null) {
+                                  push(
+                                      context,
+                                      MateriaPrimaCreatePage(
+                                          materiaPrima: materiaPrima));
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(6),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.inventory_2_outlined,
+                                      size: 12, color: Colors.orange[400]),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    materiaPrima!.label,
+                                    style: AppCss.minimumRegular
+                                        .setSize(11)
+                                        .setColor(Colors.orange[700]!)
+                                        .copyWith(
+                                            decoration: TextDecoration.underline),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
-                ),
-                // Botões de status laterais (somente quando NÃO é modo operador)
-                if (!isModoPorPedido && !isModoPorOS)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _statusWidget(),
-                      ],
+                  // Botões de status laterais (somente quando NÃO é modo operador)
+                  if (!_isOperador)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _statusWidget(),
+                        ],
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
