@@ -142,9 +142,14 @@ class ElementoSupabaseCollection {
     if (_isListen) return;
     _isListen = true;
 
-    // Listener simplificado: qualquer mudança na tabela elementos dispara um re-fetch
+    // Listener: qualquer mudança na tabela elementos dispara um re-fetch
     SupabaseService.client
         .from(name)
+        .stream(primaryKey: ['id']).listen((_) => _updateStreams());
+
+    // Listener: mudanças na tabela elemento_posicoes (ex: operador muda status no tablet)
+    SupabaseService.client
+        .from('elemento_posicoes')
         .stream(primaryKey: ['id']).listen((_) => _updateStreams());
   }
 
