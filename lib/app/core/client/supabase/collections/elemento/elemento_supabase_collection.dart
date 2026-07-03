@@ -4,6 +4,7 @@ import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sf;
 
 class ElementoSupabaseCollection {
   static final ElementoSupabaseCollection _instance =
@@ -148,9 +149,18 @@ class ElementoSupabaseCollection {
         .stream(primaryKey: ['id']).listen((_) => _updateStreams());
 
     // Listener: mudanças na tabela elemento_posicoes (ex: operador muda status no tablet)
+    // Usa channel em vez de .stream() porque a tabela tem 11k+ linhas —
+    // o .stream() faria download de TODA a tabela no subscribe, o channel
+    // só recebe o evento de mudança (leve e rápido).
     SupabaseService.client
-        .from('elemento_posicoes')
-        .stream(primaryKey: ['id']).listen((_) => _updateStreams());
+        .channel('elemento_posicoes_realtime')
+        .onPostgresChanges(
+          event: sf.PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'elemento_posicoes',
+          callback: (_) => _updateStreams(),
+        )
+        .subscribe();
   }
 
   Timer? _streamDebounce;
