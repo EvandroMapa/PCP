@@ -8,6 +8,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/enums/sort_type.dart';
+import 'package:aco_plus/app/core/utils/posicao_progresso_helper.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
@@ -228,7 +229,7 @@ class PedidoController {
       for (var produto in pedido.produtos
           .where((e) => e.produto.id == produto.id)
           .toList()) {
-        qtde = qtde + produto.qtde;
+        qtde = qtde + calcularConsumoAjustado(produto);
       }
     }
     return double.parse(qtde.toStringAsFixed(2));

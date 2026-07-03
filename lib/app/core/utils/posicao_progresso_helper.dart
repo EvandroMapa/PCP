@@ -1,4 +1,6 @@
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 
 /// Resultado do cálculo de progresso por posições de produção.
@@ -115,4 +117,34 @@ PosicaoProgressoResult calcularProgressoOrdem(
     qtdProduzindo: qtdProduzindo,
     qtdPronto: qtdPronto,
   );
+}
+
+/// Calcula o consumo ajustado de um pedido_bitola, descontando o peso das
+/// posições já marcadas como pronto (que já geraram baixa de estoque).
+///
+/// Quando o modo de apontamento é "por_os", cada posição marcada como pronto
+/// faz `baixarEstoque()` individualmente, mas o pedido_bitola continua com
+/// status `produzindo` até que TODAS as posições fiquem prontas.
+/// Sem esse ajuste, o consumo previsto conta o total do pedido_bitola inteiro,
+/// gerando contagem dupla com a baixa já realizada no saldo.
+///
+/// Para itens com status diferente de `produzindo`, ou sem posições,
+/// retorna `produto.qtde` normalmente.
+double calcularConsumoAjustado(PedidoBitolaModel produto) {
+  // Só precisa ajustar itens em "produzindo" que podem ter posições parciais
+  if (produto.statusess.last.status != PedidoBitolaStatus.produzindo) {
+    return produto.qtde;
+  }
+
+  final progresso = calcularProgressoPosicoes(
+    produto.pedidoId,
+    produto.produto.id,
+  );
+
+  // Se não tem posições cadastradas, usa o valor original
+  if (!progresso.hasData) return produto.qtde;
+
+  // Desconta o peso das posições já prontas (já baixadas do estoque)
+  final consumoRestante = produto.qtde - progresso.pesoPronto;
+  return consumoRestante > 0 ? consumoRestante : 0;
 }

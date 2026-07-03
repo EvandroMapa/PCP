@@ -8,6 +8,7 @@ import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart' as Navigator;
 import 'package:aco_plus/app/core/utils/global_resource.dart';
+import 'package:aco_plus/app/core/utils/posicao_progresso_helper.dart';
 import 'package:aco_plus/app/modules/dashboard/dashboard_view_model.dart';
 
 DashboardController dashCtrl = DashboardController();
@@ -114,7 +115,7 @@ class DashboardController {
       for (var produto in pedido.produtos) {
         if (statusValidos.contains(produto.statusess.last.status)) {
           final prodId = produto.produto.id;
-          consumo[prodId] = (consumo[prodId] ?? 0) + produto.qtde;
+          consumo[prodId] = (consumo[prodId] ?? 0) + calcularConsumoAjustado(produto);
         }
       }
     }
