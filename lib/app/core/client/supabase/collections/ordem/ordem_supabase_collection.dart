@@ -179,6 +179,39 @@ class OrdemSupabaseCollection extends OrdemCollection {
     // pedidos.fetch() removido — o Realtime de pedidos já cuida da sincronização.
   }
 
+  /// Busca o próximo número sequencial para uma bitola direto no Supabase,
+  /// considerando TODAS as ordens (ativas + arquivadas) para evitar duplicidade.
+  @override
+  Future<int> proximoSequencial(String prefixoBitola) async {
+    try {
+      // Busca todas as ordens que começam com o prefixo (ex: 'OP10-')
+      // e extrai o maior número sequencial
+      final response = await SupabaseService.client
+          .from(name)
+          .select('id')
+          .like('id', '$prefixoBitola%');
+
+      int maxSeq = 0;
+      for (final row in response) {
+        final id = row['id'] as String;
+        // Formato: OP{bitola}-{seq}_{hash}
+        // Extrai o número entre '-' e '_'
+        final partes = id.split('-');
+        if (partes.length >= 2) {
+          final depoisDoHifen = partes.sublist(1).join('-');
+          final seqStr = depoisDoHifen.split('_').first;
+          final seq = int.tryParse(seqStr) ?? 0;
+          if (seq > maxSeq) maxSeq = seq;
+        }
+      }
+      return maxSeq + 1;
+    } catch (e) {
+      log('Erro ao buscar próximo sequencial: $e');
+      // Fallback: usa contagem em memória (comportamento antigo)
+      return [...data, ...ordensArquivadas].length + 1;
+    }
+  }
+
   @override
   Stream<OrdemModel> listenById(String id) {
     return dataStream.listen.map((_) => getById(id));

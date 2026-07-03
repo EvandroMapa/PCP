@@ -202,10 +202,9 @@ class OrdemController {
         .first
         .replaceAll(RegExp(r'[^0-9]'), '');
 
-    form.id = 'OP$bitola-${[
-          ...FirestoreClient.ordens.ordensNaoArquivadas,
-          ...FirestoreClient.ordens.ordensArquivadas
-        ].length + 1}_${HashService.get}';
+    final prefixo = 'OP$bitola-';
+    final proximoSeq = await FirestoreClient.ordens.proximoSequencial(prefixo);
+    form.id = '$prefixo${proximoSeq}_${HashService.get}';
 
     final ordemCriada = form.toOrdemModelCreate();
     if (ordemCriada.produtos.isEmpty) {

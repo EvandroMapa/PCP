@@ -202,4 +202,11 @@ class OrdemCollection {
     }
     await batch.commit();
   }
+
+  /// Busca o próximo número sequencial para uma bitola.
+  /// Implementação base (Firestore): usa contagem em memória.
+  /// Sobrescrito no Supabase para buscar direto do banco.
+  Future<int> proximoSequencial(String prefixoBitola) async {
+    return [...data, ...ordensArquivadas].length + 1;
+  }
 }
