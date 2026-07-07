@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'package:aco_plus/app/core/utils/posicao_progresso_helper.dart';
 
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/enums/materia_prima_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/models/materia_prima_model.dart';
@@ -695,21 +696,44 @@ class OrdemController {
 
     // Baixa automática de estoque quando produto fica pronto
     if (status == PedidoBitolaStatus.pronto) {
-      await estoqueCtrl.baixarEstoque(
-        produtoId: produto.produto.id,
-        quantidade: produto.qtde,
-        ordem: ordem,
+      // Proteção contra baixa dupla: se posições (modo por_os) já
+      // geraram baixas individuais, desconta o peso já baixado.
+      final progresso = calcularProgressoPosicoes(
+        produto.pedidoId,
+        produto.produto.id,
       );
+      final pesoJaBaixado = progresso.hasData ? progresso.pesoPronto : 0.0;
+      final qtdeBaixar = (produto.qtde - pesoJaBaixado).clamp(0.0, produto.qtde);
+
+      if (qtdeBaixar > 0) {
+        await estoqueCtrl.baixarEstoque(
+          produtoId: produto.produto.id,
+          quantidade: qtdeBaixar,
+          ordem: ordem,
+        );
+      }
     }
 
     // Estorno quando produto volta de PRONTO para outro status
     if (statusAnterior == PedidoBitolaStatus.pronto &&
         status != PedidoBitolaStatus.pronto) {
-      await estoqueCtrl.estornarBaixa(
-        produtoId: produto.produto.id,
-        quantidade: produto.qtde,
-        ordem: ordem,
+      // Mesma proteção: estorna apenas o que foi baixado neste nível,
+      // sem estornar o que já foi baixado pelas posições (será
+      // estornado individualmente ao voltar cada posição).
+      final progresso = calcularProgressoPosicoes(
+        produto.pedidoId,
+        produto.produto.id,
       );
+      final pesoJaBaixado = progresso.hasData ? progresso.pesoPronto : 0.0;
+      final qtdeEstornar = (produto.qtde - pesoJaBaixado).clamp(0.0, produto.qtde);
+
+      if (qtdeEstornar > 0) {
+        await estoqueCtrl.estornarBaixa(
+          produtoId: produto.produto.id,
+          quantidade: qtdeEstornar,
+          ordem: ordem,
+        );
+      }
     }
 
     // Sincroniza posições dos elementos quando no modo "por_pedido"
