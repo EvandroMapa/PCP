@@ -12,6 +12,7 @@ import 'package:aco_plus/app/modules/pedido_compra/pedido_compra_controller.dart
 import 'package:aco_plus/app/modules/pedido_compra/pedido_compra_view_model.dart';
 import 'package:aco_plus/app/modules/pedido_compra/ui/pedido_compra_create_page.dart';
 import 'package:aco_plus/app/modules/pedido_compra/ui/simulador_compra_page.dart';
+import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:flutter/material.dart';
 
 class PedidoCompraPage extends StatefulWidget {
@@ -28,6 +29,41 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
     setWebTitle('Pedidos de Compra');
     pedidoCompraCtrl.onInit();
     super.initState();
+    if (!widget.standalone) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        baseCtrl.appBarActionsStream.add([
+          Tooltip(
+            message: 'Montar sugestão de compra',
+            preferBelow: false,
+            child: IconButton(
+              icon: const Icon(Icons.auto_graph_rounded, size: 20),
+              color: Colors.white,
+              onPressed: () => push(const SimuladorCompraPage()),
+            ),
+          ),
+          Tooltip(
+            message: 'Novo pedido de compra',
+            preferBelow: false,
+            child: IconButton(
+              icon: const Icon(Icons.add, size: 20),
+              color: Colors.white,
+              onPressed: () {
+                pedidoCompraCtrl.formStream.add(PedidoCompraCreateModel());
+                push(const PedidoCompraCreatePage());
+              },
+            ),
+          ),
+        ]);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    if (!widget.standalone) {
+      baseCtrl.appBarActionsStream.add([]);
+    }
+    super.dispose();
   }
 
   @override
@@ -59,13 +95,17 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
       builder: (_, showHistorico) {
         final ativos = BackendClient.pedidosCompra.ativosAgrupados;
         final efetivados = BackendClient.pedidosCompra.efetivadosAgrupados;
-        final totalPendentes = BackendClient.pedidosCompra.pendentes.length;
-        final totalConfirmados =
-            BackendClient.pedidosCompra.confirmados.length;
+        // Conta GRUPOS (orçamentos), não itens individuais
+        final gruposPendentes = ativos.values.where((g) => g.first.isPendente).toList();
+        final gruposConfirmados = ativos.values.where((g) => g.first.isConfirmado).toList();
+        final totalOrcamentos = gruposPendentes.length;
+        final totalItensPendentes = gruposPendentes.fold<int>(0, (s, g) => s + g.length);
+        final totalConfirmados = gruposConfirmados.length;
+        final totalItensConfirmados = gruposConfirmados.fold<int>(0, (s, g) => s + g.length);
 
         return Column(
           children: [
-            _header(context, totalPendentes, totalConfirmados, showHistorico),
+            _header(context, totalOrcamentos, totalItensPendentes, totalConfirmados, totalItensConfirmados, showHistorico),
             Expanded(
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
@@ -119,35 +159,22 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
 
   // ── Header ────────────────────────────────────────────────────────────────
 
-  Widget _header(BuildContext context, int totalPendentes,
-      int totalConfirmados, bool showHistorico) {
+  Widget _header(BuildContext context, int totalOrcamentos, int totalItensPendentes,
+      int totalConfirmados, int totalItensConfirmados, bool showHistorico) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 8, 10),
       color: Colors.white,
       child: Row(
         children: [
-          Icon(
-            showHistorico
-                ? Icons.history
-                : Icons.shopping_cart_outlined,
-            size: 18,
-            color: showHistorico ? Colors.green[700] : AppColors.primaryMain,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            showHistorico ? 'Histórico de Compras' : 'Pedidos de Compra',
-            style: AppCss.mediumBold,
-          ),
-          const SizedBox(width: 8),
           if (!showHistorico) ...[
-            if (totalPendentes > 0)
+            if (totalOrcamentos > 0)
               _miniChip(
-                  '$totalPendentes orçamento${totalPendentes > 1 ? 's' : ''}',
+                  '$totalOrcamentos orçamento${totalOrcamentos > 1 ? 's' : ''} · $totalItensPendentes ${totalItensPendentes > 1 ? 'itens' : 'item'}',
                   Colors.orange[700]!),
             if (totalConfirmados > 0) ...[
               const SizedBox(width: 4),
               _miniChip(
-                  '$totalConfirmados confirmado${totalConfirmados > 1 ? 's' : ''}',
+                  '$totalConfirmados confirmado${totalConfirmados > 1 ? 's' : ''} · $totalItensConfirmados ${totalItensConfirmados > 1 ? 'itens' : 'item'}',
                   Colors.blue[700]!),
             ],
           ],
@@ -189,7 +216,7 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
               ),
             ),
           ),
-          if (!widget.standalone && !showHistorico) ...[
+          if (widget.standalone && !showHistorico) ...[
             const SizedBox(width: 8),
             _btnSimulador(context),
             const SizedBox(width: 8),
