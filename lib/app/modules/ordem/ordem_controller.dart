@@ -760,32 +760,44 @@ class OrdemController {
     PedidoBitolaStatus pedidoStatus,
   ) async {
     // Converte PedidoBitolaStatus para PosicaoStatus
-    final PosicaoStatus? posicaoStatus;
+    final PosicaoStatus? posicaoStatusRaw;
     switch (pedidoStatus) {
       case PedidoBitolaStatus.aguardandoProducao:
-        posicaoStatus = PosicaoStatus.aguardando;
+        posicaoStatusRaw = PosicaoStatus.aguardando;
         break;
       case PedidoBitolaStatus.produzindo:
-        posicaoStatus = PosicaoStatus.produzindo;
+        posicaoStatusRaw = PosicaoStatus.produzindo;
         break;
       case PedidoBitolaStatus.pronto:
-        posicaoStatus = PosicaoStatus.pronto;
+        posicaoStatusRaw = PosicaoStatus.pronto;
         break;
       default:
-        posicaoStatus = null;
+        posicaoStatusRaw = null;
     }
-    if (posicaoStatus == null) return;
+    if (posicaoStatusRaw == null) return;
+    final PosicaoStatus posicaoStatus = posicaoStatusRaw;
 
-    // Busca elementos do pedido
-    final elementos = AppSupabaseClient.elementos.data
+    // Busca elementos do pedido — se cache vazio, busca do Supabase
+    var elementos = AppSupabaseClient.elementos.data
         .where((e) => e.pedidoId == produto.pedidoId)
         .toList();
+    if (elementos.isEmpty) {
+      try {
+        log('_syncPosicoes: cache vazio para pedido ${produto.pedidoId}, buscando do Supabase...');
+        await AppSupabaseClient.elementos.fetchByPedidoId(produto.pedidoId);
+        elementos = AppSupabaseClient.elementos.data
+            .where((e) => e.pedidoId == produto.pedidoId)
+            .toList();
+      } catch (e) {
+        log('_syncPosicoes: erro ao buscar elementos do Supabase: $e');
+      }
+    }
     if (elementos.isEmpty) return;
 
     // Busca a bitola da ordem para filtrar posições
     final bitolaId = ordem.produto.id;
 
-    // Atualiza no Supabase em batch
+    // Coleta IDs das posições que precisam ser atualizadas
     final List<String> idsToUpdate = [];
     for (final elemento in elementos) {
       for (final posicao in elemento.posicoes) {
@@ -798,11 +810,25 @@ class OrdemController {
     }
 
     if (idsToUpdate.isNotEmpty) {
-      // Persiste no Supabase
-      for (final id in idsToUpdate) {
-        await SupabaseService.client
-            .from('elemento_posicoes')
-            .update({'status': posicaoStatus.name}).eq('id', id);
+      // Persiste no Supabase em paralelo (batch) com tratamento de erro
+      try {
+        await Future.wait(
+          idsToUpdate.map((id) => SupabaseService.client
+              .from('elemento_posicoes')
+              .update({'status': posicaoStatus.name}).eq('id', id)),
+        );
+      } catch (e) {
+        log('_syncPosicoes: ERRO ao persistir ${idsToUpdate.length} posições para ${posicaoStatus.name}: $e');
+        // Retry: tenta novamente sequencialmente as que falharam
+        for (final id in idsToUpdate) {
+          try {
+            await SupabaseService.client
+                .from('elemento_posicoes')
+                .update({'status': posicaoStatus.name}).eq('id', id);
+          } catch (retryError) {
+            log('_syncPosicoes: FALHA no retry da posição $id: $retryError');
+          }
+        }
       }
       // Re-emite stream de elementos
       AppSupabaseClient.elementos.dataStream

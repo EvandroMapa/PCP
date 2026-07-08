@@ -93,8 +93,17 @@ class OrdemModel {
   bool get _isModoPorOs =>
       PreferencesService.apontamentoProducaoCD.value == 'por_os';
 
+  /// Verifica se todos os cards (pedido_bitolas) estão com status "pronto".
+  /// Usado como fallback: se os cards já são pronto mas posições ficaram
+  /// dessincronizadas, os cards são a fonte de verdade.
+  bool get _todosCardsProntos =>
+      produtos.isNotEmpty &&
+      produtos.every((e) => e.status.status == PedidoBitolaStatus.pronto);
+
   double qtdeAguardando() {
     if (_isModoPorOs && produtos.isNotEmpty) {
+      // Fallback: se todos os cards já estão pronto, posições divergem — cards são verdade
+      if (_todosCardsProntos) return 0;
       final pedidoIds = pedidos.map((e) => e.id).toList();
       final result = calcularProgressoOrdem(pedidoIds, produto.id);
       if (result.hasData) return result.pesoAguardando;
@@ -114,6 +123,8 @@ class OrdemModel {
 
   double qtdeProduzindo() {
     if (_isModoPorOs && produtos.isNotEmpty) {
+      // Fallback: se todos os cards já estão pronto, posições divergem — cards são verdade
+      if (_todosCardsProntos) return 0;
       final pedidoIds = pedidos.map((e) => e.id).toList();
       final result = calcularProgressoOrdem(pedidoIds, produto.id);
       if (result.hasData) return result.pesoProduzindo;
@@ -131,6 +142,8 @@ class OrdemModel {
 
   double qtdePronto() {
     if (_isModoPorOs && produtos.isNotEmpty) {
+      // Fallback: se todos os cards já estão pronto, posições divergem — cards são verdade
+      if (_todosCardsProntos) return quantideTotal();
       final pedidoIds = pedidos.map((e) => e.id).toList();
       final result = calcularProgressoOrdem(pedidoIds, produto.id);
       // Aqui usamos o percentual e multiplicamos pela quantidade total inteira

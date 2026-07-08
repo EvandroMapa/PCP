@@ -138,6 +138,59 @@ class ElementoSupabaseCollection {
     dataStream.add(data);
   }
 
+  /// Busca elementos de um pedido específico do Supabase e atualiza o cache local.
+  /// Usado como fallback quando o cache local não tem os elementos carregados.
+  Future<void> fetchByPedidoId(String pedidoId) async {
+    try {
+      final elementosRaw = await SupabaseService.client
+          .from(name)
+          .select()
+          .eq('pedido_id', pedidoId)
+          .order('nome');
+
+      if (elementosRaw.isEmpty) return;
+
+      final eIds = elementosRaw.map((e) => e['id'].toString()).toList();
+
+      // Busca posições e arquivos desses elementos
+      final results = await Future.wait([
+        SupabaseService.client
+            .from('elemento_posicoes')
+            .select()
+            .filter('elemento_id', 'in', eIds),
+        SupabaseService.client
+            .from('elemento_arquivos')
+            .select()
+            .filter('elemento_id', 'in', eIds),
+      ]);
+
+      final posicoesIndex = <String, List<Map<String, dynamic>>>{};
+      for (final p in List<Map<String, dynamic>>.from(results[0])) {
+        final eId = p['elemento_id'].toString();
+        (posicoesIndex[eId] ??= []).add(p);
+      }
+      final arquivosIndex = <String, List<Map<String, dynamic>>>{};
+      for (final a in List<Map<String, dynamic>>.from(results[1])) {
+        final eId = a['elemento_id'].toString();
+        (arquivosIndex[eId] ??= []).add(a);
+      }
+
+      final novosElementos = elementosRaw.map((eMap) {
+        final eId = eMap['id'].toString();
+        return ElementoModel.fromSupabaseMap(
+          eMap,
+          posicoesRaw: posicoesIndex[eId] ?? [],
+          arquivosRaw: arquivosIndex[eId] ?? [],
+        );
+      }).toList();
+
+      // Merge no cache local
+      updateLocalData(novosElementos);
+    } catch (e) {
+      log('Supabase Error (Elemento.fetchByPedidoId): $e');
+    }
+  }
+
   bool _isListen = false;
   void listen() {
     if (_isListen) return;
