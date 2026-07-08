@@ -834,50 +834,51 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
                 ),
               )
             else
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: elementoSync.arquivos.length,
-                  itemBuilder: (_, i) {
-                    final arq = elementoSync.arquivos[i];
-                    return ListTile(
-                      leading: Icon(
-                        arq.tipo.contains('image')
-                            ? Icons.image_outlined
-                            : Icons.picture_as_pdf_outlined,
-                        color: AppColors.secondary,
-                      ),
-                      title: Text(arq.nome, style: AppCss.minimumBold),
-                      subtitle: Text(
-                          '${(arq.tamanho / 1024).toStringAsFixed(1)} KB · ${DateFormat('dd/MM/yy').format(arq.criadoEm)}'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon:
-                                const Icon(Icons.open_in_new_rounded, size: 20),
-                            onPressed: () => openInNewTab(arq.url),
-                            tooltip: 'Abrir',
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline_rounded,
-                                color: Colors.red, size: 20),
-                            onPressed: (usuarioCtrl.usuario?.podeEditarElementos ?? false)
-                                ? () async {
-                                    if (await showConfirmDialog('Apagar anexo?',
-                                        'Deseja remover este arquivo permanentemente?')) {
-                                      await elementoCtrl.onDeleteArquivo(
-                                          arq, widget.pedido.id);
-                                      setState(() {});
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 400),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: elementoSync.arquivos.map((arq) {
+                      return ListTile(
+                        leading: Icon(
+                          arq.tipo.contains('image')
+                              ? Icons.image_outlined
+                              : Icons.picture_as_pdf_outlined,
+                          color: AppColors.secondary,
+                        ),
+                        title: Text(arq.nome, style: AppCss.minimumBold),
+                        subtitle: Text(
+                            '${(arq.tamanho / 1024).toStringAsFixed(1)} KB · ${DateFormat('dd/MM/yy').format(arq.criadoEm)}'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon:
+                                  const Icon(Icons.open_in_new_rounded, size: 20),
+                              onPressed: () => openInNewTab(arq.url),
+                              tooltip: 'Abrir',
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline_rounded,
+                                  color: Colors.red, size: 20),
+                              onPressed: (usuarioCtrl.usuario?.podeEditarElementos ?? false)
+                                  ? () async {
+                                      if (await showConfirmDialog('Apagar anexo?',
+                                          'Deseja remover este arquivo permanentemente?')) {
+                                        await elementoCtrl.onDeleteArquivo(
+                                            arq, widget.pedido.id);
+                                        setState(() {});
+                                      }
                                     }
-                                  }
-                                : null,
-                            tooltip: 'Excluir',
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                                  : null,
+                              tooltip: 'Excluir',
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
             const SizedBox(height: 20),

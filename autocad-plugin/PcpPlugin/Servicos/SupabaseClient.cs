@@ -85,15 +85,15 @@ namespace PcpPlugin.Servicos
         // ══════════════════════════════════════════════════════
 
         /// <summary>
-        /// Faz upload de um arquivo PNG para o bucket "elementos" do Supabase Storage.
+        /// Faz upload de um arquivo PNG para o bucket "pcp-arquivos" do Supabase Storage.
+        /// Usa multipart/form-data (POST) — mesmo formato do SDK Flutter.
         /// Retorna a URL pública do arquivo.
         /// </summary>
         public string UploadPng(string elementoId, string nomeArquivo, byte[] bytes)
         {
             var path = $"elementos/{elementoId}/{nomeArquivo}";
-            var uploadUrl = $"{StorageUrl}/object/{path}";
+            var uploadUrl = $"{StorageUrl}/object/pcp-arquivos/{path}";
 
-            // Remove "Prefer" header para upload (não aplicável no Storage)
             using var httpUpload = new HttpClient();
             httpUpload.DefaultRequestHeaders.Add("apikey", ConfigService.SupabaseKey);
             httpUpload.DefaultRequestHeaders.Authorization =
@@ -101,14 +101,24 @@ namespace PcpPlugin.Servicos
             httpUpload.DefaultRequestHeaders.Add("x-upsert", "true");
             httpUpload.Timeout = TimeSpan.FromSeconds(60);
 
-            var content = new ByteArrayContent(bytes);
-            content.Headers.ContentType = new MediaTypeHeaderValue("image/png");
+            // Multipart form-data com campo "file" — formato que o Supabase Storage espera
+            var fileContent = new ByteArrayContent(bytes);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue("image/png");
 
-            var response = httpUpload.PutAsync(uploadUrl, content).GetAwaiter().GetResult();
-            response.EnsureSuccessStatusCode();
+            var formData = new MultipartFormDataContent();
+            formData.Add(fileContent, "file", nomeArquivo);
+
+            // POST para criar novo objeto
+            var response = httpUpload.PostAsync(uploadUrl, formData).GetAwaiter().GetResult();
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorBody = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                throw new HttpRequestException(
+                    $"Upload falhou ({(int)response.StatusCode} {response.StatusCode}): {errorBody}");
+            }
 
             // URL pública
-            return $"{ConfigService.SupabaseUrl}/storage/v1/object/public/{path}";
+            return $"{ConfigService.SupabaseUrl}/storage/v1/object/public/pcp-arquivos/{path}";
         }
 
         // ══════════════════════════════════════════════════════

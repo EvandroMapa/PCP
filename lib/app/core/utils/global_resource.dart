@@ -90,6 +90,7 @@ void openInNewTab(String path) async {
   if (currentUser != null) {
     await AppRepository.add(currentUser);
   }
-  final url = Uri.base.origin + path;
+  // Se já for uma URL completa (ex: Supabase Storage), abre direto
+  final url = path.startsWith('http') ? path : Uri.base.origin + path;
   html.window.open(url, '_blank');
 }
