@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/models/automatizacao_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
@@ -52,15 +53,27 @@ class AutomatizacaoSupabaseCollection extends AutomatizacaoCollection {
 
   @override
   Future<void> update(AutomatizacaoModel model) async {
-    try {
-      final payload = model.toSupabaseMap();
-      payload['id'] = 'instance';
+    final payload = model.toSupabaseMap();
+    payload['id'] = 'instance';
 
-      await SupabaseService.client.from(tableName).upsert(payload);
-      // fetch() removido — o Realtime já dispara atualização automaticamente
-    } catch (e) {
-      print('Supabase Error (Automatizacao.update): $e');
+    log('Automatizacao.update payload: $payload');
+
+    final result = await SupabaseService.client
+        .from(tableName)
+        .upsert(payload)
+        .select();
+
+    if (result.isEmpty) {
+      throw Exception(
+        'Falha ao gravar automação: upsert retornou vazio. '
+        'Verifique RLS e policies da tabela "$tableName" no Supabase.',
+      );
     }
+
+    // Atualiza o stream local com os dados confirmados do banco
+    final saved = AutomatizacaoModel.fromSupabaseMap(result.first);
+    dataStream.add(saved);
+    log('Automatizacao.update: gravado com sucesso');
   }
 
   bool _isListen = false;

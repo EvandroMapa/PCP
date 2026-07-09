@@ -34,12 +34,20 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
 
   void _onSave() async {
     setState(() => isSaving = true);
-    await FirestoreClient.automatizacao.update(model);
-    NotificationService.showPositive(
-      'Automação Atualizada',
-      'As regras de automação foram aplicadas no banco de dados com sucesso.',
-    );
-    setState(() => isSaving = false);
+    try {
+      await FirestoreClient.automatizacao.update(model);
+      NotificationService.showPositive(
+        'Automação Atualizada',
+        'As regras de automação foram aplicadas no banco de dados com sucesso.',
+      );
+    } catch (e) {
+      NotificationService.showNegative(
+        'Erro ao salvar automação',
+        e.toString(),
+      );
+    } finally {
+      if (mounted) setState(() => isSaving = false);
+    }
   }
 
   @override
