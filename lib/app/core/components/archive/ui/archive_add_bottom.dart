@@ -210,11 +210,13 @@ class _ArchiveAddBottomState extends State<ArchiveAddBottom> {
       allowMultiple: false,
       withData: true,
     );
+    if (!mounted) return;
     if (result?.xFiles.isNotEmpty ?? false) {
       final xFile = result!.xFiles.first;
       // Lê via stream (openRead) — mais confiável no Flutter Web que readAsBytes()
       final chunks = <int>[];
       await xFile.openRead().forEach(chunks.addAll);
+      if (!mounted) return;
       final bytes = Uint8List.fromList(chunks);
       final mime = lookupMimeType(kIsWeb ? xFile.name : xFile.path) ??
           'application/octet-stream';
@@ -245,7 +247,7 @@ class _ArchiveAddBottomState extends State<ArchiveAddBottom> {
           'Erro ao enviar arquivo',
           'Não foi possível ler o conteúdo do arquivo. Tente novamente.',
         );
-        setState(() => isLoading = false);
+        if (mounted) setState(() => isLoading = false);
         return;
       }
 
@@ -263,14 +265,18 @@ class _ArchiveAddBottomState extends State<ArchiveAddBottom> {
         type: archive!.type,
         mime: archive!.mime,
       );
+      // Proteção: o Realtime pode ter desmontado o bottom sheet durante o await do upload
+      if (!mounted) return;
       setState(() {
         isLoading = false;
       });
       Navigator.pop(context, archiveModel);
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
       NotificationService.showNegative('Erro ao enviar arquivo', e.toString());
     }
   }

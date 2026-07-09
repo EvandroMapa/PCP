@@ -309,6 +309,13 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     await FirestoreClient.pedidos
         .updateProdutoStatus(widget.produto, novoStatus);
 
+    // Recalcula o status do pedido pai e dispara automação de mudança de etapa
+    final pedido = await FirestoreClient.pedidos
+        .updatePedidoStatus(widget.produto);
+    if (pedido != null) {
+      await ordemCtrl.updateFeaturesByPedidoStatus(pedido);
+    }
+
     // Força atualização da lista de ordens para refletir nos indicadores laterais
     await FirestoreClient.ordens.fetch();
     final updatedOrdem = ordemCtrl.getOrdemById(widget.ordem.id);
