@@ -623,18 +623,20 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
         final pedidoProduto =
             pedido.produtos.firstWhereOrNull((e) => e.id == produto.id);
-        if (pedidoProduto == null) continue;
+        // Fallback: se não encontrar no cache do pedido, usa o próprio objeto
+        // (evita pular silenciosamente e deixar status órfão)
+        final alvo = pedidoProduto ?? produto;
 
         if (clear) {
-          pedidoProduto.statusess.clear();
+          alvo.statusess.clear();
         }
 
-        if (pedidoProduto.statusess.isEmpty ||
-            pedidoProduto.statusess.last.status != status) {
-          pedidoProduto.statusess.add(PedidoBitolaStatusModel.create(status));
+        if (alvo.statusess.isEmpty ||
+            alvo.statusess.last.status != status) {
+          alvo.statusess.add(PedidoBitolaStatusModel.create(status));
         }
 
-        payload.add(pedidoProduto.toSupabaseMap(pedido.id));
+        payload.add(alvo.toSupabaseMap(pedido.id));
       }
 
       if (payload.isNotEmpty) {

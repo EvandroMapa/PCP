@@ -421,22 +421,30 @@ class OrdemController {
         )
         .toList();
 
-    // Prepara status locais
-    for (var pedidoProduto in pedidosProdutos) {
-      pedidoProduto.statusess.clear();
-      pedidoProduto.statusess.add(
-        PedidoBitolaStatusModel(
-          id: HashService.get,
-          status: PedidoBitolaStatus.separado,
-          createdAt: DateTime.now(),
-        ),
-      );
+    // Persiste status 'separado' direto na tabela pedido_bitolas
+    // (não usa update(pedido) genérico para evitar bug de instâncias divergentes)
+    final statusUpdates = pedidosProdutos
+        .map((pp) => (pp, PedidoBitolaStatus.separado))
+        .toList();
+    if (FirestoreClient.pedidos is PedidoSupabaseCollection) {
+      await (FirestoreClient.pedidos as PedidoSupabaseCollection)
+          .updateProdutosStatus(statusUpdates, clear: true);
+    } else {
+      for (var update in statusUpdates) {
+        await FirestoreClient.pedidos
+            .updateProdutoStatus(update.$1, update.$2);
+      }
     }
 
-    // Persiste em paralelo — antes era sequencial (1 por 1)
-    await Future.wait(pedidosProdutos.map((pp) =>
-        FirestoreClient.pedidos.update(
-            FirestoreClient.pedidos.getById(pp.pedidoId))));
+    // Atualiza status do pedido pai para cada pedido afetado
+    final pedidosAfetados = pedidosProdutos.map((pp) => pp.pedidoId).toSet();
+    await Future.wait(pedidosAfetados.map((pedidoId) async {
+      final pedido = FirestoreClient.pedidos.getById(pedidoId);
+      if (pedido.produtos.isNotEmpty) {
+        await FirestoreClient.pedidos
+            .updatePedidoStatus(pedido.produtos.first);
+      }
+    }));
 
     ordem.produtos.clear();
     await FirestoreClient.ordens.delete(ordem);
