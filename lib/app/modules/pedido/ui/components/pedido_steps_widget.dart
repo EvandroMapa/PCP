@@ -13,28 +13,37 @@ class PedidoStepsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          Expanded(child: Text('Etapa', style: AppCss.smallBold.setSize(13))),
-          if (pedido.steps.length > 1)
-            InkWell(
-              onTap: () => kanbanCtrl.onUndoStep(pedido),
-              child: const Icon(Icons.swipe_left_alt_sharp, size: 18),
-            ),
-          const W(8),
-          InkWell(
-            onTap: () => pedidoCtrl.onChangePedidoStep(pedido),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: pedido.step.color.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(6),
+          Text('Etapa', style: AppCss.smallBold.setSize(13)),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (pedido.steps.length > 1)
+                InkWell(
+                  onTap: () => kanbanCtrl.onUndoStep(pedido),
+                  child: const Icon(Icons.swipe_left_alt_sharp, size: 18),
+                ),
+              if (pedido.steps.length > 1) const W(8),
+              InkWell(
+                onTap: () => pedidoCtrl.onChangePedidoStep(pedido),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: pedido.step.color.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    pedido.step.name,
+                    style: AppCss.minimumRegular.setSize(11),
+                  ),
+                ),
               ),
-              child: Text(
-                pedido.step.name,
-                style: AppCss.minimumRegular.setSize(11),
-              ),
-            ),
+            ],
           ),
         ],
       ),

@@ -15,18 +15,25 @@ class KanbanPedidoSelectedWidget extends StatelessWidget {
       opacity: utils.isPedidoSelected ? 1 : 0,
       child: !utils.isPedidoSelected
           ? const SizedBox()
-          : Container(
-              padding: const EdgeInsets.all(16),
-              constraints: const BoxConstraints(maxWidth: 800),
-              width: double.infinity,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: PedidoPage(
-                  pedido: utils.pedido!,
-                  reason: PedidoInitReason.kanban,
-                  onDelete: () => kanbanCtrl.setPedido(null),
-                ),
-              ),
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final isMobile = constraints.maxWidth < 600;
+                return Container(
+                  padding: EdgeInsets.all(isMobile ? 0 : 16),
+                  constraints:
+                      isMobile ? null : const BoxConstraints(maxWidth: 800),
+                  width: double.infinity,
+                  child: ClipRRect(
+                    borderRadius:
+                        BorderRadius.circular(isMobile ? 0 : 8),
+                    child: PedidoPage(
+                      pedido: utils.pedido!,
+                      reason: PedidoInitReason.kanban,
+                      onDelete: () => kanbanCtrl.setPedido(null),
+                    ),
+                  ),
+                );
+              },
             ),
     );
   }

@@ -312,38 +312,66 @@ class _PedidoPageState extends State<PedidoPage>
   }
 
   Widget _detalhesBody(PedidoModel pedido) {
-    return Row(
-      children: [
-        _sidebar(
-          currentIndex: _dashboardIdx,
-          items: [
-            _SidebarItemData(
-                Icons.assignment_outlined, 'Identificação', 0),
-            _SidebarItemData(
-                Icons.analytics_outlined, 'Acompanhamento', 1),
-            _SidebarItemData(Icons.attach_file_rounded, 'Anexos', 2),
-            _SidebarItemData(Icons.checklist_rounded, 'Checklist', 3),
-            _SidebarItemData(
-                Icons.chat_bubble_outline_rounded, 'Comentários', 4),
-            _SidebarItemData(
-                Icons.place_outlined, 'Localização', 5),
-            _SidebarItemData(Icons.timeline_rounded, 'Histórico', 6),
-          ],
-          onTap: (i) => setState(() => _dashboardIdx = i),
-        ),
-        Expanded(
-          child: Container(
-            color: AppColors.neutralLightest,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: KeyedSubtree(
-                key: ValueKey(_dashboardIdx),
-                child: _dashboardContent(pedido),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+        final items = [
+          _SidebarItemData(Icons.assignment_outlined, 'Identificação', 0),
+          _SidebarItemData(Icons.analytics_outlined, 'Acompanhamento', 1),
+          _SidebarItemData(Icons.attach_file_rounded, 'Anexos', 2),
+          _SidebarItemData(Icons.checklist_rounded, 'Checklist', 3),
+          _SidebarItemData(
+              Icons.chat_bubble_outline_rounded, 'Comentários', 4),
+          _SidebarItemData(Icons.place_outlined, 'Localização', 5),
+          _SidebarItemData(Icons.timeline_rounded, 'Histórico', 6),
+        ];
+
+        if (isMobile) {
+          return Column(
+            children: [
+              _sidebarHorizontal(
+                currentIndex: _dashboardIdx,
+                items: items,
+                onTap: (i) => setState(() => _dashboardIdx = i),
+              ),
+              Expanded(
+                child: Container(
+                  color: AppColors.neutralLightest,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: KeyedSubtree(
+                      key: ValueKey(_dashboardIdx),
+                      child: _dashboardContent(pedido),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            _sidebar(
+              currentIndex: _dashboardIdx,
+              items: items,
+              onTap: (i) => setState(() => _dashboardIdx = i),
+            ),
+            Expanded(
+              child: Container(
+                color: AppColors.neutralLightest,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  child: KeyedSubtree(
+                    key: ValueKey(_dashboardIdx),
+                    child: _dashboardContent(pedido),
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 
@@ -781,6 +809,65 @@ class _PedidoPageState extends State<PedidoPage>
             );
           }),
         ],
+      ),
+    );
+  }
+
+  // ─── SIDEBAR HORIZONTAL (MOBILE) ──────────────────────────────────────────
+  Widget _sidebarHorizontal({
+    required int currentIndex,
+    required List<_SidebarItemData> items,
+    required Function(int) onTap,
+  }) {
+    return Container(
+      height: 52,
+      decoration: const BoxDecoration(
+        color: Color(0xFFF1F5F9),
+        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Row(
+          children: items.map((item) {
+            final isSelected = currentIndex == item.index;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 8),
+              child: Tooltip(
+                message: item.label,
+                preferBelow: true,
+                waitDuration: const Duration(milliseconds: 300),
+                child: InkWell(
+                  onTap: () => onTap(item.index),
+                  borderRadius: BorderRadius.circular(8),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.primaryMain.withValues(alpha: 0.10)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      border: isSelected
+                          ? Border.all(
+                              color: AppColors.primaryMain
+                                  .withValues(alpha: 0.20))
+                          : null,
+                    ),
+                    child: Icon(
+                      item.icon,
+                      size: 18,
+                      color: isSelected
+                          ? AppColors.primaryMain
+                          : Colors.grey[400],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }

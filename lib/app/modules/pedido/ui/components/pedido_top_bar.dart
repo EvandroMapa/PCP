@@ -181,34 +181,57 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
 
 
   // ── Versão Kanban ─────────────────────────────────────────────────────────
-  Widget _kanbanWidget(BuildContext context) => Container(
-        width: double.maxFinite,
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        decoration: BoxDecoration(color: AppColors.primaryMain),
-        child: Row(
-          children: [
-            InkWell(
-              onTap: () => onDelete!(),
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                width: 36,
-                height: 36,
-                alignment: Alignment.center,
-                child: Icon(Icons.close, color: AppColors.white),
-              ),
+  Widget _kanbanWidget(BuildContext context) => LayoutBuilder(
+        builder: (context, constraints) {
+          final isMobile = constraints.maxWidth < 600;
+          final botoesAcao = _acoes(context, isKanban: true)
+              .expand((btn) => [btn, const SizedBox(width: 4)])
+              .toList()
+            ..removeLast();
+
+          return Container(
+            width: double.maxFinite,
+            padding: EdgeInsets.symmetric(
+                vertical: 8, horizontal: isMobile ? 8 : 16),
+            decoration: BoxDecoration(color: AppColors.primaryMain),
+            child: Row(
+              children: [
+                InkWell(
+                  onTap: () => onDelete!(),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    alignment: Alignment.center,
+                    child: Icon(Icons.close, color: AppColors.white),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (isMobile)
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _titulo(),
+                          const SizedBox(width: 12),
+                          ...botoesAcao,
+                        ],
+                      ),
+                    ),
+                  )
+                else ...[
+                  const SizedBox(width: 4),
+                  Expanded(child: _titulo()),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: botoesAcao,
+                  ),
+                ],
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(child: _titulo()),
-            // ── Botões equidistantes com gap de 4px ──
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: _acoes(context, isKanban: true)
-                  .expand((btn) => [btn, const SizedBox(width: 4)])
-                  .toList()
-                ..removeLast(), // remove o último SizedBox extra
-            ),
-          ],
-        ),
+          );
+        },
       );
 
   // ── Versão Página (AppBar) ────────────────────────────────────────────────
