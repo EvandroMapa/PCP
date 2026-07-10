@@ -53,8 +53,10 @@ class _OrdemPedidoProdutoWidgetState extends State<OrdemPedidoProdutoWidget> {
   bool get _isAlternarToque =>
       ordemCtrl.isEmModoOperador && PreferencesService.alternarToqueCD.value;
 
+  /// Modo por OS funciona independente de isEmModoOperador:
+  /// se a config global é 'por_os' e o pedido tem elementos,
+  /// o card SEMPRE abre a tela de OS (inclusive no Painel Gerencial).
   bool get _isModoPorOS =>
-      ordemCtrl.isEmModoOperador &&
       _modoApontamento == 'por_os' &&
       _pedidoTemElementos();
 
@@ -302,8 +304,9 @@ class _OrdemPedidoProdutoWidgetState extends State<OrdemPedidoProdutoWidget> {
                       ),
                     ),
                   ),
-                  // Botões de status laterais (somente quando NÃO é modo operador)
-                  if (!_isOperador)
+                  // Botões de status laterais: ocultos no modo operador
+                  // e também no modo por OS (onde o card abre a tela de OS)
+                  if (!_isOperador && !_isModoPorOS)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Column(
