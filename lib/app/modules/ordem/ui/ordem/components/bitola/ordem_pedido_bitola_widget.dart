@@ -337,6 +337,7 @@ class _OrdemPedidoProdutoWidgetState extends State<OrdemPedidoProdutoWidget> {
         builder: (_) => OrdemPedidoElementosPage(
           produto: produto,
           ordem: ordem,
+          readOnly: !ordemCtrl.isEmModoOperador,
         ),
       ),
     );

@@ -24,11 +24,13 @@ import 'package:flutter/material.dart';
 class OrdemPedidoElementosPage extends StatefulWidget {
   final PedidoBitolaModel produto;
   final OrdemModel ordem;
+  final bool readOnly;
 
   const OrdemPedidoElementosPage({
     super.key,
     required this.produto,
     required this.ordem,
+    this.readOnly = false,
   });
 
   @override
@@ -544,16 +546,21 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
                         itemCount: _posicoes.length,
                         itemBuilder: (context, index) {
                           final item = _posicoes[index];
+                          final isReadOnly = widget.readOnly;
                           return _ElementoOSCard(
                             key: ValueKey(
                                 '${item.elemento.id}_${item.posicao.id}'),
                             item: item,
-                            onTap: _isAlternarToque
-                                ? () => _onPosicaoAlternar(item, avancar: true)
-                                : () => _onPosicaoTap(item),
-                            onLongPress: _isAlternarToque
-                                ? () => _onPosicaoAlternar(item, avancar: false)
-                                : null,
+                            onTap: isReadOnly
+                                ? null
+                                : _isAlternarToque
+                                    ? () => _onPosicaoAlternar(item, avancar: true)
+                                    : () => _onPosicaoTap(item),
+                            onLongPress: isReadOnly
+                                ? null
+                                : _isAlternarToque
+                                    ? () => _onPosicaoAlternar(item, avancar: false)
+                                    : null,
                           );
                         },
                       ),
@@ -577,13 +584,13 @@ class _PosicaoItem {
 
 class _ElementoOSCard extends StatelessWidget {
   final _PosicaoItem item;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
   const _ElementoOSCard({
     super.key,
     required this.item,
-    required this.onTap,
+    this.onTap,
     this.onLongPress,
   });
 
