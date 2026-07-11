@@ -84,122 +84,9 @@ class _ElementosTabState extends State<ElementosTab> {
             const SizedBox(height: 8),
 
             // ── Toolbar ───────────────────────────────────────────────────
-            Builder(
-              builder: (context) {
-                final isMobile = MediaQuery.sizeOf(context).width < 600;
-                return Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Elementos (${elementos.length})',
-                          style: AppCss.smallBold.setSize(13),
-                        ),
-                      ),
-                      if (isMobile) ...[
-                        // ── MOBILE: ícones compactos ──
-                        // Comparativo
-                        _iconBtn(
-                          icon: validacao.isOk
-                              ? Icons.check_circle_outlined
-                              : Icons.warning_amber_rounded,
-                          color: validacao.isOk
-                              ? AppColors.success
-                              : AppColors.error,
-                          tooltip: 'Comparativo',
-                          onTap: () => showElementoComparativoDialog(
-                            context,
-                            validacao: validacao,
-                          ),
-                        ),
-                        if (usuarioCtrl.usuario?.podeEditarElementos ??
-                            false) ...[
-                          const SizedBox(width: 8),
-                          // Limpar
-                          StreamOut<List<ElementoModel>>(
-                            stream: elementoCtrl.elementosStream.listen,
-                            builder: (_, elementos) {
-                              if (elementos.isEmpty) {
-                                return const SizedBox.shrink();
-                              }
-                              return _iconBtn(
-                                icon: Icons.delete_sweep_rounded,
-                                color: AppColors.error,
-                                tooltip: 'Limpar tudo',
-                                onTap: () => _onLimpar(elementos),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          // Novo
-                          _iconBtn(
-                            icon: Icons.add,
-                            color: Colors.white,
-                            bgColor: AppColors.primaryMain,
-                            tooltip: 'Novo Elemento',
-                            onTap: () => showElementoFormDialog(
-                              context,
-                              pedido: widget.pedido,
-                            ),
-                          ),
-                        ],
-                      ] else ...[
-                        // ── DESKTOP: botões pill com texto ──
-                        if (usuarioCtrl.usuario?.podeEditarElementos ??
-                            false) ...[
-                          // Limpar
-                          StreamOut<List<ElementoModel>>(
-                            stream: elementoCtrl.elementosStream.listen,
-                            builder: (_, elementos) {
-                              if (elementos.isEmpty) {
-                                return const SizedBox.shrink();
-                              }
-                              return _ActionButton(
-                                icon: Icons.delete_sweep_rounded,
-                                label: 'Limpar',
-                                color: AppColors.error,
-                                variant: _ButtonVariant.outlined,
-                                onTap: () => _onLimpar(elementos),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          // Novo Elemento
-                          _ActionButton(
-                            icon: Icons.add_rounded,
-                            label: 'Novo Elemento',
-                            color: AppColors.primaryMain,
-                            variant: _ButtonVariant.filled,
-                            onTap: () => showElementoFormDialog(
-                              context,
-                              pedido: widget.pedido,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                        ],
-                        // Comparativo
-                        _ActionButton(
-                          icon: validacao.isOk
-                              ? Icons.check_circle_rounded
-                              : Icons.warning_rounded,
-                          label: 'Comparativo',
-                          color: validacao.isOk
-                              ? AppColors.success
-                              : AppColors.error,
-                          variant: _ButtonVariant.outlined,
-                          onTap: () => showElementoComparativoDialog(
-                            context,
-                            validacao: validacao,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                );
-              },
-            ),
+            MediaQuery.sizeOf(context).width < 600
+                ? _buildToolbarMobile(validacao, elementos)
+                : _buildToolbarDesktop(validacao, elementos),
 
             // ── Barra de Resumo de Status ──────────────────────────────────
             if (elementos.isNotEmpty) _buildStatusSummaryBar(elementos),
@@ -263,6 +150,131 @@ class _ElementosTabState extends State<ElementosTab> {
           ],
         );
       },
+    );
+  }
+
+  // ─── TOOLBAR DESKTOP (restaurada do original) ──────────────────────────────
+  Widget _buildToolbarDesktop(
+      ElementoValidacao validacao, List<ElementoModel> elementos) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Elementos (${elementos.length})',
+            style: AppCss.mediumBold,
+          ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (usuarioCtrl.usuario?.podeEditarElementos ?? false) ...[
+                // ── Limpar (danger ghost) ──
+                StreamOut<List<ElementoModel>>(
+                  stream: elementoCtrl.elementosStream.listen,
+                  builder: (_, elementos) {
+                    if (elementos.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    return _ActionButton(
+                      icon: Icons.delete_sweep_rounded,
+                      label: 'Limpar',
+                      color: AppColors.error,
+                      variant: _ButtonVariant.outlined,
+                      onTap: () => _onLimpar(elementos),
+                    );
+                  },
+                ),
+                // ── Novo Elemento (primary solid) ──
+                _ActionButton(
+                  icon: Icons.add_rounded,
+                  label: 'Novo Elemento',
+                  color: AppColors.primaryMain,
+                  variant: _ButtonVariant.filled,
+                  onTap: () => showElementoFormDialog(
+                    context,
+                    pedido: widget.pedido,
+                  ),
+                ),
+              ],
+              // ── Comparativo (status pill) ──
+              _ActionButton(
+                icon: validacao.isOk
+                    ? Icons.check_circle_rounded
+                    : Icons.warning_rounded,
+                label: 'Comparativo',
+                color: validacao.isOk ? AppColors.success : AppColors.error,
+                variant: _ButtonVariant.outlined,
+                onTap: () => showElementoComparativoDialog(
+                  context,
+                  validacao: validacao,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── TOOLBAR MOBILE (ícones compactos) ─────────────────────────────────────
+  Widget _buildToolbarMobile(
+      ElementoValidacao validacao, List<ElementoModel> elementos) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Elementos (${elementos.length})',
+              style: AppCss.smallBold.setSize(13),
+            ),
+          ),
+          // Comparativo
+          _iconBtn(
+            icon: validacao.isOk
+                ? Icons.check_circle_outlined
+                : Icons.warning_amber_rounded,
+            color: validacao.isOk ? AppColors.success : AppColors.error,
+            tooltip: 'Comparativo',
+            onTap: () => showElementoComparativoDialog(
+              context,
+              validacao: validacao,
+            ),
+          ),
+          if (usuarioCtrl.usuario?.podeEditarElementos ?? false) ...[
+            const SizedBox(width: 8),
+            // Limpar
+            StreamOut<List<ElementoModel>>(
+              stream: elementoCtrl.elementosStream.listen,
+              builder: (_, elementos) {
+                if (elementos.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return _iconBtn(
+                  icon: Icons.delete_sweep_rounded,
+                  color: AppColors.error,
+                  tooltip: 'Limpar tudo',
+                  onTap: () => _onLimpar(elementos),
+                );
+              },
+            ),
+            const SizedBox(width: 8),
+            // Novo
+            _iconBtn(
+              icon: Icons.add,
+              color: Colors.white,
+              bgColor: AppColors.primaryMain,
+              tooltip: 'Novo Elemento',
+              onTap: () => showElementoFormDialog(
+                context,
+                pedido: widget.pedido,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
