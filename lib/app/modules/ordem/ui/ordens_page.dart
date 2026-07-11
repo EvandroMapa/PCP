@@ -435,7 +435,10 @@ class _OrdensPageState extends State<OrdensPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Header: número + posição + badge status
-                        Row(
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Text(
                               ordem.localizator,
@@ -445,7 +448,6 @@ class _OrdensPageState extends State<OrdensPage> {
                                 ordem.beltIndex != null &&
                                 !ordemCtrl.isEmModoOperador)
                               Container(
-                                margin: const EdgeInsets.only(left: 8),
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 7, vertical: 2),
                                 decoration: BoxDecoration(
@@ -460,7 +462,6 @@ class _OrdensPageState extends State<OrdensPage> {
                                       .setColor(AppColors.primaryMain),
                                 ),
                               ),
-                            const Spacer(),
                             // Badge status
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -531,7 +532,10 @@ class _OrdensPageState extends State<OrdensPage> {
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 6,
+                                crossAxisAlignment: WrapCrossAlignment.center,
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.symmetric(
@@ -549,7 +553,6 @@ class _OrdensPageState extends State<OrdensPage> {
                                           .setColor(AppColors.primaryMain),
                                     ),
                                   ),
-                                  const SizedBox(width: 6),
                                   Container(
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 8, vertical: 3),
@@ -562,7 +565,7 @@ class _OrdensPageState extends State<OrdensPage> {
                                       ),
                                     ),
                                     child: Text(
-                                      'Estoque: ${estoqueAntes.toKg()} → ${estoqueDepois.toKg()}',
+                                      'Est: ${estoqueAntes.toKg()} → ${estoqueDepois.toKg()}',
                                       style: AppCss.minimumRegular
                                           .setSize(10)
                                           .setColor(estoqueDepois < 0
@@ -570,9 +573,9 @@ class _OrdensPageState extends State<OrdensPage> {
                                               : Colors.grey[600]!),
                                     ),
                                   ),
-                                  const Spacer(),
                                   if (ordem.produtos.isNotEmpty)
                                     Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
                                         _progressChartWidget(
                                             PedidoBitolaStatus
@@ -593,6 +596,7 @@ class _OrdensPageState extends State<OrdensPage> {
                                     ),
                                   if (ordem.produtos.isEmpty)
                                     Row(
+                                      mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Icon(Symbols.brightness_empty,
                                             size: 18,
