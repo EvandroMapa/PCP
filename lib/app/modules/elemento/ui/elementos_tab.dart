@@ -84,9 +84,9 @@ class _ElementosTabState extends State<ElementosTab> {
             const SizedBox(height: 8),
 
             // ── Toolbar ───────────────────────────────────────────────────
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final isMobile = constraints.maxWidth < 600;
+            Builder(
+              builder: (context) {
+                final isMobile = MediaQuery.sizeOf(context).width < 600;
                 return Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
