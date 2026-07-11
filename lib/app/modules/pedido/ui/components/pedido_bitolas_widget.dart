@@ -4,7 +4,6 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/components/divisor.dart';
-import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
@@ -35,10 +34,12 @@ class PedidoProdutosWidget extends StatelessWidget {
     return Column(
       children: [
         ExpansionTile(
-          title: Row(
+          title: Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text('${produto.produto.nome} - ${produto.produto.descricao}'),
-              const W(16),
               Builder(
                 builder: (context) {
                   final ordem = pedidoCtrl.getOrdemByProduto(produto, true);
@@ -70,7 +71,6 @@ class PedidoProdutosWidget extends StatelessWidget {
                   );
                 },
               ),
-              const W(4),
               if (!pedido.isAguardandoEntradaProducao())
                 Container(
                   padding: const EdgeInsets.symmetric(

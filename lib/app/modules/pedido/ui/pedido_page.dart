@@ -165,41 +165,58 @@ class _PedidoPageState extends State<PedidoPage>
           ),
 
         // ── TabBar ───────────────────────────────────────────────────────
-        Container(
-          width: double.maxFinite,
-          color: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Container(
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.neutralLight.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: TabBar(
-              controller: _tabController,
-              labelStyle: AppCss.mediumBold.copyWith(fontSize: 13),
-              unselectedLabelStyle: AppCss.mediumRegular.copyWith(fontSize: 13),
-              labelColor: AppColors.white,
-              unselectedLabelColor: AppColors.neutralDark,
-              indicatorSize: TabBarIndicatorSize.tab,
-              dividerColor: Colors.transparent, // remove a linha nativa
-              indicator: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: AppColors.primaryMain,
-                boxShadow: [
-                  BoxShadow(
-                      color: AppColors.primaryMain.withValues(alpha: 0.2),
-                      offset: const Offset(0, 2),
-                      blurRadius: 4),
-                ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isMobile = constraints.maxWidth < 600;
+            return Container(
+              width: double.maxFinite,
+              color: Colors.white,
+              padding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 8 : 16, vertical: 8),
+              child: Container(
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.neutralLight.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  isScrollable: isMobile,
+                  tabAlignment:
+                      isMobile ? TabAlignment.start : TabAlignment.fill,
+                  labelStyle: AppCss.mediumBold
+                      .copyWith(fontSize: isMobile ? 11 : 13),
+                  unselectedLabelStyle: AppCss.mediumRegular
+                      .copyWith(fontSize: isMobile ? 11 : 13),
+                  labelColor: AppColors.white,
+                  unselectedLabelColor: AppColors.neutralDark,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
+                  labelPadding: isMobile
+                      ? const EdgeInsets.symmetric(horizontal: 12)
+                      : null,
+                  indicator: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: AppColors.primaryMain,
+                    boxShadow: [
+                      BoxShadow(
+                          color: AppColors.primaryMain.withValues(alpha: 0.2),
+                          offset: const Offset(0, 2),
+                          blurRadius: 4),
+                    ],
+                  ),
+                  tabs: [
+                    Tab(
+                        text: pedido.isMestre
+                            ? (isMobile ? 'INFORMAÇÕES' : 'INFORMAÇÕES GERAIS')
+                            : 'DASHBOARD'),
+                    const Tab(text: 'BITOLAS'),
+                    if (_lastShowElementos) const Tab(text: 'ELEMENTOS'),
+                  ],
+                ),
               ),
-              tabs: [
-                Tab(text: pedido.isMestre ? 'INFORMAÇÕES GERAIS' : 'DASHBOARD'),
-                const Tab(text: 'BITOLAS'),
-                if (_lastShowElementos) const Tab(text: 'ELEMENTOS'),
-              ],
-            ),
-          ),
+            );
+          },
         ),
 
         // ── Conteúdo das abas ─────────────────────────────────────────────

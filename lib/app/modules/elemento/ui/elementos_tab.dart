@@ -86,13 +86,14 @@ class _ElementosTabState extends State<ElementosTab> {
             // ── Botão adicionar ───────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Elementos (${elementos.length})',
                     style: AppCss.mediumBold,
                   ),
+                  const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -281,90 +282,69 @@ class _ElementosTabState extends State<ElementosTab> {
       final qtd = qtdPorStatus[status] ?? 0;
       final peso = pesoPorStatus[status] ?? 0;
       final pctQtd = totalQtd > 0 ? (qtd / totalQtd * 100) : 0;
-      final pctPeso = totalPeso > 0 ? (peso / totalPeso * 100) : 0;
 
       return Expanded(
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-          decoration: BoxDecoration(
-            color: status.backgroundColor,
-            border: Border(
-              top: BorderSide(color: status.color, width: 3),
+        child: GestureDetector(
+          onTap: () => setState(() => _statusVisivel[status] =
+              !(_statusVisivel[status] ?? true)),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+            decoration: BoxDecoration(
+              color: status.backgroundColor,
+              border: Border(
+                top: BorderSide(color: status.color, width: 3),
+              ),
             ),
-          ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Text(
-                      status.label.toUpperCase(),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: (_statusVisivel[status] ?? true)
-                            ? status.color
-                            : Colors.grey[400],
-                        letterSpacing: 1,
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        status.label.toUpperCase(),
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          color: (_statusVisivel[status] ?? true)
+                              ? status.color
+                              : Colors.grey[400],
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
-                  ),
-                  GestureDetector(
-                    onTap: () => setState(() => _statusVisivel[status] =
-                        !(_statusVisivel[status] ?? true)),
-                    child: Icon(
+                    const SizedBox(width: 2),
+                    Icon(
                       (_statusVisivel[status] ?? true)
                           ? Icons.visibility_rounded
                           : Icons.visibility_off_rounded,
-                      size: 14,
+                      size: 12,
                       color: (_statusVisivel[status] ?? true)
                           ? status.color
                           : Colors.grey[400],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('ELEMENTOS',
-                            style: TextStyle(
-                                fontSize: 8,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[500])),
-                        const SizedBox(height: 2),
-                        Text(
-                            '${qtd % 1 == 0 ? qtd.toInt() : qtd.toStringAsFixed(1)} (${pctQtd.toStringAsFixed(0)}%)',
-                            style: const TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.w700)),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text('PESO (KG)',
-                            style: TextStyle(
-                                fontSize: 8,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[500])),
-                        const SizedBox(height: 2),
-                        Text('${_fmt(peso)} (${pctPeso.toStringAsFixed(0)}%)',
-                            style: const TextStyle(
-                                fontSize: 12, fontWeight: FontWeight.w700)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${qtd % 1 == 0 ? qtd.toInt() : qtd.toStringAsFixed(1)} (${pctQtd.toStringAsFixed(0)}%)',
+                  style: const TextStyle(
+                      fontSize: 11, fontWeight: FontWeight.w700),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${_fmt(peso)} kg',
+                  style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[500]),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -381,9 +361,9 @@ class _ElementosTabState extends State<ElementosTab> {
         child: Row(
           children: [
             col(ElementoStatus.aguardando),
-            Container(width: 0.5, height: 70, color: Colors.grey.shade300),
+            Container(width: 0.5, height: 60, color: Colors.grey.shade300),
             col(ElementoStatus.armando),
-            Container(width: 0.5, height: 70, color: Colors.grey.shade300),
+            Container(width: 0.5, height: 60, color: Colors.grey.shade300),
             col(ElementoStatus.pronto),
           ],
         ),
@@ -442,17 +422,20 @@ class _ElementoTileState extends State<_ElementoTile> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
+                          // Nome + badges
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               Text(el.nome,
-                                  style: AppCss.mediumBold.setSize(16)),
+                                  style: AppCss.mediumBold.setSize(15)),
                               if (el.qtde > 1)
                                 Container(
-                                  margin: const EdgeInsets.only(left: 8),
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
@@ -467,7 +450,6 @@ class _ElementoTileState extends State<_ElementoTile> {
                                 ),
                               // Badge de status
                               Container(
-                                margin: const EdgeInsets.only(left: 8),
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 2),
                                 decoration: BoxDecoration(
@@ -492,96 +474,80 @@ class _ElementoTileState extends State<_ElementoTile> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${el.posicoes.length} posição(ões) · Unit: ${widget.fmt(el.pesoUnitario)} kg',
+                            '${el.posicoes.length} pos. · Unit: ${widget.fmt(el.pesoUnitario)} kg',
                             style: AppCss.minimumRegular
                                 .copyWith(color: Colors.grey[600]),
+                          ),
+                          const SizedBox(height: 6),
+                          // Peso + botões na mesma linha
+                          Wrap(
+                            spacing: 4,
+                            runSpacing: 4,
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryMain
+                                      .withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${widget.fmt(el.pesoTotal)} kg',
+                                  style: AppCss.mediumBold
+                                      .setColor(AppColors.primaryMain)
+                                      .setSize(13),
+                                ),
+                              ),
+                              // Botão de Anexos
+                              _tileAction(
+                                icon: el.arquivos.isEmpty
+                                    ? Icons.attach_file_rounded
+                                    : Icons.attachment_rounded,
+                                color: el.arquivos.isEmpty
+                                    ? Colors.grey[400]!
+                                    : AppColors.secondary,
+                                tooltip: 'Anexos (${el.arquivos.length})',
+                                onTap: () =>
+                                    _showArquivosDialog(context, el),
+                              ),
+                              // Ações
+                              if (usuarioCtrl.usuario?.podeEditarElementos ??
+                                  false) ...[
+                                _tileAction(
+                                  icon: Icons.edit_rounded,
+                                  color: Colors.grey[600]!,
+                                  tooltip: 'Editar',
+                                  onTap: () => showElementoFormDialog(
+                                      context,
+                                      pedido: widget.pedido,
+                                      elemento: el),
+                                ),
+                                _tileAction(
+                                  icon: Icons.delete_outline_rounded,
+                                  color:
+                                      el.status == ElementoStatus.aguardando
+                                          ? Colors.red[400]!
+                                          : Colors.grey[300]!,
+                                  tooltip:
+                                      el.status == ElementoStatus.aguardando
+                                          ? 'Excluir'
+                                          : 'Não é possível excluir',
+                                  onTap:
+                                      el.status == ElementoStatus.aguardando
+                                          ? () => elementoCtrl
+                                              .onDeleteElemento(el)
+                                          : null,
+                                ),
+                              ],
+                            ],
                           ),
                         ],
                       ),
                     ),
                   ),
-                  // Peso total em destaque
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryMain.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '${widget.fmt(el.pesoTotal)} kg',
-                          style: AppCss.mediumBold
-                              .setColor(AppColors.primaryMain)
-                              .setSize(14),
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Botão de Anexos
-                      IconButton(
-                        onPressed: () => _showArquivosDialog(context, el),
-                        tooltip: 'Anexos (${el.arquivos.length})',
-                        constraints:
-                            const BoxConstraints(minWidth: 32, minHeight: 32),
-                        padding: EdgeInsets.zero,
-                        splashRadius: 18,
-                        icon: Icon(
-                          el.arquivos.isEmpty
-                              ? Icons.attach_file_rounded
-                              : Icons.attachment_rounded,
-                          color: el.arquivos.isEmpty
-                              ? Colors.grey[400]
-                              : AppColors.secondary,
-                          size: 18,
-                        ),
-                      ),
-                      const SizedBox(width: 2),
-                      // Ações
-                      if (usuarioCtrl.usuario?.podeEditarElementos ??
-                          false) ...[
-                        // Botão Editar
-                        IconButton(
-                          onPressed: () => showElementoFormDialog(context,
-                              pedido: widget.pedido, elemento: el),
-                          tooltip: 'Editar',
-                          constraints:
-                              const BoxConstraints(minWidth: 32, minHeight: 32),
-                          padding: EdgeInsets.zero,
-                          splashRadius: 18,
-                          icon: Icon(Icons.edit_rounded,
-                              color: Colors.grey[600], size: 18),
-                        ),
-                        const SizedBox(width: 2),
-                        // Botão Excluir
-                        IconButton(
-                          onPressed: el.status == ElementoStatus.aguardando
-                              ? () => elementoCtrl.onDeleteElemento(el)
-                              : null,
-                          tooltip: el.status == ElementoStatus.aguardando
-                              ? 'Excluir'
-                              : 'Não é possível excluir elementos em produção',
-                          constraints:
-                              const BoxConstraints(minWidth: 32, minHeight: 32),
-                          padding: EdgeInsets.zero,
-                          splashRadius: 18,
-                          icon: Icon(
-                            Icons.delete_outline_rounded,
-                            color: el.status == ElementoStatus.aguardando
-                                ? Colors.red[400]
-                                : Colors.grey[300],
-                            size: 18,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 8),
                 ],
               ),
             ),
@@ -711,6 +677,33 @@ class _ElementoTileState extends State<_ElementoTile> {
         style:
             AppCss.minimumBold.copyWith(color: Colors.grey[400], fontSize: 11),
         textAlign: isEnd ? TextAlign.end : TextAlign.start,
+      ),
+    );
+  }
+
+  Widget _tileAction({
+    required IconData icon,
+    required Color color,
+    required String tooltip,
+    VoidCallback? onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      preferBelow: false,
+      waitDuration: const Duration(milliseconds: 300),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, color: color, size: 16),
+        ),
       ),
     );
   }
