@@ -83,82 +83,121 @@ class _ElementosTabState extends State<ElementosTab> {
           children: [
             const SizedBox(height: 8),
 
-            // ── Botão adicionar ───────────────────────────────────────────
+            // ── Toolbar ───────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
+              child: Row(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 4),
+                  Expanded(
                     child: Text(
                       'Elementos (${elementos.length})',
-                      style: AppCss.mediumBold,
+                      style: AppCss.smallBold.setSize(13),
+                    ),
+                  ),
+                  // ── Comparativo ──
+                  Tooltip(
+                    message: 'Comparativo',
+                    preferBelow: false,
+                    waitDuration: const Duration(milliseconds: 300),
+                    child: InkWell(
+                      onTap: () => showElementoComparativoDialog(
+                        context,
+                        validacao: validacao,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: (validacao.isOk
+                                  ? AppColors.success
+                                  : AppColors.error)
+                              .withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          validacao.isOk
+                              ? Icons.check_circle_outlined
+                              : Icons.warning_amber_rounded,
+                          color: validacao.isOk
+                              ? AppColors.success
+                              : AppColors.error,
+                          size: 20,
+                        ),
+                      ),
                     ),
                   ),
                   if (usuarioCtrl.usuario?.podeEditarElementos ??
                       false) ...[
-                    // ── Limpar (danger ghost) ──
+                    const SizedBox(width: 8),
+                    // ── Limpar ──
                     StreamOut<List<ElementoModel>>(
                       stream: elementoCtrl.elementosStream.listen,
                       builder: (_, elementos) {
                         if (elementos.isEmpty) {
                           return const SizedBox.shrink();
                         }
-                        return _ActionButton(
-                          icon: Icons.delete_sweep_rounded,
-                          label: 'Limpar',
-                          color: AppColors.error,
-                          variant: _ButtonVariant.outlined,
-                          onTap: () async {
-                            final hasInProduction = elementos.any((e) =>
-                                e.status != ElementoStatus.aguardando);
-                            if (hasInProduction) {
-                              showInfoDialog(
-                                  'Não é possível limpar a lista porque existem elementos que já estão em produção ou concluídos. Exclua individualmente os itens aguardando.');
-                              return;
-                            }
-
-                            if (await showConfirmDialog(
-                              'Apagar TODOS os elementos?',
-                              'Esta ação não pode ser desfeita. Deseja continuar?',
-                            )) {
-                              await elementoCtrl
-                                  .onDeleteAllElementos(widget.pedido.id);
-                            }
-                          },
+                        return Tooltip(
+                          message: 'Limpar tudo',
+                          preferBelow: false,
+                          waitDuration: const Duration(milliseconds: 300),
+                          child: InkWell(
+                            onTap: () async {
+                              final hasInProduction = elementos.any((e) =>
+                                  e.status != ElementoStatus.aguardando);
+                              if (hasInProduction) {
+                                showInfoDialog(
+                                    'Não é possível limpar a lista porque existem elementos que já estão em produção ou concluídos. Exclua individualmente os itens aguardando.');
+                                return;
+                              }
+                              if (await showConfirmDialog(
+                                'Apagar TODOS os elementos?',
+                                'Esta ação não pode ser desfeita. Deseja continuar?',
+                              )) {
+                                await elementoCtrl
+                                    .onDeleteAllElementos(widget.pedido.id);
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(8),
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: AppColors.error.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(Icons.delete_sweep_rounded,
+                                  color: AppColors.error, size: 20),
+                            ),
+                          ),
                         );
                       },
                     ),
-                    // ── Novo Elemento (primary solid) ──
-                    _ActionButton(
-                      icon: Icons.add_rounded,
-                      label: 'Novo',
-                      color: AppColors.primaryMain,
-                      variant: _ButtonVariant.filled,
-                      onTap: () => showElementoFormDialog(
-                        context,
-                        pedido: widget.pedido,
+                    const SizedBox(width: 8),
+                    // ── Novo Elemento ──
+                    Tooltip(
+                      message: 'Novo Elemento',
+                      preferBelow: false,
+                      waitDuration: const Duration(milliseconds: 300),
+                      child: InkWell(
+                        onTap: () => showElementoFormDialog(
+                          context,
+                          pedido: widget.pedido,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryMain,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.add,
+                              color: Colors.white, size: 20),
+                        ),
                       ),
                     ),
                   ],
-                  // ── Comparativo (status pill) ──
-                  _ActionButton(
-                    icon: validacao.isOk
-                        ? Icons.check_circle_rounded
-                        : Icons.warning_rounded,
-                    label: 'Comparativo',
-                    color: validacao.isOk
-                        ? AppColors.success
-                        : AppColors.error,
-                    variant: _ButtonVariant.outlined,
-                    onTap: () => showElementoComparativoDialog(
-                      context,
-                      validacao: validacao,
-                    ),
-                  ),
                 ],
               ),
             ),
