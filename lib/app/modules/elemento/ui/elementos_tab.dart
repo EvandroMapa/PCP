@@ -155,7 +155,7 @@ class _ElementosTabState extends State<ElementosTab> {
 
   // ─── TOOLBAR DESKTOP (restaurada do original) ──────────────────────────────
   Widget _buildToolbarDesktop(
-      ElementoValidacao validacao, List<ElementoModel> elementos) {
+      ElementoValidacaoResult validacao, List<ElementoModel> elementos) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -220,7 +220,7 @@ class _ElementosTabState extends State<ElementosTab> {
 
   // ─── TOOLBAR MOBILE (ícones compactos) ─────────────────────────────────────
   Widget _buildToolbarMobile(
-      ElementoValidacao validacao, List<ElementoModel> elementos) {
+      ElementoValidacaoResult validacao, List<ElementoModel> elementos) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
