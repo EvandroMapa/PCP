@@ -39,7 +39,7 @@ class PedidoProdutosWidget extends StatelessWidget {
             runSpacing: 6,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Text('${produto.produto.nome} - ${produto.produto.descricao}'),
+              Text(produto.produto.nome),
               Builder(
                 builder: (context) {
                   final ordem = pedidoCtrl.getOrdemByProduto(produto, true);
