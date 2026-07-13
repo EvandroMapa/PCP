@@ -64,9 +64,9 @@ class SimuladorCompraController {
         // Se o relatório não estiver pronto, usa 0
       }
 
-      // Total em pedidos de compra pendentes/confirmados
+      // Total em pedidos de compra CONFIRMADOS (pendentes não entram no cálculo)
       final emPedido =
-          BackendClient.pedidosCompra.getTotalPendenteByProdutoId(produto.id);
+          BackendClient.pedidosCompra.getTotalConfirmadoByProdutoId(produto.id);
 
       // Calcula sugestão de compra (usando nível alvo)
       final necessidade = consumoPrevisto + nivelAlvo - saldoFisico - emPedido;

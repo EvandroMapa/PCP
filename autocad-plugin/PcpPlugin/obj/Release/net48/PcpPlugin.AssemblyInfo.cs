@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PcpPlugin")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b8426371bfc80021aaa4bf467edf58ac39025f94")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d62de82c6cad3e21a9ee6b6356c8c3ebd79c9622")]
 [assembly: System.Reflection.AssemblyProductAttribute("PcpPlugin")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PcpPlugin")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

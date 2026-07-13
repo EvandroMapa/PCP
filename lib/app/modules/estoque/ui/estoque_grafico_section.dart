@@ -74,7 +74,7 @@ class _EstoqueGraficoSectionState extends State<EstoqueGraficoSection> {
       totalSaldo += estoque?.quantidade ?? 0.0;
       totalConsumo += consumoMap[p.id] ?? 0.0;
       totalEmPedido +=
-          BackendClient.pedidosCompra.getTotalPendenteByProdutoId(p.id);
+          BackendClient.pedidosCompra.getTotalConfirmadoByProdutoId(p.id);
     }
     final totalProjetado = totalSaldo - totalConsumo + totalEmPedido;
 
@@ -85,7 +85,7 @@ class _EstoqueGraficoSectionState extends State<EstoqueGraficoSection> {
       final saldo = estoque?.quantidade ?? 0.0;
       final consumo = consumoMap[p.id] ?? 0.0;
       final emPedido =
-          BackendClient.pedidosCompra.getTotalPendenteByProdutoId(p.id);
+          BackendClient.pedidosCompra.getTotalConfirmadoByProdutoId(p.id);
       if (saldo == 0 && consumo == 0 && emPedido == 0) continue;
       data.add(_GraficoData(
         label: p.nome,

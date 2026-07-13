@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\DESENVOLVIMENTO\\pcp\\autocad-plugin\\PcpPlugin\\PcpPlugin.csproj": {}
+    "d:\\DESENVOLVIMENTO\\pcp\\autocad-plugin\\PcpPlugin\\PcpPlugin.csproj": {}
   },
   "projects": {
-    "D:\\DESENVOLVIMENTO\\pcp\\autocad-plugin\\PcpPlugin\\PcpPlugin.csproj": {
+    "d:\\DESENVOLVIMENTO\\pcp\\autocad-plugin\\PcpPlugin\\PcpPlugin.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\DESENVOLVIMENTO\\pcp\\autocad-plugin\\PcpPlugin\\PcpPlugin.csproj",
+        "projectUniqueName": "d:\\DESENVOLVIMENTO\\pcp\\autocad-plugin\\PcpPlugin\\PcpPlugin.csproj",
         "projectName": "PcpPlugin",
-        "projectPath": "D:\\DESENVOLVIMENTO\\pcp\\autocad-plugin\\PcpPlugin\\PcpPlugin.csproj",
+        "projectPath": "d:\\DESENVOLVIMENTO\\pcp\\autocad-plugin\\PcpPlugin\\PcpPlugin.csproj",
         "packagesPath": "C:\\Users\\evandromapa\\.nuget\\packages\\",
-        "outputPath": "D:\\DESENVOLVIMENTO\\pcp\\autocad-plugin\\PcpPlugin\\obj\\",
+        "outputPath": "d:\\DESENVOLVIMENTO\\pcp\\autocad-plugin\\PcpPlugin\\obj\\",
         "projectStyle": "PackageReference",
         "crossTargeting": true,
         "configFilePaths": [
@@ -48,6 +48,12 @@
       "frameworks": {
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
+          "dependencies": {
+            "System.Drawing.Common": {
+              "target": "Package",
+              "version": "[8.0.7, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",

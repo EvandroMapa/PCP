@@ -187,10 +187,11 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
     final estoqueMin = estoque?.estoqueMinimo ?? 0.0;
     final estoqueIdeal = estoque?.estoqueIdeal ?? 0.0;
 
+    // Apenas pedidos CONFIRMADOS entram no saldo projetado e no badge "Em pedido"
     final itensPendentes =
-        BackendClient.pedidosCompra.getPendentesByProdutoId(produto.id);
+        BackendClient.pedidosCompra.getConfirmadosByProdutoId(produto.id);
     final totalEmPedido =
-        BackendClient.pedidosCompra.getTotalPendenteByProdutoId(produto.id);
+        BackendClient.pedidosCompra.getTotalConfirmadoByProdutoId(produto.id);
     final saldoProjetado = saldoFisico + totalEmPedido;
     final temPedidos = itensPendentes.isNotEmpty;
 
@@ -363,10 +364,10 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
                       ),
                     ),
                     child: Row(children: [
-                      Icon(Icons.shopping_cart_outlined,
+                      Icon(Icons.thumb_up_outlined,
                           size: 13, color: Colors.blue[600]),
                       const SizedBox(width: 6),
-                      Text('Em pedido:',
+                      Text('Confirmado:',
                           style: AppCss.minimumRegular
                               .setColor(Colors.blue[700]!)
                               .setSize(12)),

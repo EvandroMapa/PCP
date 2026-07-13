@@ -18,3 +18,5 @@ D:\DESENVOLVIMENTO\pcp\autocad-plugin\PcpPlugin\bin\Release\net48\System.ValueTu
 D:\DESENVOLVIMENTO\pcp\autocad-plugin\PcpPlugin\obj\Release\net48\PcpPlugin.csproj.Up2Date
 D:\DESENVOLVIMENTO\pcp\autocad-plugin\PcpPlugin\obj\Release\net48\PcpPlugin.dll
 D:\DESENVOLVIMENTO\pcp\autocad-plugin\PcpPlugin\obj\Release\net48\PcpPlugin.pdb
+d:\DESENVOLVIMENTO\pcp\autocad-plugin\dist\acad2022\PcpPlugin.dll
+d:\DESENVOLVIMENTO\pcp\autocad-plugin\dist\acad2022\PcpPlugin.pdb

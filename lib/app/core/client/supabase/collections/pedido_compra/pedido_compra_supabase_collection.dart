@@ -54,11 +54,20 @@ class PedidoCompraSupabaseCollection {
     return Map.fromEntries(entries);
   }
 
+  /// Ativos (pendente + confirmado) por produto — usado em contextos gerais
   List<PedidoCompraModel> getPendentesByProdutoId(String produtoId) =>
       data.where((e) => e.isAtivo && e.produtoId == produtoId).toList();
 
   double getTotalPendenteByProdutoId(String produtoId) =>
       getPendentesByProdutoId(produtoId)
+          .fold(0.0, (sum, e) => sum + e.quantidade);
+
+  /// Apenas CONFIRMADOS por produto — usado nos painéis de estoque e simulador de compra
+  List<PedidoCompraModel> getConfirmadosByProdutoId(String produtoId) =>
+      data.where((e) => e.isConfirmado && e.produtoId == produtoId).toList();
+
+  double getTotalConfirmadoByProdutoId(String produtoId) =>
+      getConfirmadosByProdutoId(produtoId)
           .fold(0.0, (sum, e) => sum + e.quantidade);
 
   bool _isStarted = false;

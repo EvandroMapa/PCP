@@ -102,8 +102,9 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
       final estoque = BackendClient.estoques.getByProdutoId(p.id);
       totalSaldo += estoque?.quantidade ?? 0.0;
       totalConsumo += consumoMap[p.id] ?? 0.0;
+      // Apenas CONFIRMADOS entram nos totais de "Em Pedido"
       totalEmPedido +=
-          BackendClient.pedidosCompra.getTotalPendenteByProdutoId(p.id);
+          BackendClient.pedidosCompra.getTotalConfirmadoByProdutoId(p.id);
     }
     final totalSaldoFinal = totalSaldo - totalConsumo + totalEmPedido;
 
@@ -124,11 +125,12 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
                     BackendClient.estoques.getByProdutoId(produto.id);
                 final saldoAtual = estoque?.quantidade ?? 0.0;
                 final consumoPrevisto = consumoMap[produto.id] ?? 0.0;
+                // Apenas CONFIRMADOS — pedidos pendentes não entram na posição
                 final itensPedido = BackendClient.pedidosCompra
-                    .getPendentesByProdutoId(produto.id);
+                    .getConfirmadosByProdutoId(produto.id);
                 final totalEmPedidoProduto =
                     BackendClient.pedidosCompra
-                        .getTotalPendenteByProdutoId(produto.id);
+                        .getTotalConfirmadoByProdutoId(produto.id);
                 final saldoFinal =
                     saldoAtual - consumoPrevisto + totalEmPedidoProduto;
 
