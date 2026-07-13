@@ -7,6 +7,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 
@@ -78,7 +79,9 @@ class AutomatizacaoController {
           }
         }
         if (stepsToAdd.isNotEmpty) {
-          await FirestoreClient.pedidos.update(pedido);
+          // IMPORTANTE: usar BackendClient (Supabase), não FirestoreClient (Firestore),
+          // para evitar que o estado antigo do Firestore sobrescreva o Supabase.
+          await BackendClient.pedidos.update(pedido);
         }
       }
     }
@@ -128,7 +131,8 @@ class AutomatizacaoController {
       isFromAutomatizacao: true,
     );
 
-    await FirestoreClient.pedidos.update(pedido);
+    // IMPORTANTE: usar BackendClient (Supabase), não FirestoreClient.
+    await BackendClient.pedidos.update(pedido);
     log('executeFinalizacaoArmacao: Pedido atualizado com sucesso.');
   }
 }
