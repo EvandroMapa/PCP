@@ -267,11 +267,12 @@ class OrdemController {
       FirestoreClient.pedidos.fetch(),
     ]);
     onReorder(FirestoreClient.ordens.ordensNaoCongeladas);
-    automatizacaoCtrl.onSetStepByPedidoStatus(
+    // Automação em background — catchError garante que falhas não sejam silenciosas
+    unawaited(automatizacaoCtrl.onSetStepByPedidoStatus(
       ordemCriada.pedidos
           .map<PedidoModel>((e) => BackendClient.pedidos.getById(e.id))
           .toList(),
-    );
+    ).catchError((e) => log('[Automação] Erro ao criar ordem: $e')));
 
     Navigator.pop(value);
     NotificationService.showPositive(
@@ -360,7 +361,12 @@ class OrdemController {
       FirestoreClient.pedidos.fetch(),
       OrdemTimelineRegister.editada(ordemEditada, ordem),
     ]);
-    automatizacaoCtrl.onSetStepByPedidoStatus(ordemEditada.pedidos);
+    // Automação em background — busca instâncias atualizadas do backend (evita stale)
+    unawaited(automatizacaoCtrl.onSetStepByPedidoStatus(
+      ordemEditada.pedidos
+          .map<PedidoModel>((e) => BackendClient.pedidos.getById(e.id))
+          .toList(),
+    ).catchError((e) => log('[Automação] Erro ao editar ordem: $e')));
 
     Navigator.pop(value);
     Navigator.pop(value);
@@ -449,8 +455,12 @@ class OrdemController {
     ordem.produtos.clear();
     await FirestoreClient.ordens.delete(ordem);
     // ordens.fetch() removido — Realtime já cuida
-    // Automatização em background
-    automatizacaoCtrl.onSetStepByPedidoStatus(ordem.pedidos);
+    // Automação em background — busca instâncias atualizadas do backend (evita stale)
+    unawaited(automatizacaoCtrl.onSetStepByPedidoStatus(
+      ordem.pedidos
+          .map<PedidoModel>((e) => BackendClient.pedidos.getById(e.id))
+          .toList(),
+    ).catchError((e) => log('[Automação] Erro ao excluir ordem: $e')));
     pop(value);
 
     onReorder(FirestoreClient.ordens.ordensNaoCongeladas);

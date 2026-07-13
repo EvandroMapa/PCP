@@ -25,64 +25,73 @@ class AutomatizacaoController {
       // Pedidos Mestre não devem ser movidos pela automação — apenas parciais e pedidos normais
       if (pedido.pedidosFilhos.isNotEmpty) continue;
 
-      AutomatizacaoItemModel? item;
-      switch (pedido.status) {
-        case PedidoStatus.aguardandoProducaoCD:
-          item = automatizacaoConfig.produtoPedidoSeparado;
-          break;
-        case PedidoStatus.produzindoCD:
-          item = automatizacaoConfig.produzindoCDPedido;
-          break;
-        case PedidoStatus.aguardandoProducaoCDA:
-          item = automatizacaoConfig.aguardandoArmacaoPedido;
-          break;
-        case PedidoStatus.produzindoCDA:
-          item = automatizacaoConfig.produzindoArmacaoPedido;
-          break;
-        case PedidoStatus.pronto:
-          switch (pedido.tipo) {
-            case PedidoTipo.cd:
-              item = automatizacaoConfig.prontoCDPedido;
-              break;
-            case PedidoTipo.cda:
-              item = automatizacaoConfig.prontoArmacaoPedido;
-              break;
-            case PedidoTipo.outros:
-              // Sem automação de etapa para pedidos do tipo 'Outros'
-              break;
+      try {
+        AutomatizacaoItemModel? item;
+        switch (pedido.status) {
+          case PedidoStatus.aguardandoProducaoCD:
+            item = automatizacaoConfig.produtoPedidoSeparado;
+            break;
+          case PedidoStatus.produzindoCD:
+            item = automatizacaoConfig.produzindoCDPedido;
+            break;
+          case PedidoStatus.aguardandoProducaoCDA:
+            item = automatizacaoConfig.aguardandoArmacaoPedido;
+            break;
+          case PedidoStatus.produzindoCDA:
+            item = automatizacaoConfig.produzindoArmacaoPedido;
+            break;
+          case PedidoStatus.pronto:
+            switch (pedido.tipo) {
+              case PedidoTipo.cd:
+                item = automatizacaoConfig.prontoCDPedido;
+                break;
+              case PedidoTipo.cda:
+                item = automatizacaoConfig.prontoArmacaoPedido;
+                break;
+              case PedidoTipo.outros:
+                // Sem automação de etapa para pedidos do tipo 'Outros'
+                break;
+            }
+            break;
+          // arquivado não é um status válido do enum
+        }
+
+        if (item != null) {
+          List<StepModel> stepsToAdd = [];
+          if (item.steps != null && item.steps!.isNotEmpty) {
+            stepsToAdd = item.steps!;
+          } else if (item.step != null) {
+            stepsToAdd = [item.step!];
           }
-          break;
-        // arquivado não é um status válido do enum
-      }
 
-      if (item != null) {
-        List<StepModel> stepsToAdd = [];
-        if (item.steps != null && item.steps!.isNotEmpty) {
-          stepsToAdd = item.steps!;
-        } else if (item.step != null) {
-          stepsToAdd = [item.step!];
-        }
+          // Flag real: só salva se pelo menos um step foi de fato adicionado
+          var algumStepAdicionado = false;
+          for (var step in stepsToAdd) {
+            if (pedido.step.index < step.index) {
+              final stepById = FirestoreClient.steps.getById(step.id);
+              pedido.steps.add(PedidoStepModel.create(stepById));
 
-        for (var step in stepsToAdd) {
-          if (pedido.step.index < step.index) {
-            final stepById = FirestoreClient.steps.getById(step.id);
-            pedido.steps.add(PedidoStepModel.create(stepById));
+              // Registrar histórico
+              pedidoCtrl.onAddHistory(
+                pedido: pedido,
+                data: stepById,
+                type: PedidoHistoryType.step,
+                action: PedidoHistoryAction.update,
+                isFromAutomatizacao: true,
+              );
+              algumStepAdicionado = true;
+            }
+          }
 
-            // Registrar histórico
-            pedidoCtrl.onAddHistory(
-              pedido: pedido,
-              data: stepById,
-              type: PedidoHistoryType.step,
-              action: PedidoHistoryAction.update,
-              isFromAutomatizacao: true,
-            );
+          if (algumStepAdicionado) {
+            // IMPORTANTE: usar BackendClient (Supabase), não FirestoreClient (Firestore),
+            // para evitar que o estado antigo do Firestore sobrescreva o Supabase.
+            await BackendClient.pedidos.update(pedido);
+            log('[Automação] Pedido ${pedido.localizador} movido para → ${pedido.step.name}');
           }
         }
-        if (stepsToAdd.isNotEmpty) {
-          // IMPORTANTE: usar BackendClient (Supabase), não FirestoreClient (Firestore),
-          // para evitar que o estado antigo do Firestore sobrescreva o Supabase.
-          await BackendClient.pedidos.update(pedido);
-        }
+      } catch (e, stack) {
+        log('[Automação] ERRO ao processar pedido ${pedido.localizador}: $e\n$stack');
       }
     }
   }
@@ -101,7 +110,12 @@ class AutomatizacaoController {
         int.tryParse(resumo['details']?['pronto']?['qtd']?.toString() ?? '0') ??
             0;
 
-    if (total == 0 || pronto < total) return null;
+    if (total == 0) {
+      // Distingue "sem elementos cadastrados" de possível dado corrompido
+      log('[Automação] checkFinalizacaoArmacao: pedido ${pedido.localizador} sem elementos (total=0) — nenhuma ação.');
+      return null;
+    }
+    if (pronto < total) return null;
 
     // Se todos estiverem prontos
     final config = automatizacaoConfig.finalizacaoArmacaoPedido;
