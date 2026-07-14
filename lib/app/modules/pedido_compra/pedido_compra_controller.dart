@@ -13,6 +13,9 @@ import 'package:aco_plus/app/core/services/supabase_storage_service.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:aco_plus/app/modules/estoque/estoque_controller.dart';
+import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
+import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
+import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_pedido_view_model.dart';
 import 'package:aco_plus/app/modules/pedido_compra/ui/pedido_compra_create_page.dart';
 import 'package:aco_plus/app/modules/pedido_compra/ui/pedido_compra_efetivar_page.dart';
 import 'package:aco_plus/app/modules/pedido_compra/ui/relatorio/pedido_compra_compra_pdf.dart';
@@ -38,6 +41,11 @@ class PedidoCompraController {
 
   final AppStream<bool> showEfetivadosStream = AppStream<bool>.seed(false);
   bool get showEfetivados => showEfetivadosStream.value;
+
+  // ── Planilha Multi-Fornecedor ───────────────────────────────────────────────
+  final AppStream<PedidoCompraPlanilhaModel?> planilhaStream =
+      AppStream<PedidoCompraPlanilhaModel?>.seed(null);
+  PedidoCompraPlanilhaModel? get planilha => planilhaStream.value;
 
   void onInit() {
     formStream.add(PedidoCompraCreateModel());
@@ -1005,5 +1013,171 @@ class _EfetivarGrupoDialogState extends State<_EfetivarGrupoDialog> {
         ),
       ],
     );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Extensão de planilha no PedidoCompraController
+// ─────────────────────────────────────────────────────────────────────────────
+extension PedidoCompraPlanilhaExt on PedidoCompraController {
+  /// Inicializa a planilha com dados de estoque e consumo atuais
+  void iniciarPlanilha() {
+    if (!relatorioCtrl.pedidoViewModelStream.hasValue) {
+      relatorioCtrl.pedidoViewModelStream.add(RelatorioPedidoViewModel());
+    }
+    relatorioCtrl.onCreateRelatorioPedido();
+
+    final produtos = [...BackendClient.bitolas.data]
+      ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
+
+    final itens = produtos.map((produto) {
+      final estoque = BackendClient.estoques.getByProdutoId(produto.id);
+      double consumo = 0.0;
+      try {
+        consumo = relatorioCtrl.getPedidosTotalPorBitola(produto);
+      } catch (_) {}
+      return PedidoCompraPlanilhaItem(
+        produto: produto,
+        saldoFisico: estoque?.quantidade ?? 0.0,
+        consumoPrevisto: consumo,
+        incluir: false,
+      );
+    }).toList();
+
+    planilhaStream.add(PedidoCompraPlanilhaModel(itens: itens));
+  }
+
+  void onToggleItemPlanilha(PedidoCompraPlanilhaItem item) {
+    item.incluir = !item.incluir;
+    planilhaStream.update();
+  }
+
+  void onSetFornecedorPlanilha(int idx, FabricanteModel? fab) {
+    planilha?.fornecedores[idx] = fab;
+    planilhaStream.update();
+  }
+
+  void onAdicionarColunaPlanilha() {
+    if (planilha == null || planilha!.colunas >= 3) return;
+    planilha!.colunas++;
+    planilhaStream.update();
+  }
+
+  void onRemoverColunaPlanilha(int idx) {
+    if (planilha == null || planilha!.colunas <= 1) return;
+    // Limpa dados da coluna removida e compacta (shift left)
+    for (int i = idx; i < planilha!.colunas - 1; i++) {
+      planilha!.fornecedores[i] = planilha!.fornecedores[i + 1];
+      for (final item in planilha!.itens) {
+        item.quantidades[i].text = item.quantidades[i + 1].text;
+      }
+    }
+    planilha!.fornecedores[planilha!.colunas - 1] = null;
+    for (final item in planilha!.itens) {
+      item.quantidades[planilha!.colunas - 1].text = '';
+    }
+    planilha!.colunas--;
+    planilhaStream.update();
+  }
+
+  void onQuantidadePlanilhaAlterada() => planilhaStream.update();
+
+  void onSelecionarDeficitPlanilha() {
+    if (planilha == null) return;
+    for (final item in planilha!.itens) {
+      item.incluir = item.temDeficit;
+    }
+    planilhaStream.update();
+  }
+
+  void onDesmarcarTodosPlanilha() {
+    if (planilha == null) return;
+    for (final item in planilha!.itens) {
+      item.incluir = false;
+    }
+    planilhaStream.update();
+  }
+
+  /// Salva: gera 1 grupo por fornecedor com itens marcados + qty > 0
+  Future<void> onSalvarPlanilha(BuildContext context) async {
+    final model = planilha;
+    if (model == null) return;
+
+    final grupos = model.gruposParaSalvar;
+    if (grupos.isEmpty) {
+      NotificationService.showNegative(
+        'Nenhum item para salvar',
+        'Selecione ao menos uma bitola com quantidade e fornecedor',
+        position: NotificationPosition.bottom,
+      );
+      return;
+    }
+
+    // Confirmação
+    if (!context.mounted) return;
+    final confirma = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Row(children: [
+          Icon(Icons.shopping_cart_outlined, color: Colors.blue),
+          SizedBox(width: 8),
+          Text('Salvar Pedidos'),
+        ]),
+        content: Text(
+          'Serão criados ${grupos.length} pedido${grupos.length > 1 ? 's' : ''}:\n'
+          '${grupos.map((g) => '• ${g.fabricante.nome} — ${g.itens.length} item${g.itens.length > 1 ? 's' : ''}').join('\n')}',
+          style: const TextStyle(fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green[700],
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            icon: const Icon(Icons.check, size: 16),
+            label: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
+    if (confirma != true) return;
+
+    showLoadingDialog();
+    try {
+      for (final grupo in grupos) {
+        final grupoId = HashService.get;
+        for (final item in grupo.itens) {
+          final qty = item.getQuantidade(grupo.colunaIdx);
+          await BackendClient.pedidosCompra.add(
+            PedidoCompraModel.novo(
+              grupoId: grupoId,
+              produtoId: item.produto.id,
+              fabricanteId: grupo.fabricante.id,
+              quantidade: qty,
+              usuarioNome: usuarioCtrl.usuario?.nome,
+            ),
+          );
+        }
+      }
+      if (context.mounted) Navigator.pop(context); // fecha loading
+      NotificationService.showPositive(
+        'Pedidos criados',
+        '${grupos.length} pedido${grupos.length > 1 ? 's' : ''} gerado${grupos.length > 1 ? 's' : ''} com sucesso',
+        position: NotificationPosition.bottom,
+      );
+      if (context.mounted) Navigator.pop(context); // volta para lista
+    } catch (e) {
+      if (context.mounted) Navigator.pop(context);
+      NotificationService.showNegative(
+        'Erro ao salvar pedidos',
+        e.toString(),
+        position: NotificationPosition.bottom,
+      );
+    }
   }
 }

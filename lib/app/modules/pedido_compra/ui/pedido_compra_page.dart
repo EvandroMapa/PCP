@@ -10,7 +10,7 @@ import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/pedido_compra/pedido_compra_controller.dart';
 import 'package:aco_plus/app/modules/pedido_compra/pedido_compra_view_model.dart';
-import 'package:aco_plus/app/modules/pedido_compra/ui/pedido_compra_create_page.dart';
+import 'package:aco_plus/app/modules/pedido_compra/ui/pedido_compra_planilha_page.dart';
 import 'package:aco_plus/app/modules/pedido_compra/ui/simulador_compra_page.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:flutter/material.dart';
@@ -48,8 +48,8 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
               icon: const Icon(Icons.add, size: 20),
               color: Colors.white,
               onPressed: () {
-                pedidoCompraCtrl.formStream.add(PedidoCompraCreateModel());
-                push(const PedidoCompraCreatePage());
+                pedidoCompraCtrl.iniciarPlanilha();
+                push(const PedidoCompraPlanilhaPage());
               },
             ),
           ),
@@ -267,8 +267,8 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
           onTap: () {
-            pedidoCompraCtrl.formStream.add(PedidoCompraCreateModel());
-            push(context, const PedidoCompraCreatePage());
+            pedidoCompraCtrl.iniciarPlanilha();
+            push(context, const PedidoCompraPlanilhaPage());
           },
           child: Container(
             width: 36,
@@ -283,6 +283,7 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
           ),
         ),
       );
+
 
   // ── Card de grupo ativo (pendente ou confirmado) ──────────────────────────
 
@@ -464,9 +465,14 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
                           final fabricantes =
                               [...BackendClient.fabricantes.data]
                                 ..sort((a, b) => a.nome.compareTo(b.nome));
+                          // Pré-seleciona o fornecedor já atribuído ao grupo (se existir)
+                          final fabricanteAtualId = itens.first.fabricanteId;
                           FabricanteModel? escolhido = fabricantes.isEmpty
                               ? null
-                              : fabricantes.first;
+                              : fabricantes.firstWhere(
+                                  (f) => f.id == fabricanteAtualId,
+                                  orElse: () => fabricantes.first,
+                                );
                           await showDialog<void>(
                             context: context,
                             builder: (_) => StatefulBuilder(

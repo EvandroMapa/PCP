@@ -651,7 +651,7 @@ class _ElementoOSCard extends StatelessWidget {
             // ─── TARJA: NÚMERO DA OS ───
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
               decoration: BoxDecoration(
                 color: Colors.grey[900],
                 borderRadius:
@@ -661,9 +661,9 @@ class _ElementoOSCard extends StatelessWidget {
                 'OS - ${posicao.numeroOs}',
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: 30,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
+                  letterSpacing: 1.0,
                 ),
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
@@ -672,11 +672,11 @@ class _ElementoOSCard extends StatelessWidget {
 
             // ─── NOME DO ELEMENTO (X QTDE) ───
             Padding(
-              padding: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.only(top: 10),
               child: Text(
                 '${elemento.nome}${elemento.qtde > 1 ? ' (X ${elemento.qtde})' : ''}',
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: Colors.black,
                 ),
@@ -733,17 +733,17 @@ class _ElementoOSCard extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 9,
+            fontSize: 11,
             fontWeight: FontWeight.w600,
             color: Colors.grey[500],
             letterSpacing: 0.5,
           ),
         ),
-        const SizedBox(height: 1),
+        const SizedBox(height: 2),
         Text(
           value,
           style: const TextStyle(
-            fontSize: 14,
+            fontSize: 16,
             fontWeight: FontWeight.w800,
             color: Colors.black87,
           ),
