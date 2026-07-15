@@ -53,8 +53,6 @@ class BackupController {
   // ─── CRIAR BACKUP ────────────────────────────────────────────────────────
   Future<void> onCreateBackup(BuildContext context) async {
     final tables = [
-      'ordem_produtos',
-      'ordem_status_history',
       'pedido_status_history',
       'pedido_steps_history',
       'pedido_tags',
@@ -143,8 +141,6 @@ class BackupController {
   Future<void> onCreateBackupSilent() async {
     try {
       final tables = [
-        'ordem_produtos',
-        'ordem_status_history',
         'pedido_status_history',
         'pedido_steps_history',
         'pedido_tags',
@@ -242,8 +238,6 @@ class BackupController {
           jsonDecode(utf8.decode(result.files.first.bytes!));
 
       final deleteOrder = [
-        'ordem_produtos',
-        'ordem_status_history',
         'pedido_status_history',
         'pedido_steps_history',
         'pedido_tags',

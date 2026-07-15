@@ -33,9 +33,11 @@ class OrdemCreatePage extends StatefulWidget {
   State<OrdemCreatePage> createState() => _OrdemCreatePageState();
 }
 
-class _OrdemCreatePageState extends State<OrdemCreatePage> {
+class _OrdemCreatePageState extends State<OrdemCreatePage>
+    with SingleTickerProviderStateMixin {
   bool _filtroExpandido = false;
   late bool _configExpandida;
+  late TabController _tabController;
 
   // Snapshot do estado original para detectar mudanças
   Set<String> _produtosOriginais = {};
@@ -61,7 +63,14 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
       _produtosOriginais = widget.ordem!.produtos.map((e) => e.id).toSet();
       _materiaPrimaOriginal = widget.ordem!.materiaPrima?.id;
     }
+    _tabController = TabController(length: 2, vsync: this);
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -123,65 +132,136 @@ class _OrdemCreatePageState extends State<OrdemCreatePage> {
     final mpSelecionada = form.materiaPrima != null &&
         form.materiaPrima!.id != 'register_unavailable';
 
-    return Column(
-      children: [
-        // ── Configuração (sempre visível no topo) ──
-        _secaoConfiguracao(form),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+        return Column(
+          children: [
+            // ── Configuração (sempre visível no topo) ──
+            _secaoConfiguracao(form),
+            Expanded(
+              child: _conteudoPrincipal(
+                form: form,
+                isMobile: isMobile,
+                disponiveis: disponiveis,
+                naOrdem: naOrdem,
+                mpSelecionada: mpSelecionada,
+                pesoNaOrdem: pesoNaOrdem,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
-        // ── Duas colunas lado a lado ──
-        if (form.produto != null)
-          Expanded(
-            child: Row(
-              children: [
-                // Coluna esquerda: Disponíveis
-                Expanded(
-                  child: _colunaDisponiveis(form, disponiveis, mpSelecionada),
-                ),
-                // Separador vertical
-                Container(
-                  width: 1,
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFCBD5E1),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.06),
-                        blurRadius: 4,
-                        offset: const Offset(1, 0),
-                      ),
+  Widget _conteudoPrincipal({
+    required OrdemCreateModel form,
+    required bool isMobile,
+    required List<PedidoBitolaModel> disponiveis,
+    required List<PedidoBitolaModel> naOrdem,
+    required bool mpSelecionada,
+    required double pesoNaOrdem,
+  }) {
+    if (form.produto == null) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.assignment_outlined,
+                  size: 48, color: Color(0xFFCBD5E1)),
+              SizedBox(height: 12),
+              Text(
+                'Selecione a bitola para começar',
+                style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF94A3B8)),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (isMobile) {
+      // ── Mobile: TabBar com duas abas ──
+      return Column(
+        children: [
+          Container(
+            color: Colors.white,
+            child: TabBar(
+              controller: _tabController,
+              labelColor: AppColors.primaryMain,
+              unselectedLabelColor: Colors.grey[500],
+              indicatorColor: AppColors.primaryMain,
+              indicatorWeight: 3,
+              labelStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.6),
+              tabs: [
+                Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.inventory_2_outlined, size: 15),
+                      const SizedBox(width: 6),
+                      Text('DISPONÍVEIS (${disponiveis.length})'),
                     ],
                   ),
                 ),
-                // Coluna direita: Na Ordem
-                Expanded(
-                  child: _colunaOrdem(form, naOrdem, pesoNaOrdem),
+                Tab(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.check_circle_outline_rounded, size: 15),
+                      const SizedBox(width: 6),
+                      Text('NA ORDEM (${naOrdem.length})'),
+                    ],
+                  ),
                 ),
               ],
             ),
-          )
-        else
-          const Expanded(
-            child: Center(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.assignment_outlined,
-                        size: 48, color: Color(0xFFCBD5E1)),
-                    SizedBox(height: 12),
-                    Text(
-                      'Selecione a bitola para começar',
-                      style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF94A3B8)),
-                    ),
-                  ],
-                ),
-              ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _colunaDisponiveis(form, disponiveis, mpSelecionada),
+                _colunaOrdem(form, naOrdem, pesoNaOrdem),
+              ],
             ),
           ),
+        ],
+      );
+    }
+
+    // ── Desktop: Duas colunas lado a lado ──
+    return Row(
+      children: [
+        Expanded(
+          child: _colunaDisponiveis(form, disponiveis, mpSelecionada),
+        ),
+        Container(
+          width: 1,
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFCBD5E1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 4,
+                offset: const Offset(1, 0),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _colunaOrdem(form, naOrdem, pesoNaOrdem),
+        ),
       ],
     );
   }
