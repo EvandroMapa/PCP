@@ -123,7 +123,8 @@ class _OrdemPedidoProdutoWidgetState extends State<OrdemPedidoProdutoWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final status = produto.statusView.status;
+    final rawStatus = produto.status.status; // estado interno real
+    final status = produto.statusView.status; // estado para exibição
     final statusColor = produto.isPaused ? Colors.orange : status.color;
 
     return Padding(
@@ -184,7 +185,7 @@ class _OrdemPedidoProdutoWidgetState extends State<OrdemPedidoProdutoWidget> {
                               if (produto.pedido.tags.isNotEmpty)
                                 _tagWidget(produto.pedido.tags.first),
                               // Badge "2ª ETAPA" quando aguarda segunda etapa
-                              if (status == PedidoBitolaStatus.aguardaSegundaEtapa)
+                              if (rawStatus == PedidoBitolaStatus.aguardaSegundaEtapa)
                                 Container(
                                   margin: const EdgeInsets.only(right: 8),
                                   padding: const EdgeInsets.symmetric(
@@ -207,7 +208,7 @@ class _OrdemPedidoProdutoWidgetState extends State<OrdemPedidoProdutoWidget> {
                                 style: AppCss.mediumBold.setSize(15),
                               ),
                               if (_isOperador && !_isProcessando &&
-                                  status == PedidoBitolaStatus.produzindo) ...[
+                                  rawStatus == PedidoBitolaStatus.produzindo) ...[
                                 const SizedBox(width: 8),
                                 // Botão 🔄 "2ª etapa" — aparece apenas em produzindo
                                 Tooltip(

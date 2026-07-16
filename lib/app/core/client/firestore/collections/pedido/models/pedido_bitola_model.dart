@@ -271,7 +271,9 @@ class PedidoBitolaModel {
   PedidoBitolaStatusModel get statusView => status.copyWith(
         status: status.status == PedidoBitolaStatus.separado
             ? PedidoBitolaStatus.aguardandoProducao
-            : status.status,
+            : status.status == PedidoBitolaStatus.aguardaSegundaEtapa
+                ? PedidoBitolaStatus.produzindo // aparece como produzindo externamente
+                : status.status,
       );
 
   PedidoBitolaModel({

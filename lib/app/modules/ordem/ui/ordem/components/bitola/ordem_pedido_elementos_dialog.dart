@@ -307,11 +307,8 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
       novoStatus = PedidoBitolaStatus.aguardandoProducao;
     } else if (todosProntos) {
       novoStatus = PedidoBitolaStatus.pronto;
-    } else if (temSegundaEtapa &&
-        !_posicoes.any((p) => p.posicao.status == PosicaoStatus.produzindo)) {
-      // Todas paradas: ou aguardando ou aguardaSegundaEtapa — bitola reflete
-      novoStatus = PedidoBitolaStatus.aguardaSegundaEtapa;
     } else {
+      // Inclui casos com aguardaSegundaEtapa: bitola permanece produzindo
       novoStatus = PedidoBitolaStatus.produzindo;
     }
 
