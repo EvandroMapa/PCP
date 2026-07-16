@@ -72,14 +72,6 @@ class _KanbanTopbarConcreteWidgetState
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (!widget.standalone) ...[
-                    IconButton(
-                      onPressed: () => openInNewTab('/kanban'),
-                      icon: Icon(Icons.open_in_new, color: AppColors.white),
-                      tooltip: 'Abrir em nova aba',
-                    ),
-                    const W(4),
-                  ],
                   // ── Botão de filtro ──
                   Stack(
                     children: [

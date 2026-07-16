@@ -67,11 +67,6 @@ class _OrdensPageState extends State<OrdensPage> {
         baseCtrl.appBarActionsStream.add(ordemCtrl.isEmModoOperador
             ? []
             : [
-                IconButton(
-                  onPressed: () => openInNewTab('/ordens'),
-                  icon: const Icon(Icons.open_in_new, color: Colors.white),
-                  tooltip: 'Abrir em nova aba',
-                ),
                 Tooltip(
                   message: 'Ordens Arquivadas',
                   child: IconButton(

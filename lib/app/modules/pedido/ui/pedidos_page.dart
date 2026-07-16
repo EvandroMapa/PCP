@@ -46,11 +46,6 @@ class _PedidosPageState extends State<PedidosPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         baseCtrl.appBarActionsStream.add(<Widget>[
           IconButton(
-            onPressed: () => openInNewTab('/pedidos'),
-            icon: const Icon(Icons.open_in_new, color: Colors.white),
-            tooltip: 'Abrir em nova aba',
-          ),
-          IconButton(
             onPressed: () => push(context, const PedidosArchivedsPage()),
             icon: const Icon(Icons.archive_outlined, color: Colors.white),
           ),

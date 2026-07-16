@@ -201,12 +201,6 @@ extension AppModuleExt on AppModule {
   /// Retorna o path standalone para abrir em nova aba, ou null se não suportado.
   String? get standalonePath {
     switch (this) {
-      case AppModule.kanban:
-        return '/kanban';
-      case AppModule.pedidos:
-        return '/pedidos';
-      case AppModule.ordens:
-        return '/ordens';
       case AppModule.painelGerencial:
         return '/gerencial';
       default:
