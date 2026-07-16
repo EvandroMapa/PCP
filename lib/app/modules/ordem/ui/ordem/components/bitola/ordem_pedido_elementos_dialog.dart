@@ -127,6 +127,8 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
         return PosicaoStatus.produzindo;
       case PosicaoStatus.produzindo:
         return PosicaoStatus.pronto;
+      case PosicaoStatus.aguardaSegundaEtapa:
+        return PosicaoStatus.produzindo; // inicia nova rodada
       case PosicaoStatus.pronto:
         return null;
     }
@@ -139,6 +141,8 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
         return PosicaoStatus.produzindo;
       case PosicaoStatus.produzindo:
         return PosicaoStatus.aguardando;
+      case PosicaoStatus.aguardaSegundaEtapa:
+        return PosicaoStatus.aguardando; // desfazer 2ª etapa
       case PosicaoStatus.aguardando:
         return null;
     }
@@ -151,6 +155,13 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
         : _anteriorPosicaoStatus(oldStatus);
     if (newStatus == null) return;
     await _aplicarNovoStatus(item, oldStatus, newStatus);
+  }
+
+  /// Marca a OS/posicao como aguardando 2ª etapa
+  Future<void> _marcarSegundaEtapaPosicao(_PosicaoItem item) async {
+    final oldStatus = item.posicao.status;
+    await _aplicarNovoStatus(
+        item, oldStatus, PosicaoStatus.aguardaSegundaEtapa);
   }
 
   Future<void> _onPosicaoTap(_PosicaoItem item) async {
@@ -240,16 +251,17 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
 
     switch (target) {
       case PosicaoStatus.aguardando:
-        // Pode voltar 1 etapa: apenas de produzindo
         return current == PosicaoStatus.produzindo;
 
       case PosicaoStatus.produzindo:
-        // Pode avançar de aguardando OU voltar de pronto
         return current == PosicaoStatus.aguardando ||
-            current == PosicaoStatus.pronto;
+            current == PosicaoStatus.pronto ||
+            current == PosicaoStatus.aguardaSegundaEtapa;
+
+      case PosicaoStatus.aguardaSegundaEtapa:
+        return current == PosicaoStatus.produzindo;
 
       case PosicaoStatus.pronto:
-        // Só pode avançar de produzindo
         return current == PosicaoStatus.produzindo;
     }
   }
@@ -281,10 +293,13 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
   Future<void> _checkAutoUpdatePedidoStatus() async {
     if (_posicoes.isEmpty) return;
 
-    final todosAguardando =
-        _posicoes.every((p) => p.posicao.status == PosicaoStatus.aguardando);
+    final todosAguardando = _posicoes.every((p) =>
+        p.posicao.status == PosicaoStatus.aguardando);
     final todosProntos =
         _posicoes.every((p) => p.posicao.status == PosicaoStatus.pronto);
+    // Se alguma posicao aguarda 2ª etapa, a bitola também aguarda
+    final temSegundaEtapa = _posicoes
+        .any((p) => p.posicao.status == PosicaoStatus.aguardaSegundaEtapa);
 
     PedidoBitolaStatus novoStatus;
 
@@ -292,6 +307,10 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
       novoStatus = PedidoBitolaStatus.aguardandoProducao;
     } else if (todosProntos) {
       novoStatus = PedidoBitolaStatus.pronto;
+    } else if (temSegundaEtapa &&
+        !_posicoes.any((p) => p.posicao.status == PosicaoStatus.produzindo)) {
+      // Todas paradas: ou aguardando ou aguardaSegundaEtapa — bitola reflete
+      novoStatus = PedidoBitolaStatus.aguardaSegundaEtapa;
     } else {
       novoStatus = PedidoBitolaStatus.produzindo;
     }
@@ -339,6 +358,11 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
         case PosicaoStatus.produzindo:
           qtdProd++;
           pesoProd += peso;
+          break;
+        case PosicaoStatus.aguardaSegundaEtapa:
+          // Trata como aguardando no resumo (OS pausada entre etapas)
+          qtdAg++;
+          pesoAg += peso;
           break;
         case PosicaoStatus.pronto:
           qtdPronto++;
@@ -561,6 +585,9 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
                                 : _isAlternarToque
                                     ? () => _onPosicaoAlternar(item, avancar: false)
                                     : null,
+                            onMarcarSegundaEtapa: isReadOnly
+                                ? null
+                                : () => _marcarSegundaEtapaPosicao(item),
                           );
                         },
                       ),
@@ -586,12 +613,14 @@ class _ElementoOSCard extends StatelessWidget {
   final _PosicaoItem item;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
+  final VoidCallback? onMarcarSegundaEtapa;
 
   const _ElementoOSCard({
     super.key,
     required this.item,
     this.onTap,
     this.onLongPress,
+    this.onMarcarSegundaEtapa,
   });
 
   ElementoModel get elemento => item.elemento;
@@ -603,6 +632,8 @@ class _ElementoOSCard extends StatelessWidget {
         return 'AGUARDANDO';
       case PosicaoStatus.produzindo:
         return 'PRODUZINDO';
+      case PosicaoStatus.aguardaSegundaEtapa:
+        return 'AG. 2ª ETAPA';
       case PosicaoStatus.pronto:
         return 'PRONTO';
     }
@@ -614,6 +645,8 @@ class _ElementoOSCard extends StatelessWidget {
         return Colors.black87;
       case PosicaoStatus.produzindo:
         return Colors.orange[800]!;
+      case PosicaoStatus.aguardaSegundaEtapa:
+        return Colors.deepOrange[700]!;
       case PosicaoStatus.pronto:
         return Colors.green[700]!;
     }
@@ -700,7 +733,7 @@ class _ElementoOSCard extends StatelessWidget {
               ),
             ),
 
-            // ─── RODAPÉ: POSIÇÃO / QTDE / PESO ───
+            // ─── RODAPÉ: POSIÇÃO / QTDE / PESO + botão 2ª etapa ───
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
@@ -711,12 +744,53 @@ class _ElementoOSCard extends StatelessWidget {
                   top: BorderSide(color: Colors.grey[200]!),
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              child: Column(
                 children: [
-                  _footerItem('POSIÇÃO', posicao.nome),
-                  _footerItem('QTDE', '${posicao.qtde * elemento.qtde}'),
-                  _footerItem('PESO', (posicao.pesoKg * elemento.qtde).toKg()),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _footerItem('POSIÇÃO', posicao.nome),
+                      _footerItem('QTDE', '${posicao.qtde * elemento.qtde}'),
+                      _footerItem('PESO', (posicao.pesoKg * elemento.qtde).toKg()),
+                    ],
+                  ),
+                  // Botão 2ª etapa — só aparece quando produzindo
+                  if (posicao.status == PosicaoStatus.produzindo &&
+                      onMarcarSegundaEtapa != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: GestureDetector(
+                        onTap: onMarcarSegundaEtapa,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 7),
+                          decoration: BoxDecoration(
+                            color: Colors.deepOrange.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                                color:
+                                    Colors.deepOrange.withValues(alpha: 0.35)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.replay_rounded,
+                                  size: 14, color: Colors.deepOrange[700]),
+                              const SizedBox(width: 5),
+                              Text(
+                                '2ª ETAPA',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.deepOrange[700],
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -770,6 +844,8 @@ class _PosicaoStatusDialog extends StatelessWidget {
         return Icons.hourglass_bottom_rounded;
       case PosicaoStatus.produzindo:
         return Icons.construction_rounded;
+      case PosicaoStatus.aguardaSegundaEtapa:
+        return Icons.replay_rounded;
       case PosicaoStatus.pronto:
         return Icons.check_circle_rounded;
     }

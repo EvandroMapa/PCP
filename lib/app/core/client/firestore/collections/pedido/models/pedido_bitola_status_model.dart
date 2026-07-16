@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:flutter/material.dart';
 
-enum PedidoBitolaStatus { separado, aguardandoProducao, produzindo, pronto }
+enum PedidoBitolaStatus { separado, aguardandoProducao, produzindo, aguardaSegundaEtapa, pronto }
 
 List<PedidoBitolaStatus> pedidoProdutoStatusValues =
     PedidoBitolaStatus.values.sublist(1);
@@ -17,6 +17,8 @@ extension PedidoBitolaStatusExt on PedidoBitolaStatus {
         return 'Aguardando Produção';
       case PedidoBitolaStatus.produzindo:
         return 'Produzindo';
+      case PedidoBitolaStatus.aguardaSegundaEtapa:
+        return 'Aguardando 2ª Etapa';
       case PedidoBitolaStatus.pronto:
         return 'Pronto';
     }
@@ -30,6 +32,8 @@ extension PedidoBitolaStatusExt on PedidoBitolaStatus {
         return Colors.red;
       case PedidoBitolaStatus.produzindo:
         return Colors.yellow;
+      case PedidoBitolaStatus.aguardaSegundaEtapa:
+        return Colors.orange;
       case PedidoBitolaStatus.pronto:
         return Colors.green;
     }
@@ -43,6 +47,8 @@ extension PedidoBitolaStatusExt on PedidoBitolaStatus {
         return isExpanded ? Colors.grey : Colors.white;
       case PedidoBitolaStatus.produzindo:
         return isExpanded ? Colors.grey : Colors.white;
+      case PedidoBitolaStatus.aguardaSegundaEtapa:
+        return isExpanded ? Colors.orange : Colors.white;
       case PedidoBitolaStatus.pronto:
         return Colors.green;
     }
@@ -84,7 +90,7 @@ class PedidoBitolaStatusModel {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'status': status.index,
+      'status': status.name,
       'createdAt': createdAt.millisecondsSinceEpoch,
     };
   }
@@ -95,12 +101,18 @@ class PedidoBitolaStatusModel {
       status: () {
         final val = map['status'];
         if (val is String) {
-          return PedidoBitolaStatus.values.firstWhere(
-            (e) => e.name == val || e.index.toString() == val,
-            orElse: () => PedidoBitolaStatus.separado,
-          );
+          // Tenta por nome primeiro (dados novos)
+          final byName = PedidoBitolaStatus.values
+              .cast<PedidoBitolaStatus?>()
+              .firstWhere((e) => e!.name == val, orElse: () => null);
+          if (byName != null) return byName;
+          // Fallback: string numérica antiga ("0".."3")
+          final idx = int.tryParse(val);
+          if (idx != null) return _fromLegacyIndex(idx);
+          return PedidoBitolaStatus.separado;
         }
-        return PedidoBitolaStatus.values[int.tryParse(val.toString()) ?? 0];
+        // Valor numérico: mapeamento legado explícito
+        return _fromLegacyIndex(int.tryParse(val.toString()) ?? 0);
       }(),
       createdAt: map['createdAt'] != null
           ? DateTime.fromMillisecondsSinceEpoch(
@@ -124,5 +136,23 @@ class PedidoBitolaStatusModel {
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
     );
+  }
+
+  /// Mapeia índice do enum ANTIGO (sem aguardaSegundaEtapa) para o valor correto.
+  /// Enum antigo: 0=separado, 1=aguardandoProducao, 2=produzindo, 3=pronto
+  /// Enum novo:   0=separado, 1=aguardandoProducao, 2=produzindo, 3=aguardaSegundaEtapa, 4=pronto
+  static PedidoBitolaStatus _fromLegacyIndex(int idx) {
+    switch (idx) {
+      case 0:
+        return PedidoBitolaStatus.separado;
+      case 1:
+        return PedidoBitolaStatus.aguardandoProducao;
+      case 2:
+        return PedidoBitolaStatus.produzindo;
+      case 3:
+        return PedidoBitolaStatus.pronto; // era pronto no enum antigo
+      default:
+        return PedidoBitolaStatus.separado;
+    }
   }
 }

@@ -85,13 +85,39 @@ class KanbanCardProductsWidget extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              produto.produto.descricao,
-              style: AppCss.mediumRegular.copyWith(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Colors.black,
-              ),
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    produto.produto.descricao,
+                    style: AppCss.mediumRegular.copyWith(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+                if (produto.status.status ==
+                    PedidoBitolaStatus.aguardaSegundaEtapa) ...[
+                  const W(4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 5, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(5),
+                      border: Border.all(
+                          color: Colors.orange.withValues(alpha: 0.4)),
+                    ),
+                    child: Text(
+                      '2ª',
+                      style: AppCss.minimumBold
+                          .setSize(9)
+                          .setColor(Colors.orange[800]!),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           const W(8),
@@ -103,6 +129,7 @@ class KanbanCardProductsWidget extends StatelessWidget {
               color: Colors.black,
             ),
           ),
+
           StreamOut(
             stream: FirestoreClient.ordens.dataStream.listen,
             builder: (context, _) {

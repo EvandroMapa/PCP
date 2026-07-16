@@ -1126,6 +1126,8 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
         return 'Aguardando';
       case PedidoBitolaStatus.produzindo:
         return 'Produzindo';
+      case PedidoBitolaStatus.aguardaSegundaEtapa:
+        return '2ª Etapa';
       case PedidoBitolaStatus.pronto:
         return 'Pronto';
     }
@@ -1141,6 +1143,8 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
         return Colors.blueGrey;
       case PedidoBitolaStatus.produzindo:
         return Colors.blue[600]!;
+      case PedidoBitolaStatus.aguardaSegundaEtapa:
+        return Colors.orange;
       case PedidoBitolaStatus.pronto:
         return _verde;
     }
@@ -1154,6 +1158,8 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
         return Icons.access_time;
       case PedidoBitolaStatus.produzindo:
         return Icons.build_outlined;
+      case PedidoBitolaStatus.aguardaSegundaEtapa:
+        return Icons.replay_rounded;
       case PedidoBitolaStatus.pronto:
         return Icons.check;
     }

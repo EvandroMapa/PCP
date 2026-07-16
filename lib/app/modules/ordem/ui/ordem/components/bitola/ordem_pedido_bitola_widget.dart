@@ -72,6 +72,8 @@ class _OrdemPedidoProdutoWidgetState extends State<OrdemPedidoProdutoWidget> {
         return PedidoBitolaStatus.produzindo;
       case PedidoBitolaStatus.produzindo:
         return PedidoBitolaStatus.pronto;
+      case PedidoBitolaStatus.aguardaSegundaEtapa:
+        return PedidoBitolaStatus.produzindo; // inicia nova rodada
       default:
         return null;
     }
@@ -84,6 +86,8 @@ class _OrdemPedidoProdutoWidgetState extends State<OrdemPedidoProdutoWidget> {
         return PedidoBitolaStatus.produzindo;
       case PedidoBitolaStatus.produzindo:
         return PedidoBitolaStatus.aguardandoProducao;
+      case PedidoBitolaStatus.aguardaSegundaEtapa:
+        return PedidoBitolaStatus.aguardandoProducao; // desfazer 2ª etapa
       default:
         return null;
     }
@@ -99,6 +103,19 @@ class _OrdemPedidoProdutoWidgetState extends State<OrdemPedidoProdutoWidget> {
     setState(() => _isProcessando = true);
     try {
       await ordemCtrl.onSelectProdutoStatus(ordem, produto, novoStatus);
+    } finally {
+      if (mounted) setState(() => _isProcessando = false);
+    }
+  }
+
+  /// Marca a OS como aguardando 2ª etapa (sem dialog)
+  Future<void> _marcarSegundaEtapa() async {
+    if (_isProcessando || produto.isPaused) return;
+    setState(() => _isProcessando = true);
+    try {
+      await ordemCtrl.onSelectProdutoStatus(
+        ordem, produto, PedidoBitolaStatus.aguardaSegundaEtapa,
+      );
     } finally {
       if (mounted) setState(() => _isProcessando = false);
     }
@@ -166,10 +183,70 @@ class _OrdemPedidoProdutoWidgetState extends State<OrdemPedidoProdutoWidget> {
                               if (produto.isPaused) _pauseTagWidget(),
                               if (produto.pedido.tags.isNotEmpty)
                                 _tagWidget(produto.pedido.tags.first),
+                              // Badge "2ª ETAPA" quando aguarda segunda etapa
+                              if (status == PedidoBitolaStatus.aguardaSegundaEtapa)
+                                Container(
+                                  margin: const EdgeInsets.only(right: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 7, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(7),
+                                    border: Border.all(
+                                        color: Colors.orange.withValues(alpha: 0.35)),
+                                  ),
+                                  child: Text(
+                                    '2ª ETAPA',
+                                    style: AppCss.minimumBold
+                                        .setSize(10)
+                                        .setColor(Colors.orange[800]!),
+                                  ),
+                                ),
                               Text(
                                 produto.pedido.localizador,
                                 style: AppCss.mediumBold.setSize(15),
                               ),
+                              if (_isOperador && !_isProcessando &&
+                                  status == PedidoBitolaStatus.produzindo) ...[
+                                const SizedBox(width: 8),
+                                // Botão 🔄 "2ª etapa" — aparece apenas em produzindo
+                                Tooltip(
+                                  message: 'Requer 2ª etapa de produção',
+                                  preferBelow: false,
+                                  waitDuration:
+                                      const Duration(milliseconds: 300),
+                                  child: GestureDetector(
+                                    onTap: _marcarSegundaEtapa,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange
+                                            .withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                            color: Colors.orange
+                                                .withValues(alpha: 0.35)),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.replay_rounded,
+                                              size: 13,
+                                              color: Colors.orange[800]),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '2ª',
+                                            style: AppCss.minimumBold
+                                                .setSize(11)
+                                                .setColor(Colors.orange[800]!),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                               if (_isOperador) ...[
                                 const Spacer(),
                                 // Badge de status / spinner

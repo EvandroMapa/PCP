@@ -49,6 +49,7 @@ enum ElementoStatus {
 enum PosicaoStatus {
   aguardando,
   produzindo,
+  aguardaSegundaEtapa,
   pronto;
 
   String get label {
@@ -57,6 +58,8 @@ enum PosicaoStatus {
         return 'Aguardando';
       case PosicaoStatus.produzindo:
         return 'Produzindo';
+      case PosicaoStatus.aguardaSegundaEtapa:
+        return 'Ag. 2ª Etapa';
       case PosicaoStatus.pronto:
         return 'Pronto';
     }
@@ -68,6 +71,8 @@ enum PosicaoStatus {
         return Colors.grey[400]!;
       case PosicaoStatus.produzindo:
         return Colors.orange[700]!;
+      case PosicaoStatus.aguardaSegundaEtapa:
+        return Colors.deepOrange[400]!;
       case PosicaoStatus.pronto:
         return Colors.green[600]!;
     }

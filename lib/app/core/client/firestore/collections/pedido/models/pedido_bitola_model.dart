@@ -141,6 +141,32 @@ class PedidoBitolaModel {
             inicioTurnoAtual = null;
             estaProduzindo = false;
             estaPausado = false;
+          } else if (novoStatus == PedidoBitolaStatus.aguardaSegundaEtapa &&
+              estaProduzindo) {
+            // 2ª etapa: encerra o turno atual igual ao pronto, mas a OS volta à fila
+            if (inicioTurnoAtual != null) {
+              final duracao = evento.createdAt.difference(inicioTurnoAtual);
+              turnos.add(
+                PedidoProdutoTurno(
+                  duration: duracao,
+                  start: PedidoProdutoHistory(
+                    type: PedidoProdutoHistoryType.pause,
+                    date: inicioTurnoAtual,
+                  ),
+                  end: PedidoProdutoHistory(
+                    type: PedidoProdutoHistoryType.unpause,
+                    date: evento.createdAt,
+                  ),
+                  produtoId: produto.id,
+                  pedidoId: pedidoId,
+                  pedidoProdutoId: id,
+                  ordemId: ordem.id,
+                ),
+              );
+            }
+            inicioTurnoAtual = null;
+            estaProduzindo = false;
+            estaPausado = false;
           } else if (estaProduzindo &&
               novoStatus != PedidoBitolaStatus.produzindo &&
               novoStatus != PedidoBitolaStatus.pronto) {
@@ -222,7 +248,9 @@ class PedidoBitolaModel {
         valorTotal: 0.0,
       );
   PedidoModel get pedido => FirestoreClient.pedidos.getById(pedidoId);
-  bool get isAvailableToChanges => status.status.index < 2;
+  bool get isAvailableToChanges =>
+      status.status == PedidoBitolaStatus.separado ||
+      status.status == PedidoBitolaStatus.aguardandoProducao;
   bool get hasOrder => status.status == PedidoBitolaStatus.separado;
 
   ClienteModel get cliente => FirestoreClient.clientes.getById(clienteId);
