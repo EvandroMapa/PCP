@@ -357,9 +357,9 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
           pesoProd += peso;
           break;
         case PosicaoStatus.aguardaSegundaEtapa:
-          // Trata como aguardando no resumo (OS pausada entre etapas)
-          qtdAg++;
-          pesoAg += peso;
+          // Conta como produzindo no sumário (ainda está em produção)
+          qtdProd++;
+          pesoProd += peso;
           break;
         case PosicaoStatus.pronto:
           qtdPronto++;
@@ -678,26 +678,58 @@ class _ElementoOSCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            // ─── TARJA: NÚMERO DA OS ───
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-              decoration: BoxDecoration(
-                color: Colors.grey[900],
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(13)),
-              ),
-              child: Text(
-                'OS - ${posicao.numeroOs}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 30,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.0,
+            // ─── TARJA: NÚMERO DA OS + botão 2ª (quando produzindo) ───
+            Stack(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[900],
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(13)),
+                  ),
+                  child: Text(
+                    'OS - ${posicao.numeroOs}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.0,
+                    ),
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-              ),
+                // Botão 🔄 2ª etapa — sobreposto no canto superior direito da tarja
+                if (status == PosicaoStatus.produzindo &&
+                    onMarcarSegundaEtapa != null)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Tooltip(
+                      message: '2ª etapa',
+                      preferBelow: false,
+                      waitDuration: const Duration(milliseconds: 200),
+                      child: GestureDetector(
+                        onTap: onMarcarSegundaEtapa,
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: Colors.deepOrange.withValues(alpha: 0.85),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.replay_rounded,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
 
             // ─── NOME DO ELEMENTO (X QTDE) ───
@@ -730,7 +762,7 @@ class _ElementoOSCard extends StatelessWidget {
               ),
             ),
 
-            // ─── RODAPÉ: POSIÇÃO / QTDE / PESO + botão 2ª etapa ───
+            // ─── RODAPÉ: POSIÇÃO / QTDE / PESO ───
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
@@ -741,53 +773,12 @@ class _ElementoOSCard extends StatelessWidget {
                   top: BorderSide(color: Colors.grey[200]!),
                 ),
               ),
-              child: Column(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _footerItem('POSIÇÃO', posicao.nome),
-                      _footerItem('QTDE', '${posicao.qtde * elemento.qtde}'),
-                      _footerItem('PESO', (posicao.pesoKg * elemento.qtde).toKg()),
-                    ],
-                  ),
-                  // Botão 2ª etapa — só aparece quando produzindo
-                  if (posicao.status == PosicaoStatus.produzindo &&
-                      onMarcarSegundaEtapa != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: GestureDetector(
-                        onTap: onMarcarSegundaEtapa,
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 7),
-                          decoration: BoxDecoration(
-                            color: Colors.deepOrange.withValues(alpha: 0.10),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                                color:
-                                    Colors.deepOrange.withValues(alpha: 0.35)),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.replay_rounded,
-                                  size: 14, color: Colors.deepOrange[700]),
-                              const SizedBox(width: 5),
-                              Text(
-                                '2ª ETAPA',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.deepOrange[700],
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+                  _footerItem('POSIÇÃO', posicao.nome),
+                  _footerItem('QTDE', '${posicao.qtde * elemento.qtde}'),
+                  _footerItem('PESO', (posicao.pesoKg * elemento.qtde).toKg()),
                 ],
               ),
             ),

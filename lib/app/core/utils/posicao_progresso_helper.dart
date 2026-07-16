@@ -68,9 +68,9 @@ PosicaoProgressoResult calcularProgressoPosicoes(
           qtdProduzindo++;
           break;
         case PosicaoStatus.aguardaSegundaEtapa:
-          // Trata como aguardando no cálculo de progresso (OS entre etapas)
-          pesoAguardando += peso;
-          qtdAguardando++;
+          // Conta como produzindo no progresso (ainda em produção)
+          pesoProduzindo += peso;
+          qtdProduzindo++;
           break;
         case PosicaoStatus.pronto:
           pesoPronto += peso;

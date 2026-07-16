@@ -234,7 +234,8 @@ class PedidoCollection {
     } else {
       bool isAnyInProduction = pedido.produtos.any((e) =>
           e.status.status == PedidoBitolaStatus.produzindo ||
-          e.status.status == PedidoBitolaStatus.aguardandoProducao);
+          e.status.status == PedidoBitolaStatus.aguardandoProducao ||
+          e.status.status == PedidoBitolaStatus.aguardaSegundaEtapa);
 
       return isAnyInProduction
           ? PedidoStatus.produzindoCD
