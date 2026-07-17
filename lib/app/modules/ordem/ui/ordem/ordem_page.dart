@@ -59,128 +59,128 @@ class _OrdemPageState extends State<OrdemPage> {
   Widget build(BuildContext context) {
     return StreamOut<List<MateriaPrimaModel>>(
       stream: FirestoreClient.materiaPrimas.dataStream.listen,
-      builder: (_, materiasPrimas) => StreamOut<List<PedidoModel>>(
-        stream: FirestoreClient.pedidos.dataStream.listen,
-        builder: (_, pedidos) => StreamOut<OrdemModel>(
-          stream: ordemCtrl.ordemStream.listen,
-          builder: (_, ordem) => AppScaffold(
-            resizeAvoid: true,
-            appBar: AppBar(
-              iconTheme: const IconThemeData(color: Colors.white, size: 20),
-              actions: ordemCtrl.isEmModoOperador
-                  ? () {
-                      final qtdeProntos = ordem.produtos
-                              .where((p) =>
-                                  p.statusView.status ==
-                                  PedidoBitolaStatus.pronto)
-                              .length;
-                      return qtdeProntos == 0
-                          ? <Widget>[]
-                          : [
-                              GestureDetector(
-                                onTap: () => setState(
-                                    () => _mostrarProntos = !_mostrarProntos),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        _mostrarProntos
-                                            ? Icons.visibility_rounded
-                                            : Icons.visibility_off_rounded,
-                                        color: Colors.white,
-                                        size: 20,
+      builder: (_, materiasPrimas) => StreamOut<OrdemModel>(
+        stream: ordemCtrl.ordemStream.listen,
+        builder: (_, ordem) => AppScaffold(
+          resizeAvoid: true,
+          appBar: AppBar(
+            iconTheme: const IconThemeData(color: Colors.white, size: 20),
+            actions: ordemCtrl.isEmModoOperador
+                ? () {
+                    final qtdeProntos = ordem.produtos
+                            .where((p) =>
+                                p.statusView.status ==
+                                PedidoBitolaStatus.pronto)
+                            .length;
+                    return qtdeProntos == 0
+                        ? <Widget>[]
+                        : [
+                            GestureDetector(
+                              onTap: () => setState(
+                                  () => _mostrarProntos = !_mostrarProntos),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      _mostrarProntos
+                                          ? Icons.visibility_rounded
+                                          : Icons.visibility_off_rounded,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 7, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white
+                                            .withValues(alpha: 0.25),
+                                        borderRadius:
+                                            BorderRadius.circular(12),
                                       ),
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 7, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white
-                                              .withValues(alpha: 0.25),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        child: Text(
-                                          '$qtdeProntos pronto${qtdeProntos > 1 ? 's' : ''}',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w700,
-                                          ),
+                                      child: Text(
+                                        '$qtdeProntos pronto${qtdeProntos > 1 ? 's' : ''}',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ];
-                    }()
-                  : [
-                      if (!ordem.isArchived)
-                        IconButton(
-                          onPressed: () async =>
-                              ordemCtrl.onArchive(context, ordem),
-                          icon: Icon(Icons.archive, color: AppColors.white),
-                        ),
-                      if (ordem.isArchived)
-                        IconButton(
-                          onPressed: () async =>
-                              ordemCtrl.onUnarchive(context, ordem, 2),
-                          icon: Icon(Icons.unarchive, color: AppColors.white),
-                        ),
-                      const W(8),
+                            ),
+                          ];
+                  }()
+                : [
+                    if (!ordem.isArchived)
                       IconButton(
-                        onPressed: () async {
-                          final tipo = await showOrdemExportarPdfTipoBottom();
-                          if (tipo != null) {
-                            if (tipo == OrdemExportarPdfTipo.relatorio) {
-                              await ordemCtrl.onGenerateRelatorioPDF(ordem);
-                            } else {
-                              await ordemCtrl.onGenerateEtiquetasPDF(ordem);
-                            }
+                        onPressed: () async =>
+                            ordemCtrl.onArchive(context, ordem),
+                        icon: Icon(Icons.archive, color: AppColors.white),
+                      ),
+                    if (ordem.isArchived)
+                      IconButton(
+                        onPressed: () async =>
+                            ordemCtrl.onUnarchive(context, ordem, 2),
+                        icon: Icon(Icons.unarchive, color: AppColors.white),
+                      ),
+                    const W(8),
+                    IconButton(
+                      onPressed: () async {
+                        final tipo = await showOrdemExportarPdfTipoBottom();
+                        if (tipo != null) {
+                          if (tipo == OrdemExportarPdfTipo.relatorio) {
+                            await ordemCtrl.onGenerateRelatorioPDF(ordem);
+                          } else {
+                            await ordemCtrl.onGenerateEtiquetasPDF(ordem);
                           }
-                        },
-                        icon: Icon(
-                          Icons.picture_as_pdf,
-                          color: AppColors.white,
-                        ),
+                        }
+                      },
+                      icon: Icon(
+                        Icons.picture_as_pdf,
+                        color: AppColors.white,
                       ),
-                      const W(8),
-                      IconButton(
-                        onPressed: () async =>
-                            push(context, OrdemCreatePage(ordem: ordem)),
-                        icon: Icon(Icons.edit, color: AppColors.white),
-                      ),
-                      const W(8),
-                      IconButton(
-                        onPressed: () async =>
-                            ordemCtrl.onDelete(context, ordem),
-                        icon: Icon(Icons.delete, color: AppColors.white),
-                      ),
-                      const W(8),
-                    ],
-              title: Text(
-                'Ordem ${ordem.localizator}',
-                style: AppCss.largeBold.setColor(AppColors.white),
-              ),
-              backgroundColor: AppColors.primaryMain,
+                    ),
+                    const W(8),
+                    IconButton(
+                      onPressed: () async =>
+                          push(context, OrdemCreatePage(ordem: ordem)),
+                      icon: Icon(Icons.edit, color: AppColors.white),
+                    ),
+                    const W(8),
+                    IconButton(
+                      onPressed: () async =>
+                          ordemCtrl.onDelete(context, ordem),
+                      icon: Icon(Icons.delete, color: AppColors.white),
+                    ),
+                    const W(8),
+                  ],
+            title: Text(
+              'Ordem ${ordem.localizator}',
+              style: AppCss.largeBold.setColor(AppColors.white),
             ),
-            body: StreamOut<OrdemModel>(
-              stream: ordemCtrl.ordemStream.listen,
-              builder: (_, form) => body(pedidos, form),
-            ),
+            backgroundColor: AppColors.primaryMain,
+          ),
+          body: StreamOut<OrdemModel>(
+            stream: ordemCtrl.ordemStream.listen,
+            builder: (_, form) => body(form),
           ),
         ),
       ),
     );
   }
 
-  Widget body(List<PedidoModel> pedidos, OrdemModel ordem) {
+  Widget body(OrdemModel ordem) {
     // Modo operador: ocultar prontos e ordenar
     final isModoOperador = ordemCtrl.isEmModoOperador;
+    // Leitura direta do cache — sem StreamOut para evitar rebuild
+    // causado pelo listener do Firestore de pedidos durante mudanca de status
+    final pedidos = FirestoreClient.pedidos.data;
 
     final produtos = () {
       final lista = isModoOperador && !_mostrarProntos
