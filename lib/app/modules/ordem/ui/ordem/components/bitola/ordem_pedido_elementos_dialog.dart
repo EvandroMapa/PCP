@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
@@ -43,12 +44,21 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
   List<_PosicaoItem> _posicoes = [];
   bool _isLoading = true;
 
+  /// Escuta mudanças no cache de elementos (Realtime de outro dispositivo)
+  StreamSubscription? _elemsSubscription;
+
   String get _ordemProdutoId => widget.ordem.produto.id;
 
   @override
   void initState() {
     super.initState();
     _fetchElementos();
+    // Quando o Realtime atualiza uma posição em outro dispositivo,
+    // o cache já tem o novo status (mesmas referências). Só precisa rebuildar.
+    _elemsSubscription =
+        AppSupabaseClient.elementos.dataStream.listen.listen((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   Future<void> _fetchElementos() async {
@@ -100,7 +110,13 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     }
   }
 
-  /// Constrói lista flat de posições filtradas pela bitola da ordem
+  @override
+  void dispose() {
+    _elemsSubscription?.cancel();
+    super.dispose();
+  }
+
+  /// Constroi lista flat de posições filtradas pela bitola da ordem
   void _buildPosicoes() {
     _posicoes = [];
     for (final elemento in _elementos) {
