@@ -763,9 +763,9 @@ class OrdemController {
         OrdemStatusProdutos(status: status, produtos: [produto]),
       );
     }
-    // Não fazemos fetch() bloqueante aqui — o Realtime listener
-    // atualiza o cache automaticamente em background.
-    // Apenas atualizamos a tela corrente com o cache local já modificado.
+    // fetch em background: não bloqueia o operador mas atualiza
+    // a esteira de produção e outros painéis que leem de ordens.data
+    unawaited(FirestoreClient.ordens.fetch());
     final updatedOrdem = getOrdemById(ordem.id);
     if (!isAll && updatedOrdem.status != ordem.status) {
       unawaited(OrdemTimelineRegister.statusOrdem(updatedOrdem));
