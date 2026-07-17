@@ -60,6 +60,24 @@ class _OrdemPedidoProdutoWidgetState extends State<OrdemPedidoProdutoWidget> {
       _modoApontamento == 'por_os' &&
       _pedidoTemElementos();
 
+  /// Configuração global é por_os (independente de ter elementos).
+  /// Usado para esconder o botão de ação "2ª" no card do pedido,
+  /// pois neste modo a segunda etapa é gerenciada por OS individual.
+  bool get _configEhPorOs => _modoApontamento == 'por_os';
+
+  /// Retorna true se alguma posição/OS deste pedido (para a bitola da ordem)
+  /// está aguardando segunda etapa. Usado para exibir badge informativo
+  /// no modo por_os.
+  bool get _temOsEmSegundaEtapa {
+    final elementos = AppSupabaseClient.elementos.data
+        .where((e) => e.pedidoId == produto.pedidoId);
+    return elementos.any((e) => e.posicoes.any(
+      (p) =>
+          p.produtoId == ordem.produto.id &&
+          p.status == PosicaoStatus.aguardaSegundaEtapa,
+    ));
+  }
+
   bool get _isModoPorPedido =>
       ordemCtrl.isEmModoOperador && !_isModoPorOS && !_isAlternarToque;
 
@@ -184,8 +202,11 @@ class _OrdemPedidoProdutoWidgetState extends State<OrdemPedidoProdutoWidget> {
                               if (produto.isPaused) _pauseTagWidget(),
                               if (produto.pedido.tags.isNotEmpty)
                                 _tagWidget(produto.pedido.tags.first),
-                              // Badge "2ª ETAPA" quando aguarda segunda etapa
-                              if (rawStatus == PedidoBitolaStatus.aguardaSegundaEtapa)
+                              // Badge "2ª ETAPA":
+                              // - modo por_pedido: quando o pedido inteiro está em aguardaSegundaEtapa
+                              // - modo por_os: quando alguma OS/posição está em aguardaSegundaEtapa
+                              if (rawStatus == PedidoBitolaStatus.aguardaSegundaEtapa ||
+                                  (_configEhPorOs && _temOsEmSegundaEtapa))
                                 Container(
                                   margin: const EdgeInsets.only(right: 8),
                                   padding: const EdgeInsets.symmetric(
@@ -207,10 +228,12 @@ class _OrdemPedidoProdutoWidgetState extends State<OrdemPedidoProdutoWidget> {
                                 produto.pedido.localizador,
                                 style: AppCss.mediumBold.setSize(15),
                               ),
-                              if (_isOperador && !_isProcessando &&
+                              // Botão de AÇÃO "🔄 2ª" — só aparece no modo por_pedido/alternarToque.
+                              // No modo por_os, a segunda etapa é gerenciada por OS individual
+                              // dentro do dialog de elementos, nunca no card do pedido.
+                              if (_isOperador && !_configEhPorOs && !_isProcessando &&
                                   rawStatus == PedidoBitolaStatus.produzindo) ...[
                                 const SizedBox(width: 8),
-                                // Botão 🔄 "2ª etapa" — aparece apenas em produzindo
                                 Tooltip(
                                   message: 'Requer 2ª etapa de produção',
                                   preferBelow: false,
