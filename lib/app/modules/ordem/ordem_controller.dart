@@ -763,10 +763,12 @@ class OrdemController {
         OrdemStatusProdutos(status: status, produtos: [produto]),
       );
     }
-    await FirestoreClient.ordens.fetch();
+    // Não fazemos fetch() bloqueante aqui — o Realtime listener
+    // atualiza o cache automaticamente em background.
+    // Apenas atualizamos a tela corrente com o cache local já modificado.
     final updatedOrdem = getOrdemById(ordem.id);
     if (!isAll && updatedOrdem.status != ordem.status) {
-      await OrdemTimelineRegister.statusOrdem(updatedOrdem);
+      unawaited(OrdemTimelineRegister.statusOrdem(updatedOrdem));
     }
     setOrdem(updatedOrdem);
   }
