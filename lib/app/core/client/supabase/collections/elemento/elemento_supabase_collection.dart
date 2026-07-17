@@ -211,9 +211,52 @@ class ElementoSupabaseCollection {
           event: sf.PostgresChangeEvent.all,
           schema: 'public',
           table: 'elemento_posicoes',
-          callback: (_) => _updateStreams(),
+          callback: _handlePosicaoRealtime,
         )
         .subscribe();
+  }
+
+  /// Atualiza apenas a posição alterada no cache local (UPDATE de status).
+  /// Evita o re-fetch completo de 11k+ posições e garante propagação
+  /// instantânea entre dispositivos via Supabase Realtime.
+  void _handlePosicaoRealtime(sf.PostgresChangePayload payload) {
+    if (payload.eventType == sf.PostgresChangeEvent.update) {
+      final newRecord = payload.newRecord;
+      final posicaoId = newRecord['id']?.toString();
+      final statusStr = newRecord['status']?.toString();
+
+      if (posicaoId != null && statusStr != null) {
+        bool updated = false;
+        for (final elemento in data) {
+          for (final posicao in elemento.posicoes) {
+            if (posicao.id == posicaoId) {
+              final newStatus = PosicaoStatus.values
+                  .cast<PosicaoStatus?>()
+                  .firstWhere(
+                    (e) => e!.name == statusStr,
+                    orElse: () => null,
+                  );
+              if (newStatus != null && newStatus != posicao.status) {
+                posicao.status = newStatus;
+                updated = true;
+              }
+              break;
+            }
+          }
+          if (updated) break;
+        }
+
+        if (updated) {
+          // Emite stream atualizado sem re-fetch — propagação instantânea
+          dataStream.add(data);
+          onUpdated?.call();
+          log('Supabase Realtime: posição $posicaoId → $statusStr (cache cirúrgico)');
+          return;
+        }
+      }
+    }
+    // Fallback: INSERT, DELETE ou posição não encontrada no cache
+    _updateStreams();
   }
 
   Timer? _streamDebounce;
