@@ -54,10 +54,19 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     super.initState();
     _fetchElementos();
     // Quando o Realtime atualiza uma posição em outro dispositivo,
-    // o cache já tem o novo status (mesmas referências). Só precisa rebuildar.
+    // re-sincroniza _posicoes com o cache global.
+    // IMPORTANTE: após um re-fetch completo (start()), os objetos no cache
+    // são NOVOS — sem re-sincronizar, _posicoes ficam com referências velhas
+    // e deixam de refletir mudanças de outros dispositivos.
     _elemsSubscription =
         AppSupabaseClient.elementos.dataStream.listen.listen((_) {
-      if (mounted) setState(() {});
+      if (!mounted) return;
+      setState(() {
+        _elementos = AppSupabaseClient.elementos.data
+            .where((e) => e.pedidoId == widget.produto.pedidoId)
+            .toList();
+        _buildPosicoes();
+      });
     });
   }
 
