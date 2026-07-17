@@ -763,9 +763,10 @@ class OrdemController {
         OrdemStatusProdutos(status: status, produtos: [produto]),
       );
     }
-    // fetch em background: não bloqueia o operador mas atualiza
-    // a esteira de produção e outros painéis que leem de ordens.data
-    unawaited(FirestoreClient.ordens.fetch());
+    // fetch em background com delay: aguarda propagação do Firestore antes de
+    // re-buscar ordens. Sem o delay, o fetch pode trazer dados desatualizados
+    // (status antigo do pedido) e causar flicker na UI (aguardando→produzindo→aguardando→produzindo).
+    unawaited(Future.delayed(const Duration(seconds: 3), () => FirestoreClient.ordens.fetch()));
     final updatedOrdem = getOrdemById(ordem.id);
     if (!isAll && updatedOrdem.status != ordem.status) {
       unawaited(OrdemTimelineRegister.statusOrdem(updatedOrdem));
