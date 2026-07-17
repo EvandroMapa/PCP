@@ -541,6 +541,27 @@ class OrdemController {
   final AppStream<OrdemModel> ordemStream = AppStream<OrdemModel>();
   OrdemModel get ordem => ordemStream.value;
 
+  /// Lock anti-flickering: enquanto ativo, o listener externo (listenById)
+  /// não sobrescreve o ordemStream nem faz fetch de pedidos.
+  /// Ativado durante onChangeProdutoStatus e por 4s após (igual ao padrão Kanban).
+  bool _statusLock = false;
+  Timer? _statusLockTimer;
+
+  void _ativarStatusLock() {
+    _statusLock = true;
+    _statusLockTimer?.cancel();
+    _statusLockTimer = Timer(const Duration(milliseconds: 4000), () {
+      _statusLock = false;
+    });
+  }
+
+  void _liberarStatusLock() {
+    _statusLockTimer?.cancel();
+    _statusLockTimer = Timer(const Duration(milliseconds: 4000), () {
+      _statusLock = false;
+    });
+  }
+
   StreamSubscription<OrdemModel>? subscription;
   void onInitPage(String ordemId, {OrdemModel? ordem}) {
     try {
@@ -555,7 +576,9 @@ class OrdemController {
 
       subscription =
           FirestoreClient.ordens.listenById(ordemId).listen((ordemFetched) {
-        // Agora aceita que a lista de produtos seja esvaziada (permitido pela UI).
+        // Lock ativo: mudança de status em andamento ou recém concluída.
+        // Ignorar evento do Firestore para evitar flicker (dados intermediários).
+        if (_statusLock) return;
         ordemStream.add(ordemFetched);
         _fetchPedidosDaOrdem(ordemFetched);
       });
@@ -575,6 +598,8 @@ class OrdemController {
     if (pedidoIds.isNotEmpty) {
       // Busca os pedidos no banco para popular a memória local e as bitolas aparecerem
       await FirestoreClient.pedidos.fetchByIds(pedidoIds);
+      // Não atualizar a UI se o lock estiver ativo (mudança de status em andamento)
+      if (_statusLock) return;
       ordemStream
           .update(); // Força a re-renderização com os produtos agora carregados
     }
@@ -583,6 +608,8 @@ class OrdemController {
   void onDisposePage() {
     subscription?.cancel();
     subscription = null;
+    _statusLockTimer?.cancel();
+    _statusLock = false;
   }
 
   OrdemModel getOrdemById(String ordemId) {
@@ -680,11 +707,15 @@ class OrdemController {
         return;
       }
     }
+    // Ativa o lock antes de qualquer operação para bloquear o listener Firestore
+    _ativarStatusLock();
     showLoadingDialog();
     await onChangeProdutoStatus(produto, status, false);
     onReorder(FirestoreClient.ordens.ordensNaoCongeladas);
     onUpdateAt(ordem);
     if (contextGlobal.mounted) Navigator.pop(contextGlobal);
+    // Renova o lock após todas as escritas (onUpdateAt dispara listenById)
+    _liberarStatusLock();
   }
 
   Future<void> onChangeProdutoStatus(
