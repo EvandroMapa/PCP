@@ -832,7 +832,7 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     Text(
-                                      '${item.clienteNome} · ${item.obraNome}',
+                                      item.obraNome,
                                       style: AppCss.minimumRegular
                                           .setColor(Colors.grey[400]!)
                                           .setSize(10),
