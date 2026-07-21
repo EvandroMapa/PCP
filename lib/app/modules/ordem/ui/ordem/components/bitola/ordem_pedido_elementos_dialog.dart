@@ -44,6 +44,10 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
   List<_PosicaoItem> _posicoes = [];
   bool _isLoading = true;
 
+  /// Lock anti-duplicata: IDs de posições que estão sendo processadas no momento.
+  /// Evita que toques rápidos do operador gerem múltiplas baixas/estornos.
+  final Set<String> _processandoPosicoes = {};
+
   /// Escuta mudanças no cache de elementos (Realtime de outro dispositivo)
   StreamSubscription? _elemsSubscription;
 
@@ -201,15 +205,20 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     PosicaoStatus oldStatus,
     PosicaoStatus newStatus,
   ) async {
-    // Atualização instantânea na UI
-    setState(() {
-      item.posicao.status = newStatus;
-    });
-
-    // Atualiza também o cache global de elementos para os gráficos
-    _updateGlobalElementosCache(item);
+    // Lock anti-duplicata: ignora se esta posição já está sendo processada.
+    // Evita múltiplas baixas/estornos por toques rápidos do operador.
+    if (_processandoPosicoes.contains(item.posicao.id)) return;
+    _processandoPosicoes.add(item.posicao.id);
 
     try {
+      // Atualização instantânea na UI
+      setState(() {
+        item.posicao.status = newStatus;
+      });
+
+      // Atualiza também o cache global de elementos para os gráficos
+      _updateGlobalElementosCache(item);
+
       // Persiste no Supabase
       await SupabaseService.client
           .from('elemento_posicoes')
@@ -238,6 +247,9 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
       _notifyOrdensStream();
     } catch (e) {
       log('Erro ao atualizar status da posição: $e');
+    } finally {
+      // Libera o lock independente de sucesso ou erro
+      _processandoPosicoes.remove(item.posicao.id);
     }
   }
 
