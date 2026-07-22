@@ -472,14 +472,16 @@ class _ElementoArmacaoCard extends StatelessWidget {
 
   // Cor do card baseada no progresso real
   Color get _cardColor {
-    if (elemento.status == ElementoStatus.pronto) return Colors.green[50]!;
+    // isProntoParcial ANTES de pronto: qtdePronto > 0 && < qtde sempre recebe lime,
+    // mesmo que o status salvo seja 'pronto' por inconsistência.
     if (elemento.isProntoParcial) return Colors.lime[50]!; // parcial: entre amarelo e verde
+    if (elemento.status == ElementoStatus.pronto) return Colors.green[50]!;
     return elemento.status.backgroundColor;
   }
 
   Color get _cardBorderColor {
-    if (elemento.status == ElementoStatus.pronto) return Colors.green[700]!;
     if (elemento.isProntoParcial) return Colors.lime[700]!; // parcial: borda lime destacada
+    if (elemento.status == ElementoStatus.pronto) return Colors.green[700]!;
     if (elemento.status == ElementoStatus.armando) return Colors.amber[700]!;
     return Colors.grey[400]!;
   }
