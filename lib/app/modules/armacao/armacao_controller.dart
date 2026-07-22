@@ -313,7 +313,11 @@ class ArmacaoController {
     }
   }
 
-  /// Método direto de atualização de progresso para elementos com qtde > 1
+  /// Método direto de atualização de progresso para elementos com qtde > 1.
+  /// Regra de fluxo:
+  ///   - AGUARDANDO → qualquer qtde > 0 vai para ARMANDO (nunca pula para PRONTO)
+  ///   - ARMANDO    → qtde total vai para PRONTO; qtde parcial fica em ARMANDO; 0 = AGUARDANDO
+  ///   - PRONTO     → pode reduzir de volta para ARMANDO
   Future<void> openProgressoParcialDirect(
       PedidoModel pedido, ElementoModel elemento) async {
     try {
@@ -328,7 +332,11 @@ class ArmacaoController {
       if (quantidadeEscolhida == 0) {
         statusFinal = ElementoStatus.aguardando;
       } else if (quantidadeEscolhida >= elemento.qtde) {
-        statusFinal = ElementoStatus.pronto;
+        // De AGUARDANDO: não pode pular para PRONTO — vai para ARMANDO
+        // De ARMANDO/PRONTO: quantidade total = PRONTO
+        statusFinal = elemento.status == ElementoStatus.aguardando
+            ? ElementoStatus.armando
+            : ElementoStatus.pronto;
       } else {
         statusFinal = ElementoStatus.armando;
       }
