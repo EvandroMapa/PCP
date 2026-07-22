@@ -325,22 +325,29 @@ class _ResumoProducaoBar extends StatelessWidget {
     for (final e in elementos) {
       totalQtd += e.qtde;
       totalPeso += e.pesoTotal;
+      final ppUnit = e.qtde > 0 ? e.pesoTotal / e.qtde : 0.0;
 
-      if (e.status == ElementoStatus.aguardando) {
-        qtdAgu += e.qtde;
-        pesoAgu += e.pesoTotal;
-      } else if (e.status == ElementoStatus.pronto) {
-        qtdPronto += e.qtde;
-        pesoPronto += e.pesoTotal;
+      if (e.qtde == 1) {
+        // qtde=1: status é a fonte de verdade
+        switch (e.status) {
+          case ElementoStatus.aguardando:
+            qtdAgu += 1;
+            pesoAgu += e.pesoTotal;
+          case ElementoStatus.armando:
+            qtdArm += 1;
+            pesoArm += e.pesoTotal;
+          case ElementoStatus.pronto:
+            qtdPronto += 1;
+            pesoPronto += e.pesoTotal;
+        }
       } else {
-        // armando — progresso parcial split entre pronto e armando
-        final prontoFrac = e.qtdePronto.toDouble();
-        final armFrac = (e.qtde - e.qtdePronto).toDouble();
-        final ppUnit = e.qtde > 0 ? e.pesoTotal / e.qtde : 0.0;
-        qtdPronto += prontoFrac;
-        pesoPronto += prontoFrac * ppUnit;
-        qtdArm += armFrac;
-        pesoArm += armFrac * ppUnit;
+        // qtde>1: contadores individuais são a fonte de verdade
+        qtdPronto += e.qtdePronto;
+        pesoPronto += e.qtdePronto * ppUnit;
+        qtdArm += e.qtdeArmando;
+        pesoArm += e.qtdeArmando * ppUnit;
+        qtdAgu += e.qtdeAguardando;
+        pesoAgu += e.qtdeAguardando * ppUnit;
       }
     }
 
@@ -497,19 +504,30 @@ class _ElementoArmacaoCard extends StatelessWidget {
     required this.onImagePressed,
   });
 
-  // Cor do card baseada no progresso real
+  // Cor do card baseada nos contadores reais (qtde > 1)
+  // Para qtde=1: usa status diretamente
   Color get _cardColor {
-    // isProntoParcial ANTES de pronto: qtdePronto > 0 && < qtde sempre recebe lime,
-    // mesmo que o status salvo seja 'pronto' por inconsistência.
-    if (elemento.isProntoParcial) return Colors.lime[50]!; // parcial: entre amarelo e verde
-    if (elemento.status == ElementoStatus.pronto) return Colors.green[50]!;
-    return elemento.status.backgroundColor;
+    if (elemento.qtde == 1) {
+      if (elemento.status == ElementoStatus.pronto) return Colors.green[50]!;
+      return elemento.status.backgroundColor;
+    }
+    // qtde > 1: derivado dos contadores
+    if (elemento.qtdePronto >= elemento.qtde) return Colors.green[50]!; // tudo pronto
+    if (elemento.qtdePronto > 0) return Colors.lime[50]!;             // algum pronto, não tudo
+    if (elemento.qtdeArmando > 0) return Colors.yellow[50]!;          // só armando
+    return Colors.grey[100]!;                                          // tudo aguardando
   }
 
   Color get _cardBorderColor {
-    if (elemento.isProntoParcial) return Colors.lime[700]!; // parcial: borda lime destacada
-    if (elemento.status == ElementoStatus.pronto) return Colors.green[700]!;
-    if (elemento.status == ElementoStatus.armando) return Colors.amber[700]!;
+    if (elemento.qtde == 1) {
+      if (elemento.status == ElementoStatus.pronto) return Colors.green[700]!;
+      if (elemento.status == ElementoStatus.armando) return Colors.amber[700]!;
+      return Colors.grey[400]!;
+    }
+    // qtde > 1: derivado dos contadores
+    if (elemento.qtdePronto >= elemento.qtde) return Colors.green[700]!;
+    if (elemento.qtdePronto > 0) return Colors.lime[700]!;
+    if (elemento.qtdeArmando > 0) return Colors.amber[700]!;
     return Colors.grey[400]!;
   }
 
@@ -545,38 +563,68 @@ class _ElementoArmacaoCard extends StatelessWidget {
                 ),
               ),
             ),
-            // Barra de progresso parcial dentro de um Container robusto
-            if (elemento.qtde > 1 && elemento.qtdePronto > 0) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: LinearProgressIndicator(
-                        value: elemento.progressoPronto,
-                        minHeight: 22,
-                        backgroundColor: Colors.grey[200],
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          elemento.status == ElementoStatus.pronto
-                              ? Colors.green[700]!   // tudo pronto: verde escuro
-                              : Colors.lime[700]!,   // parcial: lime (verde-amarelado)
+            // Barra de progresso e status das peças
+            if (elemento.qtde > 1) ...[
+              // Barra: prontas
+              if (elemento.qtdePronto > 0)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: LinearProgressIndicator(
+                          value: elemento.progressoPronto,
+                          minHeight: 18,
+                          backgroundColor: Colors.grey[200],
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            elemento.qtdePronto >= elemento.qtde
+                                ? Colors.green[700]!   // tudo pronto
+                                : Colors.lime[700]!,   // parcial
+                          ),
                         ),
                       ),
-                    ),
-                    Text(
-                      '${elemento.qtdePronto} / ${elemento.qtde} PÇ PRONTAS',
-                      style: AppCss.mediumBold.setSize(11).setColor(
-                          elemento.progressoPronto > 0.5
-                              ? Colors.white
-                              : elemento.status == ElementoStatus.pronto
-                                  ? Colors.green[900]!
-                                  : Colors.lime[900]!),
-                    ),
-                  ],
+                      Text(
+                        '${elemento.qtdePronto} / ${elemento.qtde} PRONTAS',
+                        style: AppCss.mediumBold.setSize(10).setColor(
+                            elemento.progressoPronto > 0.5
+                                ? Colors.white
+                                : elemento.qtdePronto >= elemento.qtde
+                                    ? Colors.green[900]!
+                                    : Colors.lime[900]!),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+              // Badge: em produção
+              if (elemento.qtdeArmando > 0)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: LinearProgressIndicator(
+                          value: elemento.qtde > 0
+                              ? (elemento.qtdeArmando / elemento.qtde).clamp(0.0, 1.0)
+                              : 0.0,
+                          minHeight: 18,
+                          backgroundColor: Colors.grey[200],
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.amber[600]!),
+                        ),
+                      ),
+                      Text(
+                        '${elemento.qtdeArmando} EM PRODUÇÃO',
+                        style: AppCss.mediumBold.setSize(10).setColor(
+                            (elemento.qtdeArmando / elemento.qtde) > 0.5
+                                ? Colors.white
+                                : Colors.amber[900]!),
+                      ),
+                    ],
+                  ),
+                ),
             ],
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),

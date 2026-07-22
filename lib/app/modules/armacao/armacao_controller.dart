@@ -279,70 +279,68 @@ class ArmacaoController {
 
   Future<void> updateElementoStatus(PedidoModel pedido, ElementoModel elemento,
       ElementoStatus newStatus) async {
+    // Usado SOMENTE para elementos com qtde == 1.
+    // Elementos com qtde > 1 passam pelo openProgressoParcialDirect.
     try {
-      int novoQtdePronto = elemento.qtdePronto;
+      int novoQtdePronto = 0;
       ElementoStatus statusFinal = newStatus;
 
-      // 2. Determinar status final planejado
-      if (newStatus == ElementoStatus.pronto && elemento.qtde > 1) {
-        final quantidadeEscolhida = await _showQtdeProntoDialog(
-          context: contextGlobal,
-          elemento: elemento,
-        );
-        if (quantidadeEscolhida == null) return; // Cancelou
-
-        novoQtdePronto = quantidadeEscolhida;
-        statusFinal = (novoQtdePronto >= elemento.qtde)
-            ? ElementoStatus.pronto
-            : ElementoStatus.armando;
-      } else if (newStatus == ElementoStatus.pronto && elemento.qtde == 1) {
-        novoQtdePronto = 1;
+      if (newStatus == ElementoStatus.pronto) {
+        novoQtdePronto = elemento.qtde; // 1
         statusFinal = ElementoStatus.pronto;
       } else if (newStatus == ElementoStatus.armando) {
-        novoQtdePronto = 0; // Volta a armar, zera o progresso
+        novoQtdePronto = 0;
         statusFinal = ElementoStatus.armando;
-      } else if (newStatus == ElementoStatus.aguardando) {
-        novoQtdePronto = 0; // Volta para aguardando, zera o progressodf
+      } else {
+        novoQtdePronto = 0;
         statusFinal = ElementoStatus.aguardando;
       }
 
-      await _applyStatusUpdate(pedido, elemento, statusFinal, novoQtdePronto);
+      await _applyStatusUpdate(
+        pedido,
+        elemento,
+        statusFinal,
+        novoQtdePronto: novoQtdePronto,
+        novoQtdeArmando: 0, // qtde=1: sem rastreio por contador
+      );
     } catch (e) {
       log('Erro ao atualizar status do elemento: $e');
       showInfoDialog('Erro: Não foi possível atualizar o status.');
     }
   }
 
-  /// Método direto de atualização de progresso para elementos com qtde > 1.
-  /// Regra de fluxo:
-  ///   - AGUARDANDO → qualquer qtde > 0 vai para ARMANDO (nunca pula para PRONTO)
-  ///   - ARMANDO    → qtde total vai para PRONTO; qtde parcial fica em ARMANDO; 0 = AGUARDANDO
-  ///   - PRONTO     → pode reduzir de volta para ARMANDO
+  /// Abre o dialog de distribuição de peças (qtde > 1).
+  /// O armador define independentemente quantas estão em produção e quantas já estão prontas.
   Future<void> openProgressoParcialDirect(
       PedidoModel pedido, ElementoModel elemento) async {
     try {
-      final int? quantidadeEscolhida = await _showQtdeProntoDialog(
+      final resultado = await _showDistribuicaoDialog(
         context: contextGlobal,
         elemento: elemento,
       );
 
-      if (quantidadeEscolhida == null) return; // Cancelou
+      if (resultado == null) return; // Cancelou
 
-      ElementoStatus statusFinal;
-      if (quantidadeEscolhida == 0) {
-        statusFinal = ElementoStatus.aguardando;
-      } else if (quantidadeEscolhida >= elemento.qtde) {
-        // De AGUARDANDO: não pode pular para PRONTO — vai para ARMANDO
-        // De ARMANDO/PRONTO: quantidade total = PRONTO
-        statusFinal = elemento.status == ElementoStatus.aguardando
-            ? ElementoStatus.armando
-            : ElementoStatus.pronto;
-      } else {
+      final novoArmando = resultado.$1;
+      final novoPronto = resultado.$2;
+
+      // Status derivado automaticamente dos contadores
+      final ElementoStatus statusFinal;
+      if (novoPronto >= elemento.qtde) {
+        statusFinal = ElementoStatus.pronto;
+      } else if (novoPronto > 0 || novoArmando > 0) {
         statusFinal = ElementoStatus.armando;
+      } else {
+        statusFinal = ElementoStatus.aguardando;
       }
 
       await _applyStatusUpdate(
-          pedido, elemento, statusFinal, quantidadeEscolhida);
+        pedido,
+        elemento,
+        statusFinal,
+        novoQtdePronto: novoPronto,
+        novoQtdeArmando: novoArmando,
+      );
     } catch (e) {
       log('Erro no fluxo direto de progresso: $e');
       showInfoDialog('Erro: Não foi possível atualizar o progresso.');
@@ -350,8 +348,13 @@ class ArmacaoController {
   }
 
   /// Centraliza a verificação de limite dinâmico e persistência no banco e local
-  Future<void> _applyStatusUpdate(PedidoModel pedido, ElementoModel elemento,
-      ElementoStatus statusFinal, int novoQtdePronto) async {
+  Future<void> _applyStatusUpdate(
+    PedidoModel pedido,
+    ElementoModel elemento,
+    ElementoStatus statusFinal, {
+    required int novoQtdePronto,
+    int novoQtdeArmando = 0,
+  }) async {
     // 1. Buscar limite dinamicamente (Reatividade Administrativa)
     try {
       final configRaw = await SupabaseService.client
@@ -395,6 +398,7 @@ class ArmacaoController {
       elementosLocal[index] = elemento.copyWith(
         status: statusFinal,
         qtdePronto: novoQtdePronto,
+        qtdeArmando: novoQtdeArmando,
       );
       elementosStream.add(elementosLocal);
     }
@@ -412,6 +416,7 @@ class ArmacaoController {
     await SupabaseService.client.from('elementos').update({
       'status': statusFinal.name,
       'qtde_pronto': novoQtdePronto,
+      'qtde_armando': novoQtdeArmando,
     }).eq('id', elemento.id);
 
     // Registrar histórico de mudança de status
@@ -444,132 +449,193 @@ class ArmacaoController {
     }
   }
 
-  /// Diálogo para o armador informar quantas peças estão prontas
-  Future<int?> _showQtdeProntoDialog({
+  /// Dialog com DOIS contadores independentes: Em Produção e Prontas.
+  /// Retorna (qtdeArmando, qtdePronto) ou null se cancelado.
+  Future<(int, int)?> _showDistribuicaoDialog({
     required BuildContext context,
     required ElementoModel elemento,
   }) async {
-    int selecionado = elemento.qtdePronto;
+    int selArmando = elemento.qtdeArmando;
+    int selPronto = elemento.qtdePronto;
 
-    return showDialog<int>(
+    return showDialog<(int, int)>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) {
-          final screenWidth = MediaQuery.of(ctx).size.width;
-          final isSmall = screenWidth < 400;
-          final iconSize = isSmall ? 28.0 : 32.0;
-          final fontSize = isSmall ? 20.0 : 24.0;
-          final hPad = isSmall ? 12.0 : 20.0;
+          final aguardando = (elemento.qtde - selArmando - selPronto).clamp(0, elemento.qtde);
+          final podeAdicionarArm = selArmando + selPronto < elemento.qtde;
+          final podeAdicionarPro = selArmando + selPronto < elemento.qtde;
+
+          // Cor do botão de confirmar
+          final Color corConfirmar;
+          final String labelConfirmar;
+          if (selPronto >= elemento.qtde) {
+            corConfirmar = Colors.green[700]!;
+            labelConfirmar = 'TUDO PRONTO ✔';
+          } else if (selPronto > 0 || selArmando > 0) {
+            corConfirmar = Colors.lime[800]!;
+            labelConfirmar = 'SALVAR';
+          } else {
+            corConfirmar = Colors.blueGrey;
+            labelConfirmar = 'P/ AGUARDANDO';
+          }
 
           return AlertDialog(
             insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-            title: Text('Quantas peças prontas?\n${elemento.nome}'),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  elemento.nome,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  '${elemento.qtde} peças no total',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.normal),
+                ),
+              ],
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  'Total de peças: ${elemento.qtde}\nAtualmente prontas: ${elemento.qtdePronto}',
-                  style: const TextStyle(fontSize: 13, color: Colors.grey),
-                ),
-                const SizedBox(height: 20),
+                // ── Contadores lado a lado ──────────────────────────────
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    IconButton(
-                      onPressed: selecionado > 0
-                          ? () => setState(() => selecionado--)
-                          : null,
-                      icon: const Icon(Icons.remove_circle_outline),
-                      iconSize: iconSize,
-                      color: Colors.red,
-                      padding: EdgeInsets.zero,
-                      constraints: BoxConstraints(
-                        minWidth: iconSize + 8,
-                        minHeight: iconSize + 8,
+                    // Em Produção
+                    Expanded(
+                      child: _buildContador(
+                        label: 'EM PRODUÇÃO',
+                        valor: selArmando,
+                        cor: Colors.amber[800]!,
+                        corFundo: Colors.amber[50]!,
+                        onDecrement: selArmando > 0
+                            ? () => setState(() => selArmando--)
+                            : null,
+                        onIncrement: podeAdicionarArm
+                            ? () => setState(() => selArmando++)
+                            : null,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: hPad, vertical: 8),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.green, width: 2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '$selecionado / ${elemento.qtde}',
-                        style: TextStyle(
-                            fontSize: fontSize, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: selecionado < elemento.qtde
-                          ? () => setState(() => selecionado++)
-                          : null,
-                      icon: const Icon(Icons.add_circle_outline),
-                      iconSize: iconSize,
-                      color: Colors.green,
-                      padding: EdgeInsets.zero,
-                      constraints: BoxConstraints(
-                        minWidth: iconSize + 8,
-                        minHeight: iconSize + 8,
+                    const SizedBox(width: 12),
+                    // Prontas
+                    Expanded(
+                      child: _buildContador(
+                        label: 'PRONTAS',
+                        valor: selPronto,
+                        cor: Colors.green[700]!,
+                        corFundo: Colors.green[50]!,
+                        onDecrement: selPronto > 0
+                            ? () => setState(() => selPronto--)
+                            : null,
+                        onIncrement: podeAdicionarPro
+                            ? () => setState(() => selPronto++)
+                            : null,
                       ),
                     ),
                   ],
                 ),
-                if (selecionado == 0)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Text(
-                      'O elemento voltará para AGUARDANDO.',
-                      style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.blueGrey,
-                          fontStyle: FontStyle.italic),
-                      textAlign: TextAlign.center,
-                    ),
-                  )
-                else if (selecionado < elemento.qtde)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Text(
-                      'As ${elemento.qtde - selecionado} peças restantes ficarão em ARMANDO.',
-                      style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.orange,
-                          fontStyle: FontStyle.italic),
-                      textAlign: TextAlign.center,
-                    ),
+                const SizedBox(height: 16),
+                // ── Aguardando auto ───────────────────────────────
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.grey[300]!),
                   ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Aguardando',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        '$aguardando de ${elemento.qtde}',
+                        style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child:
-                    const Text('CANCELAR', style: TextStyle(color: Colors.grey)),
+                child: const Text('CANCELAR', style: TextStyle(color: Colors.grey)),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      selecionado == 0 ? Colors.blueGrey : Colors.green,
+                  backgroundColor: corConfirmar,
                   foregroundColor: Colors.white,
                 ),
-                onPressed: () => Navigator.pop(ctx, selecionado),
-                child: Text(
-                  selecionado == 0
-                      ? 'P/ AGUARDANDO'
-                      : (selecionado == elemento.qtde
-                          ? 'CONFIRMAR PRONTO'
-                          : 'SALVAR PROGRESSO'),
-                ),
+                onPressed: () => Navigator.pop(ctx, (selArmando, selPronto)),
+                child: Text(labelConfirmar),
               ),
             ],
           );
         },
       ),
+    );
+  }
+
+  /// Widget auxiliar para um contador com +/-
+  Widget _buildContador({
+    required String label,
+    required int valor,
+    required Color cor,
+    required Color corFundo,
+    required VoidCallback? onDecrement,
+    required VoidCallback? onIncrement,
+  }) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: cor),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: corFundo,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: cor, width: 1.5),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                onPressed: onDecrement,
+                icon: const Icon(Icons.remove),
+                iconSize: 20,
+                color: onDecrement != null ? cor : Colors.grey[300],
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              ),
+              SizedBox(
+                width: 36,
+                child: Text(
+                  '$valor',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: cor),
+                ),
+              ),
+              IconButton(
+                onPressed: onIncrement,
+                icon: const Icon(Icons.add),
+                iconSize: 20,
+                color: onIncrement != null ? cor : Colors.grey[300],
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -594,34 +660,47 @@ class ArmacaoController {
       for (final e in elementosStream.value) {
         totalQtd += e.qtde;
         totalPeso += e.pesoTotal;
+        final ppUnit = e.qtde > 0 ? e.pesoTotal / e.qtde : 0.0;
 
-        if (e.status == ElementoStatus.aguardando) {
-          qtdPorStatus[ElementoStatus.aguardando] =
-              (qtdPorStatus[ElementoStatus.aguardando] ?? 0) + e.qtde;
-          pesoPorStatus[ElementoStatus.aguardando] =
-              (pesoPorStatus[ElementoStatus.aguardando] ?? 0) + e.pesoTotal;
-        } else if (e.status == ElementoStatus.pronto) {
-          qtdPorStatus[ElementoStatus.pronto] =
-              (qtdPorStatus[ElementoStatus.pronto] ?? 0) + e.qtde;
-          pesoPorStatus[ElementoStatus.pronto] =
-              (pesoPorStatus[ElementoStatus.pronto] ?? 0) + e.pesoTotal;
+        if (e.qtde == 1) {
+          // qtde=1: status é a fonte de verdade
+          switch (e.status) {
+            case ElementoStatus.aguardando:
+              qtdPorStatus[ElementoStatus.aguardando] =
+                  (qtdPorStatus[ElementoStatus.aguardando] ?? 0) + 1;
+              pesoPorStatus[ElementoStatus.aguardando] =
+                  (pesoPorStatus[ElementoStatus.aguardando] ?? 0) + e.pesoTotal;
+            case ElementoStatus.armando:
+              qtdPorStatus[ElementoStatus.armando] =
+                  (qtdPorStatus[ElementoStatus.armando] ?? 0) + 1;
+              pesoPorStatus[ElementoStatus.armando] =
+                  (pesoPorStatus[ElementoStatus.armando] ?? 0) + e.pesoTotal;
+            case ElementoStatus.pronto:
+              qtdPorStatus[ElementoStatus.pronto] =
+                  (qtdPorStatus[ElementoStatus.pronto] ?? 0) + 1;
+              pesoPorStatus[ElementoStatus.pronto] =
+                  (pesoPorStatus[ElementoStatus.pronto] ?? 0) + e.pesoTotal;
+          }
         } else {
-          // armando — pode ter progresso parcial
-          final qtdeProntoFrac = e.qtdePronto.toDouble();
-          final qtdeArmandoFrac = (e.qtde - e.qtdePronto).toDouble();
-          final pesoPorUnidade = e.qtde > 0 ? e.pesoTotal / e.qtde : 0.0;
+          // qtde>1: contadores individuais são a fonte de verdade
+          final prontoFrac = e.qtdePronto.toDouble();
+          final armFrac = e.qtdeArmando.toDouble();
+          final aguFrac = e.qtdeAguardando.toDouble(); // qtde - pronto - armando
 
           qtdPorStatus[ElementoStatus.pronto] =
-              (qtdPorStatus[ElementoStatus.pronto] ?? 0) + qtdeProntoFrac;
+              (qtdPorStatus[ElementoStatus.pronto] ?? 0) + prontoFrac;
           pesoPorStatus[ElementoStatus.pronto] =
-              (pesoPorStatus[ElementoStatus.pronto] ?? 0) +
-                  (qtdeProntoFrac * pesoPorUnidade);
+              (pesoPorStatus[ElementoStatus.pronto] ?? 0) + (prontoFrac * ppUnit);
 
           qtdPorStatus[ElementoStatus.armando] =
-              (qtdPorStatus[ElementoStatus.armando] ?? 0) + qtdeArmandoFrac;
+              (qtdPorStatus[ElementoStatus.armando] ?? 0) + armFrac;
           pesoPorStatus[ElementoStatus.armando] =
-              (pesoPorStatus[ElementoStatus.armando] ?? 0) +
-                  (qtdeArmandoFrac * pesoPorUnidade);
+              (pesoPorStatus[ElementoStatus.armando] ?? 0) + (armFrac * ppUnit);
+
+          qtdPorStatus[ElementoStatus.aguardando] =
+              (qtdPorStatus[ElementoStatus.aguardando] ?? 0) + aguFrac;
+          pesoPorStatus[ElementoStatus.aguardando] =
+              (pesoPorStatus[ElementoStatus.aguardando] ?? 0) + (aguFrac * ppUnit);
         }
       }
 

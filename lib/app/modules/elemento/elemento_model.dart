@@ -204,7 +204,8 @@ class ElementoModel {
   final String pedidoId;
   final String nome;
   final int qtde;
-  final int qtdePronto; // Quantas peças já foram concluídas (para qtde > 1)
+  final int qtdePronto;   // peças concluídas
+  final int qtdeArmando;  // peças em produção (não concluídas)
   final DateTime createdAt;
   final ElementoStatus status;
   List<ElementoPosicaoModel> posicoes;
@@ -222,6 +223,7 @@ class ElementoModel {
     required this.posicoes,
     required this.arquivos,
     this.qtdePronto = 0,
+    this.qtdeArmando = 0,
     this.status = ElementoStatus.aguardando,
     this.pesoUnitarioSpe,
   });
@@ -234,12 +236,19 @@ class ElementoModel {
   double get pesoUnitario =>
       pesoUnitarioSpe ?? posicoes.fold(0.0, (sum, p) => sum + p.pesoKg);
 
+  /// Peças ainda aguardando = total - prontas - em produção (≥ 0)
+  int get qtdeAguardando => (qtde - qtdePronto - qtdeArmando).clamp(0, qtde);
+
+  /// Há alguma peça em produção
+  bool get hasArmando => qtdeArmando > 0;
+
   ElementoModel copyWith({
     String? id,
     String? pedidoId,
     String? nome,
     int? qtde,
     int? qtdePronto,
+    int? qtdeArmando,
     DateTime? createdAt,
     ElementoStatus? status,
     List<ElementoPosicaoModel>? posicoes,
@@ -252,6 +261,7 @@ class ElementoModel {
       nome: nome ?? this.nome,
       qtde: qtde ?? this.qtde,
       qtdePronto: qtdePronto ?? this.qtdePronto,
+      qtdeArmando: qtdeArmando ?? this.qtdeArmando,
       createdAt: createdAt ?? this.createdAt,
       status: status ?? this.status,
       posicoes: posicoes ?? this.posicoes,
@@ -301,6 +311,7 @@ class ElementoModel {
       nome: (map['nome'] ?? '').toString(),
       qtde: int.tryParse((map['qtde'] ?? '1').toString()) ?? 1,
       qtdePronto: int.tryParse((map['qtde_pronto'] ?? '0').toString()) ?? 0,
+      qtdeArmando: int.tryParse((map['qtde_armando'] ?? '0').toString()) ?? 0,
       createdAt: map['created_at'] != null
           ? DateTime.tryParse(map['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
@@ -322,6 +333,7 @@ class ElementoModel {
       'nome': nome,
       'qtde': qtde,
       'qtde_pronto': qtdePronto,
+      'qtde_armando': qtdeArmando,
       'status': status.name,
     };
     if (pesoUnitarioSpe != null) map['peso_unitario'] = pesoUnitarioSpe;
