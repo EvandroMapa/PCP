@@ -11,7 +11,6 @@ import 'package:dio/dio.dart';
 import 'package:pdfx/pdfx.dart';
 import 'dart:typed_data';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
-import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
 import 'package:flutter/material.dart';
 
@@ -130,93 +129,83 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                 ],
               ),
             )
-          : StreamOut<List<PedidoModel>>(
-              stream: AppSupabaseClient.pedidos.dataStream.listen,
-              builder: (_, allPedidos) {
-                // Busca a versão mais atualizada do pedido no stream global
-                final currentPedido = allPedidos.firstWhere(
-                  (p) => p.id == widget.pedido.id,
-                  orElse: () => widget.pedido,
-                );
+          // Usa APENAS elementosStream (protegido pelo lock anti-flickering).
+          // O StreamOut<List<PedidoModel>> foi removido pois o Realtime de pedidos
+          // disparava fora do lock, causando flicker no header e nos cards.
+          : StreamOut<List<ElementoModel>>(
+              stream: armacaoCtrl.elementosStream.listen,
+              builder: (_, elementos) {
+                final filtrados = elementos.where((e) {
+                  if (e.isProntoParcial) {
+                    return (_statusVisivel[ElementoStatus.armando] ?? true) ||
+                        (_statusVisivel[ElementoStatus.pronto] ?? true);
+                  }
+                  return _statusVisivel[e.status] ?? true;
+                }).toList();
 
                 return Column(
                   children: [
                     _ResumoProducaoBar(
-                      pedido: currentPedido,
+                      elementos: elementos,
                       statusVisivel: _statusVisivel,
                       onToggle: (status) => setState(() =>
                           _statusVisivel[status] =
                               !(_statusVisivel[status] ?? true)),
                     ),
                     Expanded(
-                      child: StreamOut<List<ElementoModel>>(
-                        stream: armacaoCtrl.elementosStream.listen,
-                        builder: (_, elementos) {
-                          final filtrados = elementos.where((e) {
-                            if (e.isProntoParcial) {
-                              return (_statusVisivel[ElementoStatus.armando] ??
-                                      true) ||
-                                  (_statusVisivel[ElementoStatus.pronto] ??
-                                      true);
-                            }
-                            return _statusVisivel[e.status] ?? true;
-                          }).toList();
-                          if (filtrados.isEmpty) {
-                            return const EmptyData(
-                                message:
-                                    'Nenhum elemento visível com os filtros ativos.');
-                          }
-                          return Scrollbar(
-                            controller: _scrollController,
-                            thumbVisibility: true,
-                            trackVisibility: true,
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                final screenWidth = constraints.maxWidth;
-                                final isSmall = screenWidth < 400;
-                                final padding = isSmall ? 12.0 : 24.0;
-                                final spacing = isSmall ? 12.0 : 20.0;
-                                final maxExtent = isSmall ? 300.0 : 350.0;
-                                final mainExtent = isSmall ? 150.0 : 160.0;
+                      child: filtrados.isEmpty
+                          ? const EmptyData(
+                              message:
+                                  'Nenhum elemento visível com os filtros ativos.')
+                          : Scrollbar(
+                              controller: _scrollController,
+                              thumbVisibility: true,
+                              trackVisibility: true,
+                              child: LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final screenWidth = constraints.maxWidth;
+                                  final isSmall = screenWidth < 400;
+                                  final padding = isSmall ? 12.0 : 24.0;
+                                  final spacing = isSmall ? 12.0 : 20.0;
+                                  final maxExtent = isSmall ? 300.0 : 350.0;
+                                  final mainExtent = isSmall ? 150.0 : 160.0;
 
-                                return GridView.builder(
-                                  controller: _scrollController,
-                                  padding: EdgeInsets.all(padding),
-                                  gridDelegate:
-                                      SliverGridDelegateWithMaxCrossAxisExtent(
-                                    maxCrossAxisExtent: maxExtent,
-                                    mainAxisExtent: mainExtent,
-                                    crossAxisSpacing: spacing,
-                                    mainAxisSpacing: spacing,
-                                  ),
-                                  itemCount: filtrados.length,
-                                  itemBuilder: (context, index) {
-                                    final elemento = filtrados[index];
-                                    return _ElementoArmacaoCard(
-                                      key: ValueKey(elemento.id),
-                                      elemento: elemento,
-                                      onStatusPressed: () async {
-                                        // Para qtde > 1: sempre abre o dialog de quantidade.
-                                        // A regra de fluxo (aguardando → armando, nunca pula para pronto)
-                                        // é aplicada dentro do openProgressoParcialDirect.
-                                        if (elemento.qtde > 1) {
-                                          await armacaoCtrl
-                                              .openProgressoParcialDirect(
-                                                  currentPedido, elemento);
-                                        } else {
-                                          await _showStatusPicker(elemento);
-                                        }
-                                      },
-                                      onImagePressed: () =>
-                                          _showImageDialog(elemento),
-                                    );
-                                  },
-                                );
-                              },
+                                  return GridView.builder(
+                                    controller: _scrollController,
+                                    padding: EdgeInsets.all(padding),
+                                    gridDelegate:
+                                        SliverGridDelegateWithMaxCrossAxisExtent(
+                                      maxCrossAxisExtent: maxExtent,
+                                      mainAxisExtent: mainExtent,
+                                      crossAxisSpacing: spacing,
+                                      mainAxisSpacing: spacing,
+                                    ),
+                                    itemCount: filtrados.length,
+                                    itemBuilder: (context, index) {
+                                      final elemento = filtrados[index];
+                                      return _ElementoArmacaoCard(
+                                        key: ValueKey(elemento.id),
+                                        elemento: elemento,
+                                        onStatusPressed: () async {
+                                          // Para qtde > 1: sempre abre o dialog de quantidade.
+                                          // A regra de fluxo (aguardando → armando, nunca pula para pronto)
+                                          // é aplicada dentro do openProgressoParcialDirect.
+                                          if (elemento.qtde > 1) {
+                                            await armacaoCtrl
+                                                .openProgressoParcialDirect(
+                                                    widget.pedido, elemento);
+                                          } else {
+                                            await _showStatusPicker(elemento);
+                                          }
+                                        },
+                                        onImagePressed: () =>
+                                            _showImageDialog(elemento),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
                             ),
-                          );
-                        },
-                      ),
                     ),
                   ],
                 );
@@ -311,40 +300,53 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
   }
 }
 
+/// Barra de resumo de produção.
+/// Computa o resumo DIRETAMENTE de [elementos] (elementosStream),
+/// que está protegido pelo lock anti-flickering do controller.
+/// Não depende mais de pedido.armacaoResumo nem do Realtime de pedidos.
 class _ResumoProducaoBar extends StatelessWidget {
-  final PedidoModel pedido;
+  final List<ElementoModel> elementos;
   final Map<ElementoStatus, bool> statusVisivel;
   final ValueChanged<ElementoStatus> onToggle;
-  const _ResumoProducaoBar(
-      {required this.pedido,
-      required this.statusVisivel,
-      required this.onToggle});
+  const _ResumoProducaoBar({
+    required this.elementos,
+    required this.statusVisivel,
+    required this.onToggle,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final resumo = pedido.armacaoResumo;
-    final Map<String, dynamic> details = resumo.containsKey('details')
-        ? resumo['details'] as Map<String, dynamic>
-        : {
-            'aguardando': {
-              'qtd': 0,
-              'peso': 0.0,
-              'prcnt_qtd': 0.0,
-              'prcnt_peso': 0.0
-            },
-            'armando': {
-              'qtd': 0,
-              'peso': 0.0,
-              'prcnt_qtd': 0.0,
-              'prcnt_peso': 0.0
-            },
-            'pronto': {
-              'qtd': 0,
-              'peso': 0.0,
-              'prcnt_qtd': 0.0,
-              'prcnt_peso': 0.0
-            },
-          };
+    // Calcula resumo localmente — mesma lógica de updatePedidoSummary no controller
+    int totalQtd = 0;
+    double totalPeso = 0;
+    double qtdAgu = 0, qtdArm = 0, qtdPronto = 0;
+    double pesoAgu = 0, pesoArm = 0, pesoPronto = 0;
+
+    for (final e in elementos) {
+      totalQtd += e.qtde;
+      totalPeso += e.pesoTotal;
+
+      if (e.status == ElementoStatus.aguardando) {
+        qtdAgu += e.qtde;
+        pesoAgu += e.pesoTotal;
+      } else if (e.status == ElementoStatus.pronto) {
+        qtdPronto += e.qtde;
+        pesoPronto += e.pesoTotal;
+      } else {
+        // armando — progresso parcial split entre pronto e armando
+        final prontoFrac = e.qtdePronto.toDouble();
+        final armFrac = (e.qtde - e.qtdePronto).toDouble();
+        final ppUnit = e.qtde > 0 ? e.pesoTotal / e.qtde : 0.0;
+        qtdPronto += prontoFrac;
+        pesoPronto += prontoFrac * ppUnit;
+        qtdArm += armFrac;
+        pesoArm += armFrac * ppUnit;
+      }
+    }
+
+    _Item agu = _Item(qtd: qtdAgu, peso: pesoAgu, totalQtd: totalQtd, totalPeso: totalPeso);
+    _Item arm = _Item(qtd: qtdArm, peso: pesoArm, totalQtd: totalQtd, totalPeso: totalPeso);
+    _Item pro = _Item(qtd: qtdPronto, peso: pesoPronto, totalQtd: totalQtd, totalPeso: totalPeso);
 
     return Container(
       width: double.infinity,
@@ -358,26 +360,23 @@ class _ResumoProducaoBar extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
       child: Row(
         children: [
-          _buildResumoItem(
-              'AGUARDANDO', ElementoStatus.aguardando, details['aguardando']),
-          const SizedBox(width: 16),
-          _buildResumoItem(
-              'ARMANDO', ElementoStatus.armando, details['armando']),
-          const SizedBox(width: 16),
-          _buildResumoItem('PRONTO', ElementoStatus.pronto, details['pronto']),
+          _buildItem('AGUARDANDO', ElementoStatus.aguardando, agu),
+          const SizedBox(width: 8),
+          _buildItem('ARMANDO', ElementoStatus.armando, arm),
+          const SizedBox(width: 8),
+          _buildItem('PRONTO', ElementoStatus.pronto, pro),
         ],
       ),
     );
   }
 
-  Widget _buildResumoItem(
-      String label, ElementoStatus status, Map<String, dynamic> data) {
-    final double prcntQtd = (data['prcnt_qtd'] ?? 0.0) * 100;
-    final double prcntPeso = (data['prcnt_peso'] ?? 0.0) * 100;
+  Widget _buildItem(String label, ElementoStatus status, _Item data) {
     final bool isVisible = statusVisivel[status] ?? true;
+    final prcntQtd = data.prcntQtd;
+    final prcntPeso = data.prcntPeso;
 
     return Expanded(
       child: Container(
@@ -390,18 +389,23 @@ class _ResumoProducaoBar extends StatelessWidget {
         ),
         child: Column(
           children: [
+            // ── Cabeçalho com label + ícone visibilidade ──────────────────
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
               color: isVisible ? Colors.grey[800] : Colors.grey[400],
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      label,
-                      textAlign: TextAlign.center,
-                      style:
-                          AppCss.largeBold.setSize(15).setColor(Colors.white),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        label,
+                        textAlign: TextAlign.center,
+                        style: AppCss.largeBold
+                            .setSize(14)
+                            .setColor(Colors.white),
+                      ),
                     ),
                   ),
                   GestureDetector(
@@ -410,41 +414,48 @@ class _ResumoProducaoBar extends StatelessWidget {
                       isVisible
                           ? Icons.visibility_rounded
                           : Icons.visibility_off_rounded,
-                      size: 16,
+                      size: 14,
                       color: Colors.white.withValues(alpha: 0.8),
                     ),
                   ),
                 ],
               ),
             ),
+            // ── Dados: elementos e peso ────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+              child: Column(
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('ELEMENTOS',
-                          style: AppCss.largeBold.setSize(12).setColor(
-                              isVisible ? Colors.black : Colors.grey[400]!)),
-                      Text(
-                        '${data['qtd']} (${prcntQtd.toStringAsFixed(0)}%)',
-                        style: AppCss.largeBold.setSize(18).setColor(
-                            isVisible ? Colors.black : Colors.grey[400]!),
-                      ),
+                      Text('ELEM',
+                          style: AppCss.largeBold.setSize(10).setColor(
+                              isVisible ? Colors.black54 : Colors.grey[400]!)),
+                      Text('KG',
+                          style: AppCss.largeBold.setSize(10).setColor(
+                              isVisible ? Colors.black54 : Colors.grey[400]!)),
                     ],
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                  const SizedBox(height: 2),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('PESO (KG)',
-                          style: AppCss.largeBold.setSize(12).setColor(
-                              isVisible ? Colors.black : Colors.grey[400]!)),
-                      Text(
-                        '${data['peso'].toStringAsFixed(1)} (${prcntPeso.toStringAsFixed(0)}%)',
-                        style: AppCss.largeBold.setSize(18).setColor(
-                            isVisible ? Colors.black : Colors.grey[400]!),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          '${data.qtd.toStringAsFixed(0)} (${prcntQtd.toStringAsFixed(0)}%)',
+                          style: AppCss.largeBold.setSize(16).setColor(
+                              isVisible ? Colors.black : Colors.grey[400]!),
+                        ),
+                      ),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          '${data.peso.toStringAsFixed(1)}',
+                          style: AppCss.largeBold.setSize(16).setColor(
+                              isVisible ? Colors.black : Colors.grey[400]!),
+                        ),
                       ),
                     ],
                   ),
@@ -456,6 +467,22 @@ class _ResumoProducaoBar extends StatelessWidget {
       ),
     );
   }
+}
+
+/// DTO simples para evitar re-cálculo inline
+class _Item {
+  final double qtd;
+  final double peso;
+  final int totalQtd;
+  final double totalPeso;
+  const _Item({
+    required this.qtd,
+    required this.peso,
+    required this.totalQtd,
+    required this.totalPeso,
+  });
+  double get prcntQtd => totalQtd > 0 ? (qtd / totalQtd) * 100 : 0;
+  double get prcntPeso => totalPeso > 0 ? (peso / totalPeso) * 100 : 0;
 }
 
 class _ElementoArmacaoCard extends StatelessWidget {
