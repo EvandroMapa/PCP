@@ -168,7 +168,8 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                                   final padding = isSmall ? 12.0 : 24.0;
                                   final spacing = isSmall ? 12.0 : 20.0;
                                   final maxExtent = isSmall ? 300.0 : 350.0;
-                                  final mainExtent = isSmall ? 150.0 : 160.0;
+                                  // Altura aumentada para acomodar até 2 barras de progresso
+                                  final mainExtent = isSmall ? 195.0 : 215.0;
 
                                   return GridView.builder(
                                     controller: _scrollController,
