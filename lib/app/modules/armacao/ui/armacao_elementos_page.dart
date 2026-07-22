@@ -555,15 +555,16 @@ class _ElementoArmacaoCard extends StatelessWidget {
             _buildHeader(),
             Expanded(
               child: Center(
-                child: elemento.qtde == 1
-                    ? Text(
+                child: (elemento.qtde > 1 &&
+                        (elemento.qtdeArmando > 0 || elemento.qtdePronto > 0))
+                    ? _buildSegmentedBar()
+                    : Text(
                         elemento.status.label.toUpperCase(),
                         style: AppCss.largeBold
                             .setSize(22)
                             .setColor(Colors.black)
                             .copyWith(letterSpacing: 1.5),
-                      )
-                    : _buildSegmentedBar(),
+                      ),
               ),
             ),
             Padding(
