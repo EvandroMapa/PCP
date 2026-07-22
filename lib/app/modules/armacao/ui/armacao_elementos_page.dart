@@ -473,13 +473,13 @@ class _ElementoArmacaoCard extends StatelessWidget {
   // Cor do card baseada no progresso real
   Color get _cardColor {
     if (elemento.status == ElementoStatus.pronto) return Colors.green[50]!;
-    if (elemento.isProntoParcial) return Colors.green[50]!;
+    if (elemento.isProntoParcial) return Colors.lime[50]!; // parcial: entre amarelo e verde
     return elemento.status.backgroundColor;
   }
 
   Color get _cardBorderColor {
     if (elemento.status == ElementoStatus.pronto) return Colors.green[700]!;
-    if (elemento.isProntoParcial) return Colors.green[400]!;
+    if (elemento.isProntoParcial) return Colors.lime[700]!; // parcial: borda lime destacada
     if (elemento.status == ElementoStatus.armando) return Colors.amber[700]!;
     return Colors.grey[400]!;
   }
@@ -531,8 +531,8 @@ class _ElementoArmacaoCard extends StatelessWidget {
                         backgroundColor: Colors.grey[200],
                         valueColor: AlwaysStoppedAnimation<Color>(
                           elemento.status == ElementoStatus.pronto
-                              ? Colors.green[700]!
-                              : Colors.green[500]!,
+                              ? Colors.green[700]!   // tudo pronto: verde escuro
+                              : Colors.lime[700]!,   // parcial: lime (verde-amarelado)
                         ),
                       ),
                     ),
@@ -541,7 +541,9 @@ class _ElementoArmacaoCard extends StatelessWidget {
                       style: AppCss.mediumBold.setSize(11).setColor(
                           elemento.progressoPronto > 0.5
                               ? Colors.white
-                              : Colors.green[900]!),
+                              : elemento.status == ElementoStatus.pronto
+                                  ? Colors.green[900]!
+                                  : Colors.lime[900]!),
                     ),
                   ],
                 ),
