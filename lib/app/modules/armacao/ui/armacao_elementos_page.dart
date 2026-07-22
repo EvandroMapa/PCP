@@ -168,8 +168,8 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                                   final padding = isSmall ? 12.0 : 24.0;
                                   final spacing = isSmall ? 12.0 : 20.0;
                                   final maxExtent = isSmall ? 300.0 : 350.0;
-                                  // Altura aumentada para acomodar até 2 barras de progresso
-                                  final mainExtent = isSmall ? 195.0 : 215.0;
+                                  // Altura suficiente para header + barra segmentada + info
+                                  final mainExtent = isSmall ? 155.0 : 165.0;
 
                                   return GridView.builder(
                                     controller: _scrollController,
@@ -555,78 +555,17 @@ class _ElementoArmacaoCard extends StatelessWidget {
             _buildHeader(),
             Expanded(
               child: Center(
-                child: Text(
-                  elemento.status.label.toUpperCase(),
-                  style: AppCss.largeBold
-                      .setSize(22)
-                      .setColor(Colors.black)
-                      .copyWith(letterSpacing: 1.5),
-                ),
+                child: elemento.qtde == 1
+                    ? Text(
+                        elemento.status.label.toUpperCase(),
+                        style: AppCss.largeBold
+                            .setSize(22)
+                            .setColor(Colors.black)
+                            .copyWith(letterSpacing: 1.5),
+                      )
+                    : _buildSegmentedBar(),
               ),
             ),
-            // Barra de progresso e status das peças
-            if (elemento.qtde > 1) ...[
-              // Barra: prontas
-              if (elemento.qtdePronto > 0)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: LinearProgressIndicator(
-                          value: elemento.progressoPronto,
-                          minHeight: 18,
-                          backgroundColor: Colors.grey[200],
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            elemento.qtdePronto >= elemento.qtde
-                                ? Colors.green[700]!   // tudo pronto
-                                : Colors.lime[700]!,   // parcial
-                          ),
-                        ),
-                      ),
-                      Text(
-                        '${elemento.qtdePronto} / ${elemento.qtde} PRONTAS',
-                        style: AppCss.mediumBold.setSize(10).setColor(
-                            elemento.progressoPronto > 0.5
-                                ? Colors.white
-                                : elemento.qtdePronto >= elemento.qtde
-                                    ? Colors.green[900]!
-                                    : Colors.lime[900]!),
-                      ),
-                    ],
-                  ),
-                ),
-              // Badge: em produção
-              if (elemento.qtdeArmando > 0)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: LinearProgressIndicator(
-                          value: elemento.qtde > 0
-                              ? (elemento.qtdeArmando / elemento.qtde).clamp(0.0, 1.0)
-                              : 0.0,
-                          minHeight: 18,
-                          backgroundColor: Colors.grey[200],
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.amber[600]!),
-                        ),
-                      ),
-                      Text(
-                        '${elemento.qtdeArmando} EM PRODUÇÃO',
-                        style: AppCss.mediumBold.setSize(10).setColor(
-                            (elemento.qtdeArmando / elemento.qtde) > 0.5
-                                ? Colors.white
-                                : Colors.amber[900]!),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Row(
@@ -636,14 +575,98 @@ class _ElementoArmacaoCard extends StatelessWidget {
                   _buildInfo(
                       'PESO', '${elemento.pesoTotal.toStringAsFixed(1)} kg'),
                   _buildInfo('OS', '${elemento.posicoes.length} os'),
-                ],
-              ),
+                 ],
+               ),
             ),
           ],
         ),
       ),
     );
   }
+
+  /// Barra segmentada: uma única barra com 3 cores proporcionais (pronto/armando/aguardando)
+  Widget _buildSegmentedBar() {
+    final qtde = elemento.qtde;
+    final pronto = elemento.qtdePronto;
+    final armando = elemento.qtdeArmando;
+    final aguardando = elemento.qtdeAguardando;
+
+    final corPronto = pronto >= qtde ? Colors.green[600]! : Colors.lime[600]!;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Barra segmentada
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: SizedBox(
+              height: 20,
+              child: Row(
+                children: [
+                  if (pronto > 0)
+                    Expanded(
+                      flex: pronto,
+                      child: Container(color: corPronto),
+                    ),
+                  if (armando > 0)
+                    Expanded(
+                      flex: armando,
+                      child: Container(color: Colors.amber[500]),
+                    ),
+                  if (aguardando > 0)
+                    Expanded(
+                      flex: aguardando,
+                      child: Container(color: Colors.grey[300]),
+                    ),
+                  // fallback: se tudo zero (nunca deveria ocorrer)
+                  if (pronto == 0 && armando == 0 && aguardando == 0)
+                    Expanded(child: Container(color: Colors.grey[300])),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 5),
+          // Mini-legenda com bolinhas
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (pronto > 0) ...[
+                _buildDot(corPronto),
+                const SizedBox(width: 3),
+                Text('$pronto pron.', style: _legendStyle),
+              ],
+              if (pronto > 0 && armando > 0) const SizedBox(width: 8),
+              if (armando > 0) ...[
+                _buildDot(Colors.amber[600]!),
+                const SizedBox(width: 3),
+                Text('$armando arm.', style: _legendStyle),
+              ],
+              if ((pronto > 0 || armando > 0) && aguardando > 0) const SizedBox(width: 8),
+              if (aguardando > 0) ...[
+                _buildDot(Colors.grey[400]!),
+                const SizedBox(width: 3),
+                Text('$aguardando agu.', style: _legendStyle),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  static const TextStyle _legendStyle = TextStyle(
+    fontSize: 10,
+    fontWeight: FontWeight.bold,
+    color: Color(0xFF555555),
+  );
+
+  Widget _buildDot(Color cor) => Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
+      );
 
   Widget _buildHeader() {
     return Container(
