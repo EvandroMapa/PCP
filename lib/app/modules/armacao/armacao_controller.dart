@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
@@ -55,6 +56,28 @@ class ArmacaoController {
 
   bool _elementosListenerRegistrado = false;
 
+  /// Lock anti-flickering: enquanto ativo, o listener do Realtime (elementos)
+  /// não sobrescreve o elementosStream — evita que a confirmação do banco
+  /// chegue ANTES da atualização otimista local e cause "piscar" de status.
+  /// Ativado em _applyStatusUpdate e mantido por 4s após a escrita no banco.
+  bool _statusLock = false;
+  Timer? _statusLockTimer;
+
+  void _ativarStatusLock() {
+    _statusLock = true;
+    _statusLockTimer?.cancel();
+    _statusLockTimer = Timer(const Duration(milliseconds: 4000), () {
+      _statusLock = false;
+    });
+  }
+
+  void _liberarStatusLock() {
+    _statusLockTimer?.cancel();
+    _statusLockTimer = Timer(const Duration(milliseconds: 4000), () {
+      _statusLock = false;
+    });
+  }
+
   /// Registra o listener reativo de elementos UMA única vez.
   /// Chamado tanto no onInit() (via ArmacaoPage) quanto no onFetchElementos()
   /// (via abertura direta pelo Painel Gerencial), garantindo que o Realtime
@@ -64,6 +87,10 @@ class ArmacaoController {
     _elementosListenerRegistrado = true;
 
     AppSupabaseClient.elementos.dataStream.listen.listen((allElementos) {
+      // Lock ativo: mudança de status em andamento ou recém concluída.
+      // Ignorar evento do Realtime para evitar sobrescrever a UI otimista.
+      if (_statusLock) return;
+
       if (_currentPedidoId != null) {
         log('ArmacaoController: Recebendo atualização de elementos para Pedido $_currentPedidoId');
         final filtered =
@@ -76,7 +103,8 @@ class ArmacaoController {
         // Recalcula o resumo do pedido corrente diretamente, sem esperar
         // o ciclo completo de re-fetch de pedidos (reduz latência na tela).
         if (_currentPedido != null) {
-          _currentPedido!.elementos
+          _currentPedido!
+            .elementos
             ..clear()
             ..addAll(filtered);
           updatePedidoSummary(_currentPedido!);
@@ -349,6 +377,9 @@ class ArmacaoController {
       }
     }
 
+    // Ativa o lock ANTES da atualização local para bloquear o listener Realtime
+    _ativarStatusLock();
+
     // 3. Atualizar memória local ANTES da persistência (evita flash por realtime)
     final elementosLocal = elementosStream.value.toList();
     final index = elementosLocal.indexWhere((e) => e.id == elemento.id);
@@ -369,7 +400,7 @@ class ArmacaoController {
     // 4. Calcular e aplicar o resumo localmente (UI já reflete antes do banco)
     await updatePedidoSummary(pedido);
 
-    // 5. Persistência no Supabase (o realtime vai trazer o mesmo dado que já está na tela)
+    // 5. Persistência no Supabase
     await SupabaseService.client.from('elementos').update({
       'status': statusFinal.name,
       'qtde_pronto': novoQtdePronto,
@@ -383,7 +414,10 @@ class ArmacaoController {
       'qtde_pronto': novoQtdePronto,
     });
 
-    // 5. Finalização de Pedido inteiro
+    // Renova o lock após todas as escritas (o Realtime dispara logo após o insert)
+    _liberarStatusLock();
+
+    // 6. Finalização de Pedido inteiro
     final todosProntos = pedido.elementos.every(
       (e) => e.status == ElementoStatus.pronto && e.qtdePronto >= e.qtde,
     );

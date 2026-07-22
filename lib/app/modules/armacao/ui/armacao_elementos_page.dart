@@ -196,7 +196,11 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                                       key: ValueKey(elemento.id),
                                       elemento: elemento,
                                       onStatusPressed: () async {
-                                        if (elemento.qtde > 1) {
+                                        // Elementos em AGUARDANDO sempre passam pelo picker de status,
+                                        // independente da qtde — o fluxo obrigatório é aguardando → armando.
+                                        // Só abre o dialog de peças prontas quando já está armando ou pronto.
+                                        if (elemento.qtde > 1 &&
+                                            elemento.status != ElementoStatus.aguardando) {
                                           await armacaoCtrl
                                               .openProgressoParcialDirect(
                                                   currentPedido, elemento);
