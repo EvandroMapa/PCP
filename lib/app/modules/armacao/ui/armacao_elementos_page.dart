@@ -169,8 +169,8 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                                   final spacing = isSmall ? 12.0 : 20.0;
                                   // 2 cards/linha no mobile, 3-4 no desktop
                                   final maxExtent = isSmall ? 300.0 : 350.0;
-                                  // Altura suficiente para header + barra segmentada + info
-                                  final mainExtent = isSmall ? 155.0 : 165.0;
+                                  // Altura: label + barra segmentada + info cabe confortavelmente
+                                  final mainExtent = isSmall ? 165.0 : 175.0;
 
                                   return GridView.builder(
                                     controller: _scrollController,
@@ -533,8 +533,19 @@ class _ElementoArmacaoCard extends StatelessWidget {
     return Colors.grey[400]!;
   }
 
+  /// Label de status derivado dos contadores (para qtde > 1)
+  String get _statusLabelCard {
+    if (elemento.qtde == 1) return elemento.status.label.toUpperCase();
+    if (elemento.qtdePronto >= elemento.qtde) return 'PRONTO';
+    if (elemento.qtdePronto > 0 || elemento.qtdeArmando > 0) return 'ARMANDO';
+    return 'AGUARDANDO';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final hasProgress = elemento.qtde > 1 &&
+        (elemento.qtdeArmando > 0 || elemento.qtdePronto > 0);
+
     return InkWell(
       onTap: onStatusPressed,
       borderRadius: BorderRadius.circular(20),
@@ -554,31 +565,44 @@ class _ElementoArmacaoCard extends StatelessWidget {
         child: Column(
           children: [
             _buildHeader(),
-            Expanded(
-              child: Center(
-                child: (elemento.qtde > 1 &&
-                        (elemento.qtdeArmando > 0 || elemento.qtdePronto > 0))
-                    ? _buildSegmentedBar()
-                    : Text(
-                        elemento.status.label.toUpperCase(),
-                        style: AppCss.largeBold
-                            .setSize(22)
-                            .setColor(Colors.black)
-                            .copyWith(letterSpacing: 1.5),
-                      ),
+            if (hasProgress) ...[
+              // Label compacto — visivel acima da barra segmentada
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 2),
+                child: Text(
+                  _statusLabelCard,
+                  style: AppCss.largeBold
+                      .setSize(16)
+                      .setColor(Colors.black)
+                      .copyWith(letterSpacing: 1.2),
+                  textAlign: TextAlign.center,
+                ),
               ),
-            ),
+              _buildSegmentedBar(),
+              const Spacer(),
+            ] else
+              Expanded(
+                child: Center(
+                  child: Text(
+                    _statusLabelCard,
+                    style: AppCss.largeBold
+                        .setSize(22)
+                        .setColor(Colors.black)
+                        .copyWith(letterSpacing: 1.5),
+                  ),
+                ),
+              ),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildInfo('QTDE', '${elemento.qtde} pç'),
+                  _buildInfo('QTDE', '${elemento.qtde} pc'),
                   _buildInfo(
                       'PESO', '${elemento.pesoTotal.toStringAsFixed(1)} kg'),
                   _buildInfo('OS', '${elemento.posicoes.length} os'),
-                 ],
-               ),
+                ],
+              ),
             ),
           ],
         ),
