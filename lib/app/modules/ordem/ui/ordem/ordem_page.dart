@@ -220,6 +220,7 @@ class _OrdemPageState extends State<OrdemPage> {
                 if (_mostrarGraficoStatus) OrdemStatusWidget(ordem: ordem),
                 for (final produto in produtos)
                   OrdemPedidoProdutoWidget(
+                    key: ValueKey(produto.id), // preserva _isProcessando entre rebuilds
                     produto: produto,
                     ordem: ordem,
                     materiaPrima: ordemCtrl.getMateriaPrimaByPedidoProduto(
