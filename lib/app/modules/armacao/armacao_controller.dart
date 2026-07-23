@@ -503,6 +503,7 @@ class ArmacaoController {
             ),
             // SizedBox fixo: evita oscilação de tamanho ao alterar contadores
             content: SizedBox(
+              width: double.infinity, // Row com Expanded precisa de largura bounded
               height: 160,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
