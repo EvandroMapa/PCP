@@ -449,7 +449,7 @@ class ArmacaoController {
     }
   }
 
-  /// Dialog com DOIS contadores independentes: Em Produção e Prontas.
+  /// Dialog com DOIS contadores independentes: Armando e Prontas.
   /// Retorna (qtdeArmando, qtdePronto) ou null se cancelado.
   Future<(int, int)?> _showDistribuicaoDialog({
     required BuildContext context,
@@ -464,8 +464,12 @@ class ArmacaoController {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) {
           final aguardando = (elemento.qtde - selArmando - selPronto).clamp(0, elemento.qtde);
+
+          // + ARMANDO: só se houver peças aguardando ainda
           final podeAdicionarArm = selArmando + selPronto < elemento.qtde;
-          final podeAdicionarPro = selArmando + selPronto < elemento.qtde;
+
+          // + PRONTO: se houver peças armando (transfere) OU peças aguardando (adiciona direto)
+          final podeAdicionarPro = selPronto < elemento.qtde;
 
           // Cor do botão de confirmar
           final Color corConfirmar;
@@ -478,7 +482,7 @@ class ArmacaoController {
             labelConfirmar = 'SALVAR';
           } else {
             corConfirmar = Colors.blueGrey;
-            labelConfirmar = 'P/ AGUARDANDO';
+            labelConfirmar = 'SALVAR';
           }
 
           return AlertDialog(
@@ -497,70 +501,79 @@ class ArmacaoController {
                 ),
               ],
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // ── Contadores lado a lado ──────────────────────────────
-                Row(
-                  children: [
-                    // Em Produção
-                    Expanded(
-                      child: _buildContador(
-                        label: 'EM PRODUÇÃO',
-                        valor: selArmando,
-                        cor: Colors.amber[800]!,
-                        corFundo: Colors.amber[50]!,
-                        onDecrement: selArmando > 0
-                            ? () => setState(() => selArmando--)
-                            : null,
-                        onIncrement: podeAdicionarArm
-                            ? () => setState(() => selArmando++)
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Prontas
-                    Expanded(
-                      child: _buildContador(
-                        label: 'PRONTAS',
-                        valor: selPronto,
-                        cor: Colors.green[700]!,
-                        corFundo: Colors.green[50]!,
-                        onDecrement: selPronto > 0
-                            ? () => setState(() => selPronto--)
-                            : null,
-                        onIncrement: podeAdicionarPro
-                            ? () => setState(() => selPronto++)
-                            : null,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // ── Aguardando auto ───────────────────────────────
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.grey[300]!),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // SizedBox fixo: evita oscilação de tamanho ao alterar contadores
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 160,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // ── Contadores lado a lado ──────────────────────────────
+                  Row(
                     children: [
-                      Text(
-                        'Aguardando',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w600),
+                      // ARMANDO
+                      Expanded(
+                        child: _buildContador(
+                          label: 'ARMANDO',
+                          valor: selArmando,
+                          cor: Colors.amber[800]!,
+                          corFundo: Colors.amber[50]!,
+                          onDecrement: selArmando > 0
+                              ? () => setState(() => selArmando--)
+                              : null,
+                          onIncrement: podeAdicionarArm
+                              ? () => setState(() => selArmando++)
+                              : null,
+                        ),
                       ),
-                      Text(
-                        '$aguardando de ${elemento.qtde}',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.bold),
+                      const SizedBox(width: 12),
+                      // PRONTAS
+                      Expanded(
+                        child: _buildContador(
+                          label: 'PRONTAS',
+                          valor: selPronto,
+                          cor: Colors.green[700]!,
+                          corFundo: Colors.green[50]!,
+                          onDecrement: selPronto > 0
+                              ? () => setState(() => selPronto--)
+                              : null,
+                          // +PRONTO: debita de armando primeiro; se não, pega de aguardando
+                          onIncrement: podeAdicionarPro
+                              ? () => setState(() {
+                                    if (selArmando > 0) selArmando--;
+                                    selPronto++;
+                                  })
+                              : null,
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  // ── Aguardando auto ───────────────────────────────
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Aguardando',
+                          style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w600),
+                        ),
+                        Text(
+                          '$aguardando de ${elemento.qtde}',
+                          style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
             actions: [
               TextButton(
