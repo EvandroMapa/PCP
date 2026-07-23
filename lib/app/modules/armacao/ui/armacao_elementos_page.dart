@@ -167,7 +167,8 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                                   final isSmall = screenWidth < 400;
                                   final padding = isSmall ? 12.0 : 24.0;
                                   final spacing = isSmall ? 12.0 : 20.0;
-                                  final maxExtent = isSmall ? 300.0 : 350.0;
+                                  // 2 cards/linha no mobile, 3-4 no desktop
+                                  final maxExtent = isSmall ? 170.0 : 200.0;
                                   // Altura suficiente para header + barra segmentada + info
                                   final mainExtent = isSmall ? 155.0 : 165.0;
 
