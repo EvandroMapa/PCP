@@ -503,7 +503,6 @@ class ArmacaoController {
             ),
             // SizedBox fixo: evita oscilação de tamanho ao alterar contadores
             content: SizedBox(
-              width: double.maxFinite,
               height: 160,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
