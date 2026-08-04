@@ -48,6 +48,42 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
   /// Evita que toques rápidos do operador gerem múltiplas baixas/estornos.
   final Set<String> _processandoPosicoes = {};
 
+  // ── Lock anti-flickering (mesmo padrão do Kanban) ─────────────────────────
+  // Bloqueia o listener do Realtime enquanto uma mudança de status local
+  // está em andamento ou acabou de ocorrer. Sem isso, o Supabase Realtime
+  // pode chegar com o estado ANTERIOR (ainda não confirmado) e sobrescrever
+  // a atualização otimista, causando os cards pulando de status sozinhos.
+  bool _isChangingStatus = false;
+  Timer? _statusLockTimer;
+
+  bool get _isStatusLocked => _isChangingStatus || _statusLockTimer != null;
+
+  void _ativarLock() {
+    _isChangingStatus = true;
+    _statusLockTimer?.cancel();
+    _statusLockTimer = null;
+  }
+
+  void _liberarLock() {
+    _isChangingStatus = false;
+    _statusLockTimer?.cancel();
+    // Libera gradualmente após 2s: aguarda o Realtime estabilizar antes de
+    // permitir que atualizações externas sobrescrevam o estado local.
+    _statusLockTimer = Timer(const Duration(milliseconds: 2000), () {
+      _statusLockTimer = null;
+      // Re-sincroniza com o cache agora que o Realtime já estabilizou
+      if (mounted) {
+        setState(() {
+          _elementos = AppSupabaseClient.elementos.data
+              .where((e) => e.pedidoId == widget.produto.pedidoId)
+              .toList();
+          _buildPosicoes();
+        });
+      }
+    });
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+
   /// Escuta mudanças no cache de elementos (Realtime de outro dispositivo)
   StreamSubscription? _elemsSubscription;
 
@@ -65,6 +101,10 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     _elemsSubscription =
         AppSupabaseClient.elementos.dataStream.listen.listen((_) {
       if (!mounted) return;
+      // Lock ativo: mudança de status local em andamento ou recém concluída.
+      // Ignorar evento do Realtime para evitar sobrescrever a UI otimista
+      // com dados intermediários (estado anterior ainda não confirmado).
+      if (_isStatusLocked) return;
       setState(() {
         _elementos = AppSupabaseClient.elementos.data
             .where((e) => e.pedidoId == widget.produto.pedidoId)
@@ -126,6 +166,7 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
   @override
   void dispose() {
     _elemsSubscription?.cancel();
+    _statusLockTimer?.cancel();
     super.dispose();
   }
 
@@ -210,8 +251,13 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     if (_processandoPosicoes.contains(item.posicao.id)) return;
     _processandoPosicoes.add(item.posicao.id);
 
+    // Ativa o lock ANTES de qualquer operação para bloquear o listener Realtime.
+    // Sem isso, o Supabase Realtime pode chegar com o estado anterior (não confirmado)
+    // e sobrescrever a UI otimista enquanto a escrita ainda está em andamento.
+    _ativarLock();
+
     try {
-      // Atualização instantânea na UI
+      // Atualização instantânea na UI (otimista)
       setState(() {
         item.posicao.status = newStatus;
       });
@@ -248,8 +294,9 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     } catch (e) {
       log('Erro ao atualizar status da posição: $e');
     } finally {
-      // Libera o lock independente de sucesso ou erro
+      // Libera o lock (com delay de 2s — aguarda Realtime estabilizar)
       _processandoPosicoes.remove(item.posicao.id);
+      _liberarLock();
     }
   }
 
