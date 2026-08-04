@@ -33,3 +33,54 @@ Realtime durante o arrasto e por 3 segundos após o drop:
    para liberar o lock gradualmente (nunca setar `_pendingDrop = false` direto).
 4. Após mudanças no mecanismo de drag/drop, SEMPRE testar com **restart completo**
    (não hot reload), pois o hot reload preserva timers e flags "sujas" em memória.
+
+---
+
+## 8. APONTAMENTO POR OS — LOCK EM DUAS CAMADAS (obrigatório)
+
+### Problema resolvido (04/ago/2026)
+A tela `OrdemPedidoElementosPage` usa **UI otimista** + **Supabase Realtime**.
+Ao tocar num card de OS para mudar o status, o estado local é atualizado
+imediatamente, mas o `_handlePosicaoRealtime` (em `ElementoSupabaseCollection`)
+muta o cache global **diretamente**, ignorando qualquer lock apenas no stream listener.
+
+Isso causava o bug: o operador tocava no card → `produzindo` → após ~2s voltava para
+`aguardando` → voltava para `produzindo`. O ciclo acontecia porque:
+1. Atualização otimista: cache = `produzindo`
+2. Realtime chega → `_handlePosicaoRealtime` muta cache = `aguardando` (estado anterior)
+3. Timer de re-sync lê o cache contaminado → UI mostra `aguardando`
+4. Novo Realtime (confirmação real) → cache = `produzindo` novamente
+
+### Mecanismo de lock em duas camadas
+
+**Camada 1 — Stream listener** (`_elemsSubscription` no dialog):
+```dart
+if (_isStatusLocked) return;  // bloqueia rebuild do widget
+```
+
+**Camada 2 — Cache global** (`ElementoSupabaseCollection.isStatusChanging`):
+```dart
+// Em _handlePosicaoRealtime:
+if (isStatusChanging) return;  // bloqueia mutação direta do cache global
+```
+
+### Fluxo correto com o lock duplo
+- `_ativarLock()` → `_isChangingStatus = true` + `ElementoSupabaseCollection.isStatusChanging = true`
+- Realtime chega durante o lock → **bloqueado em ambas as camadas** → cache não contaminado
+- `_liberarLock()` → timer 4s → ao expirar: libera `isStatusChanging = false` → re-sync do cache (agora limpo) → libera stream
+- `dispose()` → **sempre** libera `isStatusChanging = false` para não bloquear o Realtime indefinidamente
+
+### Regras obrigatórias em qualquer tela que use `elemento_posicoes` com UI otimista
+1. **SEMPRE implementar o lock em duas camadas** — bloquear só o stream listener NÃO é suficiente.
+   O `_handlePosicaoRealtime` muta o cache global e precisa do `isStatusChanging` para ser bloqueado.
+2. **NUNCA liberar `isStatusChanging = false` fora do timer** (exceto no `dispose`).
+   Liberar antes do timer deixa uma janela onde o Realtime contamina o cache antes do re-sync.
+3. **O timer deve ser ≥ 4s** para cobrir toda a cadeia:
+   escrita Supabase (~300ms) + evento Realtime (~200ms) + debounce `_updateStreams` (1.5s) + fetch de elementos (~2s).
+4. **O re-sync final no timer deve ler APÓS liberar `isStatusChanging`**, para que o
+   cache já reflita eventos Realtime externos (outros dispositivos) recebidos durante o lock.
+5. Testar com **restart completo** — hot reload preserva timers e flags em memória.
+
+### Arquivos-chave
+- `elemento_supabase_collection.dart` → `static bool isStatusChanging`
+- `ordem_pedido_elementos_dialog.dart` → `_ativarLock()`, `_liberarLock()`, `dispose()`
