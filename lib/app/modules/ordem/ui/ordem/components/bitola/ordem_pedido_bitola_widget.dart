@@ -152,8 +152,35 @@ class _OrdemPedidoProdutoWidgetState extends State<OrdemPedidoProdutoWidget> {
             ? () => _alternarStatus(avancar: false)
             : null,
         child: InkWell(
-          onTap: _isModoPorOS
-              ? () => _openElementosDialog(context)
+          onTap: _modoApontamento == 'por_os'
+              // Modo por OS: verifica o cache no momento do toque.
+              // Quando o Supabase acabou de voltar (Unhealthy → Healthy), o cache de
+              // elementos pode ainda estar vazio enquanto o operador já está na tela.
+              // Nesse caso, faz um fetch direto pelo pedidoId antes de decidir o
+              // comportamento, evitando a race condition que causava mudança de status
+              // acidental ao invés de abrir a lista de OS.
+              ? () async {
+                  if (_pedidoTemElementos()) {
+                    _openElementosDialog(context);
+                    return;
+                  }
+                  // Cache vazio — busca elementos deste pedido diretamente do Supabase
+                  setState(() => _isProcessando = true);
+                  try {
+                    await AppSupabaseClient.elementos
+                        .fetchByPedidoId(produto.pedidoId);
+                  } finally {
+                    if (mounted) setState(() => _isProcessando = false);
+                  }
+                  if (!mounted) return;
+                  if (_pedidoTemElementos()) {
+                    // Elementos carregaram — abre a lista de OS normalmente
+                    _openElementosDialog(context);
+                  } else {
+                    // Pedido realmente não tem OS cadastradas — apontamento por pedido
+                    _openStatusDialog(context);
+                  }
+                }
               : _isAlternarToque
                   ? () => _alternarStatus(avancar: true)
                   : _isModoPorPedido
