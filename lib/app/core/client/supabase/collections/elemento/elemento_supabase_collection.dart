@@ -17,6 +17,13 @@ class ElementoSupabaseCollection {
   /// Flag global: bloqueia re-fetches automáticos durante importação SPE
   static bool isImportando = false;
 
+  /// Flag global: bloqueia mutações diretas do Realtime no cache enquanto
+  /// um dialog de OS está ativamente trocando status de posição.
+  /// Sem esse guard, o _handlePosicaoRealtime contamina o cache com o
+  /// estado ANTERIOR (ainda não confirmado) mesmo com o lock do dialog ativo,
+  /// causando os cards voltarem para aguardando sozinhos.
+  static bool isStatusChanging = false;
+
   /// Callback chamado após atualização dos elementos via Realtime.
   /// Usado pelo PedidoSupabaseCollection para re-mapear pedidos
   /// com os elementos atualizados e evitar a race condition.
@@ -220,6 +227,14 @@ class ElementoSupabaseCollection {
   /// Evita o re-fetch completo de 11k+ posições e garante propagação
   /// instantânea entre dispositivos via Supabase Realtime.
   void _handlePosicaoRealtime(sf.PostgresChangePayload payload) {
+    // Se um dialog de OS está ativamente trocando status, bloqueia qualquer
+    // mutação do cache para evitar que o estado intermediário/anterior do
+    // Realtime sobrescreva a UI otimista. O dialog faz sua própria atualização
+    // de cache via _updateGlobalElementosCache e re-sincroniza no unlock.
+    if (isStatusChanging) {
+      log('Supabase Realtime: posição ignorada (isStatusChanging=true)');
+      return;
+    }
     if (payload.eventType == sf.PostgresChangeEvent.update) {
       final newRecord = payload.newRecord;
       final posicaoId = newRecord['id']?.toString();

@@ -7,6 +7,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/elemento/elemento_supabase_collection.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
@@ -60,6 +61,10 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
 
   void _ativarLock() {
     _isChangingStatus = true;
+    // Bloqueia também o _handlePosicaoRealtime de mutar o cache global.
+    // Sem isso, o handler contamina o cache com estado anterior mesmo
+    // com o lock do stream ativo, e o timer callback releria o valor errado.
+    ElementoSupabaseCollection.isStatusChanging = true;
     _statusLockTimer?.cancel();
     _statusLockTimer = null;
   }
@@ -67,11 +72,16 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
   void _liberarLock() {
     _isChangingStatus = false;
     _statusLockTimer?.cancel();
-    // Libera gradualmente após 2s: aguarda o Realtime estabilizar antes de
-    // permitir que atualizações externas sobrescrevam o estado local.
-    _statusLockTimer = Timer(const Duration(milliseconds: 2000), () {
+    // 4s: tempo genéroso para cobrir a escrita no Supabase + evento Realtime
+    // de confirmação + eventual re-fetch completo do _updateStreams (1.5s debounce).
+    // Só libera o flag global DENTRO do timer, após o re-sync final,
+    // para garantir que o cache esteja limpo antes de aceitar novos eventos.
+    _statusLockTimer = Timer(const Duration(milliseconds: 4000), () {
       _statusLockTimer = null;
-      // Re-sincroniza com o cache agora que o Realtime já estabilizou
+      // Libera o guard global do Realtime
+      ElementoSupabaseCollection.isStatusChanging = false;
+      // Re-sincroniza com o cache (que agora está correto: não foi contaminado
+      // pelo _handlePosicaoRealtime durante o lock)
       if (mounted) {
         setState(() {
           _elementos = AppSupabaseClient.elementos.data
@@ -167,6 +177,9 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
   void dispose() {
     _elemsSubscription?.cancel();
     _statusLockTimer?.cancel();
+    // Garante que o flag global seja liberado se o operador sair da tela
+    // antes do timer expirar — evita bloquear o Realtime indefinidamente.
+    ElementoSupabaseCollection.isStatusChanging = false;
     super.dispose();
   }
 
