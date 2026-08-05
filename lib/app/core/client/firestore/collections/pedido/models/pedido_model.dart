@@ -1,25 +1,24 @@
 import 'dart:convert';
 
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/cliente/cliente_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
-
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/tag/models/tag_model.dart';
-import 'package:aco_plus/app/core/components/archive/archive_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
-import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
-import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/core/components/archive/archive_model.dart';
 import 'package:aco_plus/app/core/components/checklist/check_item_model.dart';
 import 'package:aco_plus/app/core/components/comment/comment_model.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
+import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 
@@ -72,7 +71,9 @@ class PedidoModel {
   bool get podeGerarParcial =>
       !isParcial &&
       elementos.isEmpty &&
-      (isMestre || produtos.every((p) => p.status.status == PedidoBitolaStatus.separado));
+      (isMestre ||
+          produtos
+              .every((p) => p.status.status == PedidoBitolaStatus.separado));
 
   // New financial fields
   final double valorSubtotal;
@@ -292,8 +293,6 @@ class PedidoModel {
     // `qtde` do mestre já é o saldo após distribuição para os filhos
     return !produtos.any((p) => p.qtde > 0.001);
   }
-
-
 
   List<PedidoBitolaStatus> get getStatusess {
     List<PedidoBitolaStatus> statusess = [];
@@ -595,8 +594,8 @@ class PedidoModel {
       index: int.tryParse((map['index'] ?? '0').toString()) ?? 0,
       histories: map['histories'] != null
           ? (map['histories'] as List<dynamic>)
-              .map((h) => PedidoHistoryModel.fromMap(
-                  Map<String, dynamic>.from(h)))
+              .map((h) =>
+                  PedidoHistoryModel.fromMap(Map<String, dynamic>.from(h)))
               .toList()
           : [],
       isArchived: map['is_archived'] == true,
@@ -663,7 +662,8 @@ class PedidoModel {
             : null,
         'status': statusess.isNotEmpty ? statusess.last.status.name : null,
         'is_archived': isArchived,
-        'checklist_id': (checklistId == null || checklistId!.isEmpty) ? null : checklistId,
+        'checklist_id':
+            (checklistId == null || checklistId!.isEmpty) ? null : checklistId,
         'planilhamento': planilhamento,
         'pedido_financeiro': pedidoFinanceiro,
         'instrucoes_entrega': instrucoesEntrega,

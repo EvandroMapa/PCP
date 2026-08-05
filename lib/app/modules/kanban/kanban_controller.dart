@@ -2,9 +2,12 @@ import 'dart:developer';
 import 'dart:async';
 import 'package:collection/collection.dart';
 
+import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
@@ -616,9 +619,52 @@ class StepController {
     );
     pedido.addStep(step);
     BackendClient.pedidos.pedidosUnarchivedsStream.update();
-    // A chamada de update aqui jÃ¡ persiste a nova etapa e o novo Ã­ndice do pedido
-    // NÃ£o usamos await para nÃ£o travar a UI
+    // A chamada de update aqui já persiste a nova etapa e o novo índice do pedido
+    // Não usamos await para não travar a UI
     BackendClient.pedidos.update(pedido);
+
+    // ─── Correção: status travado após sair da produção ──────────────────────
+    // Quando o pedido é movido manualmente para além do step de produção CDA
+    // (ex: Expedição, Entrega), o campo `status` pode ter ficado travado em
+    // `aguardandoProducaoCDA` ou `produzindoCDA` porque apenas a automação
+    // e o ordemCtrl atualizam esse campo — nunca o Kanban.
+    // Aqui forçamos o status para `pronto` quando o pedido avança além do
+    // step de `aguardandoArmacaoPedido` configurado na automação.
+    _corrigirStatusSeNecessario(pedido, step);
+  }
+
+  /// Força o status do pedido para `pronto` quando ele avança manualmente
+  /// para além da etapa de produção CDA (ex: drag para Expedição ou Entrega).
+  /// Evita que o pedido continue aparecendo na fila de armação.
+  void _corrigirStatusSeNecessario(PedidoModel pedido, StepModel novoStep) {
+    // Só aplica a pedidos que passam pela produção CDA
+    if (pedido.tipo != PedidoTipo.cda) return;
+
+    // Statuses que indicam que o pedido ainda "pertence" à fila de produção CDA
+    const statusesDeProducao = {
+      PedidoStatus.aguardandoProducaoCDA,
+      PedidoStatus.produzindoCDA,
+    };
+    if (!statusesDeProducao.contains(pedido.status)) return;
+
+    // Verifica se o novo step está além do step de aguardando armação
+    final stepAguardandoArmacao =
+        automatizacaoConfig.aguardandoArmacaoPedido.step;
+    if (stepAguardandoArmacao == null) return;
+    if (novoStep.index <= stepAguardandoArmacao.index) return;
+
+    // O pedido saiu da produção CDA — força status = pronto
+    log('[Kanban] Pedido ${pedido.localizador} saiu da produção CDA '
+        '(status=${pedido.status.name}) ao mover para "${novoStep.name}". '
+        'Forçando status → pronto.');
+
+    final novoStatusModel = PedidoStatusModel.create(PedidoStatus.pronto);
+    pedido.statusess.add(novoStatusModel);
+
+    // Persiste em background — não bloqueia a UI
+    if (pedido.produtos.isNotEmpty) {
+      BackendClient.pedidos.updatePedidoStatus(pedido.produtos.first);
+    }
   }
 
   void _onMovePedido(PedidoModel pedido, StepModel step, int index) {
