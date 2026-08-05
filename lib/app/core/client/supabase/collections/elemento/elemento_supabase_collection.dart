@@ -203,10 +203,18 @@ class ElementoSupabaseCollection {
     if (_isListen) return;
     _isListen = true;
 
-    // Listener: qualquer mudança na tabela elementos dispara um re-fetch
+    // Listener: qualquer mudança na tabela elementos via channel cirúrgico.
+    // Substituído de .stream() (que baixava TODA a tabela a cada mudança)
+    // para channel listener (recebe só o registro alterado — muito mais rápido).
     SupabaseService.client
-        .from(name)
-        .stream(primaryKey: ['id']).listen((_) => _updateStreams());
+        .channel('elementos_realtime')
+        .onPostgresChanges(
+          event: sf.PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'elementos',
+          callback: _handleElementoRealtime,
+        )
+        .subscribe();
 
     // Listener: mudanças na tabela elemento_posicoes (ex: operador muda status no tablet)
     // Usa channel em vez de .stream() porque a tabela tem 11k+ linhas —
@@ -221,6 +229,59 @@ class ElementoSupabaseCollection {
           callback: _handlePosicaoRealtime,
         )
         .subscribe();
+  }
+
+  /// Atualiza cirurgicamente o elemento alterado no cache local (UPDATE de status).
+  /// Evita o re-fetch completo de todos os elementos e garante propagação
+  /// rápida entre dispositivos (~300ms vs ~3-4s do .stream() anterior).
+  void _handleElementoRealtime(sf.PostgresChangePayload payload) {
+    // Bloqueia mutação do cache enquanto este dispositivo está trocando status.
+    // (No dispositivo REMOTO, isStatusChanging=false → processa normalmente)
+    if (isStatusChanging) {
+      log('Supabase Realtime: elemento ignorado (isStatusChanging=true)');
+      return;
+    }
+
+    if (payload.eventType == sf.PostgresChangeEvent.update) {
+      final newRecord = payload.newRecord;
+      final elementoId = newRecord['id']?.toString();
+      if (elementoId == null) {
+        _updateStreams();
+        return;
+      }
+
+      final idx = data.indexWhere((e) => e.id == elementoId);
+      if (idx == -1) {
+        // Elemento não encontrado no cache: fallback para re-fetch
+        _updateStreams();
+        return;
+      }
+
+      // Campos que mudam em operações de armação e OS
+      final statusStr = newRecord['status']?.toString();
+      final qtdePronto = int.tryParse(newRecord['qtde_pronto']?.toString() ?? '') ?? data[idx].qtdePronto;
+      final qtdeArmando = int.tryParse(newRecord['qtde_armando']?.toString() ?? '') ?? data[idx].qtdeArmando;
+
+      final newStatus = statusStr != null
+          ? ElementoStatus.values
+              .cast<ElementoStatus?>()
+              .firstWhere((e) => e!.name == statusStr, orElse: () => null)
+          : null;
+
+      data[idx] = data[idx].copyWith(
+        status: newStatus ?? data[idx].status,
+        qtdePronto: qtdePronto,
+        qtdeArmando: qtdeArmando,
+      );
+
+      dataStream.add(data);
+      onUpdated?.call();
+      log('Supabase Realtime: elemento $elementoId → ${newStatus?.name ?? statusStr} (cache cirúrgico)');
+      return;
+    }
+
+    // INSERT ou DELETE: re-fetch completo (menos frequente, mais complexo)
+    _updateStreams();
   }
 
   /// Atualiza apenas a posição alterada no cache local (UPDATE de status).
