@@ -355,6 +355,12 @@ class ArmacaoController {
     required int novoQtdePronto,
     int novoQtdeArmando = 0,
   }) async {
+    // Ativa o lock IMEDIATAMENTE (antes de qualquer await) para garantir que
+    // nenhum evento Realtime sobrescreva o elementosStream durante o fluxo.
+    // Antes estava APÓS a busca de config — havia uma janela aberta onde o
+    // Realtime chegava antes do lock, causando flicker no PC (mouse).
+    _ativarStatusLock();
+
     // 1. Buscar limite dinamicamente (Reatividade Administrativa)
     try {
       final configRaw = await SupabaseService.client
@@ -381,15 +387,14 @@ class ArmacaoController {
       final limit = PreferencesService.maxElementosProducao.value;
 
       if (countArmando >= limit) {
+        // Limite atingido: libera o lock (nada foi alterado) e bloqueia.
+        _liberarStatusLock();
         showInfoDialog('LIMITE ATINGIDO!\n\n'
             'O limite atual para este pedido é de $limit elementos simultâneos em produção.\n\n'
             'Conclua algum item ou peça ao administrador para aumentar o limite nas configurações.');
         return;
       }
     }
-
-    // Ativa o lock ANTES da atualização local para bloquear o listener Realtime
-    _ativarStatusLock();
 
     // 3. Atualizar memória local ANTES da persistência (evita flash por realtime)
     final elementosLocal = elementosStream.value.toList();

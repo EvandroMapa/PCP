@@ -284,7 +284,8 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                         Navigator.pop(context);
                         await armacaoCtrl.updateElementoStatus(
                             widget.pedido, elemento, status);
-                        setState(() {});
+                        // NÃO chamar setState aqui: a tela reage via StreamOut<elementosStream>
+                        // O setState causava rebuild com closure stale, gerando flicker no PC (mouse).
                       },
                     ),
                   )),
