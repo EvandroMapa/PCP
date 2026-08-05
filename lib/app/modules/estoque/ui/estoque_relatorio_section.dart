@@ -142,10 +142,11 @@ class _EstoqueRelatorioSectionState extends State<EstoqueRelatorioSection> {
     final entradas = movs.where((e) => e.tipo.isEntrada).fold(0.0, (s, e) => s + e.quantidade);
     final saidas = movs.where((e) => !e.tipo.isEntrada).fold(0.0, (s, e) => s + e.quantidade.abs());
 
-    // Saldo atual do bitola selecionada (ou soma total)
+    // Saldo atual do bitola selecionada (ou soma total) — calculado pelas movimentações
     final saldoAtual = filtro.produtoId != null
-        ? (BackendClient.estoques.getByProdutoId(filtro.produtoId!)?.quantidade ?? 0.0)
-        : BackendClient.estoques.data.fold(0.0, (s, e) => s + e.quantidade);
+        ? estoqueCtrl.getSaldoCalculado(filtro.produtoId!)
+        : BackendClient.bitolas.data
+            .fold(0.0, (s, p) => s + estoqueCtrl.getSaldoCalculado(p.id));
     final saldoNegativo = saldoAtual < 0;
 
     return Container(

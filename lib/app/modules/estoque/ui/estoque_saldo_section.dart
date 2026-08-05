@@ -81,23 +81,27 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
     return StreamOut(
       stream: BackendClient.estoques.dataStream.listen,
       builder: (_, __) => StreamOut(
-        stream: BackendClient.pedidosCompra.dataStream.listen,
-        builder: (_, ___) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _header(),
-            Expanded(child: _lista()),
-          ],
+        stream: BackendClient.estoquesMovimentacao.dataStream.listen,
+        builder: (_, ___) => StreamOut(
+          stream: BackendClient.pedidosCompra.dataStream.listen,
+          builder: (_, ____) => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _header(),
+              Expanded(child: _lista()),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _header() {
-    final totalSaldo =
-        BackendClient.estoques.data.fold(0.0, (s, e) => s + e.quantidade);
-    final temNegativo =
-        BackendClient.estoques.data.any((e) => e.quantidade < 0);
+    // Saldo total calculado pelas movimentações (fonte de verdade)
+    final totalSaldo = BackendClient.bitolas.data
+        .fold(0.0, (s, p) => s + estoqueCtrl.getSaldoCalculado(p.id));
+    final temNegativo = BackendClient.bitolas.data
+        .any((p) => estoqueCtrl.getSaldoCalculado(p.id) < 0);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -111,6 +115,35 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
             const SizedBox(width: 8),
             Text('Saldos de Estoque', style: AppCss.mediumBold),
             const Spacer(),
+            // Botão sincronizar saldos
+            Tooltip(
+              message: 'Sincronizar saldos com histórico de movimentações',
+              preferBelow: false,
+              waitDuration: const Duration(milliseconds: 300),
+              child: InkWell(
+                onTap: () => estoqueCtrl.sincronizarSaldos(),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                        color: Colors.orange.withValues(alpha: 0.25)),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.sync_rounded,
+                        size: 13, color: Colors.orange[700]),
+                    const SizedBox(width: 4),
+                    Text('Sincronizar',
+                        style: AppCss.minimumBold
+                            .setColor(Colors.orange[700]!)
+                            .setSize(11)),
+                  ]),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
@@ -183,7 +216,8 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _itemCard(produto, EstoqueModel? estoque) {
-    final saldoFisico = estoque?.quantidade ?? 0.0;
+    // Saldo calculado pela soma das movimentações — fonte de verdade
+    final saldoFisico = estoqueCtrl.getSaldoCalculado(produto.id);
     final estoqueMin = estoque?.estoqueMinimo ?? 0.0;
     final estoqueIdeal = estoque?.estoqueIdeal ?? 0.0;
 

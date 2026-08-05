@@ -380,6 +380,67 @@ class EstoqueController {
     }
   }
 
+  /// Retorna o saldo real de um produto calculando a soma de todas as
+  /// movimentações registradas — independente do campo estoques.quantidade.
+  /// Usa os dados já em memória, sem fetch extra.
+  double getSaldoCalculado(String produtoId) {
+    return BackendClient.estoquesMovimentacao.data
+        .where((e) => e.produtoId == produtoId)
+        .fold(0.0, (s, e) => s + e.quantidade);
+  }
+
+  /// Sincroniza o campo `quantidade` da tabela estoques com a soma real
+  /// das movimentações para todos os produtos divergentes.
+  /// Não gera movimentação — é uma correção técnica de dados.
+  Future<void> sincronizarSaldos() async {
+    try {
+      final produtos = BackendClient.bitolas.data;
+      int sincronizados = 0;
+
+      for (final produto in produtos) {
+        final saldoCalculado = getSaldoCalculado(produto.id);
+        final estoque = BackendClient.estoques.getByProdutoId(produto.id);
+
+        final saldoAtual = estoque?.quantidade ?? 0.0;
+        final divergencia = (saldoCalculado - saldoAtual).abs();
+
+        if (divergencia > 0.001) {
+          final estoqueAtualizado = (estoque ?? EstoqueModel.novo(produto.id))
+              .copyWith(
+            quantidade: saldoCalculado,
+            updatedAt: DateTime.now(),
+          );
+          await BackendClient.estoques.upsert(estoqueAtualizado);
+          sincronizados++;
+        }
+      }
+
+      // Recarrega os dados após sincronização
+      await BackendClient.estoques.fetch();
+
+      if (sincronizados == 0) {
+        NotificationService.showNeutral(
+          'Tudo sincronizado',
+          'Nenhum produto com divergência de saldo encontrado.',
+          position: NotificationPosition.bottom,
+        );
+      } else {
+        NotificationService.showPositive(
+          'Saldos sincronizados',
+          '$sincronizados produto${sincronizados > 1 ? 's' : ''} corrigido${sincronizados > 1 ? 's' : ''} com base no histórico de movimentações.',
+          position: NotificationPosition.bottom,
+        );
+      }
+    } catch (e) {
+      NotificationService.showNegative(
+        'Erro ao sincronizar saldos',
+        e.toString(),
+        position: NotificationPosition.bottom,
+      );
+      rethrow;
+    }
+  }
+
   /// Estorno automático quando produto volta de PRONTO para outro status
   Future<void> estornarBaixa({
     required String produtoId,
