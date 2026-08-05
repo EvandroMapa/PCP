@@ -41,6 +41,10 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
   @override
   void dispose() {
     _scrollController.dispose();
+    // Garante que o lock global (isStatusChanging) seja liberado ao sair da tela.
+    // Sem isso, o Realtime fica bloqueado indefinidamente se o usuário sair
+    // durante uma troca de status.
+    armacaoCtrl.liberarLockSeAtivo();
     super.dispose();
   }
 

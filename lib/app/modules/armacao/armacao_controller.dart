@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/elemento/elemento_supabase_collection.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
@@ -56,17 +57,28 @@ class ArmacaoController {
 
   bool _elementosListenerRegistrado = false;
 
-  /// Lock anti-flickering: enquanto ativo, o listener do Realtime (elementos)
-  /// não sobrescreve o elementosStream — evita que a confirmação do banco
-  /// chegue ANTES da atualização otimista local e cause "piscar" de status.
-  /// Ativado em _applyStatusUpdate e mantido por 4s após a escrita no banco.
+  /// Lock anti-flickering em DUAS CAMADAS (padrão AGENTS.md regra 8):
+  ///
+  /// Camada 1 — _statusLock (local): bloqueia o listener do dataStream no
+  ///   _registerElementosListener, impedindo que eventos do Realtime
+  ///   sobrescrevam o elementosStream enquanto o status está sendo atualizado.
+  ///
+  /// Camada 2 — ElementoSupabaseCollection.isStatusChanging (global): bloqueia
+  ///   o _handlePosicaoRealtime e o _updateStreams no cache global, impedindo
+  ///   que o re-fetch de 1.5s+fetch contamine o cache com estado anterior.
+  ///   Sem essa camada, no PC (rede rápida), o re-fetch terminava após o lock
+  ///   local expirar e sobrescrevia o elementosStream com o status antigo.
   bool _statusLock = false;
   Timer? _statusLockTimer;
 
   void _ativarStatusLock() {
     _statusLock = true;
+    ElementoSupabaseCollection.isStatusChanging = true; // Camada 2
     _statusLockTimer?.cancel();
     _statusLockTimer = Timer(const Duration(milliseconds: 4000), () {
+      // Libera camada 2 primeiro (permite que Realtime atualize o cache)
+      ElementoSupabaseCollection.isStatusChanging = false;
+      // Em seguida libera camada 1 (permite que o listener local leia o cache já correto)
       _statusLock = false;
     });
   }
@@ -74,8 +86,16 @@ class ArmacaoController {
   void _liberarStatusLock() {
     _statusLockTimer?.cancel();
     _statusLockTimer = Timer(const Duration(milliseconds: 4000), () {
-      _statusLock = false;
+      ElementoSupabaseCollection.isStatusChanging = false; // Camada 2
+      _statusLock = false; // Camada 1
     });
+  }
+
+  /// Garante que o lock global seja sempre liberado ao sair da tela.
+  void liberarLockSeAtivo() {
+    _statusLockTimer?.cancel();
+    _statusLock = false;
+    ElementoSupabaseCollection.isStatusChanging = false;
   }
 
   /// Registra o listener reativo de elementos UMA única vez.

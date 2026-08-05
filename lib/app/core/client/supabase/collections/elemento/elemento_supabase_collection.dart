@@ -284,6 +284,13 @@ class ElementoSupabaseCollection {
         log('Supabase Realtime: Elementos ignorado (importação em andamento).');
         return;
       }
+      // Bloqueia re-fetch completo durante troca de status (armação ou OS).
+      // Sem esse guard, o fetch terminava APÓS o lock local expirar e
+      // sobrescrevia o elementosStream com o estado anterior do banco.
+      if (isStatusChanging) {
+        log('Supabase Realtime: re-fetch ignorado (isStatusChanging=true).');
+        return;
+      }
       _isStarted = false;
       await start();
       log('Supabase Realtime: Elementos e Arquivos reatualizados.');
