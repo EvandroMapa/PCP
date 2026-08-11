@@ -217,10 +217,22 @@ class PedidoController {
 
     for (final produto in produtosOrdenados) {
       final produtoBase = BackendClient.bitolas.getById(produto.produto.id);
-      // pega a quantidade de Kg disponível de acordo com o produto (com base na original)
-      final double qtdeTotal = produto.qtdeOriginal;
-      final double qtdeDirecionada = pai.getQtdeDirecionada(produto);
-      final double qtdeDisponivel = qtdeTotal - qtdeDirecionada;
+
+      // Disponível = qtdeOriginal do mestre − Σ(qtde dos filhos para essa bitola)
+      // Mesma fórmula usada na tabela de saldo da aba Bitolas, garantindo consistência.
+      // Usa BackendClient (Supabase) — getPedidosFilhos() usa FirestoreClient (legado)
+      // e pode retornar lista incompleta quando os filhos não estão no cache do Firestore.
+      final filhos = pai.pedidosFilhos
+          .map((id) => BackendClient.pedidos.getById(id))
+          .where((f) => !f.localizador.startsWith('NOTFOUND'))
+          .toList();
+      final totalDirecionado = filhos.fold<double>(0, (acc, filho) {
+        final fp = filho.produtos.where((p) => p.produto.id == produto.produto.id);
+        return acc + fp.fold<double>(0, (a, p) => a + p.qtde);
+      });
+      final double qtdeDisponivel = (produto.qtdeOriginal - totalDirecionado).clamp(0, double.infinity);
+
+
       final create = PedidoBitolaCreateModel(
         isEnabled: qtdeDisponivel > 0,
         qtdeDisponivel: qtdeDisponivel,
@@ -666,7 +678,12 @@ class PedidoController {
   /// qtde = qtdeOriginal - soma(qtde dos filhos para o mesmo produto)
   /// Corrige inconsistências causadas por exclusões falhas de parciais.
   Future<void> recalcularSaldo(PedidoModel mestre) async {
-    final filhos = mestre.getPedidosFilhos();
+    // Usa BackendClient (Supabase) — getPedidosFilhos() usa FirestoreClient (legado)
+    // e pode retornar lista incompleta, causando recálculo incorreto do saldo.
+    final filhos = mestre.pedidosFilhos
+        .map((id) => BackendClient.pedidos.getById(id))
+        .where((f) => !f.localizador.startsWith('NOTFOUND'))
+        .toList();
 
     for (int i = 0; i < mestre.produtos.length; i++) {
       final produto = mestre.produtos[i];

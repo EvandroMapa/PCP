@@ -32,13 +32,19 @@ class PaiPedidoSaldoTableWidget extends StatelessWidget {
     final produtos = mestre.produtos;
     if (produtos.isEmpty) return const SizedBox();
 
-    // Calcula saldo por produto: qtdeOriginal do mestre - soma dos filhos
+    // SALDO = qtdeOriginal do mestre − Σ(qtde dos filhos para essa bitola)
+    // Isso faz a equação da tabela fechar visualmente:
+    //   linha MESTRE  → mostra qtdeOriginal
+    //   linhas PARCIAL → mostram − qtde
+    //   linha SALDO   → qtdeOriginal − Σ(filhos.qtde) ✓
+    // NÃO usar produto.qtde do mestre diretamente (pode estar corrompido no banco).
+    // NÃO usar filhos.qtdeOriginal (não atualiza em edições posteriores do parcial).
     double _saldo(PedidoBitolaModel mestProduto) {
       final totalFilhos = filhos.fold<double>(0, (acc, filho) {
         final fp = filho.produtos.where(
           (p) => p.produto.id == mestProduto.produto.id,
         );
-        return acc + fp.fold<double>(0, (a, p) => a + p.qtdeOriginal);
+        return acc + fp.fold<double>(0, (a, p) => a + p.qtde);
       });
       return mestProduto.qtdeOriginal - totalFilhos;
     }
@@ -244,8 +250,10 @@ class PaiPedidoSaldoTableWidget extends StatelessWidget {
                   final fp = filho.produtos.where(
                     (p) => p.produto.id == mestreProduto.produto.id,
                   );
+                  // Usa p.qtde (quantidade atual) e não p.qtdeOriginal,
+                  // pois qtdeOriginal não é atualizada em edições do parcial.
                   final qtde =
-                      fp.isEmpty ? 0.0 : fp.fold(0.0, (a, p) => a + p.qtdeOriginal);
+                      fp.isEmpty ? 0.0 : fp.fold(0.0, (a, p) => a + p.qtde);
                   return Text(
                     qtde > 0 ? '− ${qtde.toKg()}' : '---',
                     textAlign: TextAlign.right,

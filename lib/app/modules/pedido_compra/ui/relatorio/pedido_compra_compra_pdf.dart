@@ -88,7 +88,7 @@ class PedidoCompraCompraPdfPage {
       margin: const pw.EdgeInsets.only(bottom: 16),
       child: pw.Column(
         children: [
-          // Faixa superior
+          // Faixa superior — logo + dados da empresa (sem título sobreposto)
           pw.Container(
             padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: pw.BoxDecoration(
@@ -99,59 +99,32 @@ class PedidoCompraCompraPdfPage {
               ),
             ),
             child: pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Row(
-                  children: [
-                    pw.Image(pw.MemoryImage(logoBytes), width: 40, height: 40),
-                    pw.SizedBox(width: 12),
-                    pw.Column(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Text(
-                          _nomeExibicao,
-                          style: pw.TextStyle(
-                            fontSize: 14,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.white,
-                          ),
-                        ),
-                        if (cnpj.isNotEmpty)
-                          pw.Text(
-                            'CNPJ: $cnpj',
-                            style: pw.TextStyle(
-                                fontSize: 8, color: PdfColors.grey300),
-                          ),
-                        if (endereco.isNotEmpty)
-                          pw.Text(
-                            endereco,
-                            style: pw.TextStyle(
-                                fontSize: 8, color: PdfColors.grey300),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
+                pw.Image(pw.MemoryImage(logoBytes), width: 40, height: 40),
+                pw.SizedBox(width: 12),
                 pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.end,
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(
-                      'PEDIDO DE COMPRA',
+                      _nomeExibicao,
                       style: pw.TextStyle(
                         fontSize: 14,
                         fontWeight: pw.FontWeight.bold,
                         color: PdfColors.white,
-                        letterSpacing: 0.5,
                       ),
                     ),
-                    pw.SizedBox(height: 2),
-                    pw.Text(
-                      'Nº $numeroPedido',
-                      style: pw.TextStyle(
-                          fontSize: 10,
-                          color: PdfColors.grey300,
-                          fontStyle: pw.FontStyle.italic),
-                    ),
+                    if (cnpj.isNotEmpty)
+                      pw.Text(
+                        'CNPJ: $cnpj',
+                        style: pw.TextStyle(
+                            fontSize: 8, color: PdfColors.grey300),
+                      ),
+                    if (endereco.isNotEmpty)
+                      pw.Text(
+                        endereco,
+                        style: pw.TextStyle(
+                            fontSize: 8, color: PdfColors.grey300),
+                      ),
                   ],
                 ),
               ],
@@ -180,9 +153,48 @@ class PedidoCompraCompraPdfPage {
                         fontWeight: pw.FontWeight.bold),
                   ),
                 pw.Text(
-                  'Responsavel: ${usuarioNome ?? '-'}',
+                  'Responsável: ${usuarioNome ?? '-'}',
                   style: pw.TextStyle(
                       fontSize: 8, color: PdfColors.white),
+                ),
+              ],
+            ),
+          ),
+          // Faixa de título em destaque — ORDEM DE COMPRA
+          pw.Container(
+            width: double.infinity,
+            padding: const pw.EdgeInsets.symmetric(vertical: 10),
+            decoration: pw.BoxDecoration(
+              color: _azulClaro,
+              border: pw.Border.all(color: _azulMedio.shade(0.4), width: 1),
+              borderRadius: const pw.BorderRadius.only(
+                bottomLeft: pw.Radius.circular(6),
+                bottomRight: pw.Radius.circular(6),
+              ),
+            ),
+            child: pw.Column(
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              children: [
+                pw.Text(
+                  'ORDEM DE COMPRA',
+                  style: pw.TextStyle(
+                    fontSize: 18,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _azulMedio,
+                    letterSpacing: 2.0,
+                  ),
+                  textAlign: pw.TextAlign.center,
+                ),
+                pw.SizedBox(height: 4),
+                pw.Text(
+                  'Nº $numeroPedido',
+                  style: pw.TextStyle(
+                    fontSize: 11,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _azulEscuro,
+                    letterSpacing: 0.5,
+                  ),
+                  textAlign: pw.TextAlign.center,
                 ),
               ],
             ),
@@ -287,6 +299,11 @@ class PedidoCompraCompraPdfPage {
                   '${itens.fold(0.0, (s, i) => s + i.quantidade).toStringAsFixed(3)} kg',
                 ),
                 _dadoRow('Status', 'CONFIRMADO'),
+                if (itens.isNotEmpty && itens.first.dataPrevista != null)
+                  _dadoRow(
+                    'Prev. Entrega',
+                    DateFormat('dd/MM/yyyy').format(itens.first.dataPrevista!),
+                  ),
               ],
             ),
           ),
@@ -555,7 +572,7 @@ class PedidoCompraCompraPdfPage {
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           pw.Text(
-            'Documento gerado em ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}  |  Pedido Nº $numeroPedido',
+            'Documento gerado em ${DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now())}  |  Ordem Nº $numeroPedido',
             style: pw.TextStyle(fontSize: 7, color: _subtexto),
           ),
           pw.Text(

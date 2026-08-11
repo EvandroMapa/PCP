@@ -640,7 +640,13 @@ class _PedidoPageState extends State<PedidoPage>
                 if (pedido.pedidosFilhos.isNotEmpty) ...[
                   PaiPedidoSaldoTableWidget(
                     mestre: pedido,
-                    filhos: pedido.getPedidosFilhos(),
+                    // Usa BackendClient (Supabase) para garantir todos os filhos —
+                    // getPedidosFilhos() usa FirestoreClient (legado) e pode retornar
+                    // lista incompleta quando os filhos não estão no cache local.
+                    filhos: pedido.pedidosFilhos
+                        .map((id) => BackendClient.pedidos.getById(id))
+                        .where((f) => !f.localizador.startsWith('NOTFOUND'))
+                        .toList(),
                   ),
                   const H(16),
                   PedidoFilhosWidget(
