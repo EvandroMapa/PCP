@@ -328,6 +328,30 @@ class PedidoController {
           pedidoStream.add(update);
           pedidoStream.update();
         }
+
+        // ── Caso 2: é parcial → recalcular e salvar saldo do pai ────────
+        // Após editar um filho, o produto.qtde do mestre pode estar
+        // desatualizado. Recalcula via qtdeOriginal - Σ(filhos.qtde)
+        // e persiste no banco para manter consistência.
+        if (edit.isParcial && edit.pai != null) {
+          final pai = BackendClient.pedidos.getById(edit.pai!);
+          if (!pai.localizador.startsWith('NOTFOUND')) {
+            final filhos = pai.pedidosFilhos
+                .map((id) => BackendClient.pedidos.getById(id))
+                .where((f) => !f.localizador.startsWith('NOTFOUND'))
+                .toList();
+            for (int i = 0; i < pai.produtos.length; i++) {
+              final prod = pai.produtos[i];
+              final totalFilhos = filhos.fold<double>(0, (acc, filho) {
+                final fp = filho.produtos.where((p) => p.produto.id == prod.produto.id);
+                return acc + fp.fold<double>(0, (a, p) => a + p.qtde);
+              });
+              final novoSaldo = (prod.qtdeOriginal - totalFilhos).clamp(0, double.infinity);
+              pai.produtos[i] = prod.copyWith(qtde: novoSaldo);
+            }
+            await BackendClient.pedidos.update(pai);
+          }
+        }
       } else {
         PedidoModel pedidoModel = form.toPedidoModel(pedido);
         // Validação: não permite gravar sem membro
@@ -336,16 +360,28 @@ class PedidoController {
         }
 
         // Validar saldo disponível se for pedido parcial
+        // Usa qtdeOriginal - Σ(filhos.qtde) via BackendClient — mesma fórmula
+        // da tela, garante que a validação nunca use produto.qtde corrompido.
         if (form.pai != null) {
           final pai = BackendClient.pedidos.getById(form.pai!);
+          final filhosExistentes = pai.pedidosFilhos
+              .map((id) => BackendClient.pedidos.getById(id))
+              .where((f) => !f.localizador.startsWith('NOTFOUND'))
+              .toList();
           for (final produtoFilho in pedidoModel.produtos) {
             final produtoPai = pai.produtos.firstWhereOrNull(
               (e) => e.produto.id == produtoFilho.produto.id,
             );
-            if (produtoPai != null && (produtoFilho.qtde.precision > produtoPai.qtde.precision)) {
+            if (produtoPai == null) continue;
+            final totalDirecionado = filhosExistentes.fold<double>(0, (acc, filho) {
+              final fp = filho.produtos.where((p) => p.produto.id == produtoFilho.produto.id);
+              return acc + fp.fold<double>(0, (a, p) => a + p.qtde);
+            });
+            final saldoDisponivel = (produtoPai.qtdeOriginal - totalDirecionado).clamp(0, double.infinity);
+            if (produtoFilho.qtde.precision > saldoDisponivel.precision) {
               NotificationService.showNegative(
                 'Saldo Insuficiente',
-                'O produto ${produtoPai.produto.nome} possui apenas ${produtoPai.qtde}Kg disponíveis.',
+                'O produto ${produtoPai.produto.nome} possui apenas ${saldoDisponivel.toKg()} disponíveis.',
               );
               return;
             }
