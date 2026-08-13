@@ -421,12 +421,24 @@ class ArmacaoController {
     final elementosLocal = elementosStream.value.toList();
     final index = elementosLocal.indexWhere((e) => e.id == elemento.id);
     if (index != -1) {
-      elementosLocal[index] = elemento.copyWith(
+      final elementoAtualizado = elemento.copyWith(
         status: statusFinal,
         qtdePronto: novoQtdePronto,
         qtdeArmando: novoQtdeArmando,
       );
+      elementosLocal[index] = elementoAtualizado;
       elementosStream.add(elementosLocal);
+
+      // CRÍTICO: atualizar também o cache global (AppSupabaseClient.elementos.data).
+      // Sem isso, quando o lock expirar (4s), o listener do dataStream lê o cache
+      // com o estado ANTIGO e sobrescreve o elementosStream — revertendo a UI
+      // visualmente mesmo com o banco já correto. O Realtime que normalmente
+      // atualizaria o cache foi bloqueado pelo isStatusChanging durante o lock.
+      final globalIdx = AppSupabaseClient.elementos.data
+          .indexWhere((e) => e.id == elemento.id);
+      if (globalIdx != -1) {
+        AppSupabaseClient.elementos.data[globalIdx] = elementoAtualizado;
+      }
     }
 
     // Atualizar no pedido também caso algo o leia diretamente
