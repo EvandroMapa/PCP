@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/elemento/elemento_supabase_collection.dart';
@@ -445,12 +446,42 @@ class ArmacaoController {
     }).eq('id', elemento.id);
 
     // Registrar histórico de mudança de status
-    await SupabaseService.client.from('elemento_status_history').insert({
-      'elemento_id': elemento.id,
-      'pedido_id': pedido.id,
-      'status': statusFinal.name,
-      'qtde_pronto': novoQtdePronto,
-    });
+    // Inclui campos de rastreio de diagnóstico (status_anterior, qtde_armando, plataforma)
+    // para identificar a origem de possíveis regressões tardias.
+    final String plataforma = () {
+      switch (defaultTargetPlatform) {
+        case TargetPlatform.android: return 'android';
+        case TargetPlatform.iOS: return 'ios';
+        case TargetPlatform.windows: return 'windows';
+        case TargetPlatform.macOS: return 'macos';
+        case TargetPlatform.linux: return 'linux';
+        default: return 'web';
+      }
+    }();
+    try {
+      await SupabaseService.client.from('elemento_status_history').insert({
+        'elemento_id': elemento.id,
+        'pedido_id': pedido.id,
+        'status': statusFinal.name,
+        'qtde_pronto': novoQtdePronto,
+        'status_anterior': elemento.status.name,
+        'qtde_armando': novoQtdeArmando,
+        'plataforma': plataforma,
+      });
+    } catch (e) {
+      // Fallback: tenta sem os campos de diagnóstico (colunas podem não existir ainda)
+      log('ArmacaoController: insert com campos extras falhou ($e), tentando sem extras...');
+      try {
+        await SupabaseService.client.from('elemento_status_history').insert({
+          'elemento_id': elemento.id,
+          'pedido_id': pedido.id,
+          'status': statusFinal.name,
+          'qtde_pronto': novoQtdePronto,
+        });
+      } catch (e2) {
+        log('ArmacaoController: erro ao registrar histórico de status: $e2');
+      }
+    }
 
     // Renova o lock após todas as escritas (o Realtime dispara logo após o insert)
     _liberarStatusLock();

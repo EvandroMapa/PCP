@@ -6,6 +6,7 @@ import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/services/fullscreen_service.dart';
+import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/modules/armacao/armacao_controller.dart';
 import 'package:dio/dio.dart';
 import 'package:pdfx/pdfx.dart';
@@ -53,6 +54,15 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
     if (mounted) {
       setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _showHistoricoStatus() async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ArmacaoHistoricoSheet(pedidoId: widget.pedido.id),
+    );
   }
 
   Future<void> _showImageDialog(ElementoModel elemento) async {
@@ -117,6 +127,11 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
         backgroundColor: AppColors.secondary,
         elevation: 0,
         actions: [
+          IconButton(
+            onPressed: _showHistoricoStatus,
+            icon: const Icon(Icons.history_rounded, color: Colors.white),
+            tooltip: 'Histórico de status',
+          ),
           FullscreenButton(),
           const SizedBox(width: 8),
         ],
@@ -390,7 +405,6 @@ class _ResumoProducaoBar extends StatelessWidget {
   Widget _buildItem(String label, ElementoStatus status, _Item data) {
     final bool isVisible = statusVisivel[status] ?? true;
     final prcntQtd = data.prcntQtd;
-    final prcntPeso = data.prcntPeso;
 
     return Expanded(
       child: Container(
@@ -466,7 +480,7 @@ class _ResumoProducaoBar extends StatelessWidget {
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                          '${data.peso.toStringAsFixed(1)}',
+                          data.peso.toStringAsFixed(1),
                           style: AppCss.largeBold.setSize(16).setColor(
                               isVisible ? Colors.black : Colors.grey[400]!),
                         ),
@@ -1069,6 +1083,395 @@ class _MediaViewerDialogState extends State<_MediaViewerDialog> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Histórico de Status — Bottom Sheet
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _ArmacaoHistoricoSheet extends StatefulWidget {
+  final String pedidoId;
+  const _ArmacaoHistoricoSheet({required this.pedidoId});
+
+  @override
+  State<_ArmacaoHistoricoSheet> createState() => _ArmacaoHistoricoSheetState();
+}
+
+class _ArmacaoHistoricoSheetState extends State<_ArmacaoHistoricoSheet> {
+  List<Map<String, dynamic>> _registros = [];
+  bool _carregando = true;
+  String? _erro;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregar();
+  }
+
+  Future<void> _carregar() async {
+    try {
+      final raw = await SupabaseService.client
+          .from('elemento_status_history')
+          .select()
+          .eq('pedido_id', widget.pedidoId)
+          .order('created_at', ascending: false)
+          .limit(200);
+      if (mounted) {
+        setState(() {
+          _registros = List<Map<String, dynamic>>.from(raw);
+          _carregando = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _erro = e.toString();
+          _carregando = false;
+        });
+      }
+    }
+  }
+
+  Color _corStatus(String? status) {
+    switch (status) {
+      case 'pronto':    return Colors.green[700]!;
+      case 'armando':   return Colors.amber[800]!;
+      case 'aguardando': return Colors.blueGrey[400]!;
+      default:          return Colors.grey;
+    }
+  }
+
+  String _labelStatus(String? status) {
+    switch (status) {
+      case 'pronto':    return 'PRONTO';
+      case 'armando':   return 'ARMANDO';
+      case 'aguardando': return 'AGUARDANDO';
+      default:          return status?.toUpperCase() ?? '?';
+    }
+  }
+
+  IconData _iconeStatus(String? status) {
+    switch (status) {
+      case 'pronto':    return Icons.check_circle_rounded;
+      case 'armando':   return Icons.build_rounded;
+      case 'aguardando': return Icons.hourglass_empty_rounded;
+      default:          return Icons.circle_outlined;
+    }
+  }
+
+  String _formatarData(dynamic raw) {
+    if (raw == null) return '—';
+    final dt = DateTime.tryParse(raw.toString())?.toLocal();
+    if (dt == null) return raw.toString();
+    final d = dt.day.toString().padLeft(2, '0');
+    final m = dt.month.toString().padLeft(2, '0');
+    final y = dt.year;
+    final h = dt.hour.toString().padLeft(2, '0');
+    final min = dt.minute.toString().padLeft(2, '0');
+    final s = dt.second.toString().padLeft(2, '0');
+    return '$d/$m/$y  $h:$min:$s';
+  }
+
+  bool _eRegressao(Map<String, dynamic> r) {
+    final ant = r['status_anterior']?.toString();
+    final novo = r['status']?.toString();
+    if (ant == null || novo == null) return false;
+    // Considera regressão: pronto→armando, pronto→aguardando, armando→aguardando
+    const ordem = {'aguardando': 0, 'armando': 1, 'pronto': 2};
+    final ordemAnt = ordem[ant] ?? 0;
+    final ordemNovo = ordem[novo] ?? 0;
+    return ordemNovo < ordemAnt;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      builder: (_, scrollCtrl) => Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 4),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            // Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(Icons.history_rounded,
+                        color: AppColors.secondary, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Histórico de Status',
+                            style: AppCss.mediumBold.setSize(16)),
+                        if (!_carregando && _erro == null)
+                          Text('${_registros.length} registros',
+                              style: AppCss.minimumRegular
+                                  .setColor(Colors.grey[500]!)),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      setState(() { _carregando = true; _erro = null; });
+                      _carregar();
+                    },
+                    icon: Icon(Icons.refresh_rounded,
+                        color: AppColors.secondary),
+                    tooltip: 'Atualizar',
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            // Corpo
+            Expanded(
+              child: _carregando
+                  ? const Center(child: CircularProgressIndicator())
+                  : _erro != null
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Text('Erro ao carregar: $_erro',
+                                textAlign: TextAlign.center,
+                                style: AppCss.minimumRegular
+                                    .setColor(Colors.red[700]!)),
+                          ),
+                        )
+                      : _registros.isEmpty
+                          ? const EmptyData(
+                              message: 'Nenhuma mudança de status registrada.')
+                          : ListView.builder(
+                              controller: scrollCtrl,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                              itemCount: _registros.length,
+                              itemBuilder: (_, i) {
+                                final r = _registros[i];
+                                final eReg = _eRegressao(r);
+                                final statusNovo = r['status']?.toString();
+                                final statusAnt = r['status_anterior']?.toString();
+                                final plataforma = r['plataforma']?.toString();
+                                final qtdePronto = r['qtde_pronto'];
+                                final qtdeArmando = r['qtde_armando'];
+
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  decoration: BoxDecoration(
+                                    color: eReg
+                                        ? Colors.red[50]
+                                        : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: eReg
+                                          ? Colors.red[200]!
+                                          : const Color(0xFFE2E8F0),
+                                      width: eReg ? 1.5 : 1,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.03),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Linha 1: data + badge de regressão
+                                        Row(
+                                          children: [
+                                            Icon(Icons.access_time_rounded,
+                                                size: 13,
+                                                color: Colors.grey[400]),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              _formatarData(r['created_at']),
+                                              style: AppCss.minimumRegular
+                                                  .setSize(12)
+                                                  .setColor(Colors.grey[600]!),
+                                            ),
+                                            if (plataforma != null) ...[
+                                              const SizedBox(width: 8),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(
+                                                    horizontal: 6, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.blueGrey[50],
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Icon(
+                                                      plataforma == 'android'
+                                                          ? Icons.tablet_android_rounded
+                                                          : plataforma == 'windows'
+                                                              ? Icons.computer_rounded
+                                                              : Icons.device_unknown_rounded,
+                                                      size: 11,
+                                                      color: Colors.blueGrey[600],
+                                                    ),
+                                                    const SizedBox(width: 3),
+                                                    Text(plataforma,
+                                                        style: AppCss.minimumRegular
+                                                            .setSize(10)
+                                                            .setColor(
+                                                                Colors.blueGrey[600]!)),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                            const Spacer(),
+                                            if (eReg)
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(
+                                                    horizontal: 8, vertical: 3),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.red[700],
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
+                                                child: Text(
+                                                  '⚠ REGRESSÃO',
+                                                  style: AppCss.minimumBold
+                                                      .setSize(10)
+                                                      .setColor(Colors.white),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        // Linha 2: status anterior → status novo
+                                        Row(
+                                          children: [
+                                            if (statusAnt != null) ...[
+                                              _StatusBadge(
+                                                label: _labelStatus(statusAnt),
+                                                cor: _corStatus(statusAnt),
+                                                icone: _iconeStatus(statusAnt),
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.symmetric(
+                                                    horizontal: 8),
+                                                child: Icon(
+                                                  Icons.arrow_forward_rounded,
+                                                  size: 16,
+                                                  color: eReg
+                                                      ? Colors.red[700]
+                                                      : Colors.grey[400],
+                                                ),
+                                              ),
+                                            ] else
+                                              Text('—   →   ',
+                                                  style: AppCss.minimumRegular
+                                                      .setColor(Colors.grey[400]!)),
+                                            _StatusBadge(
+                                              label: _labelStatus(statusNovo),
+                                              cor: _corStatus(statusNovo),
+                                              icone: _iconeStatus(statusNovo),
+                                            ),
+                                            const Spacer(),
+                                            // Qtdes
+                                            if (qtdePronto != null || qtdeArmando != null)
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.end,
+                                                children: [
+                                                  if (qtdePronto != null)
+                                                    Text(
+                                                      'pronto: $qtdePronto',
+                                                      style: AppCss.minimumRegular
+                                                          .setSize(11)
+                                                          .setColor(
+                                                              Colors.green[700]!),
+                                                    ),
+                                                  if (qtdeArmando != null &&
+                                                      qtdeArmando != 0)
+                                                    Text(
+                                                      'armando: $qtdeArmando',
+                                                      style: AppCss.minimumRegular
+                                                          .setSize(11)
+                                                          .setColor(
+                                                              Colors.amber[800]!),
+                                                    ),
+                                                ],
+                                              ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  final String label;
+  final Color cor;
+  final IconData icone;
+  const _StatusBadge({
+    required this.label,
+    required this.cor,
+    required this.icone,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: cor.withValues(alpha: 0.30)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icone, size: 13, color: cor),
+          const SizedBox(width: 4),
+          Text(label,
+              style: AppCss.minimumBold.setSize(11).setColor(cor)),
         ],
       ),
     );
