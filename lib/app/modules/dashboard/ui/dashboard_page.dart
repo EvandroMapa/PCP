@@ -761,15 +761,21 @@ class DashboardPageState extends State<DashboardPage> {
             ),
           ),
           Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: _mostrarGraficoEstoque
-                  ? _estoqueChartContent(key: const ValueKey('chart'))
-                  : _consumoListContent(
-                      key: const ValueKey('lista'),
-                      produtos: produtos,
-                      consumoMap: consumoMap,
-                    ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isSmall = constraints.maxWidth < 400;
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: _mostrarGraficoEstoque
+                      ? _estoqueChartContent(key: const ValueKey('chart'))
+                      : _consumoListContent(
+                          key: const ValueKey('lista'),
+                          produtos: produtos,
+                          consumoMap: consumoMap,
+                          isSmall: isSmall,
+                        ),
+                );
+              },
             ),
           ),
         ],
@@ -814,6 +820,7 @@ class DashboardPageState extends State<DashboardPage> {
     required Key key,
     required List produtos,
     required Map consumoMap,
+    bool isSmall = false,
   }) {
     if (produtos.isEmpty) {
       return Center(
@@ -836,8 +843,11 @@ class DashboardPageState extends State<DashboardPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(p.descricao,
-                      style: AppCss.mediumBold.setSize(13)),
+                  Text(
+                      isSmall ? p.nome : p.descricao,
+                      style: AppCss.mediumBold.setSize(13),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   Text(peso.toKg(),
                       style: AppCss.mediumBold
                           .setSize(13)
