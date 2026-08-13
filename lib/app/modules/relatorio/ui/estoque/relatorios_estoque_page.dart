@@ -288,6 +288,8 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: AppCss.minimumRegular
                           .setSize(9)
                           .setColor(Colors.grey[500]!)),
