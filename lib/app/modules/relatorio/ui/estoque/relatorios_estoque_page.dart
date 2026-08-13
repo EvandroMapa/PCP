@@ -274,15 +274,15 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
   Widget _kpi(String label, String valor, Color cor, IconData icon) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
         child: Row(children: [
-          Icon(icon, size: 15, color: cor),
-          const SizedBox(width: 6),
+          Icon(icon, size: 14, color: cor),
+          const SizedBox(width: 5),
           Expanded(
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,13 +291,17 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
                       style: AppCss.minimumRegular
                           .setSize(9)
                           .setColor(Colors.grey[500]!)),
-                  Text(valor, style: AppCss.minimumBold.setColor(cor)),
+                  Text(valor,
+                      style: AppCss.minimumBold.setSize(11).setColor(cor),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
                 ]),
           ),
         ]),
       ),
     );
   }
+
 
   /// Calcula consumo previsto por bitola, considerando APENAS pedidos com data de entrega
   double _getConsumoPorBitolaComData(BitolaModel produto) {
