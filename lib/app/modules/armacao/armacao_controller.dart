@@ -429,16 +429,16 @@ class ArmacaoController {
       elementosLocal[index] = elementoAtualizado;
       elementosStream.add(elementosLocal);
 
-      // CRÍTICO: atualizar também o cache global (AppSupabaseClient.elementos.data).
+      // CRÍTICO: atualizar também o cache global via API oficial da collection.
       // Sem isso, quando o lock expirar (4s), o listener do dataStream lê o cache
       // com o estado ANTIGO e sobrescreve o elementosStream — revertendo a UI
       // visualmente mesmo com o banco já correto. O Realtime que normalmente
       // atualizaria o cache foi bloqueado pelo isStatusChanging durante o lock.
-      final globalIdx = AppSupabaseClient.elementos.data
-          .indexWhere((e) => e.id == elemento.id);
-      if (globalIdx != -1) {
-        AppSupabaseClient.elementos.data[globalIdx] = elementoAtualizado;
-      }
+      //
+      // updateLocalData emite dataStream, mas _registerElementosListener está
+      // bloqueado por _statusLock → elementosStream NÃO é afetado por isso.
+      // Só o cache global (AppSupabaseClient.elementos.data) é atualizado.
+      AppSupabaseClient.elementos.updateLocalData([elementoAtualizado]);
     }
 
     // Atualizar no pedido também caso algo o leia diretamente
