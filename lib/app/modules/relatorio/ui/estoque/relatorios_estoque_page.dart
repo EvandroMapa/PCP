@@ -209,12 +209,6 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
                   ),
                 ]),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Saldo físico, abatido do consumo previsto nas ordens, '
-                'acrescido dos pedidos de compra em aberto.',
-                style: AppCss.minimumRegular.setColor(Colors.grey[500]!),
-              ),
               const SizedBox(height: 10),
               // KPIs — 2x2 no mobile, 4 em linha no desktop
               if (isSmall)
