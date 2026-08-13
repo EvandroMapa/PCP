@@ -26,11 +26,11 @@ class ArmacaoElementosPage extends StatefulWidget {
 class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
   bool _isLoading = true;
   final ScrollController _scrollController = ScrollController();
-  // Filtros de visibilidade por status (Pronto oculto por padrão no Armador)
+  // Filtros de visibilidade por status (todos visíveis por padrão)
   final Map<ElementoStatus, bool> _statusVisivel = {
     ElementoStatus.aguardando: true,
     ElementoStatus.armando: true,
-    ElementoStatus.pronto: false,
+    ElementoStatus.pronto: true,
   };
 
   @override
