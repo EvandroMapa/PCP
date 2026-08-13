@@ -1,46 +1,42 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
-import 'package:aco_plus/app/core/client/supabase/collections/cliente/cliente_supabase_collection.dart';
-import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
-import 'package:aco_plus/app/core/utils/app_colors.dart';
-import 'package:aco_plus/app/core/services/audit_service.dart';
-import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
-
-
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
-
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_history_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
-import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/cliente/cliente_supabase_collection.dart';
 import 'package:aco_plus/app/core/components/archive/archive_model.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
+import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
 import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
 import 'package:aco_plus/app/core/enums/sort_type.dart';
-import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
+import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/models/endereco_model.dart';
+import 'package:aco_plus/app/core/services/audit_service.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/automatizacao/automatizacao_controller.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_status_bottom.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_step_bottom.dart';
-
 import 'package:aco_plus/app/modules/pedido/view_models/pedido_bitola_view_model.dart';
 import 'package:aco_plus/app/modules/pedido/view_models/pedido_view_model.dart';
 import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/pedido/relatorio_pedido_pdf_page.dart';
 import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_pedido_view_model.dart';
+import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -57,7 +53,6 @@ class PedidoController {
   factory PedidoController() => _instance;
 
   final AppStream<int> activeTabStream = AppStream<int>.seed(0);
-
 
   final AppStream<PedidoUtils> utilsStream = AppStream<PedidoUtils>.seed(
     PedidoUtils(),
@@ -227,16 +222,18 @@ class PedidoController {
           .where((f) => !f.localizador.startsWith('NOTFOUND'))
           .toList();
       final totalDirecionado = filhos.fold<double>(0, (acc, filho) {
-        final fp = filho.produtos.where((p) => p.produto.id == produto.produto.id);
+        final fp =
+            filho.produtos.where((p) => p.produto.id == produto.produto.id);
         return acc + fp.fold<double>(0, (a, p) => a + p.qtde);
       });
-      final double qtdeDisponivel = (produto.qtdeOriginal - totalDirecionado).clamp(0, double.infinity);
-
+      final double qtdeDisponivel =
+          (produto.qtdeOriginal - totalDirecionado).clamp(0, double.infinity);
 
       final create = PedidoBitolaCreateModel(
         isEnabled: qtdeDisponivel > 0,
         qtdeDisponivel: qtdeDisponivel,
-        isSelected: false, // Inicia desmarcado — só seleciona quando preenche quantidade
+        isSelected:
+            false, // Inicia desmarcado — só seleciona quando preenche quantidade
       );
       create.produtoModel = produtoBase;
       create.produtoEC.text = produtoBase.descricaoReplaced;
@@ -268,8 +265,10 @@ class PedidoController {
   ) {
     // Ordenar por arquivados mais recentes (último archive.createdAt)
     pedidos.sort((a, b) {
-      final aDate = a.archives.isNotEmpty ? a.archives.last.createdAt : a.createdAt;
-      final bDate = b.archives.isNotEmpty ? b.archives.last.createdAt : b.createdAt;
+      final aDate =
+          a.archives.isNotEmpty ? a.archives.last.createdAt : a.createdAt;
+      final bDate =
+          b.archives.isNotEmpty ? b.archives.last.createdAt : b.createdAt;
       return bDate.compareTo(aDate); // desc: mais recente primeiro
     });
     if (search.length < 2) return pedidos;
@@ -277,7 +276,6 @@ class PedidoController {
         .where((e) => e.localizador.toCompare.contains(search.toCompare))
         .toList();
   }
-
 
   Future<void> onConfirm(value, PedidoModel? pedido, bool isFromOrder) async {
     try {
@@ -295,7 +293,8 @@ class PedidoController {
         final edit = form.toPedidoModel(pedido);
         // Validação: não permite gravar sem membro
         if (edit.users.isEmpty) {
-          throw Exception('O pedido precisa ter pelo menos um membro responsável');
+          throw Exception(
+              'O pedido precisa ter pelo menos um membro responsável');
         }
         // Se NÃO é Mestre, qtdeOriginal deve acompanhar a qtde editada
         if (!edit.isMestre) {
@@ -328,60 +327,26 @@ class PedidoController {
           pedidoStream.add(update);
           pedidoStream.update();
         }
-
-        // ── Caso 2: é parcial → recalcular e salvar saldo do pai ────────
-        // Após editar um filho, o produto.qtde do mestre pode estar
-        // desatualizado. Recalcula via qtdeOriginal - Σ(filhos.qtde)
-        // e persiste no banco para manter consistência.
-        if (edit.isParcial && edit.pai != null) {
-          final pai = BackendClient.pedidos.getById(edit.pai!);
-          if (!pai.localizador.startsWith('NOTFOUND')) {
-            final filhos = pai.pedidosFilhos
-                .map((id) => BackendClient.pedidos.getById(id))
-                .where((f) => !f.localizador.startsWith('NOTFOUND'))
-                .toList();
-            for (int i = 0; i < pai.produtos.length; i++) {
-              final prod = pai.produtos[i];
-              final totalFilhos = filhos.fold<double>(0, (acc, filho) {
-                final fp = filho.produtos.where((p) => p.produto.id == prod.produto.id);
-                return acc + fp.fold<double>(0, (a, p) => a + p.qtde);
-              });
-              final novoSaldo = (prod.qtdeOriginal - totalFilhos).clamp(0, double.infinity);
-              pai.produtos[i] = prod.copyWith(qtde: novoSaldo);
-            }
-            await BackendClient.pedidos.update(pai);
-          }
-        }
       } else {
         PedidoModel pedidoModel = form.toPedidoModel(pedido);
         // Validação: não permite gravar sem membro
         if (pedidoModel.users.isEmpty) {
-          throw Exception('O pedido precisa ter pelo menos um membro responsável');
+          throw Exception(
+              'O pedido precisa ter pelo menos um membro responsável');
         }
 
         // Validar saldo disponível se for pedido parcial
-        // Usa qtdeOriginal - Σ(filhos.qtde) via BackendClient — mesma fórmula
-        // da tela, garante que a validação nunca use produto.qtde corrompido.
         if (form.pai != null) {
           final pai = BackendClient.pedidos.getById(form.pai!);
-          final filhosExistentes = pai.pedidosFilhos
-              .map((id) => BackendClient.pedidos.getById(id))
-              .where((f) => !f.localizador.startsWith('NOTFOUND'))
-              .toList();
           for (final produtoFilho in pedidoModel.produtos) {
             final produtoPai = pai.produtos.firstWhereOrNull(
               (e) => e.produto.id == produtoFilho.produto.id,
             );
-            if (produtoPai == null) continue;
-            final totalDirecionado = filhosExistentes.fold<double>(0, (acc, filho) {
-              final fp = filho.produtos.where((p) => p.produto.id == produtoFilho.produto.id);
-              return acc + fp.fold<double>(0, (a, p) => a + p.qtde);
-            });
-            final saldoDisponivel = (produtoPai.qtdeOriginal - totalDirecionado).clamp(0, double.infinity);
-            if (produtoFilho.qtde.precision > saldoDisponivel.precision) {
+            if (produtoPai != null &&
+                (produtoFilho.qtde.toDouble().precision > produtoPai.qtde.toDouble().precision)) {
               NotificationService.showNegative(
                 'Saldo Insuficiente',
-                'O produto ${produtoPai.produto.nome} possui apenas ${saldoDisponivel.toKg()} disponíveis.',
+                'O produto ${produtoPai.produto.nome} possui apenas ${produtoPai.qtde}Kg disponíveis.',
               );
               return;
             }
@@ -407,12 +372,16 @@ class PedidoController {
         if (automatizacaoConfig.novoPedidoNoTopo) {
           final menorIndex = pedidosDaEtapa.isEmpty
               ? 0
-              : pedidosDaEtapa.map((e) => e.index).reduce((a, b) => a < b ? a : b);
+              : pedidosDaEtapa
+                  .map((e) => e.index)
+                  .reduce((a, b) => a < b ? a : b);
           pedidoModel.index = menorIndex - 1;
         } else {
           final maiorIndex = pedidosDaEtapa.isEmpty
               ? 0
-              : pedidosDaEtapa.map((e) => e.index).reduce((a, b) => a > b ? a : b);
+              : pedidosDaEtapa
+                  .map((e) => e.index)
+                  .reduce((a, b) => a > b ? a : b);
           pedidoModel.index = maiorIndex + 1;
         }
 
@@ -421,18 +390,20 @@ class PedidoController {
           final pai = BackendClient.pedidos.getById(form.pai!);
           pai.pedidosFilhos.add(pedidoModel.id);
 
-          // Ao se tornar mestre, apaga a data de entrega — 
+          // Ao se tornar mestre, apaga a data de entrega —
           // a entrega passa a ser controlada pelos parciais
           pai.deliveryAt = null;
-          
+
           // Deduct quantity physically from parent
           for (final produtoFilho in pedidoModel.produtos) {
-            final produtoPaiIndex = pai.produtos.indexWhere((e) => e.produto.id == produtoFilho.produto.id);
+            final produtoPaiIndex = pai.produtos
+                .indexWhere((e) => e.produto.id == produtoFilho.produto.id);
             if (produtoPaiIndex != -1) {
               final produtoPai = pai.produtos[produtoPaiIndex];
-              double newQtde = (produtoPai.qtde - produtoFilho.qtde).precision;
+              double newQtde = (produtoPai.qtde.toDouble() - produtoFilho.qtde.toDouble()).precision;
               if (newQtde < 0) newQtde = 0;
-              pai.produtos[produtoPaiIndex] = produtoPai.copyWith(qtde: newQtde);
+              pai.produtos[produtoPaiIndex] =
+                  produtoPai.copyWith(qtde: newQtde);
             }
           }
 
@@ -566,7 +537,7 @@ class PedidoController {
       NotificationService.showNegative(
         'Exclusão bloqueada',
         'O Pedido Mestre possui ${filhosReais.length} parcial(is) vinculado(s). '
-        'Exclua os parciais antes de excluir o Mestre.',
+            'Exclua os parciais antes de excluir o Mestre.',
       );
       return true;
     }
@@ -583,7 +554,10 @@ class PedidoController {
       deleteMessage: 'Todos seus dados do pedido apagados do sistema',
       infoMessage:
           'Não é possível excluir o pedido, pois ele está vinculado a uma ordem de produção.',
-      conditional: [...FirestoreClient.ordens.data, ...FirestoreClient.ordens.ordensArquivadas]
+      conditional: [
+        ...FirestoreClient.ordens.data,
+        ...FirestoreClient.ordens.ordensArquivadas
+      ]
           .expand((e) => e.produtos.map((e) => e.pedidoId))
           .any((e) => e == pedido.id),
     );
@@ -733,9 +707,9 @@ class PedidoController {
         }
       }
 
-      final novoSaldo = produto.qtdeOriginal - totalDirecionado;
+      final double novoSaldo = (produto.qtdeOriginal - totalDirecionado).toDouble();
       mestre.produtos[i] = produto.copyWith(
-        qtde: novoSaldo < 0 ? 0 : novoSaldo,
+        qtde: novoSaldo < 0 ? 0.0 : novoSaldo,
       );
     }
 
@@ -796,7 +770,7 @@ class PedidoController {
         NotificationService.showNegative(
           'Arquivamento bloqueado',
           'O Pedido Mestre ainda possui saldo não distribuído. '
-          'Distribua toda a quantidade nos parciais antes de arquivar.',
+              'Distribua toda a quantidade nos parciais antes de arquivar.',
         );
         return false;
       }
@@ -949,7 +923,8 @@ class PedidoController {
     return step.index;
   }
 
-  Future<void> onGeneratePDF(PedidoModel pedido, {RelatorioPedidoTipo? type}) async {
+  Future<void> onGeneratePDF(PedidoModel pedido,
+      {RelatorioPedidoTipo? type}) async {
     showLoadingDialog();
     try {
       final RelatorioPedidoViewModel relatorio = RelatorioPedidoViewModel();
@@ -964,9 +939,10 @@ class PedidoController {
           .toSet()
           .toList();
 
-      relatorio.tipo = type ?? (pedido.isMestre
-          ? RelatorioPedidoTipo.mestre
-          : RelatorioPedidoTipo.pedidos);
+      relatorio.tipo = type ??
+          (pedido.isMestre
+              ? RelatorioPedidoTipo.mestre
+              : RelatorioPedidoTipo.pedidos);
 
       final pedidosRelatorio =
           pedido.isMestre ? [pedido, ...pedido.getPedidosFilhos()] : [pedido];
@@ -1058,7 +1034,8 @@ class PedidoController {
     showLoadingDialog();
     try {
       // Atualização cirúrgica apenas do JSONB endereco no Supabase
-      await ClienteSupabaseCollection().updateObraEndereco(pedido.obra.id, endereco);
+      await ClienteSupabaseCollection()
+          .updateObraEndereco(pedido.obra.id, endereco);
       // Atualiza em memória
       pedido.obra.endereco = endereco;
       pedidoStream.update();
@@ -1104,7 +1081,6 @@ class PedidoController {
     );
   }
 
-
   void verificarTags(PedidoModel edit) {
     // Lógica antiga (que forçava etiqueta CDA) foi removida a pedido do usuário
   }
@@ -1116,10 +1092,9 @@ class PedidoController {
     return await showDialog<bool>(
           context: context,
           builder: (_) => AlertDialog(
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16)),
-            icon: Icon(Icons.info_outline,
-                size: 40, color: Colors.orange[700]),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            icon: Icon(Icons.info_outline, size: 40, color: Colors.orange[700]),
             title: const Text('Pedido Mestre'),
             content: Text(
               'A obra foi alterada. Este pedido possui $qtd '
