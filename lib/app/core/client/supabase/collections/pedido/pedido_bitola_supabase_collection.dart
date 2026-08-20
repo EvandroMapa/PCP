@@ -4,6 +4,8 @@ import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'package:supabase_flutter/supabase_flutter.dart' as sf;
+
 class PedidoBitolaSupabaseCollection extends PedidoBitolaCollection {
   static final PedidoBitolaSupabaseCollection _instance =
       PedidoBitolaSupabaseCollection._();
@@ -45,15 +47,35 @@ class PedidoBitolaSupabaseCollection extends PedidoBitolaCollection {
     }
   }
 
+  bool _isListen = false;
   @override
   Future<void> listen() async {
+    if (_isListen) return;
+    _isListen = true;
     SupabaseService.client
-        .from(tableName)
-        .stream(primaryKey: ['id']).listen((List<Map<String, dynamic>> data) {
-      final produtos =
-          data.map((e) => PedidoBitolaModel.fromSupabaseMap(e)).toList();
-      dataStream.add(produtos);
-    });
+        .channel('pedido_bitolas_realtime')
+        .onPostgresChanges(
+          event: sf.PostgresChangeEvent.all,
+          schema: 'public',
+          table: tableName,
+          callback: (payload) {
+            if (payload.eventType == sf.PostgresChangeEvent.update) {
+              final newRecord = payload.newRecord;
+              final id = newRecord['id']?.toString();
+              if (id != null) {
+                final currentList = List<PedidoBitolaModel>.from(data);
+                final idx = currentList.indexWhere((e) => e.id == id);
+                if (idx != -1) {
+                  currentList[idx] = PedidoBitolaModel.fromSupabaseMap(newRecord);
+                  dataStream.add(currentList);
+                  return;
+                }
+              }
+            }
+            fetch();
+          },
+        )
+        .subscribe();
   }
 
   Future<List<PedidoBitolaModel>> getByPedidoId(String pedidoId) async {

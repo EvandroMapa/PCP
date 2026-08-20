@@ -18,6 +18,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/pedido_col
 import 'package:aco_plus/app/core/client/supabase/collections/elemento/elemento_supabase_collection.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as sf;
 
 class PedidoSupabaseCollection extends PedidoCollection {
   static final PedidoSupabaseCollection _instance =
@@ -236,18 +237,24 @@ class PedidoSupabaseCollection extends PedidoCollection {
     };
 
     SupabaseService.client
-        .from(name)
-        .stream(primaryKey: ['id'])
-        .eq('is_archived', false)
-        .listen((List<Map<String, dynamic>> data) {
-          _realtimeDebounce?.cancel();
-          _realtimeDebounce =
-              Timer(const Duration(milliseconds: 1000), () async {
-            if (!kanbanCtrl.isDropLocked && !_optimisticCooldown && !ElementoSupabaseCollection.isImportando) {
-              await start(lock: false);
-            }
-          });
-        });
+        .channel('pedidos_realtime')
+        .onPostgresChanges(
+          event: sf.PostgresChangeEvent.all,
+          schema: 'public',
+          table: name,
+          callback: (_) {
+            _realtimeDebounce?.cancel();
+            _realtimeDebounce =
+                Timer(const Duration(milliseconds: 1000), () async {
+              if (!kanbanCtrl.isDropLocked &&
+                  !_optimisticCooldown &&
+                  !ElementoSupabaseCollection.isImportando) {
+                await start(lock: false);
+              }
+            });
+          },
+        )
+        .subscribe();
   }
 
 
