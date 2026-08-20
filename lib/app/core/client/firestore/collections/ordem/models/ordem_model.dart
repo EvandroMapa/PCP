@@ -207,9 +207,17 @@ class OrdemModel {
     if (pedidos.isEmpty) {
       return PedidoBitolaStatus.aguardandoProducao;
     }
-    if (qtdePronto() == quantideTotal()) {
+    final pronto = qtdePronto();
+    final total = quantideTotal();
+
+    if (total > 0 && pronto >= total) {
       return PedidoBitolaStatus.pronto;
-    } else if (qtdeProduzindo() > 0) {
+    } else if (qtdeProduzindo() > 0 ||
+        pronto > 0 ||
+        produtos.any((e) =>
+            e.status.status == PedidoBitolaStatus.produzindo ||
+            e.status.status == PedidoBitolaStatus.pronto ||
+            e.status.status == PedidoBitolaStatus.aguardaSegundaEtapa)) {
       return PedidoBitolaStatus.produzindo;
     } else {
       return PedidoBitolaStatus.aguardandoProducao;

@@ -1,6 +1,7 @@
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/services/keyboard_visible_service.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
+import 'package:aco_plus/app/core/services/supabase_keepalive_service.dart';
 import 'package:aco_plus/app/core/services/preferences_service.dart';
 
 abstract class Service {
@@ -37,6 +38,9 @@ abstract class Service {
 
     // Carrega todas as coleções do Supabase (queries pesadas)
     await AppSupabaseClient.init();
+
+    // Mantém o Supabase ativo (ping + health check dos canais Realtime)
+    SupabaseKeepAliveService.instance.start();
 
     // Carrega configs (logo, kanban width, etc.)
     for (final service in _heavyServices) {

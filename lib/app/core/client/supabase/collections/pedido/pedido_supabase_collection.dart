@@ -631,6 +631,10 @@ class PedidoSupabaseCollection extends PedidoCollection {
           alvo.statusess.clear();
         }
 
+        if (status == PedidoBitolaStatus.separado) {
+          alvo.materiaPrima = null;
+        }
+
         if (alvo.statusess.isEmpty ||
             alvo.statusess.last.status != status) {
           alvo.statusess.add(PedidoBitolaStatusModel.create(status));

@@ -300,13 +300,14 @@ class OrdemController {
       }
     }
 
-    final List<(PedidoBitolaModel, PedidoBitolaStatus)> statusUpdates = [];
+    final List<(PedidoBitolaModel, PedidoBitolaStatus)> statusUpdatesRemovidos = [];
+    final List<(PedidoBitolaModel, PedidoBitolaStatus)> statusUpdatesMantidos = [];
     final List<(PedidoBitolaModel, MateriaPrimaModel?)> mpUpdates = [];
     final Set<String> pedidosAfetados = {};
 
     for (PedidoBitolaModel produto in ordem.produtos) {
       if (!ordemEditada.produtos.any((e) => e.id == produto.id)) {
-        statusUpdates.add((produto, PedidoBitolaStatus.separado));
+        statusUpdatesRemovidos.add((produto, PedidoBitolaStatus.separado));
         pedidosAfetados.add(produto.pedidoId);
         if (produto.materiaPrima != null) {
           mpUpdates.add((produto, null));
@@ -328,22 +329,30 @@ class OrdemController {
         newStatus = PedidoBitolaStatus.aguardandoProducao;
         produto.statusess.add(PedidoBitolaStatusModel.create(newStatus));
       }
-      statusUpdates.add((produto, newStatus));
+      statusUpdatesMantidos.add((produto, newStatus));
     }
 
     if (FirestoreClient.pedidos is PedidoSupabaseCollection) {
       final supabaseColl = FirestoreClient.pedidos as PedidoSupabaseCollection;
       await Future.wait([
         if (mpUpdates.isNotEmpty) supabaseColl.updateProdutosMateriaPrima(mpUpdates),
-        if (statusUpdates.isNotEmpty) supabaseColl.updateProdutosStatus(statusUpdates),
+        if (statusUpdatesRemovidos.isNotEmpty)
+          supabaseColl.updateProdutosStatus(statusUpdatesRemovidos, clear: true),
+        if (statusUpdatesMantidos.isNotEmpty)
+          supabaseColl.updateProdutosStatus(statusUpdatesMantidos, clear: false),
       ]);
     } else {
       for (var update in mpUpdates) {
         await FirestoreClient.pedidos
             .updateProdutoMateriaPrima(update.$1, update.$2);
       }
-      for (var update in statusUpdates) {
-        await FirestoreClient.pedidos.updateProdutoStatus(update.$1, update.$2);
+      for (var update in statusUpdatesRemovidos) {
+        await FirestoreClient.pedidos
+            .updateProdutoStatus(update.$1, update.$2, clear: true);
+      }
+      for (var update in statusUpdatesMantidos) {
+        await FirestoreClient.pedidos
+            .updateProdutoStatus(update.$1, update.$2);
       }
     }
 

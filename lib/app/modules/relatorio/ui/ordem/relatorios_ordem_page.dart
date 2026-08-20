@@ -74,6 +74,18 @@ String _duracao(DateTime? inicio, DateTime? fim) {
 String _fmt(DateTime? d) =>
     d != null ? DateFormat("dd/MM/yy HH:mm").format(d) : '—';
 
+// ─── Enums de Filtro ─────────────────────────────────────────────────────────
+
+enum RelatorioOrdemFiltroStatus {
+  todas('Todas'),
+  concluidas('Concluídas'),
+  produzindo('Em Produção'),
+  aguardando('Aguardando');
+
+  final String label;
+  const RelatorioOrdemFiltroStatus(this.label);
+}
+
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 class RelatoriosOrdemPage extends StatefulWidget {
@@ -84,6 +96,7 @@ class RelatoriosOrdemPage extends StatefulWidget {
 }
 
 class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
+  RelatorioOrdemFiltroStatus _filtroStatus = RelatorioOrdemFiltroStatus.todas;
   DateTimeRange? _periodo = DateTimeRange(
     start: DateTime.now().subtract(const Duration(days: 7)),
     end: DateTime.now(),
@@ -92,13 +105,33 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
   String? _expandidoId;
 
   List<OrdemModel> _filtrarOrdens(List<OrdemModel> todas) {
-    // Filtra apenas as produzidas: arquivadas OU todos os produtos prontos
-    var lista = todas.where((o) {
-      if (o.isArchived) return true;
-      final prods = o.produtos;
-      return prods.isNotEmpty &&
-          prods.every((p) => p.status.status == PedidoBitolaStatus.pronto);
-    }).toList();
+    var lista = todas.toList();
+
+    // Filtro por Status
+    switch (_filtroStatus) {
+      case RelatorioOrdemFiltroStatus.todas:
+        break;
+      case RelatorioOrdemFiltroStatus.concluidas:
+        lista = lista.where((o) {
+          if (o.isArchived) return true;
+          final prods = o.produtos;
+          return prods.isNotEmpty &&
+              prods.every((p) => p.status.status == PedidoBitolaStatus.pronto);
+        }).toList();
+        break;
+      case RelatorioOrdemFiltroStatus.produzindo:
+        lista = lista
+            .where((o) => !o.isArchived && o.status == PedidoBitolaStatus.produzindo)
+            .toList();
+        break;
+      case RelatorioOrdemFiltroStatus.aguardando:
+        lista = lista
+            .where((o) =>
+                !o.isArchived &&
+                o.status == PedidoBitolaStatus.aguardandoProducao)
+            .toList();
+        break;
+    }
 
     // Filtro bitola
     if (_bitola != null) {
@@ -118,11 +151,8 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
     }
 
     lista.sort((a, b) {
-      final ia = _ordemInicio(a);
-      final ib = _ordemInicio(b);
-      if (ia == null && ib == null) return 0;
-      if (ia == null) return 1;
-      if (ib == null) return -1;
+      final ia = _ordemInicio(a) ?? a.createdAt;
+      final ib = _ordemInicio(b) ?? b.createdAt;
       return ib.compareTo(ia); // mais recentes primeiro
     });
 
@@ -249,6 +279,18 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       child: Row(
         children: [
+          // Status
+          Expanded(
+            child: AppDropDown<RelatorioOrdemFiltroStatus>(
+              label: 'Status',
+              itens: RelatorioOrdemFiltroStatus.values,
+              item: _filtroStatus,
+              itemLabel: (e) => e.label,
+              onSelect: (e) => setState(
+                  () => _filtroStatus = e ?? RelatorioOrdemFiltroStatus.todas),
+            ),
+          ),
+          const SizedBox(width: 10),
           // Bitola
           Expanded(
             child: AppDropDown<BitolaModel?>(
@@ -462,24 +504,21 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
                             Row(children: [
                               Text(ordem.localizator,
                                   style: AppCss.mediumBold),
-                              if (ordem.isArchived) ...[
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
-                                        color: Colors.grey[300]!),
-                                  ),
-                                  child: Text('Arquivada',
-                                      style: AppCss.minimumRegular
-                                          .setSize(11)
-                                          .setColor(Colors.grey[500]!)),
-                                ),
-                              ],
+                              const SizedBox(width: 8),
+                              if (ordem.isArchived)
+                                _statusBadge('Arquivada', Colors.grey[700]!,
+                                    Colors.grey[100]!, Colors.grey[300]!)
+                              else if (ordem.status == PedidoBitolaStatus.pronto)
+                                _statusBadge('Concluída', Colors.green[700]!,
+                                    Colors.green[50]!, Colors.green[200]!)
+                              else if (ordem.status == PedidoBitolaStatus.produzindo)
+                                _statusBadge('Em Produção', Colors.orange[800]!,
+                                    Colors.orange[50]!, Colors.orange[300]!)
+                              else
+                                _statusBadge('Aguardando', Colors.blueGrey[700]!,
+                                    Colors.blueGrey[50]!, Colors.blueGrey[200]!),
                             ]),
+                            const SizedBox(height: 2),
                             Text(
                               'Bitola ${ordem.produto.descricaoReplaced}mm · ${totalKg.toKg()}',
                               style: AppCss.minimumRegular
@@ -498,7 +537,7 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
                   ]),
                   const SizedBox(height: 10),
                   // Linha de tempo
-                  _linhaTempoOrdem(inicio, fim, dur),
+                  _linhaTempoOrdem(ordem, inicio, fim, dur),
                 ],
               ),
             ),
@@ -513,19 +552,77 @@ class _RelatoriosOrdemPageState extends State<RelatoriosOrdemPage> {
     );
   }
 
-  Widget _linhaTempoOrdem(DateTime? inicio, DateTime? fim, String dur) {
+  Widget _statusBadge(
+      String texto, Color corTexto, Color corFundo, Color corBorda) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: corFundo,
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(color: corBorda),
+      ),
+      child: Text(
+        texto,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: corTexto,
+        ),
+      ),
+    );
+  }
+
+  Widget _linhaTempoOrdem(
+      OrdemModel ordem, DateTime? inicio, DateTime? fim, String dur) {
+    final emProducao = ordem.status == PedidoBitolaStatus.produzindo;
+    final aguardando = ordem.status == PedidoBitolaStatus.aguardandoProducao;
+
+    final fimTexto = emProducao
+        ? 'Em andamento'
+        : aguardando
+            ? 'Na fila'
+            : _fmt(fim);
+    final fimCor = emProducao
+        ? Colors.orange[800]!
+        : aguardando
+            ? Colors.blueGrey[600]!
+            : Colors.green[700]!;
+
+    final duracaoTexto = emProducao && inicio != null
+        ? _duracao(inicio, DateTime.now())
+        : aguardando
+            ? '—'
+            : dur;
+
     return Row(children: [
-      _tempoChip(Icons.play_arrow_rounded, _fmt(inicio), Colors.blue[700]!,
-          'Início'),
+      _tempoChip(
+        Icons.play_arrow_rounded,
+        _fmt(inicio),
+        inicio != null ? Colors.blue[700]! : Colors.grey[400]!,
+        'Início',
+      ),
       const Padding(
         padding: EdgeInsets.symmetric(horizontal: 6),
         child:
             Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Color(0xFFCBD5E1)),
       ),
       _tempoChip(
-          Icons.stop_rounded, _fmt(fim), Colors.green[700]!, 'Fim'),
+        emProducao
+            ? Icons.sync_rounded
+            : aguardando
+                ? Icons.schedule_rounded
+                : Icons.stop_rounded,
+        fimTexto,
+        fimCor,
+        'Fim',
+      ),
       const SizedBox(width: 8),
-      _tempoChip(Icons.timer_outlined, dur, Colors.orange[700]!, 'Duração'),
+      _tempoChip(
+        Icons.timer_outlined,
+        duracaoTexto,
+        emProducao ? Colors.orange[800]! : Colors.orange[700]!,
+        emProducao ? 'Decorrido' : 'Duração',
+      ),
     ]);
   }
 

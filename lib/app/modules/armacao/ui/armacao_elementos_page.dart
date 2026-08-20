@@ -175,7 +175,7 @@ class _ArmacaoElementosPageState extends State<ArmacaoElementosPage> {
                                   // 2 cards/linha no mobile, 3-4 no desktop
                                   final maxExtent = isSmall ? 300.0 : 350.0;
                                   // Altura: label + barra segmentada + info cabe confortavelmente
-                                  final mainExtent = isSmall ? 165.0 : 175.0;
+                                  final mainExtent = isSmall ? 190.0 : 200.0;
 
                                   return GridView.builder(
                                     controller: _scrollController,
