@@ -305,8 +305,25 @@ class OrdemController {
     final List<(PedidoBitolaModel, MateriaPrimaModel?)> mpUpdates = [];
     final Set<String> pedidosAfetados = {};
 
+    // 1. Identificar bitolas removidas comparando os IDs de referência originais vs editados
+    final Set<String> idsMantidos = ordemEditada.idPedidosProdutosRefs
+        .map((e) => (e['produtoId'] ?? e['bitola_id'] ?? '').toString().trim())
+        .where((id) => id.isNotEmpty)
+        .toSet();
+
+    final List<String> bitolaIdsRemovidos = [];
+    for (var ref in ordem.idPedidosProdutosRefs) {
+      final bId = (ref['produtoId'] ?? ref['bitola_id'] ?? '').toString().trim();
+      final pId = (ref['pedidoId'] ?? '').toString().trim();
+      if (bId.isNotEmpty && !idsMantidos.contains(bId)) {
+        bitolaIdsRemovidos.add(bId);
+        if (pId.isNotEmpty) pedidosAfetados.add(pId);
+      }
+    }
+
+    // Itens removidos que temos em memória
     for (PedidoBitolaModel produto in ordem.produtos) {
-      if (!ordemEditada.produtos.any((e) => e.id == produto.id)) {
+      if (!idsMantidos.contains(produto.id)) {
         statusUpdatesRemovidos.add((produto, PedidoBitolaStatus.separado));
         pedidosAfetados.add(produto.pedidoId);
         if (produto.materiaPrima != null) {
@@ -315,6 +332,7 @@ class OrdemController {
       }
     }
 
+    // Itens mantidos ou adicionados
     for (PedidoBitolaModel produto in ordemEditada.produtos) {
       pedidosAfetados.add(produto.pedidoId);
 
@@ -330,6 +348,24 @@ class OrdemController {
         produto.statusess.add(PedidoBitolaStatusModel.create(newStatus));
       }
       statusUpdatesMantidos.add((produto, newStatus));
+    }
+
+    // Atualização direta no Supabase para garantir que nenhuma bitola removida fique órfã
+    if (bitolaIdsRemovidos.isNotEmpty) {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      for (final bId in bitolaIdsRemovidos) {
+        try {
+          await SupabaseService.client.from('pedido_bitolas').update({
+            'status': 'separado',
+            'materia_prima_raw': null,
+            'statusess_raw': [
+              {'id': '${bId}_sep', 'status': 'separado', 'createdAt': now}
+            ],
+          }).eq('id', bId);
+        } catch (e) {
+          log('Erro ao resetar bitola removida $bId no Supabase: $e');
+        }
+      }
     }
 
     if (FirestoreClient.pedidos is PedidoSupabaseCollection) {
@@ -426,36 +462,55 @@ class OrdemController {
 
     if (await _isDeleteUnavailable(ordem)) return;
 
-    // Coleta todos os pedidos afetados e atualiza em paralelo
-    final pedidosProdutos = ordem.produtos
-        .map<PedidoBitolaModel>(
-          (e) => FirestoreClient.pedidos.getProdutoByPedidoId(
-            e.pedidoId,
-            e.id,
-          ),
-        )
-        .toList();
+    // Coleta todos os IDs de bitolas e pedidos da ordem
+    final List<String> bitolaIds = [];
+    final Set<String> pedidosAfetados = {};
+    for (var ref in ordem.idPedidosProdutosRefs) {
+      final bId = (ref['produtoId'] ?? ref['bitola_id'] ?? '').toString().trim();
+      final pId = (ref['pedidoId'] ?? '').toString().trim();
+      if (bId.isNotEmpty) bitolaIds.add(bId);
+      if (pId.isNotEmpty) pedidosAfetados.add(pId);
+    }
 
-    // Persiste status 'separado' direto na tabela pedido_bitolas
-    // (não usa update(pedido) genérico para evitar bug de instâncias divergentes)
-    final statusUpdates = pedidosProdutos
-        .map((pp) => (pp, PedidoBitolaStatus.separado))
-        .toList();
+    // Reset direto no Supabase para garantir que nenhuma bitola fique órfã
+    if (bitolaIds.isNotEmpty) {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      for (final bId in bitolaIds) {
+        try {
+          await SupabaseService.client.from('pedido_bitolas').update({
+            'status': 'separado',
+            'materia_prima_raw': null,
+            'statusess_raw': [
+              {'id': '${bId}_sep', 'status': 'separado', 'createdAt': now}
+            ],
+          }).eq('id', bId);
+        } catch (e) {
+          log('Erro ao resetar bitola $bId no onDelete: $e');
+        }
+      }
+    }
+
+    final List<(PedidoBitolaModel, PedidoBitolaStatus)> statusUpdates = [];
+    for (var p in ordem.produtos) {
+      statusUpdates.add((p, PedidoBitolaStatus.separado));
+      pedidosAfetados.add(p.pedidoId);
+    }
+
     if (FirestoreClient.pedidos is PedidoSupabaseCollection) {
       await (FirestoreClient.pedidos as PedidoSupabaseCollection)
           .updateProdutosStatus(statusUpdates, clear: true);
     } else {
       for (var update in statusUpdates) {
         await FirestoreClient.pedidos
-            .updateProdutoStatus(update.$1, update.$2);
+            .updateProdutoStatus(update.$1, update.$2, clear: true);
       }
     }
 
     // Atualiza status do pedido pai para cada pedido afetado
-    final pedidosAfetados = pedidosProdutos.map((pp) => pp.pedidoId).toSet();
     await Future.wait(pedidosAfetados.map((pedidoId) async {
-      final pedido = FirestoreClient.pedidos.getById(pedidoId);
-      if (pedido.produtos.isNotEmpty) {
+      final pedido = FirestoreClient.pedidos.data
+          .firstWhereOrNull((e) => e.id == pedidoId);
+      if (pedido != null && pedido.produtos.isNotEmpty) {
         await FirestoreClient.pedidos
             .updatePedidoStatus(pedido.produtos.first);
       }

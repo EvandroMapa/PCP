@@ -75,7 +75,7 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
         .where((e) => e.pedidoId == pedido.id)
         .toList();
 
-    // Buscar histórico de status dos elementos (tabela pode não existir ainda)
+    // Buscar histórico de status dos elementos
     final Map<String, List<ElementoStatusHistoryModel>> historico = {};
     try {
       final raw = await SupabaseService.client
@@ -159,18 +159,25 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Título
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Text('Árvore de Produção',
-                style: AppCss.largeBold.setSize(20)),
+        // Header e Campo de Busca
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Árvore de Produção',
+                  style: AppCss.largeBold.setSize(22).setColor(const Color(0xFF0F172A))),
+              const SizedBox(height: 2),
+              Text('Rastreabilidade completa do pedido: insumos de Corte & Dobra e Armação',
+                  style: AppCss.minimumRegular.setColor(Colors.grey[500]!)),
+              const SizedBox(height: 12),
+              _campoBusca(),
+            ],
           ),
         ),
-        // Busca
-        _campoBusca(),
-        const Divider(height: 1),
+        const Divider(height: 1, color: Color(0xFFE2E8F0)),
+
         // Conteúdo
         Expanded(
           child: _carregando
@@ -184,20 +191,27 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
   }
 
   Widget _campoBusca() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TextField(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFCBD5E1)),
+          ),
+          child: TextField(
             controller: _buscaCtrl,
             focusNode: _buscaFocus,
+            style: AppCss.minimumBold.setSize(13).setColor(const Color(0xFF1E293B)),
             decoration: InputDecoration(
-              hintText: 'Buscar pedido por localizador ou cliente...',
-              prefixIcon: const Icon(Icons.search, size: 20),
+              hintText: 'Digite o localizador do pedido ou nome do cliente...',
+              hintStyle: AppCss.minimumRegular.setColor(Colors.grey[400]!),
+              prefixIcon: Icon(Icons.search_rounded,
+                  size: 20, color: AppColors.primaryMain),
               suffixIcon: _buscaCtrl.text.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear, size: 18),
+                      icon: const Icon(Icons.clear_rounded, size: 18),
                       onPressed: () {
                         _buscaCtrl.clear();
                         setState(() {
@@ -210,59 +224,81 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
                       },
                     )
                   : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+              border: InputBorder.none,
               contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               isDense: true,
             ),
             onChanged: _filtrarSugestoes,
           ),
-          if (_mostrarSugestoes)
-            Container(
-              constraints: const BoxConstraints(maxHeight: 250),
-              margin: const EdgeInsets.only(top: 4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
+        ),
+        if (_mostrarSugestoes)
+          Container(
+            constraints: const BoxConstraints(maxHeight: 280),
+            margin: const EdgeInsets.only(top: 6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFCBD5E1)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
               child: ListView.separated(
                 shrinkWrap: true,
                 padding: EdgeInsets.zero,
                 itemCount: _sugestoes.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, __) =>
+                    const Divider(height: 1, color: Color(0xFFF1F5F9)),
                 itemBuilder: (_, i) {
                   final p = _sugestoes[i];
                   return ListTile(
                     dense: true,
-                    title: Text(p.localizador,
-                        style: AppCss.mediumBold.setSize(13)),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    leading: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryMain.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        p.localizador,
+                        style: AppCss.minimumBold
+                            .setSize(11)
+                            .setColor(AppColors.primaryMain),
+                      ),
+                    ),
+                    title: Text(p.cliente.nome,
+                        style: AppCss.mediumBold
+                            .setSize(13)
+                            .setColor(const Color(0xFF1E293B))),
                     subtitle: Text(
-                        '${p.cliente.nome} · ${p.obra.descricao}',
+                        '${p.obra.descricao} · ${p.pesoTotal.toKg()}',
                         style: AppCss.minimumRegular
                             .setSize(11)
-                            .setColor(Colors.grey[600]!)),
+                            .setColor(Colors.grey[500]!)),
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: p.status.color.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
+                        color: p.status.color.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         p.status.label,
-                        style: AppCss.minimumBold
-                            .setSize(10)
-                            .setColor(p.status.color),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: p.status.color,
+                        ),
                       ),
                     ),
                     onTap: () => _selecionarPedido(p),
@@ -270,25 +306,45 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
                 },
               ),
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 
   Widget _vazio() {
     return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.account_tree_outlined,
-              size: 48, color: Colors.grey[300]),
-          const SizedBox(height: 12),
-          Text(
-            'Selecione um pedido para ver a árvore de produção',
-            style:
-                AppCss.mediumRegular.setColor(Colors.grey[500]!),
-          ),
-        ],
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        margin: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.primaryMain.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(32),
+              ),
+              child: Icon(Icons.account_tree_outlined,
+                  size: 32, color: AppColors.primaryMain),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Rastreie um Pedido na Árvore de Produção',
+              style: AppCss.mediumBold
+                  .setSize(16)
+                  .setColor(const Color(0xFF1E293B)),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Utilize a barra de pesquisa acima para encontrar um pedido por localizador ou cliente.',
+              textAlign: TextAlign.center,
+              style: AppCss.minimumRegular
+                  .setColor(Colors.grey[500]!),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -300,33 +356,37 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
       children: [
         // Header do pedido
         _headerPedido(pedido),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
         // Seção Bitolas (CD)
         if (pedido.produtos.isNotEmpty) ...[
-          _secaoTitulo('Bitolas (Produção CD)',
-              Icons.straighten, pedido.produtos.length),
-          const SizedBox(height: 8),
+          _secaoTitulo('Corte & Dobra (Bitolas)',
+              Icons.straighten_rounded, pedido.produtos.length, AppColors.primaryMain),
+          const SizedBox(height: 10),
           ...pedido.produtos.map(_cardBitola),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
         ],
 
         // Seção Elementos (Armação)
         if (_elementos.isNotEmpty) ...[
-          _secaoTitulo('Elementos (Armação)',
-              Icons.construction, _elementos.length),
-          const SizedBox(height: 8),
+          _secaoTitulo('Armação (Elementos Estruturais)',
+              Icons.construction_rounded, _elementos.length, const Color(0xFF0D9488)),
+          const SizedBox(height: 10),
           ..._elementos.map(_cardElemento),
         ],
 
         if (pedido.produtos.isEmpty && _elementos.isEmpty)
-          Padding(
+          Container(
             padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
             child: Center(
               child: Text(
-                'Nenhum produto ou elemento neste pedido.',
-                style: AppCss.mediumRegular
-                    .setColor(Colors.grey[500]!),
+                'Nenhum produto de corte e dobra ou elemento de armação encontrado para este pedido.',
+                style: AppCss.mediumRegular.setColor(Colors.grey[500]!),
               ),
             ),
           ),
@@ -336,61 +396,101 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
 
   Widget _headerPedido(PedidoModel pedido) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color: AppColors.primaryMain.withValues(alpha: 0.25)),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
               color: AppColors.primaryMain.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(Icons.description_outlined,
-                color: AppColors.primaryMain, size: 20),
+            child: Icon(Icons.receipt_outlined,
+                color: AppColors.primaryMain, size: 22),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(pedido.localizador,
-                    style: AppCss.largeBold.setSize(16)),
-                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryMain,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        pedido.localizador,
+                        style: AppCss.minimumBold
+                            .setSize(12)
+                            .setColor(Colors.white),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: pedido.status.color.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        pedido.status.label,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: pedido.status.color,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
                 Text(
                   '${pedido.cliente.nome} · ${pedido.obra.descricao}',
                   style: AppCss.minimumRegular
                       .setSize(12)
-                      .setColor(Colors.grey[600]!),
+                      .setColor(const Color(0xFF64748B)),
                 ),
               ],
             ),
           ),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: AppColors.primaryMain.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
-              pedido.pesoTotal.toKg(),
-              style: AppCss.mediumBold
-                  .setSize(13)
-                  .setColor(AppColors.primaryMain),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text('Volume Total',
+                    style: AppCss.minimumRegular
+                        .setSize(9)
+                        .setColor(Colors.grey[500]!)),
+                Text(
+                  pedido.pesoTotal.toKg(),
+                  style: AppCss.mediumBold
+                      .setSize(14)
+                      .setColor(AppColors.primaryMain),
+                ),
+              ],
             ),
           ),
         ],
@@ -398,24 +498,32 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
     );
   }
 
-  Widget _secaoTitulo(String titulo, IconData icon, int count) {
+  Widget _secaoTitulo(String titulo, IconData icon, int count, Color cor) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: Colors.grey[600]),
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: cor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, size: 16, color: cor),
+        ),
         const SizedBox(width: 8),
-        Text(titulo, style: AppCss.mediumBold.setSize(14)),
+        Text(titulo,
+            style: AppCss.mediumBold.setSize(14).setColor(const Color(0xFF0F172A))),
         const SizedBox(width: 8),
         Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
           decoration: BoxDecoration(
-            color: Colors.grey[200],
+            color: const Color(0xFFF1F5F9),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text('$count',
               style: AppCss.minimumBold
-                  .setSize(11)
-                  .setColor(Colors.grey[700]!)),
+                  .setSize(10)
+                  .setColor(const Color(0xFF64748B))),
         ),
       ],
     );
@@ -424,6 +532,7 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
   Widget _cardBitola(PedidoBitolaModel produto) {
     final inicio = _bitolaInicio(produto.statusess);
     final fim = _bitolaFim(produto.statusess);
+    final dur = _duracao(inicio, fim);
     final PedidoBitolaStatus status = produto.status.status;
 
     return Container(
@@ -431,19 +540,35 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-            color: status.color.withValues(alpha: 0.30)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          // Barra lateral colorida
+          // Ícone bitola
           Container(
-            width: 4,
-            height: 50,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-              color: status.color,
-              borderRadius: BorderRadius.circular(2),
+              color: status.color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Text(
+                produto.produto.descricaoReplaced,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: status.color,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -454,44 +579,31 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
               children: [
                 Row(
                   children: [
-                    Text(produto.produto.descricao,
-                        style: AppCss.mediumBold.setSize(13)),
+                    Text('Bitola ${produto.produto.descricaoReplaced} mm',
+                        style: AppCss.mediumBold
+                            .setSize(13)
+                            .setColor(const Color(0xFF0F172A))),
                     const SizedBox(width: 8),
                     _statusBadge(status.label, status.color),
+                    const Spacer(),
+                    Text(produto.qtde.toKg(),
+                        style: AppCss.mediumBold
+                            .setSize(13)
+                            .setColor(const Color(0xFF1E293B))),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(produto.qtde.toKg(),
-                    style: AppCss.minimumRegular
-                        .setSize(11)
-                        .setColor(Colors.grey[600]!)),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(Icons.play_arrow, size: 12,
-                        color: Colors.green[600]),
-                    const SizedBox(width: 4),
-                    Text(_fmt(inicio),
-                        style: AppCss.minimumRegular
-                            .setSize(11)
-                            .setColor(Colors.grey[700]!)),
+                    _timelineChip(Icons.play_arrow_rounded, _fmt(inicio),
+                        const Color(0xFF2563EB), 'Início'),
                     const SizedBox(width: 12),
-                    Icon(Icons.stop, size: 12,
-                        color: Colors.red[400]),
-                    const SizedBox(width: 4),
-                    Text(_fmt(fim),
-                        style: AppCss.minimumRegular
-                            .setSize(11)
-                            .setColor(Colors.grey[700]!)),
+                    _timelineChip(Icons.stop_rounded, _fmt(fim),
+                        const Color(0xFF059669), 'Fim'),
                     if (inicio != null && fim != null) ...[
                       const SizedBox(width: 12),
-                      Icon(Icons.timer_outlined, size: 12,
-                          color: Colors.blue[400]),
-                      const SizedBox(width: 4),
-                      Text(_duracao(inicio, fim),
-                          style: AppCss.minimumBold
-                              .setSize(11)
-                              .setColor(Colors.blue[600]!)),
+                      _timelineChip(Icons.timer_outlined, dur,
+                          const Color(0xFFD97706), 'Duração'),
                     ],
                   ],
                 ),
@@ -506,6 +618,7 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
   Widget _cardElemento(ElementoModel elemento) {
     final inicio = _elementoInicio(elemento.id);
     final fim = _elementoFim(elemento.id);
+    final dur = _duracao(inicio, fim);
     final historico = _historicoElementos[elemento.id] ?? [];
 
     return Container(
@@ -513,23 +626,31 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border:
-            Border.all(color: elemento.status.color.withValues(alpha: 0.30)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          // Header do Elemento
           Row(
             children: [
               Container(
-                width: 4,
-                height: 40,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
-                  color: elemento.status.color,
-                  borderRadius: BorderRadius.circular(2),
+                  color: elemento.status.color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                child: Icon(Icons.hub_outlined,
+                    size: 18, color: elemento.status.color),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -539,20 +660,22 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
                     Row(
                       children: [
                         Text(elemento.nome,
-                            style: AppCss.mediumBold.setSize(13)),
+                            style: AppCss.mediumBold
+                                .setSize(13)
+                                .setColor(const Color(0xFF0F172A))),
                         if (elemento.qtde > 1) ...[
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 1),
                             decoration: BoxDecoration(
-                              color: Colors.grey[200],
+                              color: const Color(0xFFF1F5F9),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text('x${elemento.qtde}',
                                 style: AppCss.minimumBold
                                     .setSize(10)
-                                    .setColor(Colors.grey[700]!)),
+                                    .setColor(const Color(0xFF475569))),
                           ),
                         ],
                         const SizedBox(width: 8),
@@ -560,7 +683,7 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
                             elemento.status.label, elemento.status.color),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(elemento.pesoTotal.toKg(),
                         style: AppCss.minimumRegular
                             .setSize(11)
@@ -570,69 +693,54 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
               ),
               if (elemento.qtde > 1 && elemento.qtdePronto > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(8),
+                    color: const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFA7F3D0)),
                   ),
-                  child: Text(
-                      '${elemento.qtdePronto}/${elemento.qtde}',
+                  child: Text('${elemento.qtdePronto}/${elemento.qtde} prontas',
                       style: AppCss.minimumBold
-                          .setSize(11)
-                          .setColor(Colors.green[700]!)),
+                          .setSize(10)
+                          .setColor(const Color(0xFF059669))),
                 ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
+
           // Datas
-          Padding(
-            padding: const EdgeInsets.only(left: 16),
-            child: Row(
-              children: [
-                Icon(Icons.play_arrow, size: 12,
-                    color: Colors.green[600]),
-                const SizedBox(width: 4),
-                Text(_fmt(inicio),
-                    style: AppCss.minimumRegular
-                        .setSize(11)
-                        .setColor(Colors.grey[700]!)),
+          Row(
+            children: [
+              _timelineChip(Icons.play_arrow_rounded, _fmt(inicio),
+                  const Color(0xFF2563EB), 'Início'),
+              const SizedBox(width: 12),
+              _timelineChip(Icons.stop_rounded, _fmt(fim),
+                  const Color(0xFF059669), 'Fim'),
+              if (inicio != null && fim != null) ...[
                 const SizedBox(width: 12),
-                Icon(Icons.stop, size: 12,
-                    color: Colors.red[400]),
-                const SizedBox(width: 4),
-                Text(_fmt(fim),
-                    style: AppCss.minimumRegular
-                        .setSize(11)
-                        .setColor(Colors.grey[700]!)),
-                if (inicio != null && fim != null) ...[
-                  const SizedBox(width: 12),
-                  Icon(Icons.timer_outlined, size: 12,
-                      color: Colors.blue[400]),
-                  const SizedBox(width: 4),
-                  Text(_duracao(inicio, fim),
-                      style: AppCss.minimumBold
-                          .setSize(11)
-                          .setColor(Colors.blue[600]!)),
-                ],
+                _timelineChip(Icons.timer_outlined, dur,
+                    const Color(0xFFD97706), 'Duração'),
               ],
-            ),
+            ],
           ),
 
           // Posições
           if (elemento.posicoes.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.only(left: 16),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFF1F5F9)),
+              ),
               child: Column(
                 children: elemento.posicoes.map((pos) {
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
+                    padding: const EdgeInsets.symmetric(vertical: 2),
                     child: Row(
                       children: [
-                        Icon(Icons.subdirectory_arrow_right,
-                            size: 14, color: Colors.grey[400]),
-                        const SizedBox(width: 6),
                         Container(
                           width: 6,
                           height: 6,
@@ -641,14 +749,30 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
                             shape: BoxShape.circle,
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             '${pos.nome} · ${pos.produto?.descricao ?? "—"} · ${pos.pesoKg.toKg()}',
                             style: AppCss.minimumRegular
                                 .setSize(11)
-                                .setColor(Colors.grey[600]!),
+                                .setColor(const Color(0xFF475569)),
                             overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: pos.status.color.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            pos.status.label,
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: pos.status.color,
+                            ),
                           ),
                         ),
                       ],
@@ -661,26 +785,25 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
 
           // Histórico timeline
           if (historico.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.only(left: 16),
+            const SizedBox(height: 6),
+            Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
               child: ExpansionTile(
                 tilePadding: EdgeInsets.zero,
-                childrenPadding: EdgeInsets.zero,
+                childrenPadding: const EdgeInsets.symmetric(vertical: 4),
                 dense: true,
-                title: Text('Histórico de Status',
+                title: Text('Ver Histórico de Status',
                     style: AppCss.minimumBold
                         .setSize(11)
-                        .setColor(Colors.grey[600]!)),
+                        .setColor(const Color(0xFF64748B))),
                 children: historico.map((h) {
                   return Padding(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 2),
+                    padding: const EdgeInsets.symmetric(vertical: 2),
                     child: Row(
                       children: [
                         Container(
-                          width: 8,
-                          height: 8,
+                          width: 6,
+                          height: 6,
                           decoration: BoxDecoration(
                             color: h.status.color,
                             shape: BoxShape.circle,
@@ -691,7 +814,7 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
                           '${h.status.label} — ${_fmt(h.createdAt)}',
                           style: AppCss.minimumRegular
                               .setSize(11)
-                              .setColor(Colors.grey[700]!),
+                              .setColor(const Color(0xFF334155)),
                         ),
                         if (h.qtdePronto > 0) ...[
                           const SizedBox(width: 6),
@@ -714,17 +837,38 @@ class _ArvoreProducaoPageState extends State<ArvoreProducaoPage> {
     );
   }
 
+  Widget _timelineChip(IconData icon, String valor, Color cor, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: cor),
+        const SizedBox(width: 3),
+        Text(
+          '$label: ',
+          style: AppCss.minimumRegular.setSize(10).setColor(Colors.grey[500]!),
+        ),
+        Text(
+          valor,
+          style: AppCss.minimumBold.setSize(11).setColor(cor),
+        ),
+      ],
+    );
+  }
+
   Widget _statusBadge(String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.30)),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(5),
       ),
       child: Text(
-        label.toUpperCase(),
-        style: AppCss.minimumBold.setSize(9).setColor(color),
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
       ),
     );
   }

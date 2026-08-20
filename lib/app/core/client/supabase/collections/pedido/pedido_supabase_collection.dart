@@ -618,11 +618,14 @@ class PedidoSupabaseCollection extends PedidoCollection {
       for (var update in updates) {
         final produto = update.$1;
         final status = update.$2;
-        final pedido = getById(produto.pedidoId);
-        pedidoIds.add(pedido.id);
+        final pId = produto.pedidoId;
+        if (pId.isNotEmpty) {
+          pedidoIds.add(pId);
+        }
 
+        final pedido = data.firstWhereOrNull((e) => e.id == pId);
         final pedidoProduto =
-            pedido.produtos.firstWhereOrNull((e) => e.id == produto.id);
+            pedido?.produtos.firstWhereOrNull((e) => e.id == produto.id);
         // Fallback: se não encontrar no cache do pedido, usa o próprio objeto
         // (evita pular silenciosamente e deixar status órfão)
         final alvo = pedidoProduto ?? produto;
@@ -640,7 +643,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
           alvo.statusess.add(PedidoBitolaStatusModel.create(status));
         }
 
-        payload.add(alvo.toSupabaseMap(pedido.id));
+        payload.add(alvo.toSupabaseMap(pId));
       }
 
       if (payload.isNotEmpty) {
@@ -651,11 +654,13 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
       // Gatilho: atualiza a tabela pai 'pedidos' para os pedidos afetados (em paralelo)
       if (pedidoIds.isNotEmpty) {
-        await Future.wait(pedidoIds.map((pId) {
-          final pedido = getById(pId);
-          return SupabaseService.client
-              .from(name)
-              .update({'index': pedido.index}).eq('id', pId);
+        await Future.wait(pedidoIds.map((pId) async {
+          final pedido = data.firstWhereOrNull((e) => e.id == pId);
+          if (pedido != null) {
+            return SupabaseService.client
+                .from(name)
+                .update({'index': pedido.index}).eq('id', pId);
+          }
         }));
       }
 
