@@ -74,7 +74,7 @@ class AppSupabaseClient {
       pedidos.listen();
       ordens.listen();
       materiaPrima.listen();
-      pedidoArquivos.listen();
+      // pedidoArquivos.listen() removido — arquivos do pedido são salvos no campo JSON archives
       pedidoBitolas.listen();
       tags.listen();
       checklists.listen();
@@ -111,9 +111,7 @@ class AppSupabaseClient {
       await materiaPrima
           .start()
           .catchError((e) => log('Error starting materiaPrima: $e'));
-      await pedidoArquivos
-          .start()
-          .catchError((e) => log('Error starting pedidoArquivos: $e'));
+      // pedidoArquivos.start() removido — arquivos carregados via PedidoModel
       await pedidoBitolas
           .start()
           .catchError((e) => log('Error starting pedidoBitolas: $e'));

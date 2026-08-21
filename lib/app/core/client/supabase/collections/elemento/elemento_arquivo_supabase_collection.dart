@@ -12,6 +12,23 @@ class ElementoArquivoSupabaseCollection {
     await fetch();
   }
 
+  Future<List<ElementoArquivoModel>> fetchByElementoId(String elementoId) async {
+    try {
+      final response = await SupabaseService.client
+          .from(tableName)
+          .select()
+          .eq('elemento_id', elementoId)
+          .order('criado_em', ascending: false);
+
+      final arquivos =
+          response.map((e) => ElementoArquivoModel.fromMap(e)).toList();
+      return arquivos;
+    } catch (e) {
+      print('Supabase Error (ElementoArquivo.fetchByElementoId): $e');
+      return [];
+    }
+  }
+
   Future<void> fetch() async {
     try {
       final response = await SupabaseService.client

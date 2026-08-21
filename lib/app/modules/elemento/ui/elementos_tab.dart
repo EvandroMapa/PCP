@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/dialogs/info_dialog.dart';
+import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:file_picker/file_picker.dart';
@@ -823,6 +824,32 @@ class _ElementoArquivosDialog extends StatefulWidget {
 }
 
 class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
+  bool _carregandoArquivos = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarArquivos();
+  }
+
+  Future<void> _carregarArquivos() async {
+    if (widget.elemento.arquivos.isEmpty) {
+      if (mounted) setState(() => _carregandoArquivos = true);
+      final arqs = await AppSupabaseClient.elementoArquivos
+          .fetchByElementoId(widget.elemento.id);
+      if (mounted) {
+        final elementoSync = elementoCtrl.elementos.firstWhere(
+          (e) => e.id == widget.elemento.id,
+          orElse: () => widget.elemento,
+        );
+        elementoSync.arquivos
+          ..clear()
+          ..addAll(arqs);
+        setState(() => _carregandoArquivos = false);
+      }
+    }
+  }
+
   void _onUpload() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -906,7 +933,14 @@ class _ElementoArquivosDialogState extends State<_ElementoArquivosDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (elementoSync.arquivos.isEmpty)
+            if (_carregandoArquivos)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (elementoSync.arquivos.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 40),
                 child: Column(

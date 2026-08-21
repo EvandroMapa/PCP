@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
+import 'package:aco_plus/app/modules/elemento/elemento_arquivo_model.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sf;
@@ -90,34 +91,37 @@ class ElementoSupabaseCollection {
         }
       }
 
-      final results = await Future.wait([
-        safeFetch('elemento_posicoes'),
-        safeFetch('elemento_arquivos'),
-      ]);
+      final allPosicoes = await safeFetch('elemento_posicoes');
 
-      final allPosicoes = results[0];
-      final allArquivos = results[1];
-
-      // 3. Indexar por elemento_id — evita O(n×m) = 42M iterações
+      // 3. Indexar posições por elemento_id — evita O(n×m)
       final posicoesIndex = <String, List<Map<String, dynamic>>>{};
       for (final p in allPosicoes) {
         final eId = p['elemento_id'].toString();
         (posicoesIndex[eId] ??= []).add(p);
       }
-      final arquivosIndex = <String, List<Map<String, dynamic>>>{};
-      for (final a in allArquivos) {
-        final eId = a['elemento_id'].toString();
-        (arquivosIndex[eId] ??= []).add(a);
+
+      // Preserva arquivos existentes no cache local caso já tenham sido carregados
+      final existingArquivosMap = <String, List<ElementoArquivoModel>>{};
+      for (final existing in data) {
+        if (existing.arquivos.isNotEmpty) {
+          existingArquivosMap[existing.id] = existing.arquivos;
+        }
       }
 
       // 4. Montar modelos com lookup O(1)
       final elementos = elementosRaw.map((eMap) {
         final eId = eMap['id'].toString();
-        return ElementoModel.fromSupabaseMap(
+        final elem = ElementoModel.fromSupabaseMap(
           eMap,
           posicoesRaw: posicoesIndex[eId] ?? [],
-          arquivosRaw: arquivosIndex[eId] ?? [],
+          arquivosRaw: null,
         );
+        if (existingArquivosMap.containsKey(eId)) {
+          elem.arquivos
+            ..clear()
+            ..addAll(existingArquivosMap[eId]!);
+        }
+        return elem;
       }).toList();
 
       dataStream.add(elementos);
