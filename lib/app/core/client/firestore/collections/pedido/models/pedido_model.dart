@@ -559,18 +559,28 @@ class PedidoModel {
       produtos: produtos,
       tipo: PedidoTipo.values.firstWhere((e) => e.name == (map['tipo'] ?? 'cd'),
           orElse: () => PedidoTipo.cd),
-      statusess: statusRaw != null
+      statusess: (statusRaw != null && statusRaw.isNotEmpty)
           ? statusRaw.map((s) => PedidoStatusModel.fromSupabaseMap(s)).toList()
           : [
-              PedidoStatusModel.create(PedidoStatus.aguardandoProducaoCD),
+              PedidoStatusModel(
+                id: (map['id'] ?? '').toString(),
+                status: map['status'] != null
+                    ? PedidoStatus.values.firstWhere(
+                        (e) => e.name == map['status'],
+                        orElse: () => PedidoStatus.aguardandoProducaoCD,
+                      )
+                    : PedidoStatus.aguardandoProducaoCD,
+                createdAt: _parseDate(map['created_at']),
+              ),
             ],
-      steps: stepsRaw != null
+      steps: (stepsRaw != null && stepsRaw.isNotEmpty)
           ? stepsRaw.map((e) => PedidoStepModel.fromSupabaseMap(e)).toList()
           : [
               PedidoStepModel(
-                  id: (map['id'] ?? '').toString(),
-                  step: step,
-                  createdAt: DateTime.now())
+                id: (map['id'] ?? '').toString(),
+                step: step,
+                createdAt: _parseDate(map['created_at']),
+              )
             ],
       tags: tagsIds != null
           ? tagsIds.map((tid) => FirestoreClient.tags.getById(tid)).toList()

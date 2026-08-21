@@ -51,13 +51,12 @@ class PedidoSupabaseCollection extends PedidoCollection {
     _isStarted = true;
   }
 
-  // Não inclui elementos no join — carregados separadamente pelo ElementoSupabaseCollection
-  // e resolvidos por memória em _mapPedido. Evita query com 3k+ elementos + 9k posições.
+  // Não inclui elementos nem históricos pesados no join inicial.
+  // Elementos são carregados via ElementoSupabaseCollection (memória).
+  // Históricos são carregados sob demanda ou via campos diretos 'status' e 'step_id'.
   static const String _selectCompleto = '''
     *,
     pedido_bitolas (*),
-    pedido_status_history (*),
-    pedido_steps_history (*),
     pedido_tags (*)
   ''';
 

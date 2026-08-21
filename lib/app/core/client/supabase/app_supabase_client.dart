@@ -152,13 +152,12 @@ class AppSupabaseClient {
       await equipamentos
           .start()
           .catchError((e) => log('Error starting equipamentos: $e'));
-      await ordens.startOnlyArquivadas();
 
       // Pedidos depende de clientes/steps para mapeamento
       await pedidos
           .start()
           .catchError((e) => log('Error starting pedidos: $e'));
-      await pedidos.startOnlyArquivadas();
+      // Arquivados (pedidos e ordens) são carregados sob demanda ao abrir suas respectivas páginas
     } catch (e) {
       log('AppSupabaseClient: Critical error during init: $e');
     }
