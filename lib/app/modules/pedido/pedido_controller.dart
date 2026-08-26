@@ -296,8 +296,8 @@ class PedidoController {
           throw Exception(
               'O pedido precisa ter pelo menos um membro responsável');
         }
-        // Se NÃO é Mestre, qtdeOriginal deve acompanhar a qtde editada
-        if (!edit.isMestre) {
+        // Se NÃO é Mestre e nunca teve parciais, qtdeOriginal deve acompanhar a qtde editada
+        if (!edit.isMestre && edit.pedidosFilhos.isEmpty) {
           for (int i = 0; i < edit.produtos.length; i++) {
             edit.produtos[i] = edit.produtos[i].copyWith(
               qtdeOriginal: edit.produtos[i].qtde,
@@ -388,24 +388,19 @@ class PedidoController {
         await BackendClient.pedidos.add(pedidoModel);
         if (form.pai != null) {
           final pai = BackendClient.pedidos.getById(form.pai!);
-          pai.pedidosFilhos.add(pedidoModel.id);
+          if (!pai.pedidosFilhos.contains(pedidoModel.id)) {
+            pai.pedidosFilhos.add(pedidoModel.id);
+          }
 
           // Ao se tornar mestre, apaga a data de entrega —
           // a entrega passa a ser controlada pelos parciais
           pai.deliveryAt = null;
 
-          // Deduct quantity physically from parent
-          for (final produtoFilho in pedidoModel.produtos) {
-            final produtoPaiIndex = pai.produtos
-                .indexWhere((e) => e.produto.id == produtoFilho.produto.id);
-            if (produtoPaiIndex != -1) {
-              final produtoPai = pai.produtos[produtoPaiIndex];
-              double newQtde = (produtoPai.qtde.toDouble() - produtoFilho.qtde.toDouble()).precision;
-              if (newQtde < 0) newQtde = 0;
-              pai.produtos[produtoPaiIndex] =
-                  produtoPai.copyWith(qtde: newQtde);
-            }
-          }
+          // Recálculo determinístico de saldo de todos os produtos do mestre
+          recalcularSaldosMestreInterno(
+            pai,
+            novosFilhosAdicionais: [pedidoModel],
+          );
 
           await BackendClient.pedidos.update(pai);
         }
@@ -460,28 +455,14 @@ class PedidoController {
     // Exibe o spinner durante as operações async
     showLoadingDialog();
 
-    // Se é parcial, desvincular do mestre e devolver quantidade antes de deletar
-    if (pedido.isParcial) {
+    // Se é parcial, desvincular do mestre e recalcular quantidade antes de deletar
+    if (pedido.isParcial && pedido.pai != null && pedido.pai!.isNotEmpty) {
       try {
-        final mestre = FirestoreClient.pedidos.getById(pedido.pai!);
+        final mestre = BackendClient.pedidos.getById(pedido.pai!);
         mestre.pedidosFilhos.remove(pedido.id);
 
-        // Limpar também quaisquer IDs fantasma remanescentes no mestre
-        final idsValidos = mestre.getPedidosFilhos().map((f) => f.id).toSet();
-        mestre.pedidosFilhos.retainWhere((id) => idsValidos.contains(id));
-
-        // Devolver a quantidade do parcial de volta ao mestre
-        for (final produtoFilho in pedido.produtos) {
-          final idx = mestre.produtos.indexWhere(
-            (e) => e.produto.id == produtoFilho.produto.id,
-          );
-          if (idx != -1) {
-            final produtoMestre = mestre.produtos[idx];
-            mestre.produtos[idx] = produtoMestre.copyWith(
-              qtde: produtoMestre.qtde + produtoFilho.qtde,
-            );
-          }
-        }
+        // Recálculo determinístico de saldo de todos os produtos do mestre (já sem o filho)
+        recalcularSaldosMestreInterno(mestre);
 
         pedido.pai = null;
         // Salva o mestre com quantidade restaurada e sem o filho na lista
@@ -684,22 +665,38 @@ class PedidoController {
     BackendClient.pedidos.update(atualizado);
   }
 
-  /// Recalcula o saldo (qtde) de cada produto do mestre com base na fórmula:
-  /// qtde = qtdeOriginal - soma(qtde dos filhos para o mesmo produto)
-  /// Corrige inconsistências causadas por exclusões falhas de parciais.
-  Future<void> recalcularSaldo(PedidoModel mestre) async {
-    // Usa BackendClient (Supabase) — getPedidosFilhos() usa FirestoreClient (legado)
-    // e pode retornar lista incompleta, causando recálculo incorreto do saldo.
-    final filhos = mestre.pedidosFilhos
-        .map((id) => BackendClient.pedidos.getById(id))
-        .where((f) => !f.localizador.startsWith('NOTFOUND'))
-        .toList();
+  /// Recalcula o saldo (qtde) de cada produto do mestre de forma determinística:
+  /// qtde = max(0, qtdeOriginal - soma(qtde dos filhos ativos para a bitola))
+  /// Limpa também IDs fantasmas de parciais que não existem mais.
+  void recalcularSaldosMestreInterno(
+    PedidoModel mestre, {
+    List<PedidoModel>? novosFilhosAdicionais,
+  }) {
+    final todosFilhos = <PedidoModel>[];
+    final idsValidos = <String>{};
+
+    for (final id in mestre.pedidosFilhos) {
+      final f = BackendClient.pedidos.getById(id);
+      if (!f.localizador.startsWith('NOTFOUND')) {
+        todosFilhos.add(f);
+        idsValidos.add(f.id);
+      }
+    }
+    if (novosFilhosAdicionais != null) {
+      for (final nf in novosFilhosAdicionais) {
+        if (!idsValidos.contains(nf.id)) {
+          todosFilhos.add(nf);
+          idsValidos.add(nf.id);
+        }
+      }
+    }
+    mestre.pedidosFilhos.retainWhere((id) => idsValidos.contains(id));
 
     for (int i = 0; i < mestre.produtos.length; i++) {
       final produto = mestre.produtos[i];
-      double totalDirecionado = 0;
+      double totalDirecionado = 0.0;
 
-      for (final filho in filhos) {
+      for (final filho in todosFilhos) {
         for (final prodFilho in filho.produtos) {
           if (prodFilho.produto.id == produto.produto.id) {
             totalDirecionado += prodFilho.qtde;
@@ -707,11 +704,19 @@ class PedidoController {
         }
       }
 
-      final double novoSaldo = (produto.qtdeOriginal - totalDirecionado).toDouble();
-      mestre.produtos[i] = produto.copyWith(
-        qtde: novoSaldo < 0 ? 0.0 : novoSaldo,
-      );
+      final double novoSaldo = (produto.qtdeOriginal - totalDirecionado)
+          .clamp(0.0, double.infinity)
+          .toDouble()
+          .precision;
+      mestre.produtos[i] = produto.copyWith(qtde: novoSaldo);
     }
+  }
+
+  /// Recalcula o saldo (qtde) de cada produto do mestre com base na fórmula:
+  /// qtde = qtdeOriginal - soma(qtde dos filhos para o mesmo produto)
+  /// Corrige inconsistências causadas por exclusões falhas de parciais.
+  Future<void> recalcularSaldo(PedidoModel mestre) async {
+    recalcularSaldosMestreInterno(mestre);
 
     _ultimaGravacaoLocal = DateTime.now();
     pedidoStream.add(mestre);
@@ -831,7 +836,7 @@ class PedidoController {
           contextGlobal.mounted) {
         final arquivarMestre = await showDialog<bool>(
           context: contextGlobal,
-          builder: (_) => AlertDialog(
+          builder: (ctx) => AlertDialog(
             icon: Icon(Icons.archive_outlined,
                 size: 40, color: Colors.green[700]),
             title: const Text('Todos os parciais arquivados!'),
@@ -841,7 +846,7 @@ class PedidoController {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(_, false),
+                onPressed: () => Navigator.pop(ctx, false),
                 child: const Text('Agora não'),
               ),
               ElevatedButton(
@@ -849,7 +854,7 @@ class PedidoController {
                   backgroundColor: AppColors.primaryMain,
                   foregroundColor: Colors.white,
                 ),
-                onPressed: () => Navigator.pop(_, true),
+                onPressed: () => Navigator.pop(ctx, true),
                 child: const Text('Arquivar Mestre'),
               ),
             ],
@@ -1124,7 +1129,7 @@ class PedidoController {
 
   /// Propaga a obra do mestre para todos os pedidos parciais.
   Future<void> _propagarObraParaParciais(PedidoModel mestre) async {
-    final filhos = FirestoreClient.pedidos.data
+    final filhos = BackendClient.pedidos.data
         .where((p) => mestre.pedidosFilhos.contains(p.id))
         .toList();
 
