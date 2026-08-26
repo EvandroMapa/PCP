@@ -75,8 +75,30 @@ class EstoqueMovimentacaoSupabaseCollection {
                 dataStream.add(currentList);
                 return;
               }
+            } else if (payload.eventType == sf.PostgresChangeEvent.update) {
+              final newRecord = payload.newRecord;
+              final id = newRecord['id']?.toString();
+              if (id != null) {
+                final currentList = List<EstoqueMovimentacaoModel>.from(data);
+                final idx = currentList.indexWhere((e) => e.id == id);
+                if (idx != -1) {
+                  currentList[idx] =
+                      EstoqueMovimentacaoModel.fromSupabaseMap(newRecord);
+                  dataStream.add(currentList);
+                  return;
+                }
+              }
+            } else if (payload.eventType == sf.PostgresChangeEvent.delete) {
+              final oldRecord = payload.oldRecord;
+              final id = oldRecord['id']?.toString();
+              if (id != null) {
+                final currentList = List<EstoqueMovimentacaoModel>.from(data);
+                currentList.removeWhere((e) => e.id == id);
+                dataStream.add(currentList);
+                return;
+              }
             }
-            // Fallback para updates e deletes
+            // Fallback: só se o tratamento cirúrgico falhar
             fetch();
           },
         )

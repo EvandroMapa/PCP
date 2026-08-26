@@ -66,12 +66,35 @@ class PedidoBitolaSupabaseCollection extends PedidoBitolaCollection {
                 final currentList = List<PedidoBitolaModel>.from(data);
                 final idx = currentList.indexWhere((e) => e.id == id);
                 if (idx != -1) {
-                  currentList[idx] = PedidoBitolaModel.fromSupabaseMap(newRecord);
+                  currentList[idx] =
+                      PedidoBitolaModel.fromSupabaseMap(newRecord);
                   dataStream.add(currentList);
                   return;
                 }
               }
+            } else if (payload.eventType == sf.PostgresChangeEvent.insert) {
+              final newRecord = payload.newRecord;
+              final id = newRecord['id']?.toString();
+              if (id != null) {
+                final currentList = List<PedidoBitolaModel>.from(data);
+                if (!currentList.any((e) => e.id == id)) {
+                  currentList
+                      .add(PedidoBitolaModel.fromSupabaseMap(newRecord));
+                  dataStream.add(currentList);
+                }
+                return;
+              }
+            } else if (payload.eventType == sf.PostgresChangeEvent.delete) {
+              final oldRecord = payload.oldRecord;
+              final id = oldRecord['id']?.toString();
+              if (id != null) {
+                final currentList = List<PedidoBitolaModel>.from(data);
+                currentList.removeWhere((e) => e.id == id);
+                dataStream.add(currentList);
+                return;
+              }
             }
+            // Fallback: só se o tratamento cirúrgico falhar
             fetch();
           },
         )
