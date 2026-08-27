@@ -16,6 +16,7 @@ import 'package:collection/collection.dart';
 
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/pedido_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/elemento/elemento_supabase_collection.dart';
+import 'package:aco_plus/app/core/client/supabase/collections/ordem/ordem_supabase_collection.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as sf;
@@ -116,7 +117,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
   Future<void> fetchPedidosFaltantesDasOrdensAtivas() async {
     try {
       final ordensAtivas =
-          BackendClient.ordens.data.where((o) => !o.isArchived).toList();
+          OrdemSupabaseCollection().data.where((o) => !o.isArchived).toList();
       if (ordensAtivas.isEmpty) return;
 
       final Set<String> pedidosNecessarios = {};
