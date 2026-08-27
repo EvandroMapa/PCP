@@ -37,6 +37,10 @@ class OrdemModel {
 
           final produto =
               BackendClient.pedidos.getProdutoByPedidoId(pedidoId, produtoId);
+          if (produto.id.isEmpty ||
+              produto.pedido.localizador.startsWith('NOTFOUND')) {
+            continue;
+          }
           result.add(produto);
         } catch (_) {
           // Ignora produtos que falham ao carregar para evitar trava na UI
@@ -66,6 +70,7 @@ class OrdemModel {
         produtos.map((e) => e.pedido).map((e) => e.id).toSet().toList();
     return pedidosIds
         .map<PedidoModel>((e) => BackendClient.pedidos.getById(e))
+        .where((p) => !p.localizador.startsWith('NOTFOUND'))
         .toList();
   }
 

@@ -131,6 +131,8 @@ class PedidoCollection {
 
   Future<void> fetchByIds(List<String> ids) async {}
 
+  Future<void> fetchPedidosFaltantesDasOrdensAtivas() async {}
+
   Future<PedidoModel?> getByIdSupabase(String id) async => null;
 
   PedidoBitolaModel getProdutoByPedidoId(String pedidoId, String produtoId) =>

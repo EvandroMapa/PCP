@@ -103,9 +103,66 @@ class PedidoSupabaseCollection extends PedidoCollection {
 
       pedidosUnarchivedsStream.add(pedidos);
       dataStream.add(pedidos);
+
+      // Carrega cirurgicamente pedidos arquivados que pertencem a ordens ativas
+      await fetchPedidosFaltantesDasOrdensAtivas();
     } catch (e) {
       log('Supabase CRITICAL Error (Pedido.start): $e');
       NotificationService.showNegative('Erro ao Carregar Pedidos', e.toString());
+    }
+  }
+
+  @override
+  Future<void> fetchPedidosFaltantesDasOrdensAtivas() async {
+    try {
+      final ordensAtivas =
+          BackendClient.ordens.data.where((o) => !o.isArchived).toList();
+      if (ordensAtivas.isEmpty) return;
+
+      final Set<String> pedidosNecessarios = {};
+      for (final ordem in ordensAtivas) {
+        for (final ref in ordem.idPedidosProdutosRefs) {
+          final pId = ref['pedidoId'] ?? ref['pedido_id'] ?? '';
+          if (pId.isNotEmpty) {
+            pedidosNecessarios.add(pId);
+          }
+        }
+      }
+
+      if (pedidosNecessarios.isEmpty) return;
+
+      // Identifica quais IDs NÃO estão em memória (nem em data/unarchiveds, nem em pedidosArchiveds)
+      final Set<String> idsEmMemoria = {
+        ...data.map((p) => p.id),
+        ...pedidosArchiveds.map((p) => p.id),
+      };
+
+      final idsFaltantes = pedidosNecessarios.difference(idsEmMemoria).toList();
+      if (idsFaltantes.isEmpty) return;
+
+      log('Supabase (Pedido): Buscando cirurgicamente ${idsFaltantes.length} pedidos arquivados para ordens ativas...');
+
+      final response = await SupabaseService.client
+          .from(name)
+          .select(_selectCompleto)
+          .filter('id', 'in', '(${idsFaltantes.join(",")})');
+
+      if (response.isEmpty) return;
+
+      _rebuildElementosIndex();
+      final novosPedidos = response.map((pMap) => _mapPedido(pMap)).toList();
+
+      final Map<String, PedidoModel> mapArquivados = {
+        for (var p in pedidosArchiveds) p.id: p,
+      };
+      for (var p in novosPedidos) {
+        mapArquivados[p.id] = p;
+      }
+      pedidosArchivedsStream.add(mapArquivados.values.toList());
+
+      log('Supabase (Pedido): ${novosPedidos.length} pedidos arquivados adicionados ao cache para ordens ativas.');
+    } catch (e) {
+      log('Supabase Error (Pedido.fetchPedidosFaltantesDasOrdensAtivas): $e');
     }
   }
 

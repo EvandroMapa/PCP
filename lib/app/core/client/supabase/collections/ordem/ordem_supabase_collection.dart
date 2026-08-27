@@ -93,6 +93,9 @@ class OrdemSupabaseCollection extends OrdemCollection {
 
     ordensNaoArquivadasStream.add(ordensNaoArquivadas);
     dataStream.add(ordensNaoArquivadas);
+
+    // Garante que qualquer pedido arquivado referenciado nas ordens ativas esteja em cache
+    BackendClient.pedidos.fetchPedidosFaltantesDasOrdensAtivas();
   }
 
   bool _isListen = false;
