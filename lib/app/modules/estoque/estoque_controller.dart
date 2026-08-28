@@ -49,6 +49,7 @@ class EstoqueController {
     movimentacaoFiltroStream.add(EstoqueMovimentacaoFiltroModel());
     BackendClient.estoques.fetch();
     BackendClient.estoquesMovimentacao.fetch();
+    BackendClient.ordens.startOnlyArquivadas();
   }
 
   List<EstoqueModel> getEstoqueFiltrado(String search) {

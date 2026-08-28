@@ -296,8 +296,8 @@ class PedidoController {
           throw Exception(
               'O pedido precisa ter pelo menos um membro responsável');
         }
-        // Se NÃO é Mestre e nunca teve parciais, qtdeOriginal deve acompanhar a qtde editada
-        if (!edit.isMestre && edit.pedidosFilhos.isEmpty) {
+        // Se NÃO é Mestre e nunca teve parciais nem é parcial, qtdeOriginal deve acompanhar a qtde editada
+        if (!edit.isMestre && edit.pedidosFilhos.isEmpty && !edit.isParcial) {
           for (int i = 0; i < edit.produtos.length; i++) {
             edit.produtos[i] = edit.produtos[i].copyWith(
               qtdeOriginal: edit.produtos[i].qtde,
@@ -305,6 +305,51 @@ class PedidoController {
           }
         }
         verificarTags(edit);
+
+        // ── Validação se for edição de pedido parcial ──────────────────────
+        if (edit.isParcial && edit.pai != null && edit.pai!.isNotEmpty) {
+          final pai = BackendClient.pedidos.getById(edit.pai!);
+          if (!pai.localizador.startsWith('NOTFOUND')) {
+            final outrosFilhos = pai.pedidosFilhos
+                .where((id) => id != edit.id)
+                .map((id) => BackendClient.pedidos.getById(id))
+                .where((f) => !f.localizador.startsWith('NOTFOUND'))
+                .toList();
+
+            for (final produtoFilho in edit.produtos) {
+              final produtoPai = pai.produtos.firstWhereOrNull(
+                (e) => e.produto.id == produtoFilho.produto.id,
+              );
+              if (produtoPai != null) {
+                final double consumidoOutros =
+                    outrosFilhos.fold<double>(0.0, (acc, filho) {
+                  final fp = filho.produtos
+                      .where((p) => p.produto.id == produtoFilho.produto.id);
+                  return acc + fp.fold<double>(0.0, (a, p) => a + p.qtde);
+                });
+                final double saldoDisponivel =
+                    (produtoPai.qtdeOriginal - consumidoOutros)
+                        .clamp(0.0, double.infinity)
+                        .toDouble()
+                        .precision;
+
+                if (produtoFilho.qtde.toDouble().precision > saldoDisponivel) {
+                  NotificationService.showNegative(
+                    'Saldo Insuficiente',
+                    'O produto ${produtoPai.produto.nome} possui apenas ${saldoDisponivel.toKg()} disponíveis no mestre.',
+                    position: NotificationPosition.bottom,
+                  );
+                  return;
+                }
+              }
+            }
+          }
+        }
+
+        // ── Se for edição do próprio mestre, recalcula saldo interno ────────
+        if (edit.isMestre || edit.pedidosFilhos.isNotEmpty) {
+          recalcularSaldosMestreInterno(edit);
+        }
 
         // ── Caso 1: troca de obra no pedido mestre ──────────────────────
         if (edit.isMestre && pedido != null) {
@@ -326,6 +371,19 @@ class PedidoController {
         if (update != null) {
           pedidoStream.add(update);
           pedidoStream.update();
+
+          // ── Se for pedido parcial, recalcula e atualiza o pedido mestre ──
+          if (edit.isParcial && edit.pai != null && edit.pai!.isNotEmpty) {
+            final pai = BackendClient.pedidos.getById(edit.pai!);
+            if (!pai.localizador.startsWith('NOTFOUND')) {
+              if (!pai.pedidosFilhos.contains(edit.id)) {
+                pai.pedidosFilhos.add(edit.id);
+              }
+              recalcularSaldosMestreInterno(pai,
+                  novosFilhosAdicionais: [update]);
+              await BackendClient.pedidos.update(pai);
+            }
+          }
         }
       } else {
         PedidoModel pedidoModel = form.toPedidoModel(pedido);
@@ -676,10 +734,17 @@ class PedidoController {
     final idsValidos = <String>{};
 
     for (final id in mestre.pedidosFilhos) {
-      final f = BackendClient.pedidos.getById(id);
-      if (!f.localizador.startsWith('NOTFOUND')) {
-        todosFilhos.add(f);
-        idsValidos.add(f.id);
+      final filhoSubstituido =
+          novosFilhosAdicionais?.firstWhereOrNull((nf) => nf.id == id);
+      if (filhoSubstituido != null) {
+        todosFilhos.add(filhoSubstituido);
+        idsValidos.add(filhoSubstituido.id);
+      } else {
+        final f = BackendClient.pedidos.getById(id);
+        if (!f.localizador.startsWith('NOTFOUND')) {
+          todosFilhos.add(f);
+          idsValidos.add(f.id);
+        }
       }
     }
     if (novosFilhosAdicionais != null) {

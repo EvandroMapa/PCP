@@ -26,8 +26,7 @@ class EstoqueMovimentacaoSupabaseCollection {
       final response = await SupabaseService.client
           .from(name)
           .select()
-          .order('data_hora', ascending: false)
-          .limit(500);
+          .order('data_hora', ascending: false);
       final lista = List<Map<String, dynamic>>.from(response)
           .map((e) => EstoqueMovimentacaoModel.fromSupabaseMap(e))
           .toList();
@@ -69,9 +68,6 @@ class EstoqueMovimentacaoSupabaseCollection {
                 final novaMov = EstoqueMovimentacaoModel.fromSupabaseMap(newRecord);
                 final currentList = List<EstoqueMovimentacaoModel>.from(data);
                 currentList.insert(0, novaMov);
-                if (currentList.length > 500) {
-                  currentList.removeLast();
-                }
                 dataStream.add(currentList);
                 return;
               }

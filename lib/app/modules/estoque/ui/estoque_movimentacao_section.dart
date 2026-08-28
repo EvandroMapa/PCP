@@ -527,8 +527,12 @@ class _EstoqueMovimentacaoSectionState
     final hora =
         DateFormat("dd/MM/yyyy 'às' HH:mm").format(grupo.dataHora);
 
-    // Busca a referência da ordem
-    final ordem = BackendClient.ordens.data
+    // Busca a referência da ordem (ativa ou arquivada)
+    final todasOrdens = [
+      ...BackendClient.ordens.data,
+      ...BackendClient.ordens.ordensArquivadas,
+    ];
+    final ordem = todasOrdens
         .cast<dynamic>()
         .firstWhere(
           (o) => o.id == grupo.ordemId,
@@ -978,8 +982,12 @@ class _EstoqueMovimentacaoSectionState
                       Padding(
                         padding: const EdgeInsets.only(top: 3),
                         child: Builder(builder: (context) {
-                          // Busca o id da ordem para exibir
-                          final ordem = BackendClient.ordens.data
+                          // Busca o id da ordem para exibir (ativa ou arquivada)
+                          final todasOrdens = [
+                            ...BackendClient.ordens.data,
+                            ...BackendClient.ordens.ordensArquivadas,
+                          ];
+                          final ordem = todasOrdens
                               .cast<dynamic>()
                               .firstWhere(
                                 (o) => o.id == linha.ordemId,
