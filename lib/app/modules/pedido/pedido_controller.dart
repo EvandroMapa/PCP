@@ -86,6 +86,12 @@ class PedidoController {
     FirestoreClient.ordens.startOnlyArquivadas();
     _pagePollingTimer?.cancel();
 
+    // Se for pedido mestre, garante que os filhos arquivados (sem ordem ativa)
+    // estejam no cache para exibição correta na aba Bitolas.
+    if (pedido.pedidosFilhos.isNotEmpty) {
+      BackendClient.pedidos.fetchFilhosArquivadosDoPedido(pedido.pedidosFilhos);
+    }
+
     // Primeira atualização rápida após 1 segundo da abertura
     Future.delayed(const Duration(seconds: 1), () async {
       if (pedidoStream.hasValue) {
@@ -101,6 +107,12 @@ class PedidoController {
         if (updated != null) {
           await BackendClient.ordens.fetch();
           await BackendClient.ordens.startOnlyArquivadas();
+          // Re-busca os filhos arquivados após o fetch do mestre atualizado,
+          // pois a lista de pedidosFilhos pode ter sido atualizada.
+          if (updated.pedidosFilhos.isNotEmpty) {
+            await BackendClient.pedidos
+                .fetchFilhosArquivadosDoPedido(updated.pedidosFilhos);
+          }
           pedidoStream.add(updated);
           SchedulerBinding.instance.scheduleFrame();
         }

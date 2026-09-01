@@ -133,6 +133,10 @@ class PedidoCollection {
 
   Future<void> fetchPedidosFaltantesDasOrdensAtivas() async {}
 
+  /// Busca cirurgicamente os filhos de um pedido mestre que ainda não estão no cache.
+  /// Útil ao abrir a aba Bitolas de um mestre com filhos arquivados sem ordem ativa.
+  Future<void> fetchFilhosArquivadosDoPedido(List<String> idsFilhos) async {}
+
   Future<PedidoModel?> getByIdSupabase(String id) async => null;
 
   PedidoBitolaModel getProdutoByPedidoId(String pedidoId, String produtoId) =>

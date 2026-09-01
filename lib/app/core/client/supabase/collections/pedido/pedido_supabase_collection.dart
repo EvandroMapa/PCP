@@ -225,6 +225,48 @@ class PedidoSupabaseCollection extends PedidoCollection {
     }
   }
 
+  /// Busca cirurgicamente os filhos de um pedido mestre que ainda não estão no cache.
+  /// Útil ao abrir a aba Bitolas de um mestre com filhos arquivados sem ordem ativa.
+  @override
+  Future<void> fetchFilhosArquivadosDoPedido(List<String> idsFilhos) async {
+    if (idsFilhos.isEmpty) return;
+    try {
+      // Descobre quais filhos já estão em cache (ativos ou arquivados)
+      final Set<String> idsEmCache = {
+        ...data.map((p) => p.id),
+        ...pedidosArchiveds.map((p) => p.id),
+      };
+      final idsFaltantes = idsFilhos.where((id) => !idsEmCache.contains(id)).toList();
+      if (idsFaltantes.isEmpty) return;
+
+      log('Supabase (Pedido): Buscando ${idsFaltantes.length} filhos arquivados para aba Bitolas...');
+
+      final response = await SupabaseService.client
+          .from(name)
+          .select(_selectCompleto)
+          .filter('id', 'in', '(${idsFaltantes.join(",")})');
+
+      if (response.isEmpty) return;
+
+      _rebuildElementosIndex();
+      final novosPedidos = response.map((pMap) => _mapPedido(pMap)).toList();
+
+      // Merge com o cache de arquivados existente
+      final Map<String, PedidoModel> mapArquivados = {
+        for (var p in pedidosArchiveds) p.id: p,
+      };
+      for (var p in novosPedidos) {
+        mapArquivados[p.id] = p;
+      }
+      pedidosArchivedsStream.add(mapArquivados.values.toList());
+
+      log('Supabase (Pedido): ${novosPedidos.length} filhos arquivados adicionados ao cache.');
+    } catch (e) {
+      log('Supabase Error (Pedido.fetchFilhosArquivadosDoPedido): $e');
+    }
+  }
+
+
   /// Mapeia os dados do Supabase (com joins) para o PedidoModel.
   /// Elementos são resolvidos a partir do cache em memória do ElementoSupabaseCollection.
   PedidoModel _mapPedido(Map<String, dynamic> pMap) {
