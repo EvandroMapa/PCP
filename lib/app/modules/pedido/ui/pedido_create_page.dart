@@ -7,7 +7,9 @@ import 'package:aco_plus/app/core/client/firestore/collections/tag/models/tag_mo
 import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/user_permission_type.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:overlay_support/overlay_support.dart';
 import 'package:aco_plus/app/core/components/app_checkbox.dart';
 import 'package:aco_plus/app/core/components/app_drop_down.dart';
 import 'package:aco_plus/app/core/components/app_drop_down_list.dart';
@@ -904,6 +906,24 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
                 .expand((e) => e.produtos.map((e) => e.id))
                 .any((e) => e == produto.id));
 
+    // Verifica se a bitola já foi consumida por algum parcial e calcula o saldo.
+    // Usa a soma real dos filhos (não o qtde armazenado no mestre, que pode
+    // estar desatualizado) para garantir consistência mesmo após parciais recém-criados.
+    final bitolaId = produto.produtoModel?.id ?? '';
+    final ehMestre = widget.pedido != null && widget.pedido!.pedidosFilhos.isNotEmpty;
+    final totalDirecionado = ehMestre && bitolaId.isNotEmpty
+        ? widget.pedido!.pedidosFilhos
+            .map((id) => BackendClient.pedidos.getById(id))
+            .where((f) => !f.localizador.startsWith('NOTFOUND'))
+            .fold<double>(0, (acc, filho) {
+              final prods = filho.produtos.where((p) => p.produto.id == bitolaId);
+              return acc + prods.fold<double>(0, (a, p) => a + p.qtde);
+            })
+        : 0.0;
+    final foiUsadoEmParcial = totalDirecionado > 0;
+    final qtdeOriginal = double.tryParse(produto.qtde.text) ?? 0.0;
+    final saldoAtual = (qtdeOriginal - totalDirecionado).clamp(0.0, double.infinity);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -929,8 +949,28 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Quantidade: ${double.tryParse(produto.qtde.text)?.toKg() ?? produto.qtde.text}',
-                style: AppCss.minimumRegular),
+            // Linha 1: quantidade original (ou Quantidade para pedidos comuns)
+            Text(
+              ehMestre
+                  ? 'Original: ${qtdeOriginal.toKg()}'
+                  : 'Quantidade: ${qtdeOriginal.toKg()}',
+              style: AppCss.minimumRegular,
+            ),
+            // Linha 2: saldo (só exibe para pedido mestre com filhos)
+            if (ehMestre)
+              Row(
+                children: [
+                  Text('Saldo: ', style: AppCss.minimumRegular),
+                  Text(
+                    saldoAtual.toKg(),
+                    style: AppCss.minimumBold.setColor(
+                      saldoAtual > 0
+                          ? const Color(0xFF15803D)  // verde
+                          : Colors.orange[700]!,
+                    ),
+                  ),
+                ],
+              ),
             if (isDisabled)
               Text(
                 !produto.isEnabled
@@ -945,18 +985,16 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
           children: [
             if (!isDisabled) ...[
               IconButton(
+                tooltip: foiUsadoEmParcial
+                    ? 'Bitola parcialmente direcionada (edição bloqueada)'
+                    : 'Editar quantidade',
                 onPressed: () async {
-                  // Bloqueia edição apenas se essa bitola já foi usada em algum parcial
-                  // (ou seja, qtde < qtdeOriginal — parte já foi direcionada)
-                  final produtoOriginal = widget.pedido?.produtos
-                      .firstWhereOrNull((p) => p.produto.id == produto.produtoModel?.id);
-                  final foiUsadoEmParcial = produtoOriginal != null &&
-                      produtoOriginal.qtde < produtoOriginal.qtdeOriginal;
                   if (foiUsadoEmParcial) {
                     NotificationService.showNegative(
                       'Edição bloqueada',
                       'Esta bitola já foi parcialmente direcionada. '
                       'Quantidade original não pode ser alterada.',
+                      position: NotificationPosition.bottom,
                     );
                     return;
                   }
@@ -968,15 +1006,12 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
                   }
                 },
                 icon: Icon(Icons.edit_outlined,
-                    color: Colors.blue[700], size: 20),
+                    color: foiUsadoEmParcial ? Colors.grey[400] : Colors.blue[700],
+                    size: 20),
               ),
               if (widget.pai == null)
                 Builder(builder: (context) {
                   // Permite deletar só se a bitola nunca foi usada em parcial
-                  final produtoOriginal = widget.pedido?.produtos
-                      .firstWhereOrNull((p) => p.produto.id == produto.produtoModel?.id);
-                  final foiUsadoEmParcial = produtoOriginal != null &&
-                      produtoOriginal.qtde < produtoOriginal.qtdeOriginal;
                   if (foiUsadoEmParcial) return const SizedBox.shrink();
                   return IconButton(
                     onPressed: () async {

@@ -34,13 +34,22 @@ class PedidoBitolaCreateModel {
     ];
   }
 
-  PedidoBitolaCreateModel.edit(PedidoBitolaModel produto,
-      {this.isEnabled = true, this.qtdeDisponivel, this.isSelected = true})
-      : id = produto.id,
+  PedidoBitolaCreateModel.edit(
+    PedidoBitolaModel produto, {
+    this.isEnabled = true,
+    this.qtdeDisponivel,
+    this.isSelected = true,
+    bool usarQtdeOriginal = false,
+  })  : id = produto.id,
         isEdit = true {
     produtoModel = produto.produto;
-    qtde.text = produto.qtde.toString();
-    _qtdeOriginal = produto.qtdeOriginal;
+    // Para pedidos MESTRE, usar qtdeOriginal (valor original antes das reduções por parciais).
+    // Para pedidos normais/parciais, usar qtde (valor atual editável).
+    qtde.text = (usarQtdeOriginal ? produto.qtdeOriginal : produto.qtde).toString();
+    // Se usarQtdeOriginal (mestre): _qtdeOriginal fica nulo → toPedidoBitolaModel usa
+    // qtde.doubleValue como novo qtdeOriginal, atualizando-o se o usuário editou o valor.
+    // Para parciais/normais: _qtdeOriginal guarda o valor antigo (não acompanha edições).
+    _qtdeOriginal = usarQtdeOriginal ? null : produto.qtdeOriginal;
     statusess = produto.statusess.toList();
   }
 

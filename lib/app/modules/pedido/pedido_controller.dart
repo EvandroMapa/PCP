@@ -358,8 +358,32 @@ class PedidoController {
           }
         }
 
-        // ── Se for edição do próprio mestre, recalcula saldo interno ────────
-        if (edit.isMestre || edit.pedidosFilhos.isNotEmpty) {
+        // ── Se for edição do próprio mestre, valida se houve alteração indevida de bitola consumida ──
+        if ((edit.isMestre || edit.pedidosFilhos.isNotEmpty) && pedido != null) {
+          for (final prodEdit in edit.produtos) {
+            final prodAntigo = pedido.produtos
+                .firstWhereOrNull((p) => p.produto.id == prodEdit.produto.id);
+            if (prodAntigo != null) {
+              final totalConsumido = edit.pedidosFilhos
+                  .map((id) => BackendClient.pedidos.getById(id))
+                  .where((f) => !f.localizador.startsWith('NOTFOUND'))
+                  .fold<double>(0, (acc, f) {
+                final fp = f.produtos
+                    .where((p) => p.produto.id == prodEdit.produto.id);
+                return acc + fp.fold<double>(0, (a, p) => a + p.qtde);
+              });
+              if (totalConsumido > 0 &&
+                  (prodEdit.qtdeOriginal - prodAntigo.qtdeOriginal).abs() > 0.001) {
+                NotificationService.showNegative(
+                  'Edição bloqueada',
+                  'A bitola ${prodEdit.produto.descricao} já possui parciais direcionados. '
+                  'Sua quantidade original não pode ser alterada.',
+                  position: NotificationPosition.bottom,
+                );
+                return;
+              }
+            }
+          }
           recalcularSaldosMestreInterno(edit);
         }
 

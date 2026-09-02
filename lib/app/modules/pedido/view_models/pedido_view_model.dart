@@ -108,8 +108,15 @@ class PedidoCreateModel {
     cliente = FirestoreClient.clientes.getById(pedido.cliente.id);
     obra = cliente?.obras.firstWhereOrNull((e) => e.id == pedido.obra.id);
     tipo = pedido.tipo;
-    produtos =
-        pedido.produtos.map((e) => PedidoBitolaCreateModel.edit(e)).toList();
+    // Pedidos MESTRE: usar qtdeOriginal para exibir o valor original no form,
+    // pois o campo qtde pode ter sido reduzido progressivamente quando parciais foram criados.
+    final ehMestre = pedido.pedidosFilhos.isNotEmpty;
+    produtos = pedido.produtos
+        .map((e) => PedidoBitolaCreateModel.edit(
+              e,
+              usarQtdeOriginal: ehMestre,
+            ))
+        .toList();
     deliveryAt = pedido.deliveryAt;
     final firstStep = pedido.steps.firstOrNull;
     step = firstStep != null
