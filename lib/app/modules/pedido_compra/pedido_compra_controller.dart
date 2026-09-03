@@ -1,5 +1,6 @@
-import 'dart:js_util' as js_util;
+import 'dart:js_interop';
 import 'dart:typed_data';
+import 'package:web/web.dart' as web;
 
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
@@ -9,7 +10,6 @@ import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/services/pdf_download_service/pdf_download_service_mobile.dart';
 import 'package:aco_plus/app/core/services/preferences_service.dart';
-import 'package:aco_plus/app/core/services/supabase_storage_service.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:aco_plus/app/modules/estoque/estoque_controller.dart';
@@ -26,7 +26,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:overlay_support/overlay_support.dart';
 import 'package:printing/printing.dart';
-import 'dart:html' as html;
 
 final pedidoCompraCtrl = PedidoCompraController();
 
@@ -440,84 +439,44 @@ class PedidoCompraController {
   // ── Compartilhar imagem via Web Share API ─────────────────────────────────
   Future<void> _compartilharImagemWeb(Uint8List bytes, String fileName) async {
     try {
-      // Cria um File JS a partir dos bytes
-      final jsFile = js_util.callConstructor(
-        js_util.getProperty(html.window, 'File'),
-        [
-          js_util.jsify([bytes.buffer]),
-          fileName,
-          js_util.jsify({'type': 'image/png'}),
-        ],
+      final file = web.File(
+        [bytes.toJS].toJS,
+        fileName,
+        web.FilePropertyBag(type: 'image/png'),
       );
 
-      // Verifica se o browser suporta compartilhar arquivos
-      final shareData = js_util.jsify({
-        'files': [jsFile],
-        'title': 'Cotação de materiais',
-      });
-
-      final canShare = js_util.callMethod<bool>(
-        html.window.navigator,
-        'canShare',
-        [shareData],
+      final shareData = web.ShareData(
+        files: [file].toJS,
+        title: 'Cotação de materiais',
       );
 
-      if (canShare) {
-        await js_util.promiseToFuture<void>(
-          js_util.callMethod(
-            html.window.navigator,
-            'share',
-            [shareData],
-          ),
-        );
+      if (web.window.navigator.canShare(shareData)) {
+        await web.window.navigator.share(shareData).toDart;
         return;
       }
     } catch (e) {
       if (e.toString().contains('AbortError')) return; // usuário cancelou
     }
 
-    // Fallback: dialog "Salvar como"
-    await _downloadImageWeb(bytes, fileName);
+    // Fallback: download direto no browser
+    _downloadImageWeb(bytes, fileName);
   }
 
   // ── Download de imagem via browser (web) ──────────────────────────────────
-  Future<void> _downloadImageWeb(Uint8List bytes, String fileName) async {
+  void _downloadImageWeb(Uint8List bytes, String fileName) {
     try {
-      // File System Access API — abre o dialog "Salvar como"
-      final blob = html.Blob([bytes.buffer], 'image/png');
-      final jsHandle = await js_util.promiseToFuture<dynamic>(
-        js_util.callMethod(html.window, 'showSaveFilePicker', [
-          js_util.jsify({
-            'suggestedName': fileName,
-            'types': [
-              {
-                'description': 'Imagem PNG',
-                'accept': {
-                  'image/png': ['.png'],
-                },
-              },
-            ],
-          }),
-        ]),
+      final blob = web.Blob(
+        [bytes.toJS].toJS,
+        web.BlobPropertyBag(type: 'image/png'),
       );
-      final writable = await js_util.promiseToFuture<dynamic>(
-        js_util.callMethod(jsHandle, 'createWritable', []),
-      );
-      await js_util.promiseToFuture<void>(
-        js_util.callMethod(writable, 'write', [blob]),
-      );
-      await js_util.promiseToFuture<void>(
-        js_util.callMethod(writable, 'close', []),
-      );
+      final url = web.URL.createObjectURL(blob);
+      final anchor = web.document.createElement('a') as web.HTMLAnchorElement
+        ..href = url
+        ..download = fileName;
+      anchor.click();
+      web.URL.revokeObjectURL(url);
     } catch (e) {
-      // Fallback: download direto se API não suportada ou usuario cancelou
-      if (e.toString().contains('AbortError')) return; // usuario cancelou
-      final blob = html.Blob([bytes.buffer], 'image/png');
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      html.AnchorElement(href: url)
-        ..setAttribute('download', fileName)
-        ..click();
-      html.Url.revokeObjectUrl(url);
+      debugPrint('Erro ao baixar imagem: $e');
     }
   }
 
@@ -809,7 +768,7 @@ class _ConfirmarGrupoDialogState extends State<_ConfirmarGrupoDialog> {
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<FabricanteModel>(
-              value: _fabricanteSelecionado,
+              initialValue: _fabricanteSelecionado,
               decoration: InputDecoration(
                 hintText: 'Selecione o fornecedor',
                 prefixIcon: const Icon(Icons.factory_outlined, size: 18),

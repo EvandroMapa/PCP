@@ -238,18 +238,51 @@ class StepController {
     }
 
     final stepAnterior = pedido.step;
+    final int indexAnterior = pedido.index;
 
     _onMovePedido(pedido, step, index);
     utilsStream.update();
 
-    // Renova timer após o move otimista
+    // Mantém lock ativo enquanto a persistência cirúrgica é executada
+    _dropTimer?.cancel();
+    _pendingDrop = true;
+
+    // Executa a persistência cirúrgica com verificação de sucesso
+    final salvou = await _onAddStep(pedido, step);
+    if (!salvou) {
+      log('[Kanban] Falha ao persistir movimento de ${pedido.localizador}. Executando rollback para ${stepAnterior.name}.');
+
+      // Rollback nos steps e históricos adicionados em memória
+      if (pedido.steps.isNotEmpty && pedido.steps.last.step.id == step.id) {
+        pedido.steps.removeLast();
+      }
+      if (pedido.histories.isNotEmpty) {
+        pedido.histories.removeLast();
+      }
+
+      // Devolve para a etapa e posição anteriores na UI
+      _onMovePedido(pedido, stepAnterior, indexAnterior);
+      utilsStream.update();
+
+      _dropTimer?.cancel();
+      _dropTimer = Timer(const Duration(milliseconds: 2000), () {
+        _pendingDrop = false;
+      });
+
+      NotificationService.showNegative(
+        'Falha ao mover pedido',
+        'Não foi possível salvar a alteração de "${pedido.localizador}" no servidor. O cartão foi restaurado.',
+      );
+      return;
+    }
+
+    // Renova timer de proteção pós-drop bem-sucedido
     _dropTimer?.cancel();
     _dropTimer = Timer(const Duration(milliseconds: 3000), () {
       _pendingDrop = false;
     });
 
     // Process secondary actions in background
-    _onAddStep(pedido, step);
     onRemovePedidoFromPrioridadeIfNeeded(step, pedido);
     _getPedidosVinculadosToMove(pedido, step).then((pedidosVinculados) {
       if (pedidosVinculados.isNotEmpty) {
@@ -258,7 +291,7 @@ class StepController {
       }
     });
 
-    // Audit — só registra se mudou de etapa (não apenas reordenou)
+    // Audit — só registra se mudou de etapa e foi persistido com sucesso
     if (stepAnterior.id != step.id && !auto) {
       AuditService.registrar(
         acao: 'mover_etapa',
@@ -610,18 +643,18 @@ class StepController {
     return true;
   }
 
-  void _onAddStep(PedidoModel pedido, StepModel step) async {
+  Future<bool> _onAddStep(PedidoModel pedido, StepModel step) async {
     pedidoCtrl.onAddHistory(
       pedido: pedido,
       data: step,
       type: PedidoHistoryType.step,
       action: PedidoHistoryAction.update,
     );
-    pedido.addStep(step);
-    BackendClient.pedidos.pedidosUnarchivedsStream.update();
-    // A chamada de update aqui já persiste a nova etapa e o novo índice do pedido
-    // Não usamos await para não travar a UI
-    BackendClient.pedidos.update(pedido);
+
+    // Garante que o step está registrado no pedido sem duplicar
+    if (pedido.steps.isEmpty || pedido.steps.last.step.id != step.id) {
+      pedido.addStep(step);
+    }
 
     // ─── Correção: status travado após sair da produção ──────────────────────
     // Quando o pedido é movido manualmente para além do step de produção CDA
@@ -631,6 +664,12 @@ class StepController {
     // Aqui forçamos o status para `pronto` quando o pedido avança além do
     // step de `aguardandoArmacaoPedido` configurado na automação.
     _corrigirStatusSeNecessario(pedido, step);
+
+    BackendClient.pedidos.pedidosUnarchivedsStream.update();
+
+    // Persiste cirurgicamente step_id, index, status e histories
+    final resultado = await BackendClient.pedidos.updateStep(pedido, step);
+    return resultado != null;
   }
 
   /// Força o status do pedido para `pronto` quando ele avança manualmente
@@ -660,11 +699,6 @@ class StepController {
 
     final novoStatusModel = PedidoStatusModel.create(PedidoStatus.pronto);
     pedido.statusess.add(novoStatusModel);
-
-    // Persiste em background — não bloqueia a UI
-    if (pedido.produtos.isNotEmpty) {
-      BackendClient.pedidos.updatePedidoStatus(pedido.produtos.first);
-    }
   }
 
   void _onMovePedido(PedidoModel pedido, StepModel step, int index) {
@@ -820,7 +854,7 @@ class StepController {
       return;
     }
     _onMovePedido(pedido, step, 0);
-    _onAddStep(pedido, step);
+    await _onAddStep(pedido, step);
     utilsStream.update();
   }
 

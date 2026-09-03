@@ -5,6 +5,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -151,6 +152,10 @@ class PedidoCollection {
   Future<PedidoModel?> update(PedidoModel model) async {
     await collection.doc(model.id).update(model.toMap());
     return model;
+  }
+
+  Future<PedidoModel?> updateStep(PedidoModel model, StepModel novoStep) async {
+    return await update(model);
   }
 
   Future<void> delete(PedidoModel model) async {

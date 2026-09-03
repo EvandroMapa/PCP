@@ -9,7 +9,9 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_status_model.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:collection/collection.dart';
@@ -501,6 +503,77 @@ class PedidoSupabaseCollection extends PedidoCollection {
       log('Supabase CRITICAL ERROR (Pedido.update): $e');
       NotificationService.showNegative(
           'Erro Crítico ao Atualizar Pedido', e.toString());
+      return null;
+    }
+  }
+
+  @override
+  Future<PedidoModel?> updateStep(PedidoModel model, StepModel novoStep) async {
+    try {
+      final stepId = novoStep.id;
+      final updateData = {
+        'step_id': stepId,
+        'index': model.index,
+        'status': model.status.name,
+        'histories': model.histories.map((h) => h.toMap()).toList(),
+      };
+
+      await SupabaseService.client
+          .from(name)
+          .update(updateData)
+          .eq('id', model.id);
+
+      // Registra cirurgicamente no pedido_steps_history sem recriar outras tabelas
+      try {
+        final lastStep = model.steps.lastOrNull;
+        if (lastStep != null) {
+          await SupabaseService.client.from('pedido_steps_history').insert(
+            lastStep.toSupabaseMap(model.id),
+          );
+        }
+      } catch (e) {
+        log('Supabase Warning (Pedido.updateStep steps_history): $e');
+      }
+
+      // Se o status mudou (ex: corrigido para pronto), registra no status_history
+      try {
+        final lastStatus = model.statusess.lastOrNull;
+        if (lastStatus != null && lastStatus.status == PedidoStatus.pronto) {
+          await SupabaseService.client.from('pedido_status_history').upsert(
+            lastStatus.toSupabaseMap(model.id),
+            onConflict: 'id',
+            ignoreDuplicates: true,
+          );
+        }
+      } catch (e) {
+        log('Supabase Warning (Pedido.updateStep status_history): $e');
+      }
+
+      // ── Atualização otimista: sincroniza cache local ──
+      final currentData = List<PedidoModel>.from(data);
+      final idx = currentData.indexWhere((p) => p.id == model.id);
+      if (idx != -1) {
+        currentData[idx] = model;
+      } else {
+        currentData.add(model);
+      }
+      dataStream.add(currentData);
+      pedidosUnarchivedsStream
+          .add(currentData.where((e) => !e.isArchived).toList());
+
+      // Protege contra o Realtime sobrescrever dados otimistas
+      _optimisticCooldown = true;
+      _optimisticTimer?.cancel();
+      _optimisticTimer = Timer(const Duration(seconds: 4), () {
+        _optimisticCooldown = false;
+        start(lock: false);
+      });
+
+      return model;
+    } catch (e) {
+      log('Supabase CRITICAL ERROR (Pedido.updateStep): $e');
+      NotificationService.showNegative(
+          'Erro ao Mover Pedido', e.toString());
       return null;
     }
   }
