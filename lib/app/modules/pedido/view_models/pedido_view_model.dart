@@ -15,6 +15,8 @@ import 'package:aco_plus/app/core/enums/sort_type.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:aco_plus/app/modules/pedido/view_models/pedido_bitola_view_model.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
@@ -111,11 +113,41 @@ class PedidoCreateModel {
     // Pedidos MESTRE: usar qtdeOriginal para exibir o valor original no form,
     // pois o campo qtde pode ter sido reduzido progressivamente quando parciais foram criados.
     final ehMestre = pedido.pedidosFilhos.isNotEmpty;
+    PedidoModel? paiModel;
+    if (pedido.isParcial && pedido.pai != null && pedido.pai!.isNotEmpty) {
+      paiModel = BackendClient.pedidos.getById(pedido.pai!);
+      if (paiModel.localizador.startsWith('NOTFOUND')) paiModel = null;
+    }
     produtos = pedido.produtos
-        .map((e) => PedidoBitolaCreateModel.edit(
-              e,
-              usarQtdeOriginal: ehMestre,
-            ))
+        .map((e) {
+          double? qtdeDisp;
+          if (paiModel != null) {
+            final prodPai = paiModel.produtos.firstWhereOrNull(
+              (p) => p.produto.id == e.produto.id,
+            );
+            if (prodPai != null) {
+              final outrosFilhos = paiModel.pedidosFilhos
+                  .where((id) => id != pedido.id)
+                  .map((id) => BackendClient.pedidos.getById(id))
+                  .where((f) => !f.localizador.startsWith('NOTFOUND'))
+                  .toList();
+              final consumidoOutros = outrosFilhos.fold<double>(0.0, (acc, f) {
+                final fp =
+                    f.produtos.where((p) => p.produto.id == e.produto.id);
+                return acc + fp.fold<double>(0.0, (a, p) => a + p.qtde);
+              });
+              qtdeDisp = (prodPai.qtdeOriginal - consumidoOutros)
+                  .clamp(0.0, double.infinity)
+                  .toDouble()
+                  .precision;
+            }
+          }
+          return PedidoBitolaCreateModel.edit(
+            e,
+            usarQtdeOriginal: ehMestre,
+            qtdeDisponivel: qtdeDisp,
+          );
+        })
         .toList();
     deliveryAt = pedido.deliveryAt;
     final firstStep = pedido.steps.firstOrNull;

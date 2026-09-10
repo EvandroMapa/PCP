@@ -308,8 +308,8 @@ class PedidoController {
           throw Exception(
               'O pedido precisa ter pelo menos um membro responsável');
         }
-        // Se NÃO é Mestre e nunca teve parciais nem é parcial, qtdeOriginal deve acompanhar a qtde editada
-        if (!edit.isMestre && edit.pedidosFilhos.isEmpty && !edit.isParcial) {
+        // Se NÃO é Mestre e nunca teve parciais, qtdeOriginal deve acompanhar a qtde editada (inclusive para parciais)
+        if (!edit.isMestre && edit.pedidosFilhos.isEmpty) {
           for (int i = 0; i < edit.produtos.length; i++) {
             edit.produtos[i] = edit.produtos[i].copyWith(
               qtdeOriginal: edit.produtos[i].qtde,
@@ -332,27 +332,33 @@ class PedidoController {
               final produtoPai = pai.produtos.firstWhereOrNull(
                 (e) => e.produto.id == produtoFilho.produto.id,
               );
-              if (produtoPai != null) {
-                final double consumidoOutros =
-                    outrosFilhos.fold<double>(0.0, (acc, filho) {
-                  final fp = filho.produtos
-                      .where((p) => p.produto.id == produtoFilho.produto.id);
-                  return acc + fp.fold<double>(0.0, (a, p) => a + p.qtde);
-                });
-                final double saldoDisponivel =
-                    (produtoPai.qtdeOriginal - consumidoOutros)
-                        .clamp(0.0, double.infinity)
-                        .toDouble()
-                        .precision;
+              if (produtoPai == null) {
+                NotificationService.showNegative(
+                  'Bitola não permitida',
+                  'A bitola ${produtoFilho.produto.descricao} não pertence ao pedido mestre.',
+                  position: NotificationPosition.bottom,
+                );
+                return;
+              }
+              final double consumidoOutros =
+                  outrosFilhos.fold<double>(0.0, (acc, filho) {
+                final fp = filho.produtos
+                    .where((p) => p.produto.id == produtoFilho.produto.id);
+                return acc + fp.fold<double>(0.0, (a, p) => a + p.qtde);
+              });
+              final double saldoDisponivel =
+                  (produtoPai.qtdeOriginal - consumidoOutros)
+                      .clamp(0.0, double.infinity)
+                      .toDouble()
+                      .precision;
 
-                if (produtoFilho.qtde.toDouble().precision > saldoDisponivel) {
-                  NotificationService.showNegative(
-                    'Saldo Insuficiente',
-                    'O produto ${produtoPai.produto.nome} possui apenas ${saldoDisponivel.toKg()} disponíveis no mestre.',
-                    position: NotificationPosition.bottom,
-                  );
-                  return;
-                }
+              if (produtoFilho.qtde.toDouble().precision > saldoDisponivel) {
+                NotificationService.showNegative(
+                  'Saldo Insuficiente',
+                  'O produto ${produtoPai.produto.nome} possui apenas ${saldoDisponivel.toKg()} disponíveis no mestre.',
+                  position: NotificationPosition.bottom,
+                );
+                return;
               }
             }
           }
@@ -432,17 +438,44 @@ class PedidoController {
         // Validar saldo disponível se for pedido parcial
         if (form.pai != null) {
           final pai = BackendClient.pedidos.getById(form.pai!);
-          for (final produtoFilho in pedidoModel.produtos) {
-            final produtoPai = pai.produtos.firstWhereOrNull(
-              (e) => e.produto.id == produtoFilho.produto.id,
-            );
-            if (produtoPai != null &&
-                (produtoFilho.qtde.toDouble().precision > produtoPai.qtde.toDouble().precision)) {
-              NotificationService.showNegative(
-                'Saldo Insuficiente',
-                'O produto ${produtoPai.produto.nome} possui apenas ${produtoPai.qtde}Kg disponíveis.',
+          if (!pai.localizador.startsWith('NOTFOUND')) {
+            final filhos = pai.pedidosFilhos
+                .map((id) => BackendClient.pedidos.getById(id))
+                .where((f) => !f.localizador.startsWith('NOTFOUND'))
+                .toList();
+
+            for (final produtoFilho in pedidoModel.produtos) {
+              final produtoPai = pai.produtos.firstWhereOrNull(
+                (e) => e.produto.id == produtoFilho.produto.id,
               );
-              return;
+              if (produtoPai == null) {
+                NotificationService.showNegative(
+                  'Bitola não permitida',
+                  'A bitola ${produtoFilho.produto.descricao} não pertence ao pedido mestre.',
+                  position: NotificationPosition.bottom,
+                );
+                return;
+              }
+              final double consumidoFilhos =
+                  filhos.fold<double>(0.0, (acc, filho) {
+                final fp = filho.produtos
+                    .where((p) => p.produto.id == produtoFilho.produto.id);
+                return acc + fp.fold<double>(0.0, (a, p) => a + p.qtde);
+              });
+              final double saldoDisponivel =
+                  (produtoPai.qtdeOriginal - consumidoFilhos)
+                      .clamp(0.0, double.infinity)
+                      .toDouble()
+                      .precision;
+
+              if (produtoFilho.qtde.toDouble().precision > saldoDisponivel) {
+                NotificationService.showNegative(
+                  'Saldo Insuficiente',
+                  'O produto ${produtoPai.produto.nome} possui apenas ${saldoDisponivel.toKg()} disponíveis no mestre.',
+                  position: NotificationPosition.bottom,
+                );
+                return;
+              }
             }
           }
         }
@@ -867,7 +900,7 @@ class PedidoController {
             final fp = filho.produtos.where(
               (fp) => fp.produto.id == p.produto.id,
             );
-            return acc + fp.fold<double>(0, (a, fp) => a + fp.qtdeOriginal);
+            return acc + fp.fold<double>(0, (a, fp) => a + fp.qtde);
           },
         );
         return (p.qtdeOriginal - totalFilhos) > 0.001;
@@ -877,6 +910,7 @@ class PedidoController {
           'Arquivamento bloqueado',
           'O Pedido Mestre ainda possui saldo não distribuído. '
               'Distribua toda a quantidade nos parciais antes de arquivar.',
+          position: NotificationPosition.bottom,
         );
         return false;
       }
@@ -890,6 +924,7 @@ class PedidoController {
       NotificationService.showNegative(
         'Pedido não pode ser arquivado',
         'O pedido possui ordens não concluídas',
+        position: NotificationPosition.bottom,
       );
       return false;
     }
@@ -1124,6 +1159,7 @@ class PedidoController {
     }
     pedido.pedidosFilhos.remove(pedidoFilho.id);
     pedidoFilho.pai = null;
+    recalcularSaldosMestreInterno(pedido);
     BackendClient.pedidos.update(pedido);
     BackendClient.pedidos.update(pedidoFilho);
     pedidoStream.update();

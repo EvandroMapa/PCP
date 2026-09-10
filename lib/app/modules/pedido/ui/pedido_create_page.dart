@@ -841,13 +841,52 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
                   nextFocus: form.produto.qtde.focus,
                   item: form.produto.produtoModel,
                   itens: FirestoreClient.bitolas.data
-                      .where((e) => !form.produtos
-                          .map((e) => e.produtoModel?.id)
-                          .contains(e.id))
+                      .where((e) {
+                        if (form.isPartial && form.pai != null) {
+                          final pai = BackendClient.pedidos.getById(form.pai!);
+                          if (!pai.localizador.startsWith('NOTFOUND')) {
+                            if (!pai.produtos.any((p) => p.produto.id == e.id)) {
+                              return false;
+                            }
+                          }
+                        }
+                        return !form.produtos
+                            .map((p) => p.produtoModel?.id)
+                            .contains(e.id);
+                      })
                       .toList(),
                   itemLabel: (e) => e?.descricao ?? 'Selecione',
                   onSelect: (e) {
                     form.produto.produtoModel = e;
+                    if (form.isPartial && form.pai != null && e != null) {
+                      final pai = BackendClient.pedidos.getById(form.pai!);
+                      if (!pai.localizador.startsWith('NOTFOUND')) {
+                        final prodPai = pai.produtos.firstWhereOrNull(
+                          (p) => p.produto.id == e.id,
+                        );
+                        if (prodPai != null) {
+                          final outrosFilhos = pai.pedidosFilhos
+                              .where((id) => id != form.id)
+                              .map((id) => BackendClient.pedidos.getById(id))
+                              .where((f) => !f.localizador.startsWith('NOTFOUND'))
+                              .toList();
+                          final consumido = outrosFilhos.fold<double>(0.0, (acc, f) {
+                            final fp =
+                                f.produtos.where((p) => p.produto.id == e.id);
+                            return acc + fp.fold<double>(0.0, (a, p) => a + p.qtde);
+                          });
+                          final disp = (prodPai.qtdeOriginal - consumido)
+                              .clamp(0.0, double.infinity)
+                              .toDouble()
+                              .precision;
+                          form.produto = PedidoBitolaCreateModel(
+                            isEnabled: disp > 0,
+                            qtdeDisponivel: disp,
+                          );
+                          form.produto.produtoModel = e;
+                        }
+                      }
+                    }
                     pedidoCtrl.formStream.update();
                   },
                 ),
@@ -864,6 +903,17 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
                   onChanged: (_) => pedidoCtrl.formStream.update(),
                   onEditingComplete: () {
                     if (form.produto.isEnable) {
+                      if (form.isPartial &&
+                          form.produto.qtdeDisponivel != null &&
+                          form.produto.qtde.doubleValue >
+                              form.produto.qtdeDisponivel!) {
+                        NotificationService.showNegative(
+                          'Quantidade indisponível',
+                          'A quantidade disponível no mestre é de ${form.produto.qtdeDisponivel!.toKg()}',
+                          position: NotificationPosition.bottom,
+                        );
+                        return;
+                      }
                       form.produtos.add(form.produto);
                       form.produto = PedidoBitolaCreateModel();
                       form.produto.produtoEC.focus.requestFocus();
@@ -877,6 +927,17 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
                 onPressed: !form.produto.isEnable
                     ? null
                     : () {
+                        if (form.isPartial &&
+                            form.produto.qtdeDisponivel != null &&
+                            form.produto.qtde.doubleValue >
+                                form.produto.qtdeDisponivel!) {
+                          NotificationService.showNegative(
+                            'Quantidade indisponível',
+                            'A quantidade disponível no mestre é de ${form.produto.qtdeDisponivel!.toKg()}',
+                            position: NotificationPosition.bottom,
+                          );
+                          return;
+                        }
                         form.produtos.add(form.produto);
                         form.produto = PedidoBitolaCreateModel();
                         pedidoCtrl.formStream.update();
@@ -966,6 +1027,21 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
                     style: AppCss.minimumBold.setColor(
                       saldoAtual > 0
                           ? const Color(0xFF15803D)  // verde
+                          : Colors.orange[700]!,
+                    ),
+                  ),
+                ],
+              ),
+            // Se for parcial e tiver informação de disponível no mestre
+            if (form.isPartial && produto.qtdeDisponivel != null)
+              Row(
+                children: [
+                  Text('Disponível no mestre: ', style: AppCss.minimumRegular),
+                  Text(
+                    produto.qtdeDisponivel!.toKg(),
+                    style: AppCss.minimumBold.setColor(
+                      produto.qtdeDisponivel! > 0
+                          ? const Color(0xFF15803D)
                           : Colors.orange[700]!,
                     ),
                   ),

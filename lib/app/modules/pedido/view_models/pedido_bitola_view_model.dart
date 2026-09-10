@@ -48,8 +48,8 @@ class PedidoBitolaCreateModel {
     qtde.text = (usarQtdeOriginal ? produto.qtdeOriginal : produto.qtde).toString();
     // Se usarQtdeOriginal (mestre): _qtdeOriginal fica nulo → toPedidoBitolaModel usa
     // qtde.doubleValue como novo qtdeOriginal, atualizando-o se o usuário editou o valor.
-    // Para parciais/normais: _qtdeOriginal guarda o valor antigo (não acompanha edições).
-    _qtdeOriginal = usarQtdeOriginal ? null : produto.qtdeOriginal;
+    // Para parciais/normais: _qtdeOriginal também fica nulo para que qtdeOriginal acompanhe a nova qtde digitada.
+    _qtdeOriginal = null;
     statusess = produto.statusess.toList();
   }
 
