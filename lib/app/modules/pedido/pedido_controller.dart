@@ -26,6 +26,7 @@ import 'package:aco_plus/app/core/models/endereco_model.dart';
 import 'package:aco_plus/app/core/services/audit_service.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
+import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/automatizacao/automatizacao_controller.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
@@ -850,6 +851,8 @@ class PedidoController {
   /// qtde = qtdeOriginal - soma(qtde dos filhos para o mesmo produto)
   /// Corrige inconsistências causadas por exclusões falhas de parciais.
   Future<void> recalcularSaldo(PedidoModel mestre) async {
+    await BackendClient.pedidos
+        .fetchFilhosArquivadosDoPedido(mestre.pedidosFilhos);
     recalcularSaldosMestreInterno(mestre);
 
     _ultimaGravacaoLocal = DateTime.now();
@@ -858,6 +861,350 @@ class PedidoController {
     NotificationService.showPositive(
       'Saldo Recalculado',
       'O saldo de todos os produtos foi recalculado com base nos parciais.',
+      position: NotificationPosition.bottom,
+    );
+  }
+
+  /// Verifica se há divergências de saldo entre o mestre e seus parciais.
+  /// Se não houver divergência, apenas avisa o usuário.
+  /// Se houver, exibe diálogo com o comparativo de cada bitola e pede confirmação antes de atualizar.
+  Future<void> verificarERecalcularSaldo(
+    BuildContext context,
+    PedidoModel mestre,
+  ) async {
+    // Garante que todos os filhos (inclusive os arquivados) estejam em cache antes de calcular
+    await BackendClient.pedidos
+        .fetchFilhosArquivadosDoPedido(mestre.pedidosFilhos);
+
+    final todosFilhos = <PedidoModel>[];
+    final idsValidos = <String>{};
+
+    for (final id in mestre.pedidosFilhos) {
+      final f = BackendClient.pedidos.getById(id);
+      if (!f.localizador.startsWith('NOTFOUND')) {
+        todosFilhos.add(f);
+        idsValidos.add(f.id);
+      }
+    }
+
+    final int qtdFantasmas = mestre.pedidosFilhos.length - idsValidos.length;
+    final divergencias = <DivergenciaSaldoBitola>[];
+
+    for (final produto in mestre.produtos) {
+      double totalDirecionado = 0.0;
+      for (final filho in todosFilhos) {
+        for (final prodFilho in filho.produtos) {
+          if (prodFilho.produto.id == produto.produto.id) {
+            totalDirecionado += prodFilho.qtde;
+          }
+        }
+      }
+
+      final double saldoCalculado = (produto.qtdeOriginal - totalDirecionado)
+          .clamp(0.0, double.infinity)
+          .toDouble()
+          .precision;
+      final double saldoAtual = produto.qtde.toDouble().precision;
+
+      // Inconsistência 1: Saldo gravado no mestre difere do saldo calculado
+      final bool saldoDivergente = (saldoCalculado - saldoAtual).abs() > 0.001;
+
+      // Inconsistência 2: Estouro — os parciais consumiram mais do que a quantidade original
+      final bool isEstouro = totalDirecionado > (produto.qtdeOriginal + 0.001);
+
+      if (saldoDivergente || isEstouro) {
+        divergencias.add(
+          DivergenciaSaldoBitola(
+            bitolaDescricao: produto.produto.descricao,
+            qtdeOriginal: produto.qtdeOriginal.toDouble().precision,
+            totalParciais: totalDirecionado.toDouble().precision,
+            saldoAtual: saldoAtual,
+            saldoCalculado: saldoCalculado,
+            isEstouro: isEstouro,
+          ),
+        );
+      }
+    }
+
+    if (divergencias.isEmpty && qtdFantasmas == 0) {
+      if (context.mounted) {
+        await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            icon: Icon(Icons.info_outline, size: 40, color: Colors.orange[700]),
+            title: const Text('Saldos Consistentes', textAlign: TextAlign.center),
+            content: Text(
+              'Todos os produtos do pedido mestre "${mestre.localizador}" '
+              'estão com os saldos perfeitamente consistentes com os pedidos parciais.\n\n'
+              'Não há divergências a corrigir.',
+              textAlign: TextAlign.center,
+            ),
+            actionsAlignment: MainAxisAlignment.center,
+            actions: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryMain,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Entendi'),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
+    }
+
+    if (!context.mounted) return;
+
+    final confirmar = await _mostrarDialogoDivergencias(
+      context,
+      mestre,
+      divergencias,
+      qtdFantasmas,
+    );
+
+    if (confirmar != true) return;
+
+    showLoadingDialog();
+    try {
+      await recalcularSaldo(mestre);
+    } finally {
+      if (contextGlobal.mounted) Navigator.pop(contextGlobal);
+    }
+  }
+
+  Future<bool?> _mostrarDialogoDivergencias(
+    BuildContext context,
+    PedidoModel mestre,
+    List<DivergenciaSaldoBitola> divergencias,
+    int qtdFantasmas,
+  ) {
+    final bool temEstouro = divergencias.any((d) => d.isEstouro);
+
+    return showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        icon: Icon(Icons.info_outline, size: 40, color: Colors.orange[700]),
+        title: const Text(
+          'Divergência de Saldo',
+          textAlign: TextAlign.center,
+        ),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 580),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Foram identificadas inconsistências no pedido mestre ${mestre.localizador}:',
+                style: AppCss.mediumRegular.setColor(const Color(0xFF475569)),
+              ),
+              const SizedBox(height: 16),
+              if (divergencias.isNotEmpty)
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFEDF2F7),
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(8)),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 4,
+                              child: Text('Bitola', style: AppCss.minimumBold),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Text('Original',
+                                  textAlign: TextAlign.right,
+                                  style: AppCss.minimumBold),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Text('Parciais',
+                                  textAlign: TextAlign.right,
+                                  style: AppCss.minimumBold),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Text('Saldo',
+                                  textAlign: TextAlign.right,
+                                  style: AppCss.minimumBold),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Text('Diferença',
+                                  textAlign: TextAlign.right,
+                                  style: AppCss.minimumBold),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ...divergencias.map((d) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              top: BorderSide(color: Color(0xFFF1F5F9)),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                flex: 4,
+                                child: Text(
+                                  d.bitolaDescricao,
+                                  style: AppCss.minimumRegular
+                                      .setColor(const Color(0xFF1E293B)),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  d.qtdeOriginal.toKg(),
+                                  textAlign: TextAlign.right,
+                                  style: AppCss.minimumRegular
+                                      .setColor(Colors.grey[700]!),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  d.totalParciais.toKg(),
+                                  textAlign: TextAlign.right,
+                                  style: AppCss.minimumRegular
+                                      .setColor(Colors.grey[800]!),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  d.saldoAtual.toKg(),
+                                  textAlign: TextAlign.right,
+                                  style: AppCss.minimumBold
+                                      .setColor(const Color(0xFF15803D)),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  d.isEstouro
+                                      ? 'Estouro -${d.excesso.toKg()}'
+                                      : '${d.diferenca > 0 ? '+' : ''}${d.diferenca.toKg()}',
+                                  textAlign: TextAlign.right,
+                                  style: AppCss.minimumBold.setColor(
+                                    (d.isEstouro || d.diferenca < 0)
+                                        ? AppColors.error
+                                        : Colors.blue[700]!,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              if (temEstouro) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                        color: Colors.red.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded,
+                          size: 18, color: Colors.red[800]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Atenção: A quantidade direcionada aos parciais excedeu a quantidade original (estouro). O saldo disponível do mestre será mantido em 0 kg.',
+                          style: AppCss.minimumRegular
+                              .setColor(Colors.red[900]!),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              if (qtdFantasmas > 0) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                        color: Colors.orange.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline,
+                          size: 18, color: Colors.orange[800]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '$qtdFantasmas parcial(is) excluído(s) ainda constavam vinculados e serão limpos.',
+                          style: AppCss.minimumRegular
+                              .setColor(Colors.orange[900]!),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              Text(
+                'Deseja atualizar e sincronizar os saldos do pedido mestre?',
+                style: AppCss.mediumBold.setSize(13),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryMain,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Atualizar Saldo'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1276,3 +1623,30 @@ class PedidoController {
     }
   }
 }
+
+class DivergenciaSaldoBitola {
+  final String bitolaDescricao;
+  final double qtdeOriginal;
+  final double totalParciais;
+  final double saldoAtual;
+  final double saldoCalculado;
+  final bool isEstouro;
+
+  /// Excesso consumido acima da quantidade original quando há estouro
+  double get excesso => (totalParciais - qtdeOriginal).precision;
+
+  /// Diferença para exibir: se estouro, é o excesso negativo; se divergência de saldo, é (calculado - atual)
+  double get diferenca => isEstouro
+      ? -excesso
+      : (saldoCalculado - saldoAtual).precision;
+
+  DivergenciaSaldoBitola({
+    required this.bitolaDescricao,
+    required this.qtdeOriginal,
+    required this.totalParciais,
+    required this.saldoAtual,
+    required this.saldoCalculado,
+    this.isEstouro = false,
+  });
+}
+

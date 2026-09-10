@@ -1,5 +1,5 @@
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
-
+import 'package:aco_plus/app/core/components/app_notification_bell.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/h.dart';
@@ -1665,6 +1665,8 @@ class DashboardPageState extends State<DashboardPage> {
                   ),
                 ),
               ],
+              const SizedBox(width: 8),
+              const AppNotificationBell(),
             ],
           ),
         );

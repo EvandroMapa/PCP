@@ -1,5 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/user_permission_type.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:aco_plus/app/core/components/app_notification_bell.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
@@ -195,6 +196,8 @@ class _KanbanTopbarConcreteWidgetState
                         }
                       },
                     ),
+                  const W(8),
+                  const AppNotificationBell(),
                   const W(8),
                 ],
               ),

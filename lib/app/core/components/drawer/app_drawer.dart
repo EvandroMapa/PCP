@@ -10,7 +10,6 @@ import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:aco_plus/app/modules/config/config_page.dart';
-import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_notificao_widget.dart';
 import 'package:aco_plus/app/modules/notificacao/notificacao_controller.dart';
 import 'package:aco_plus/app/modules/notificacao/ui/notificacoes_page.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
@@ -501,14 +500,8 @@ class AppDrawerItem extends StatelessWidget {
               color: item == module ? AppColors.primaryMain : null,
             ),
           ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (notificacoes.isNotEmpty &&
-                  ([AppModule.kanban, AppModule.pedidos].contains(item)))
-                KanbanCardNotificacaoWidget(),
-              if (item.standalonePath != null)
-                IconButton(
+          trailing: item.standalonePath != null
+              ? IconButton(
                   onPressed: () {
                     pop(context);
                     openInNewTab(item.standalonePath!);
@@ -521,9 +514,8 @@ class AppDrawerItem extends StatelessWidget {
                         : Colors.grey[400],
                   ),
                   tooltip: 'Abrir em nova janela',
-                ),
-            ],
-          ),
+                )
+              : null,
         );
       },
     );

@@ -51,13 +51,7 @@ class PedidoFilhosWidget extends StatelessWidget {
               waitDuration: const Duration(milliseconds: 300),
               child: InkWell(
                 onTap: () async {
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (_) => const Center(child: CircularProgressIndicator()),
-                  );
-                  await pedidoCtrl.recalcularSaldo(pedido);
-                  if (context.mounted) Navigator.of(context).pop();
+                  await pedidoCtrl.verificarERecalcularSaldo(context, pedido);
                 },
                 child: Container(
                   width: 36,

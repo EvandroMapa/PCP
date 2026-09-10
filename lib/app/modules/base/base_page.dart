@@ -1,15 +1,13 @@
 import 'dart:html' as html;
 
-import 'package:aco_plus/app/core/components/app_bottom_nav.dart';
+import 'package:aco_plus/app/core/components/app_notification_bell.dart';
 import 'package:aco_plus/app/core/components/drawer/app_drawer.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/enums/app_module.dart';
 import 'package:aco_plus/app/modules/backup/backup_scheduler_service.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
-import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:aco_plus/app/core/components/w.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class BasePage extends StatefulWidget {
@@ -97,10 +95,12 @@ class _BasePageState extends State<BasePage> {
                         actions[i],
                         if (i < actions.length - 1) const W(8),
                       ],
-                      const W(8),
+                      if (actions.isNotEmpty) const W(8),
                     ],
                   ),
                 ),
+                const AppNotificationBell(),
+                const W(12),
               ],
               backgroundColor: Theme.of(context).primaryColor,
             ),
