@@ -38,6 +38,15 @@ import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:flutter/material.dart';
 
+enum _PedidoSection {
+  dadosGerais(label: 'Dados Gerais', icon: Icons.info_outline),
+  bitolas(label: 'Bitolas & Produtos', icon: Icons.inventory_2_outlined);
+
+  final String label;
+  final IconData icon;
+  const _PedidoSection({required this.label, required this.icon});
+}
+
 class PedidoCreatePage extends StatefulWidget {
   final PedidoModel? pedido;
   final PedidoModel? pai;
@@ -48,7 +57,7 @@ class PedidoCreatePage extends StatefulWidget {
 }
 
 class _PedidoCreatePageState extends State<PedidoCreatePage> {
-  int _selected = 0;
+  _PedidoSection _selected = _PedidoSection.dadosGerais;
   String _initialSnapshot = '';
 
   String _snapshot(PedidoCreateModel form) {
@@ -70,7 +79,11 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
     if (widget.pai != null) {
       return form.isEdit ? 'Editar Parcial' : 'Novo Parcial';
     }
-    return form.isEdit ? 'Editar Pedido' : 'Novo Pedido';
+    if (form.isEdit) {
+      final loc = form.localizador.text.trim();
+      return loc.isNotEmpty ? 'Editar Pedido • $loc' : 'Editar Pedido';
+    }
+    return 'Novo Pedido';
   }
 
   @override
@@ -134,132 +147,166 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
         ),
       ),
     );
-  }
-
-  Widget _sidebar(PedidoCreateModel form) {
+  }  Widget _sidebar(PedidoCreateModel form) {
     return Container(
       width: 60,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        border: Border(right: BorderSide(color: const Color(0xFFE2E8F0))),
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        color: Color(0xFFF1F5F9),
+        border: Border(right: BorderSide(color: Color(0xFFE2E8F0))),
       ),
       child: Column(
         children: [
-          const SizedBox(height: 16),
-          // Preview Pedido
-          Tooltip(
-            message: form.localizador.text.isEmpty
-                ? 'Novo Pedido'
-                : form.localizador.text,
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppColors.primaryMain,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryMain.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  )
-                ],
-              ),
-              child: Center(
-                child: Text(
-                  form.localizador.text.isNotEmpty
-                      ? form.localizador.text.substring(0, 1).toUpperCase()
-                      : 'P',
-                  style:
-                      AppCss.minimumBold.setColor(AppColors.white).setSize(14),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          _sidebarItem(0, Icons.info_outline, 'Dados Gerais'),
+          _buildSidebarPreview(form),
+          const SizedBox(height: 8),
+          _sidebarItem(_PedidoSection.dadosGerais),
           if (form.tipo != PedidoTipo.outros)
-            _sidebarItem(1, Icons.inventory_2_outlined, 'Bitolas'),
+            _sidebarItem(_PedidoSection.bitolas),
           const Spacer(),
           if (widget.pedido != null &&
               usuario.permission.pedido.contains(UserPermissionType.delete))
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Tooltip(
-                message: 'Excluir Pedido',
-                preferBelow: false,
-                child: InkWell(
-                  onTap: () => pedidoCtrl.onDelete(context, widget.pedido!),
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: AppColors.error.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.delete_outline,
-                        size: 18, color: AppColors.error),
-                  ),
-                ),
-              ),
-            ),
+            _buildSidebarDelete(form),
+          const SizedBox(height: 8),
         ],
       ),
     );
   }
 
-  Widget _sidebarItem(int index, IconData icon, String label) {
-    final isSelected = _selected == index;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Tooltip(
-        message: label,
-        preferBelow: false,
-        waitDuration: const Duration(milliseconds: 300),
-        child: InkWell(
-          onTap: () {
-            setState(() => _selected = index);
-            if (index == 1) {
-              Future.delayed(const Duration(milliseconds: 300), () {
-                pedidoCtrl.form.produto.produtoEC.focus.requestFocus();
-              });
-            }
-          },
-          borderRadius: BorderRadius.circular(8),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? AppColors.primaryMain.withValues(alpha: 0.1)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-              border: isSelected
-                  ? Border.all(
-                      color: AppColors.primaryMain.withValues(alpha: 0.2))
-                  : null,
+  Widget _buildSidebarPreview(PedidoCreateModel form) {
+    final nome = form.localizador.text.trim().isEmpty
+        ? 'Novo Pedido'
+        : form.localizador.text.trim();
+    return Tooltip(
+      message: nome,
+      preferBelow: false,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 14),
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: AppColors.primaryMain,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryMain.withValues(alpha: 0.35),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-            child: Icon(
-              icon,
-              size: 18,
-              color: isSelected ? AppColors.primaryMain : Colors.grey[400],
-            ),
+          ],
+        ),
+        child: Center(
+          child: Text(
+            form.localizador.text.trim().isNotEmpty
+                ? form.localizador.text.trim()[0].toUpperCase()
+                : 'P',
+            style: AppCss.mediumBold.setColor(AppColors.white).setSize(14),
           ),
         ),
       ),
     );
   }
 
+  Widget _sidebarItem(_PedidoSection section) {
+    final isSelected = _selected == section;
+    return Tooltip(
+      message: section.label,
+      preferBelow: false,
+      waitDuration: const Duration(milliseconds: 300),
+      child: InkWell(
+        onTap: () {
+          setState(() => _selected = section);
+          if (section == _PedidoSection.bitolas) {
+            Future.delayed(const Duration(milliseconds: 300), () {
+              pedidoCtrl.form.produto.produtoEC.focus.requestFocus();
+            });
+          }
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.primaryMain.withValues(alpha: 0.10)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: isSelected
+                ? Border.all(
+                    color: AppColors.primaryMain.withValues(alpha: 0.20))
+                : null,
+          ),
+          child: Icon(
+            section.icon,
+            size: 18,
+            color: isSelected ? AppColors.primaryMain : Colors.grey[400],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSidebarDelete(PedidoCreateModel form) {
+    final nome = form.localizador.text.trim().isEmpty
+        ? 'Pedido'
+        : form.localizador.text.trim();
+    return Tooltip(
+      message: 'Excluir $nome',
+      preferBelow: false,
+      child: InkWell(
+        onTap: () => pedidoCtrl.onDelete(context, widget.pedido!),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: AppColors.error.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+        ),
+      ),
+    );
+  }
+
   Widget _sectionContent(PedidoCreateModel form) {
-    if (_selected == 0) return _dadosGeraisSection(form);
-    return _produtosSection(form);
+    switch (_selected) {
+      case _PedidoSection.dadosGerais:
+        return _dadosGeraisSection(form);
+      case _PedidoSection.bitolas:
+        return _produtosSection(form);
+    }
   }
 
   Widget _dadosGeraisSection(PedidoCreateModel form) {
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
+        // Cabeçalho da seção
+        Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AppColors.primaryMain.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(_PedidoSection.dadosGerais.icon,
+                  color: AppColors.primaryMain, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              _PedidoSection.dadosGerais.label.toUpperCase(),
+              style: AppCss.mediumBold
+                  .setSize(15)
+                  .setColor(const Color(0xFF1E293B))
+                  .setLetterSpacing(0.8),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
         _sectionPanel(
           icon: Icons.info_outline,
           title: 'INFORMAÇÕES PRINCIPAIS',
@@ -284,7 +331,7 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
 
                 form.tipo = e;
                 if (e == PedidoTipo.outros) {
-                  _selected = 0;
+                  _selected = _PedidoSection.dadosGerais;
                 } else {
                   form.tags.clear();
                 }
@@ -341,12 +388,13 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
             const H(16),
             AppField(
               label: 'Descrição',
+              maxLines: 2,
               controller: form.descricao,
               onChanged: (_) => pedidoCtrl.formStream.update(),
             ),
           ],
         ),
-        const H(24),
+        const H(20),
         _sectionPanel(
           icon: Icons.business_outlined,
           title: 'CLIENTE E OBRA',
@@ -396,9 +444,9 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
             ),
           ],
         ),
-        const H(24),
+        const H(20),
         _sectionPanel(
-          icon: Icons.settings_outlined,
+          icon: Icons.tune_outlined,
           title: 'CONFIGURAÇÕES E DATAS',
           children: [
             AppDropDown<ChecklistModel?>(
@@ -437,7 +485,7 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
             ),
           ],
         ),
-        const H(24),
+        const H(20),
         _sectionPanel(
           icon: Icons.payments_outlined,
           title: 'FINANCEIRO E LOGÍSTICA',
@@ -450,12 +498,14 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
             const H(16),
             AppField(
               label: 'Instruções Financeiras',
+              maxLines: 2,
               controller: form.instrucoesFinanceiras,
               onChanged: (_) => pedidoCtrl.formStream.update(),
             ),
             const H(16),
             AppField(
               label: 'Instruções de Entrega',
+              maxLines: 2,
               controller: form.instrucoesEntrega,
               onChanged: (_) => pedidoCtrl.formStream.update(),
             ),
@@ -470,18 +520,131 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
     if (widget.pai != null) {
       return _parcialProdutosSection(form);
     }
+    final totalPeso = form.produtos.fold<double>(
+      0.0,
+      (acc, p) => acc + (double.tryParse(p.qtde.text) ?? 0.0),
+    );
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Cabeçalho da seção
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryMain.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(_PedidoSection.bitolas.icon,
+                    color: AppColors.primaryMain, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                _PedidoSection.bitolas.label.toUpperCase(),
+                style: AppCss.mediumBold
+                    .setSize(15)
+                    .setColor(const Color(0xFF1E293B))
+                    .setLetterSpacing(0.8),
+              ),
+              const Spacer(),
+              if (form.produtos.isNotEmpty)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryMain.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.primaryMain.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.scale_outlined,
+                          size: 15, color: AppColors.primaryMain),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${totalPeso.toKg()} • ${form.produtos.length} ${form.produtos.length == 1 ? 'bitola' : 'bitolas'}',
+                        style: AppCss.minimumBold
+                            .setSize(12)
+                            .setColor(AppColors.primaryMain),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
         if (widget.pedido == null || widget.pedido!.pedidosFilhos.isEmpty)
           _produtoAddCard(form),
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-            itemCount: form.produtos.length,
-            itemBuilder: (_, i) => _produtoItemCard(form, form.produtos[i], i),
-          ),
+          child: form.produtos.isEmpty
+              ? _produtosEmptyState()
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                  itemCount: form.produtos.length,
+                  itemBuilder: (_, i) =>
+                      _produtoItemCard(form, form.produtos[i], i),
+                ),
         ),
       ],
+    );
+  }
+
+  Widget _produtosEmptyState() {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 54,
+              height: 54,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF1F5F9),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.inventory_2_outlined,
+                  size: 26, color: Colors.grey[500]),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Nenhuma bitola adicionada ainda',
+              style: AppCss.mediumBold
+                  .setSize(14)
+                  .setColor(const Color(0xFF1E293B)),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Selecione a bitola e informe a quantidade acima para adicioná-la ao pedido.',
+              textAlign: TextAlign.center,
+              style: AppCss.minimumRegular
+                  .setSize(12)
+                  .setColor(Colors.grey[500]!),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -805,17 +968,18 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
 
   Widget _produtoAddCard(PedidoCreateModel form) {
     return Container(
-      margin: const EdgeInsets.all(24),
-      padding: const EdgeInsets.all(24),
+      margin: const EdgeInsets.fromLTRB(24, 16, 24, 12),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[300]!, width: 1),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4))
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -823,10 +987,23 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
         children: [
           Row(
             children: [
-              Icon(Icons.add_circle_outline, color: AppColors.primaryMain),
-              const SizedBox(width: 12),
-              Text('ADICIONAR PRODUTO / BITOLA',
-                  style: AppCss.mediumBold.setSize(14)),
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryMain.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: Icon(Icons.add, color: AppColors.primaryMain, size: 16),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'ADICIONAR PRODUTO / BITOLA',
+                style: AppCss.mediumBold
+                    .setSize(13)
+                    .setColor(const Color(0xFF1E293B))
+                    .setLetterSpacing(0.5),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -923,34 +1100,41 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
                 ),
               ),
               const W(16),
-              IconButton(
-                onPressed: !form.produto.isEnable
-                    ? null
-                    : () {
-                        if (form.isPartial &&
-                            form.produto.qtdeDisponivel != null &&
-                            form.produto.qtde.doubleValue >
-                                form.produto.qtdeDisponivel!) {
-                          NotificationService.showNegative(
-                            'Quantidade indisponível',
-                            'A quantidade disponível no mestre é de ${form.produto.qtdeDisponivel!.toKg()}',
-                            position: NotificationPosition.bottom,
-                          );
-                          return;
-                        }
-                        form.produtos.add(form.produto);
-                        form.produto = PedidoBitolaCreateModel();
-                        pedidoCtrl.formStream.update();
-                      },
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.all(form.produto.isEnable
-                      ? AppColors.primaryMain
-                      : Colors.grey[300]),
-                  padding: WidgetStateProperty.all(const EdgeInsets.all(16)),
-                  shape: WidgetStateProperty.all(RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12))),
+              SizedBox(
+                height: 48,
+                child: ElevatedButton.icon(
+                  onPressed: !form.produto.isEnable
+                      ? null
+                      : () {
+                          if (form.isPartial &&
+                              form.produto.qtdeDisponivel != null &&
+                              form.produto.qtde.doubleValue >
+                                  form.produto.qtdeDisponivel!) {
+                            NotificationService.showNegative(
+                              'Quantidade indisponível',
+                              'A quantidade disponível no mestre é de ${form.produto.qtdeDisponivel!.toKg()}',
+                              position: NotificationPosition.bottom,
+                            );
+                            return;
+                          }
+                          form.produtos.add(form.produto);
+                          form.produto = PedidoBitolaCreateModel();
+                          pedidoCtrl.formStream.update();
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryMain,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: Colors.grey[200],
+                    disabledForegroundColor: Colors.grey[400],
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Adicionar'),
                 ),
-                icon: Icon(Icons.add, color: AppColors.white),
               ),
             ],
           ),
@@ -986,79 +1170,144 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
     final saldoAtual = (qtdeOriginal - totalDirecionado).clamp(0.0, double.infinity);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: isDisabled ? Colors.grey[50] : Colors.white,
+        color: isDisabled ? const Color(0xFFF8FAFC) : Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-            color: isDisabled ? Colors.grey[200]! : Colors.grey[300]!),
+          color: const Color(0xFFE2E8F0),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-              color: AppColors.primaryMain.withValues(alpha: 0.1),
-              shape: BoxShape.circle),
-          child: Center(
-              child: Text('${index + 1}',
-                  style: AppCss.minimumBold.setColor(AppColors.primaryMain))),
-        ),
-        title: Text(produto.produtoModel?.descricao ?? '',
-            style: AppCss.mediumBold),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
           children: [
-            // Linha 1: quantidade original (ou Quantidade para pedidos comuns)
-            Text(
-              ehMestre
-                  ? 'Original: ${qtdeOriginal.toKg()}'
-                  : 'Quantidade: ${qtdeOriginal.toKg()}',
-              style: AppCss.minimumRegular,
+            // Tag numérica
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: AppColors.primaryMain.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  '${index + 1}',
+                  style: AppCss.minimumBold
+                      .setColor(AppColors.primaryMain)
+                      .setSize(12),
+                ),
+              ),
             ),
-            // Linha 2: saldo (só exibe para pedido mestre com filhos)
-            if (ehMestre)
-              Row(
+            const SizedBox(width: 14),
+            // Detalhes da Bitola
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Saldo: ', style: AppCss.minimumRegular),
                   Text(
-                    saldoAtual.toKg(),
-                    style: AppCss.minimumBold.setColor(
-                      saldoAtual > 0
-                          ? const Color(0xFF15803D)  // verde
-                          : Colors.orange[700]!,
-                    ),
+                    produto.produtoModel?.descricao ?? '',
+                    style: AppCss.mediumBold
+                        .setSize(14)
+                        .setColor(const Color(0xFF1E293B)),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      // Badge de Quantidade
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Text(
+                          ehMestre
+                              ? 'Original: ${qtdeOriginal.toKg()}'
+                              : qtdeOriginal.toKg(),
+                          style: AppCss.minimumBold
+                              .setSize(11)
+                              .setColor(const Color(0xFF334155)),
+                        ),
+                      ),
+                      // Badge de Saldo (se for mestre com filhos)
+                      if (ehMestre)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: saldoAtual > 0
+                                ? const Color(0xFFF0FDF4)
+                                : const Color(0xFFFFF7ED),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: saldoAtual > 0
+                                  ? const Color(0xFFBBF7D0)
+                                  : const Color(0xFFFED7AA),
+                            ),
+                          ),
+                          child: Text(
+                            'Saldo: ${saldoAtual.toKg()}',
+                            style: AppCss.minimumBold.setSize(11).setColor(
+                                  saldoAtual > 0
+                                      ? const Color(0xFF15803D)
+                                      : const Color(0xFFC2410C),
+                                ),
+                          ),
+                        ),
+                      // Badge se for parcial com disponível
+                      if (form.isPartial && produto.qtdeDisponivel != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FDF4),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFBBF7D0)),
+                          ),
+                          child: Text(
+                            'Disponível no mestre: ${produto.qtdeDisponivel!.toKg()}',
+                            style: AppCss.minimumBold
+                                .setSize(11)
+                                .setColor(const Color(0xFF15803D)),
+                          ),
+                        ),
+                      if (isDisabled)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.error.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            !produto.isEnabled
+                                ? 'Quantidade já direcionada'
+                                : 'Bitola vinculada a Ordem',
+                            style: AppCss.minimumBold
+                                .setColor(AppColors.error)
+                                .setSize(10),
+                          ),
+                        ),
+                    ],
                   ),
                 ],
               ),
-            // Se for parcial e tiver informação de disponível no mestre
-            if (form.isPartial && produto.qtdeDisponivel != null)
-              Row(
-                children: [
-                  Text('Disponível no mestre: ', style: AppCss.minimumRegular),
-                  Text(
-                    produto.qtdeDisponivel!.toKg(),
-                    style: AppCss.minimumBold.setColor(
-                      produto.qtdeDisponivel! > 0
-                          ? const Color(0xFF15803D)
-                          : Colors.orange[700]!,
-                    ),
-                  ),
-                ],
-              ),
-            if (isDisabled)
-              Text(
-                !produto.isEnabled
-                    ? 'Quantidade já direcionada'
-                    : 'Bitola vinculada a Ordem',
-                style: AppCss.minimumBold.setColor(AppColors.error).setSize(11),
-              ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+            ),
+            const SizedBox(width: 8),
+            // Ações
             if (!isDisabled) ...[
               IconButton(
                 tooltip: foiUsadoEmParcial
@@ -1082,25 +1331,24 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
                   }
                 },
                 icon: Icon(Icons.edit_outlined,
-                    color: foiUsadoEmParcial ? Colors.grey[400] : Colors.blue[700],
+                    color: foiUsadoEmParcial
+                        ? Colors.grey[400]
+                        : Colors.blue[700],
                     size: 20),
               ),
-              if (widget.pai == null)
-                Builder(builder: (context) {
-                  // Permite deletar só se a bitola nunca foi usada em parcial
-                  if (foiUsadoEmParcial) return const SizedBox.shrink();
-                  return IconButton(
-                    onPressed: () async {
-                      if (await showConfirmDialog('Remover Bitola',
-                          'Deseja remover ${produto.produtoModel?.descricao}?')) {
-                        form.produtos.remove(produto);
-                        pedidoCtrl.formStream.update();
-                      }
-                    },
-                    icon: Icon(Icons.delete_outline,
-                        color: AppColors.error, size: 20),
-                  );
-                }),
+              if (widget.pai == null && !foiUsadoEmParcial)
+                IconButton(
+                  tooltip: 'Remover bitola',
+                  onPressed: () async {
+                    if (await showConfirmDialog('Remover Bitola',
+                        'Deseja remover ${produto.produtoModel?.descricao}?')) {
+                      form.produtos.remove(produto);
+                      pedidoCtrl.formStream.update();
+                    }
+                  },
+                  icon: Icon(Icons.delete_outline,
+                      color: AppColors.error, size: 20),
+                ),
               if (widget.pai != null)
                 AppCheckbox(
                   value: produto.isSelected,
@@ -1121,16 +1369,17 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
       required String title,
       required List<Widget> children}) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[300]!, width: 1),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4))
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -1138,15 +1387,26 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
         children: [
           Row(
             children: [
-              Icon(icon, color: AppColors.primaryMain, size: 20),
-              const SizedBox(width: 12),
-              Text(title,
-                  style: AppCss.mediumBold
-                      .setSize(13)
-                      .setColor(Colors.grey[700]!)),
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryMain.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: AppColors.primaryMain, size: 16),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: AppCss.mediumBold
+                    .setSize(13)
+                    .setColor(const Color(0xFF1E293B))
+                    .setLetterSpacing(0.5),
+              ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           ...children,
         ],
       ),

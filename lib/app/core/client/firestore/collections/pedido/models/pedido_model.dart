@@ -28,7 +28,7 @@ class PedidoModel {
   final String descricao;
   final DateTime createdAt;
   DateTime? deliveryAt;
-  final ClienteModel cliente;
+  ClienteModel cliente;
   ObraModel obra;
   final List<PedidoBitolaModel> produtos;
   final PedidoTipo tipo;
