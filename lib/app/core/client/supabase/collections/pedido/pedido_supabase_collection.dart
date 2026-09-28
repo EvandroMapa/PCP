@@ -329,6 +329,14 @@ class PedidoSupabaseCollection extends PedidoCollection {
     // os elementos antigos (sem kg, sem elementos nos cartões).
     ElementoSupabaseCollection().onUpdated = () async {
       if (!ElementoSupabaseCollection.isImportando) {
+        // Bloqueia re-fetch durante drag/drop no Kanban.
+        // Sem esse guard, o onUpdated disparava start() durante a janela do
+        // drop, sobrescrevendo o estado otimista e fazendo o cartão voltar
+        // para a etapa anterior (bug JOAO-FRAN.002 - 27994).
+        if (kanbanCtrl.isDropLocked) {
+          log('PedidoSupabase: onUpdated ignorado (isDropLocked=true).');
+          return;
+        }
         log('PedidoSupabase: re-mapeando pedidos após atualização dos elementos.');
         // Não verifica _optimisticCooldown aqui: a atualização de elementos
         // é uma fonte externa ao pedido e DEVE sempre re-mapear.
