@@ -13,6 +13,7 @@ import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
+import 'package:aco_plus/app/core/utils/posicao_progresso_helper.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_pedido_view_model.dart';
@@ -572,11 +573,17 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
         borderRadius: const BorderRadius.horizontal(right: Radius.circular(12)),
         child: Column(
           children: pedidos.asMap().entries.map((entry) {
-            int index = entry.key;
-            PedidoModel pedido = entry.value;
-            double qtde = pedido.produtos
+            final index = entry.key;
+            final pedido = entry.value;
+            final prods = pedido.produtos
                 .where((p) => p.produto.id == produto.id)
-                .fold(0, (prev, curr) => prev + curr.qtde);
+                .toList();
+            double qtde = prods.fold(
+                0.0, (prev, curr) => prev + calcularConsumoAjustado(curr));
+            double qtdeOriginal =
+                prods.fold(0.0, (prev, curr) => prev + curr.qtde);
+            bool isParcial =
+                qtdeOriginal > 0 && (qtdeOriginal - qtde) > 0.001;
             double percent = totalBitola > 0 ? (qtde / totalBitola) * 100 : 0;
             bool isOdd = index % 2 != 0;
 
@@ -624,6 +631,13 @@ class _RelatoriosPedidoPageState extends State<RelatoriosPedidoPage> {
                                 .setSize(12)
                                 .setColor(AppColors.primaryMain),
                           ),
+                          if (isParcial)
+                            Text(
+                              'restante de ${qtdeOriginal.toKg()}',
+                              style: AppCss.minimumRegular
+                                  .setSize(9)
+                                  .setColor(Colors.grey[500]!),
+                            ),
                           Text(
                             '${percent.toStringAsFixed(1)}% da bitola',
                             style: AppCss.minimumRegular

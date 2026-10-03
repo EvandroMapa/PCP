@@ -990,14 +990,13 @@ extension PedidoCompraPlanilhaExt on PedidoCompraController {
       ..sort((a, b) => a.sortIndex.compareTo(b.sortIndex));
 
     final itens = produtos.map((produto) {
-      final estoque = BackendClient.estoques.getByProdutoId(produto.id);
       double consumo = 0.0;
       try {
         consumo = relatorioCtrl.getPedidosTotalPorBitola(produto);
       } catch (_) {}
       return PedidoCompraPlanilhaItem(
         produto: produto,
-        saldoFisico: estoque?.quantidade ?? 0.0,
+        saldoFisico: estoqueCtrl.getSaldoCalculado(produto.id),
         consumoPrevisto: consumo,
         incluir: false,
       );

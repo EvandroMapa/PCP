@@ -15,6 +15,7 @@ import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:aco_plus/app/core/enums/app_module.dart';
 import 'package:aco_plus/app/modules/armacao/ui/armacao_elementos_page.dart';
 import 'package:aco_plus/app/modules/dashboard/ui/mapa_obras_page.dart';
+import 'package:aco_plus/app/modules/estoque/estoque_controller.dart';
 
 import 'package:aco_plus/app/modules/ordem/ui/ordem/ordem_page.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
@@ -877,11 +878,10 @@ class DashboardPageState extends State<DashboardPage> {
     double tSaldo = 0, tPedido = 0, tConsumo = 0;
 
     for (final p in todosProdutos) {
-      final estoque = BackendClient.estoques.getByProdutoId(p.id);
-      final saldo = estoque?.quantidade ?? 0.0;
+      final saldo = estoqueCtrl.getSaldoCalculado(p.id);
       final consumo = consumoMap[p.id] ?? 0.0;
       final emPedido =
-          BackendClient.pedidosCompra.getTotalPendenteByProdutoId(p.id);
+          BackendClient.pedidosCompra.getTotalConfirmadoByProdutoId(p.id);
       if (saldo == 0 && consumo == 0 && emPedido == 0) continue;
       final projetado = saldo + emPedido - consumo;
       data.add(_DashEstoqueData(

@@ -352,7 +352,8 @@ class EstoqueController {
       var estoque = BackendClient.estoques.getByProdutoId(produtoId);
       estoque ??= EstoqueModel.novo(produtoId);
 
-      final novaQtde = estoque.quantidade - quantidade;
+      final saldoBase = getSaldoCalculado(produtoId);
+      final novaQtde = saldoBase - quantidade;
       final estoqueAtualizado = estoque.copyWith(
         quantidade: novaQtde,
         updatedAt: DateTime.now(),
@@ -385,9 +386,12 @@ class EstoqueController {
   /// movimentações registradas — independente do campo estoques.quantidade.
   /// Usa os dados já em memória, sem fetch extra.
   double getSaldoCalculado(String produtoId) {
-    return BackendClient.estoquesMovimentacao.data
-        .where((e) => e.produtoId == produtoId)
-        .fold(0.0, (s, e) => s + e.quantidade);
+    final movs = BackendClient.estoquesMovimentacao.data
+        .where((e) => e.produtoId == produtoId);
+    if (movs.isEmpty) {
+      return BackendClient.estoques.getByProdutoId(produtoId)?.quantidade ?? 0.0;
+    }
+    return movs.fold(0.0, (s, e) => s + e.quantidade);
   }
 
   /// Sincroniza o campo `quantidade` da tabela estoques com a soma real

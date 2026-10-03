@@ -1,12 +1,11 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
-import 'package:aco_plus/app/core/utils/posicao_progresso_helper.dart';
+import 'package:aco_plus/app/modules/estoque/estoque_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_pedido_view_model.dart';
 import 'package:flutter/material.dart';
@@ -41,12 +40,15 @@ class _EstoqueGraficoSectionState extends State<EstoqueGraficoSection> {
     return StreamOut(
       stream: BackendClient.estoques.dataStream.listen,
       builder: (_, __) => StreamOut(
-        stream: BackendClient.pedidosCompra.dataStream.listen,
-        builder: (_, ___) => StreamOut(
-          stream: FirestoreClient.pedidos.dataStream.listen,
-          builder: (_, __) => StreamOut<RelatorioPedidoViewModel>(
-            stream: relatorioCtrl.pedidoViewModelStream.listen,
-            builder: (_, model) => _body(model),
+        stream: BackendClient.estoquesMovimentacao.dataStream.listen,
+        builder: (_, _____) => StreamOut(
+          stream: BackendClient.pedidosCompra.dataStream.listen,
+          builder: (_, ___) => StreamOut(
+            stream: FirestoreClient.pedidos.dataStream.listen,
+            builder: (_, __) => StreamOut<RelatorioPedidoViewModel>(
+              stream: relatorioCtrl.pedidoViewModelStream.listen,
+              builder: (_, model) => _body(model),
+            ),
           ),
         ),
       ),
@@ -59,19 +61,16 @@ class _EstoqueGraficoSectionState extends State<EstoqueGraficoSection> {
 
     final Map<String, double> consumoMap = {};
     for (final p in produtos) {
-      double total;
-      if (widget.considerarPedidoSemData) {
-        total = relatorioCtrl.getPedidosTotalPorBitola(p);
-      } else {
-        total = _getConsumoPorBitolaComData(p);
-      }
+      final total = relatorioCtrl.getPedidosTotalPorBitola(
+        p,
+        considerarPedidoSemData: widget.considerarPedidoSemData,
+      );
       if (total > 0) consumoMap[p.id] = total;
     }
 
     double totalSaldo = 0, totalConsumo = 0, totalEmPedido = 0;
     for (final p in produtos) {
-      final estoque = BackendClient.estoques.getByProdutoId(p.id);
-      totalSaldo += estoque?.quantidade ?? 0.0;
+      totalSaldo += estoqueCtrl.getSaldoCalculado(p.id);
       totalConsumo += consumoMap[p.id] ?? 0.0;
       totalEmPedido +=
           BackendClient.pedidosCompra.getTotalConfirmadoByProdutoId(p.id);
@@ -82,7 +81,7 @@ class _EstoqueGraficoSectionState extends State<EstoqueGraficoSection> {
     final List<_GraficoData> data = [];
     for (final p in produtos) {
       final estoque = BackendClient.estoques.getByProdutoId(p.id);
-      final saldo = estoque?.quantidade ?? 0.0;
+      final saldo = estoqueCtrl.getSaldoCalculado(p.id);
       final consumo = consumoMap[p.id] ?? 0.0;
       final emPedido =
           BackendClient.pedidosCompra.getTotalConfirmadoByProdutoId(p.id);
@@ -424,21 +423,7 @@ class _EstoqueGraficoSectionState extends State<EstoqueGraficoSection> {
     ]);
   }
 
-  double _getConsumoPorBitolaComData(BitolaModel produto) {
-    double qtde = 0;
-    if (!relatorioCtrl.pedidoViewModelStream.hasValue) return 0;
-    final relatorio = relatorioCtrl.pedidoViewModel.relatorio;
-    if (relatorio == null) return 0;
-    for (var pedido in relatorio.pedidos) {
-      if (pedido.deliveryAt == null) continue;
-      for (var prod in pedido.produtos
-          .where((e) => e.produto.id == produto.id)
-          .toList()) {
-        qtde = qtde + calcularConsumoAjustado(prod);
-      }
-    }
-    return double.parse(qtde.toStringAsFixed(2));
-  }
+
 }
 
 // ── Model de dados do gráfico ─────────────────────────────────────────────────

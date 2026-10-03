@@ -1,11 +1,11 @@
 import 'package:aco_plus/app/core/client/backend_client.dart';
-import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/pedido_compra/pedido_compra_model.dart';
 import 'package:aco_plus/app/core/dialogs/loading_dialog.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 
+import 'package:aco_plus/app/modules/estoque/estoque_controller.dart';
 import 'package:aco_plus/app/modules/pedido_compra/simulador_compra_view_model.dart';
 import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_pedido_view_model.dart';
@@ -43,7 +43,7 @@ class SimuladorCompraController {
 
     for (final produto in produtos) {
       final estoque = BackendClient.estoques.getByProdutoId(produto.id);
-      final saldoFisico = estoque?.quantidade ?? 0.0;
+      final saldoFisico = estoqueCtrl.getSaldoCalculado(produto.id);
       final estoqueMinimo = estoque?.estoqueMinimo ?? 0.0;
       final estoqueIdeal = estoque?.estoqueIdeal ?? 0.0;
 
@@ -53,13 +53,10 @@ class SimuladorCompraController {
       // Consumo previsto = total de kg em pedidos ativos
       double consumoPrevisto = 0.0;
       try {
-        if (considerarSemData) {
-          // Usa todos os pedidos (comportamento padrão)
-          consumoPrevisto = relatorioCtrl.getPedidosTotalPorBitola(produto);
-        } else {
-          // Filtra: só pedidos com data de entrega definida
-          consumoPrevisto = _getConsumoPorBitolaComData(produto);
-        }
+        consumoPrevisto = relatorioCtrl.getPedidosTotalPorBitola(
+          produto,
+          considerarPedidoSemData: considerarSemData,
+        );
       } catch (_) {
         // Se o relatório não estiver pronto, usa 0
       }
@@ -112,22 +109,7 @@ class SimuladorCompraController {
     modelStream.add(newModel);
   }
 
-  /// Calcula consumo previsto por bitola, considerando APENAS pedidos com data de entrega
-  double _getConsumoPorBitolaComData(BitolaModel produto) {
-    double qtde = 0;
-    final relatorio = relatorioCtrl.pedidoViewModel.relatorio;
-    if (relatorio == null) return 0;
-    for (var pedido in relatorio.pedidos) {
-      // Filtra: ignora pedidos sem data de entrega
-      if (pedido.deliveryAt == null) continue;
-      for (var prod in pedido.produtos
-          .where((e) => e.produto.id == produto.id)
-          .toList()) {
-        qtde = qtde + prod.qtde;
-      }
-    }
-    return double.parse(qtde.toStringAsFixed(2));
-  }
+
 
   /// Toggle considerar pedidos sem data de entrega
   void onToggleConsiderarPedidoSemData(bool valor) {

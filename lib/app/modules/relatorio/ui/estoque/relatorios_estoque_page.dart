@@ -11,7 +11,9 @@ import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/core/utils/logo_helper.dart';
+import 'package:aco_plus/app/core/utils/posicao_progresso_helper.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
+import 'package:aco_plus/app/modules/estoque/estoque_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/relatorio_controller.dart';
 import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_pedido_view_model.dart';
 import 'package:flutter/material.dart';
@@ -64,12 +66,15 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
     return StreamOut(
       stream: BackendClient.estoques.dataStream.listen,
       builder: (_, __) => StreamOut(
-        stream: BackendClient.pedidosCompra.dataStream.listen,
-        builder: (_, ___) => StreamOut(
-          stream: FirestoreClient.pedidos.dataStream.listen,
-          builder: (_, __) => StreamOut<RelatorioPedidoViewModel>(
-            stream: relatorioCtrl.pedidoViewModelStream.listen,
-            builder: (_, model) => _body(model),
+        stream: BackendClient.estoquesMovimentacao.dataStream.listen,
+        builder: (_, _____) => StreamOut(
+          stream: BackendClient.pedidosCompra.dataStream.listen,
+          builder: (_, ___) => StreamOut(
+            stream: FirestoreClient.pedidos.dataStream.listen,
+            builder: (_, __) => StreamOut<RelatorioPedidoViewModel>(
+              stream: relatorioCtrl.pedidoViewModelStream.listen,
+              builder: (_, model) => _body(model),
+            ),
           ),
         ),
       ),
@@ -87,20 +92,17 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
     // Consumo previsto por produto
     final Map<String, double> consumoMap = {};
     for (final produto in produtos) {
-      double total;
-      if (_considerarPedidoSemData) {
-        total = relatorioCtrl.getPedidosTotalPorBitola(produto);
-      } else {
-        total = _getConsumoPorBitolaComData(produto);
-      }
+      final total = relatorioCtrl.getPedidosTotalPorBitola(
+        produto,
+        considerarPedidoSemData: _considerarPedidoSemData,
+      );
       if (total > 0) consumoMap[produto.id] = total;
     }
 
     // Totais globais
     double totalSaldo = 0, totalConsumo = 0, totalEmPedido = 0;
     for (final p in produtos) {
-      final estoque = BackendClient.estoques.getByProdutoId(p.id);
-      totalSaldo += estoque?.quantidade ?? 0.0;
+      totalSaldo += estoqueCtrl.getSaldoCalculado(p.id);
       totalConsumo += consumoMap[p.id] ?? 0.0;
       // Apenas CONFIRMADOS entram nos totais de "Em Pedido"
       totalEmPedido +=
@@ -121,9 +123,7 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
               separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (_, i) {
                 final produto = produtos[i];
-                final estoque =
-                    BackendClient.estoques.getByProdutoId(produto.id);
-                final saldoAtual = estoque?.quantidade ?? 0.0;
+                final saldoAtual = estoqueCtrl.getSaldoCalculado(produto.id);
                 final consumoPrevisto = consumoMap[produto.id] ?? 0.0;
                 // Apenas CONFIRMADOS — pedidos pendentes não entram na posição
                 final itensPedido = BackendClient.pedidosCompra
@@ -298,22 +298,7 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
     );
   }
 
-  /// Calcula consumo previsto por bitola, considerando APENAS pedidos com data de entrega
-  double _getConsumoPorBitolaComData(BitolaModel produto) {
-    double qtde = 0;
-    if (!relatorioCtrl.pedidoViewModelStream.hasValue) return 0;
-    final relatorio = relatorioCtrl.pedidoViewModel.relatorio;
-    if (relatorio == null) return 0;
-    for (var pedido in relatorio.pedidos) {
-      if (pedido.deliveryAt == null) continue;
-      for (var prod in pedido.produtos
-          .where((e) => e.produto.id == produto.id)
-          .toList()) {
-        qtde = qtde + prod.qtde;
-      }
-    }
-    return double.parse(qtde.toStringAsFixed(2));
-  }
+
 
   // ── Card por produto ───────────────────────────────────────────────────────
 
@@ -650,12 +635,14 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
         if (!_considerarPedidoSemData && pedido.deliveryAt == null) continue;
         for (final prod in pedido.produtos) {
           if (prod.produto.id != produto.id) continue;
-          if (prod.qtde <= 0) continue;
+          final consumoAjustado = calcularConsumoAjustado(prod);
+          if (consumoAjustado <= 0) continue;
           consumos.add(_ConsumoPrevisto(
             localizador: pedido.localizador,
             clienteNome: pedido.cliente.nome,
             obraNome: pedido.obra.descricao,
-            quantidade: prod.qtde,
+            quantidade: consumoAjustado,
+            quantidadeOriginal: prod.qtde,
             status: prod.statusView.status,
           ));
         }
@@ -854,6 +841,13 @@ class _RelatoriosEstoquePageState extends State<RelatoriosEstoquePage> {
                                         .setColor(Colors.orange[700]!)
                                         .setSize(12),
                                   ),
+                                  if (item.isParcialmenteProduzido)
+                                    Text(
+                                      'restante de ${item.quantidadeOriginal.toKg()}',
+                                      style: AppCss.minimumRegular
+                                          .setColor(Colors.grey[500]!)
+                                          .setSize(9),
+                                    ),
                                   Text(
                                     'Saldo: ${saldoAcum.toKg()}',
                                     style: AppCss.minimumRegular
@@ -1192,6 +1186,7 @@ class _ConsumoPrevisto {
   final String clienteNome;
   final String obraNome;
   final double quantidade;
+  final double quantidadeOriginal;
   final PedidoBitolaStatus status;
 
   const _ConsumoPrevisto({
@@ -1199,6 +1194,10 @@ class _ConsumoPrevisto {
     required this.clienteNome,
     required this.obraNome,
     required this.quantidade,
+    this.quantidadeOriginal = 0.0,
     required this.status,
   });
+
+  bool get isParcialmenteProduzido =>
+      quantidadeOriginal > 0 && (quantidadeOriginal - quantidade) > 0.001;
 }

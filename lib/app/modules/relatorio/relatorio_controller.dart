@@ -203,9 +203,12 @@ class PedidoController {
 
   double getPedidosTotal() {
     double qtde = 0;
+    if (!pedidoViewModelStream.hasValue || pedidoViewModel.relatorio == null) {
+      return 0;
+    }
     for (var pedido in pedidoViewModel.relatorio!.pedidos) {
       for (var produto in pedido.produtos) {
-        qtde = qtde + produto.qtde;
+        qtde = qtde + calcularConsumoAjustado(produto);
       }
     }
     return double.parse(qtde.toStringAsFixed(2));
@@ -223,13 +226,20 @@ class PedidoController {
     return double.parse(qtde.toStringAsFixed(2));
   }
 
-  double getPedidosTotalPorBitola(BitolaModel produto) {
+  double getPedidosTotalPorBitola(
+    BitolaModel produto, {
+    bool considerarPedidoSemData = true,
+  }) {
     double qtde = 0;
+    if (!pedidoViewModelStream.hasValue || pedidoViewModel.relatorio == null) {
+      return 0;
+    }
     for (var pedido in pedidoViewModel.relatorio!.pedidos) {
-      for (var produto in pedido.produtos
+      if (!considerarPedidoSemData && pedido.deliveryAt == null) continue;
+      for (var prod in pedido.produtos
           .where((e) => e.produto.id == produto.id)
           .toList()) {
-        qtde = qtde + calcularConsumoAjustado(produto);
+        qtde = qtde + calcularConsumoAjustado(prod);
       }
     }
     return double.parse(qtde.toStringAsFixed(2));
