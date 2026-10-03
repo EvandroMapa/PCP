@@ -540,33 +540,58 @@ class PedidoCompraController {
       final fabricante = model.itens.first.fabricante;
       int efetivados = 0;
 
+      int jaEfetivados = 0;
+
       for (var i = 0; i < model.itens.length; i++) {
         final item = model.itens[i];
         final qtdeRecebida = model.getQuantidadeRecebida(i);
         if (qtdeRecebida <= 0) continue;
 
-        await estoqueCtrl.onRegistrarCompraManual(
-          produtoId: item.produtoId,
-          quantidade: qtdeRecebida,
-          observacao:
-              'Compra de ${fabricante.nome} — Pedido #${item.grupoId.substring(0, 6)}',
-        );
-
-        await BackendClient.pedidosCompra.update(
+        // Reivindica o item ANTES de creditar o estoque: só quem muda o
+        // status para convertido no banco faz a entrada (evita duplo clique
+        // ou dois aparelhos efetivando o mesmo pedido).
+        final reivindicado = await BackendClient.pedidosCompra.updateCondicional(
           item.copyWith(
             status: PedidoCompraStatus.convertido,
             quantidadeRecebida: qtdeRecebida,
             updatedAt: DateTime.now(),
           ),
+          seNaoStatus: PedidoCompraStatus.convertido,
         );
+        if (!reivindicado) {
+          jaEfetivados++;
+          continue;
+        }
+
+        try {
+          await estoqueCtrl.onRegistrarCompraManual(
+            produtoId: item.produtoId,
+            quantidade: qtdeRecebida,
+            observacao:
+                'Compra de ${fabricante.nome} — Pedido #${item.grupoId.substring(0, 6)}',
+          );
+        } catch (e) {
+          // Entrada não gravada → devolve o item ao status anterior
+          await BackendClient.pedidosCompra.update(item);
+          rethrow;
+        }
         efetivados++;
       }
 
-      NotificationService.showPositive(
-        'Compra efetivada',
-        '$efetivados item${efetivados > 1 ? 's' : ''} adicionados ao estoque',
-        position: NotificationPosition.bottom,
-      );
+      if (efetivados > 0) {
+        NotificationService.showPositive(
+          'Compra efetivada',
+          '$efetivados item${efetivados > 1 ? 's' : ''} adicionados ao estoque',
+          position: NotificationPosition.bottom,
+        );
+      }
+      if (jaEfetivados > 0) {
+        NotificationService.showNeutral(
+          'Itens já efetivados',
+          '$jaEfetivados item${jaEfetivados > 1 ? 's já tinham' : ' já tinha'} sido efetivado${jaEfetivados > 1 ? 's' : ''} — o estoque não foi creditado de novo.',
+          position: NotificationPosition.bottom,
+        );
+      }
 
       // Volta 2 telas: efetivar page + fecha o card
       if (context.mounted) {
@@ -616,20 +641,33 @@ class PedidoCompraController {
     if (confirm != true) return;
     try {
       for (final item in itens) {
-        final qtdeRecebida = item.quantidadeRecebida ?? item.quantidade;
-        await estoqueCtrl.onEstornarCompraManual(
-          produtoId: item.produtoId,
-          quantidade: qtdeRecebida,
-          observacao:
-              'Estorno — $fabricante · Pedido #${item.grupoId.substring(0, 6)}',
-        );
-        await BackendClient.pedidosCompra.update(
+        // Só estorna o que de fato entrou: item efetivado no banco e com
+        // quantidade recebida registrada
+        final qtdeRecebida = item.quantidadeRecebida ?? 0;
+        if (qtdeRecebida <= 0) continue;
+
+        final reivindicado = await BackendClient.pedidosCompra.updateCondicional(
           item.copyWith(
             status: PedidoCompraStatus.confirmado,
             quantidadeRecebida: 0,
             updatedAt: DateTime.now(),
           ),
+          seStatus: PedidoCompraStatus.convertido,
         );
+        if (!reivindicado) continue;
+
+        try {
+          await estoqueCtrl.onEstornarCompraManual(
+            produtoId: item.produtoId,
+            quantidade: qtdeRecebida,
+            observacao:
+                'Estorno — $fabricante · Pedido #${item.grupoId.substring(0, 6)}',
+          );
+        } catch (e) {
+          // Estorno não gravado → item volta a efetivado
+          await BackendClient.pedidosCompra.update(item);
+          rethrow;
+        }
       }
       NotificationService.showPending(
         'Compra estornada',

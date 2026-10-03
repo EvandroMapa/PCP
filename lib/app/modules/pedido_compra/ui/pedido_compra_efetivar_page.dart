@@ -21,6 +21,7 @@ class _PedidoCompraEfetivarPageState
   late final PedidoCompraConverterGrupoModel _model;
   // Ordena por sortIndex do produto (mesma ordem do cadastro)
   late final List<PedidoCompraModel> _itensOrdenados;
+  bool _salvando = false;
 
   @override
   void initState() {
@@ -133,9 +134,27 @@ class _PedidoCompraEfetivarPageState
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                     ),
-                    onPressed: () =>
-                        pedidoCompraCtrl.onEfetivarComModel(context, _model),
-                    icon: const Icon(Icons.check),
+                    // Desabilitado enquanto processa: evita creditar o
+                    // estoque duas vezes num duplo clique
+                    onPressed: _salvando
+                        ? null
+                        : () async {
+                            setState(() => _salvando = true);
+                            try {
+                              await pedidoCompraCtrl.onEfetivarComModel(
+                                  context, _model);
+                            } finally {
+                              if (mounted) setState(() => _salvando = false);
+                            }
+                          },
+                    icon: _salvando
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.check),
                     label: Text(
                       'Confirmar Recebimento (${_itensOrdenados.length} item${_itensOrdenados.length > 1 ? 's' : ''})',
                       style: const TextStyle(fontSize: 15),

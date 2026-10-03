@@ -11,6 +11,7 @@ import 'package:aco_plus/app/core/client/supabase/collections/elemento/elemento_
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
+import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/services/preferences_service.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
@@ -18,8 +19,10 @@ import 'package:aco_plus/app/core/utils/app_css.dart';
 
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/estoque/estoque_controller.dart';
+import 'package:aco_plus/app/modules/estoque/estoque_producao_service.dart';
 import 'package:aco_plus/app/modules/ordem/ordem_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:overlay_support/overlay_support.dart';
 
 /// Página fullscreen para o operador controlar produção por OS/Elemento.
 /// Mostra um grid de cards no estilo industrial.
@@ -278,24 +281,46 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
       // Atualiza também o cache global de elementos para os gráficos
       _updateGlobalElementosCache(item);
 
-      // Persiste no Supabase
-      await SupabaseService.client
-          .from('elemento_posicoes')
-          .update({'status': newStatus.name}).eq('id', item.posicao.id);
+      // Persiste no Supabase com compare-and-set: o efeito no estoque vem do
+      // estado REAL do banco, não do que esta tela mostrava (oldStatus). Se a
+      // OS já estava pronta (outro aparelho / tela desatualizada), não baixa.
+      final transicao = await EstoqueProducaoService.transicionarPosicao(
+          item.posicao.id, newStatus);
+
+      if (!transicao.aplicada) {
+        final statusBanco = transicao.statusBanco;
+        if (mounted) {
+          setState(() {
+            if (statusBanco != null) item.posicao.status = statusBanco;
+          });
+        }
+        _updateGlobalElementosCache(item);
+        NotificationService.showNeutral(
+          'OS ${item.posicao.numeroOs} já estava atualizada',
+          statusBanco == null
+              ? 'A OS não existe mais no banco. Nenhuma movimentação de estoque foi feita.'
+              : 'Status atual: ${statusBanco.label}. Nenhuma movimentação de estoque foi feita.',
+          position: NotificationPosition.bottom,
+        );
+        return;
+      }
 
       // Baixa/estorno de estoque por posição (OS)
       final pesoPosicao = item.posicao.pesoKg * item.elemento.qtde;
-      if (newStatus == PosicaoStatus.pronto && oldStatus != PosicaoStatus.pronto) {
+      final detalheOs = 'OS ${item.posicao.numeroOs}';
+      if (transicao.efeito == EfeitoEstoque.baixa) {
         await estoqueCtrl.baixarEstoque(
           produtoId: _ordemProdutoId,
           quantidade: pesoPosicao,
           ordem: widget.ordem,
+          detalhe: detalheOs,
         );
-      } else if (oldStatus == PosicaoStatus.pronto && newStatus != PosicaoStatus.pronto) {
+      } else if (transicao.efeito == EfeitoEstoque.estorno) {
         await estoqueCtrl.estornarBaixa(
           produtoId: _ordemProdutoId,
           quantidade: pesoPosicao,
           ordem: widget.ordem,
+          detalhe: detalheOs,
         );
       }
 
@@ -420,6 +445,10 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
       return;
     }
 
+    // Complemento do item (qtde não coberta pelas OS): baixado quando o item
+    // entra em pronto e estornado quando sai — só por quem cruzou a fronteira.
+    await _movimentarComplementoItem(novoStatus);
+
     // Atualiza no Firestore o status do item do pedido
     await FirestoreClient.pedidos
         .updateProdutoStatus(widget.produto, novoStatus);
@@ -435,6 +464,38 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     await FirestoreClient.ordens.fetch();
     final updatedOrdem = ordemCtrl.getOrdemById(widget.ordem.id);
     ordemCtrl.setOrdem(updatedOrdem);
+  }
+
+  Future<void> _movimentarComplementoItem(PedidoBitolaStatus novoStatus) async {
+    try {
+      final efeito = await EstoqueProducaoService.transicionarItem(
+          widget.produto.id, novoStatus);
+      if (efeito == EfeitoEstoque.nenhum) return;
+
+      final posicoes = await EstoqueProducaoService.posicoesDoBanco(
+          widget.produto.pedidoId, _ordemProdutoId);
+      final complemento =
+          EstoqueProducaoService.complementoItem(widget.produto.qtde, posicoes);
+      if (complemento <= 0) return;
+
+      if (efeito == EfeitoEstoque.baixa) {
+        await estoqueCtrl.baixarEstoque(
+          produtoId: _ordemProdutoId,
+          quantidade: complemento,
+          ordem: widget.ordem,
+          detalhe: 'complemento do item',
+        );
+      } else {
+        await estoqueCtrl.estornarBaixa(
+          produtoId: _ordemProdutoId,
+          quantidade: complemento,
+          ordem: widget.ordem,
+          detalhe: 'complemento do item',
+        );
+      }
+    } catch (e) {
+      log('Erro ao movimentar complemento do item ${widget.produto.id}: $e');
+    }
   }
 
   /// Barra fixa de resumo de produção por status das posições

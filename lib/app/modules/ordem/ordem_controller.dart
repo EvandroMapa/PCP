@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
-import 'package:aco_plus/app/core/utils/posicao_progresso_helper.dart';
+import 'package:aco_plus/app/modules/estoque/estoque_producao_service.dart';
 
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/enums/materia_prima_status.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/materia_prima/models/materia_prima_model.dart';
@@ -801,56 +801,60 @@ class OrdemController {
         }
       }
     }
-    final statusAnterior = produto.status.status;
+    // Estoque: tudo é decidido pelo estado do BANCO com updates condicionais,
+    // nunca pelo status do cache — assim uma tela desatualizada ou dois
+    // aparelhos simultâneos não geram baixa/estorno em dobro.
+    // 1. Reivindica a travessia da fronteira "pronto" do item
+    EfeitoEstoque efeitoItem = EfeitoEstoque.nenhum;
+    try {
+      efeitoItem =
+          await EstoqueProducaoService.transicionarItem(produto.id, status);
+    } catch (e) {
+      log('Erro ao transicionar item ${produto.id} para ${status.name}: $e');
+    }
 
     await FirestoreClient.pedidos.updateProdutoStatus(produto, status);
     final pedido = await FirestoreClient.pedidos.updatePedidoStatus(produto);
     if (pedido != null) await updateFeaturesByPedidoStatus(pedido);
 
-    // Baixa automática de estoque quando produto fica pronto
-    if (status == PedidoBitolaStatus.pronto) {
-      // Proteção contra baixa dupla: se posições (modo por_os) já
-      // geraram baixas individuais, desconta o peso já baixado.
-      final progresso = calcularProgressoPosicoes(
-        produto.pedidoId,
-        produto.produto.id,
-      );
-      final pesoJaBaixado = progresso.hasData ? progresso.pesoPronto : 0.0;
-      final qtdeBaixar = (produto.qtde - pesoJaBaixado).clamp(0.0, produto.qtde);
+    // 2. Sincroniza as posições (OS) — cada OS que efetivamente entrou ou
+    //    saiu de pronto entra na movimentação
+    final sync = await _syncPosicoesByPedidoStatus(produto, status);
 
-      if (qtdeBaixar > 0) {
-        await estoqueCtrl.baixarEstoque(
-          produtoId: produto.produto.id,
-          quantidade: qtdeBaixar,
-          ordem: ordem,
+    // 3. Complemento: parte da qtde do item não coberta pelas OS (ou a qtde
+    //    inteira quando não há OS)
+    double complemento = 0;
+    if (efeitoItem != EfeitoEstoque.nenhum) {
+      try {
+        complemento = EstoqueProducaoService.complementoItem(
+          produto.qtde,
+          sync.posicoes ??
+              await EstoqueProducaoService.posicoesDoBanco(
+                  produto.pedidoId, produto.produto.id),
         );
+      } catch (e) {
+        log('Erro ao calcular complemento do item ${produto.id}: $e');
       }
     }
 
-    // Estorno quando produto volta de PRONTO para outro status
-    if (statusAnterior == PedidoBitolaStatus.pronto &&
-        status != PedidoBitolaStatus.pronto) {
-      // Mesma proteção: estorna apenas o que foi baixado neste nível,
-      // sem estornar o que já foi baixado pelas posições (será
-      // estornado individualmente ao voltar cada posição).
-      final progresso = calcularProgressoPosicoes(
-        produto.pedidoId,
-        produto.produto.id,
+    final baixar = sync.pesoEntrouPronto +
+        (efeitoItem == EfeitoEstoque.baixa ? complemento : 0);
+    final estornar = sync.pesoSaiuPronto +
+        (efeitoItem == EfeitoEstoque.estorno ? complemento : 0);
+    if (baixar > 0) {
+      await estoqueCtrl.baixarEstoque(
+        produtoId: produto.produto.id,
+        quantidade: baixar,
+        ordem: ordem,
       );
-      final pesoJaBaixado = progresso.hasData ? progresso.pesoPronto : 0.0;
-      final qtdeEstornar = (produto.qtde - pesoJaBaixado).clamp(0.0, produto.qtde);
-
-      if (qtdeEstornar > 0) {
-        await estoqueCtrl.estornarBaixa(
-          produtoId: produto.produto.id,
-          quantidade: qtdeEstornar,
-          ordem: ordem,
-        );
-      }
     }
-
-    // Sincroniza posições dos elementos quando no modo "por_pedido"
-    await _syncPosicoesByPedidoStatus(produto, status);
+    if (estornar > 0) {
+      await estoqueCtrl.estornarBaixa(
+        produtoId: produto.produto.id,
+        quantidade: estornar,
+        ordem: ordem,
+      );
+    }
 
     if (!isAll) {
       await OrdemTimelineRegister.statusProdutoAlterada(
@@ -872,10 +876,24 @@ class OrdemController {
 
   /// Sincroniza todas as posições de um pedido com o status do card.
   /// Chamado quando o operador muda status no modo "por_pedido".
-  Future<void> _syncPosicoesByPedidoStatus(
+  ///
+  /// Lê as posições do BANCO (o cache pode estar vazio ou desatualizado) e
+  /// move cada uma com compare-and-set. Retorna o peso das OS que este
+  /// cliente efetivamente colocou em pronto / tirou de pronto, para que o
+  /// chamador faça a baixa/estorno correspondente — antes, as OS voltavam de
+  /// pronto sem estorno e a próxima ida a pronto baixava tudo de novo.
+  Future<
+      ({
+        double pesoEntrouPronto,
+        double pesoSaiuPronto,
+        List<PosicaoEstoqueRef>? posicoes,
+      })> _syncPosicoesByPedidoStatus(
     PedidoBitolaModel produto,
     PedidoBitolaStatus pedidoStatus,
   ) async {
+    const semEfeito =
+        (pesoEntrouPronto: 0.0, pesoSaiuPronto: 0.0, posicoes: null);
+
     // Converte PedidoBitolaStatus para PosicaoStatus
     final PosicaoStatus? posicaoStatusRaw;
     switch (pedidoStatus) {
@@ -891,66 +909,54 @@ class OrdemController {
       default:
         posicaoStatusRaw = null;
     }
-    if (posicaoStatusRaw == null) return;
+    if (posicaoStatusRaw == null) return semEfeito;
     final PosicaoStatus posicaoStatus = posicaoStatusRaw;
 
-    // Busca elementos do pedido — se cache vazio, busca do Supabase
-    var elementos = AppSupabaseClient.elementos.data
-        .where((e) => e.pedidoId == produto.pedidoId)
-        .toList();
-    if (elementos.isEmpty) {
-      try {
-        log('_syncPosicoes: cache vazio para pedido ${produto.pedidoId}, buscando do Supabase...');
-        await AppSupabaseClient.elementos.fetchByPedidoId(produto.pedidoId);
-        elementos = AppSupabaseClient.elementos.data
-            .where((e) => e.pedidoId == produto.pedidoId)
-            .toList();
-      } catch (e) {
-        log('_syncPosicoes: erro ao buscar elementos do Supabase: $e');
-      }
-    }
-    if (elementos.isEmpty) return;
-
-    // Busca a bitola da ordem para filtrar posições
-    final bitolaId = ordem.produto.id;
-
-    // Coleta IDs das posições que precisam ser atualizadas
-    final List<String> idsToUpdate = [];
-    for (final elemento in elementos) {
-      for (final posicao in elemento.posicoes) {
-        if (posicao.produtoId == bitolaId && posicao.status != posicaoStatus) {
-          idsToUpdate.add(posicao.id);
-          // Atualiza cache local
-          posicao.status = posicaoStatus;
-        }
-      }
+    final List<PosicaoEstoqueRef> posicoes;
+    try {
+      posicoes = await EstoqueProducaoService.posicoesDoBanco(
+          produto.pedidoId, produto.produto.id);
+    } catch (e) {
+      log('_syncPosicoes: erro ao buscar posições do pedido ${produto.pedidoId}: $e');
+      return semEfeito;
     }
 
-    if (idsToUpdate.isNotEmpty) {
-      // Persiste no Supabase em paralelo (batch) com tratamento de erro
-      try {
-        await Future.wait(
-          idsToUpdate.map((id) => SupabaseService.client
-              .from('elemento_posicoes')
-              .update({'status': posicaoStatus.name}).eq('id', id)),
-        );
-      } catch (e) {
-        log('_syncPosicoes: ERRO ao persistir ${idsToUpdate.length} posições para ${posicaoStatus.name}: $e');
-        // Retry: tenta novamente sequencialmente as que falharam
-        for (final id in idsToUpdate) {
-          try {
-            await SupabaseService.client
-                .from('elemento_posicoes')
-                .update({'status': posicaoStatus.name}).eq('id', id);
-          } catch (retryError) {
-            log('_syncPosicoes: FALHA no retry da posição $id: $retryError');
-          }
+    final pendentes = posicoes.where((p) => p.status != posicaoStatus).toList();
+    double entrou = 0, saiu = 0;
+    final Map<String, PosicaoStatus> statusFinal = {};
+
+    // Lotes paralelos pequenos para não saturar a conexão
+    for (var i = 0; i < pendentes.length; i += 20) {
+      final lote = pendentes.sublist(
+          i, i + 20 > pendentes.length ? pendentes.length : i + 20);
+      await Future.wait(lote.map((p) async {
+        try {
+          final t = await EstoqueProducaoService.transicionarPosicao(
+              p.id, posicaoStatus);
+          if (t.statusBanco != null) statusFinal[p.id] = t.statusBanco!;
+          if (t.efeito == EfeitoEstoque.baixa) entrou += p.peso;
+          if (t.efeito == EfeitoEstoque.estorno) saiu += p.peso;
+        } catch (e) {
+          // Não mudou no banco → nenhuma movimentação para esta OS
+          log('_syncPosicoes: FALHA ao mover a posição ${p.id}: $e');
+        }
+      }));
+    }
+
+    // Reflete no cache local o que de fato ficou no banco
+    if (statusFinal.isNotEmpty) {
+      for (final elemento in AppSupabaseClient.elementos.data
+          .where((e) => e.pedidoId == produto.pedidoId)) {
+        for (final posicao in elemento.posicoes) {
+          final s = statusFinal[posicao.id];
+          if (s != null) posicao.status = s;
         }
       }
-      // Re-emite stream de elementos
       AppSupabaseClient.elementos.dataStream
           .add(AppSupabaseClient.elementos.data);
     }
+
+    return (pesoEntrouPronto: entrou, pesoSaiuPronto: saiu, posicoes: posicoes);
   }
 
   Future<void> updateFeaturesByPedidoStatus(PedidoModel pedido) async {

@@ -118,6 +118,29 @@ class PedidoCompraSupabaseCollection {
     }
   }
 
+  /// Grava [model] apenas se o status no banco ainda permitir a transição
+  /// (compare-and-set). Retorna false quando outro clique/aparelho já mudou o
+  /// item — usado para que entradas e estornos de estoque não dupliquem.
+  Future<bool> updateCondicional(
+    PedidoCompraModel model, {
+    PedidoCompraStatus? seStatus,
+    PedidoCompraStatus? seNaoStatus,
+  }) async {
+    try {
+      var query = SupabaseService.client
+          .from(name)
+          .update(model.toSupabaseMap())
+          .eq('id', model.id);
+      if (seStatus != null) query = query.eq('status', seStatus.name);
+      if (seNaoStatus != null) query = query.neq('status', seNaoStatus.name);
+      final rows = await query.select('id');
+      return rows.isNotEmpty;
+    } catch (e) {
+      log('Supabase Error (PedidoCompra.updateCondicional): $e');
+      rethrow;
+    }
+  }
+
   Future<void> delete(PedidoCompraModel model) async {
     try {
       await SupabaseService.client.from(name).delete().eq('id', model.id);

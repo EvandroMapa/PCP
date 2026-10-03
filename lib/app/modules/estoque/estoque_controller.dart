@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/estoque/estoque_model.dart';
@@ -6,6 +8,7 @@ import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/services/audit_service.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
+import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:aco_plus/app/modules/estoque/estoque_view_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
@@ -271,16 +274,10 @@ class EstoqueController {
       if (quantidade <= 0)
         throw Exception('Quantidade deve ser maior que zero');
 
-      var estoque = BackendClient.estoques.getByProdutoId(produtoId);
-      estoque ??= EstoqueModel.novo(produtoId);
+      final novoSaldo = getSaldoCalculado(produtoId) + quantidade;
 
-      final novaQtde = estoque.quantidade + quantidade;
-      final estoqueAtualizado = estoque.copyWith(
-        quantidade: novaQtde,
-        updatedAt: DateTime.now(),
-      );
-      await BackendClient.estoques.upsert(estoqueAtualizado);
-
+      // Movimentação primeiro (fonte da verdade). Se falhar, lança e o
+      // chamador desfaz o que reivindicou; o campo resumido vem depois.
       await BackendClient.estoquesMovimentacao.add(
         EstoqueMovimentacaoModel.novo(
           produtoId: produtoId,
@@ -290,6 +287,7 @@ class EstoqueController {
           usuarioNome: usuarioCtrl.usuario?.nome,
         ),
       );
+      await _atualizarSaldoResumido(produtoId, novoSaldo);
 
       NotificationService.showPositive(
         'Compra Registrada',
@@ -316,12 +314,7 @@ class EstoqueController {
       if (quantidade <= 0)
         throw Exception('Quantidade deve ser maior que zero');
 
-      var estoque = BackendClient.estoques.getByProdutoId(produtoId);
-      estoque ??= EstoqueModel.novo(produtoId);
-
-      final novaQtde = estoque.quantidade - quantidade;
-      await BackendClient.estoques.upsert(
-          estoque.copyWith(quantidade: novaQtde, updatedAt: DateTime.now()));
+      final novoSaldo = getSaldoCalculado(produtoId) - quantidade;
 
       await BackendClient.estoquesMovimentacao.add(
         EstoqueMovimentacaoModel.novo(
@@ -332,6 +325,7 @@ class EstoqueController {
           usuarioNome: usuarioCtrl.usuario?.nome,
         ),
       );
+      await _atualizarSaldoResumido(produtoId, novoSaldo);
     } catch (e) {
       NotificationService.showNegative(
         'Erro ao estornar compra',
@@ -342,43 +336,103 @@ class EstoqueController {
     }
   }
 
-  /// Baixa automática ao marcar item como pronto na ordem
+  /// Baixa automática ao marcar item como pronto na ordem.
+  ///
+  /// Só deve ser chamada por quem efetivamente moveu o registro para pronto
+  /// no banco (ver EstoqueProducaoService) — esta função não deduplica.
   Future<void> baixarEstoque({
     required String produtoId,
     required double quantidade,
     required OrdemModel ordem,
+    String? detalhe,
+  }) =>
+      _registrarMovimentoProducao(
+        produtoId: produtoId,
+        tipo: EstoqueTipoMovimentacao.baixaProducao,
+        quantidade: -quantidade,
+        ordem: ordem,
+        observacao: 'Baixa da Ordem ${ordem.localizator}'
+            '${detalhe != null ? ' · $detalhe' : ''}',
+      );
+
+  /// Grava a movimentação de produção (fonte da verdade do saldo) e depois
+  /// atualiza o campo resumido `estoques.quantidade`.
+  ///
+  /// Não lança exceção para não travar a produção, mas uma falha definitiva
+  /// fica registrada no audit (`falha_movimentacao_estoque`) para conciliação.
+  Future<void> _registrarMovimentoProducao({
+    required String produtoId,
+    required EstoqueTipoMovimentacao tipo,
+    required double quantidade,
+    required OrdemModel ordem,
+    required String observacao,
   }) async {
+    if (quantidade.abs() < 0.0005) return;
+
+    // Saldo calculado ANTES de inserir, para não depender do Realtime
+    final novoSaldo = getSaldoCalculado(produtoId) + quantidade;
+    final mov = EstoqueMovimentacaoModel.novo(
+      produtoId: produtoId,
+      tipo: tipo,
+      quantidade: quantidade,
+      observacao: observacao,
+      ordemId: ordem.id,
+      usuarioNome: usuarioCtrl.usuario?.nome,
+    );
+
     try {
-      var estoque = BackendClient.estoques.getByProdutoId(produtoId);
-      estoque ??= EstoqueModel.novo(produtoId);
-
-      final saldoBase = getSaldoCalculado(produtoId);
-      final novaQtde = saldoBase - quantidade;
-      final estoqueAtualizado = estoque.copyWith(
-        quantidade: novaQtde,
-        updatedAt: DateTime.now(),
-      );
-      await BackendClient.estoques.upsert(estoqueAtualizado);
-
-      // Registra movimentação
-      await BackendClient.estoquesMovimentacao.add(
-        EstoqueMovimentacaoModel.novo(
-          produtoId: produtoId,
-          tipo: EstoqueTipoMovimentacao.baixaProducao,
-          quantidade: -quantidade,
-          observacao: 'Baixa da Ordem ${ordem.localizator}',
-          ordemId: ordem.id,
-          usuarioNome: usuarioCtrl.usuario?.nome,
-        ),
-      );
-
+      try {
+        await BackendClient.estoquesMovimentacao.add(mov);
+      } catch (_) {
+        // Nova tentativa com o MESMO id: se a primeira chegou ao banco (e só a
+        // resposta se perdeu), não duplica — a checagem abaixo a encontra.
+        await Future.delayed(const Duration(milliseconds: 800));
+        final jaGravada = await SupabaseService.client
+            .from(BackendClient.estoquesMovimentacao.name)
+            .select('id')
+            .eq('id', mov.id)
+            .maybeSingle();
+        if (jaGravada == null) await BackendClient.estoquesMovimentacao.add(mov);
+      }
     } catch (e) {
-      // Não bloqueia a produção em caso de erro no estoque
       NotificationService.showNegative(
-        'Erro na baixa de estoque',
+        tipo == EstoqueTipoMovimentacao.estorno
+            ? 'Erro no estorno de estoque'
+            : 'Erro na baixa de estoque',
         e.toString(),
         position: NotificationPosition.bottom,
       );
+      AuditService.registrar(
+        acao: 'falha_movimentacao_estoque',
+        modulo: 'estoque',
+        entidadeId: produtoId,
+        entidadeLabel: ordem.localizator,
+        detalhes: {
+          'tipo': tipo.value,
+          'quantidade': quantidade,
+          'ordem_id': ordem.id,
+          'observacao': observacao,
+          'erro': e.toString(),
+        },
+      );
+      return;
+    }
+
+    await _atualizarSaldoResumido(produtoId, novoSaldo);
+  }
+
+  /// Atualiza o campo resumido `estoques.quantidade`. Nunca lança: o saldo
+  /// real vem das movimentações e divergências são corrigidas por
+  /// [sincronizarSaldos].
+  Future<void> _atualizarSaldoResumido(String produtoId, double novoSaldo) async {
+    try {
+      final estoque = BackendClient.estoques.getByProdutoId(produtoId) ??
+          EstoqueModel.novo(produtoId);
+      await BackendClient.estoques.upsert(
+        estoque.copyWith(quantidade: novoSaldo, updatedAt: DateTime.now()),
+      );
+    } catch (e) {
+      log('Erro ao atualizar estoques.quantidade de $produtoId: $e');
     }
   }
 
@@ -451,37 +505,15 @@ class EstoqueController {
     required String produtoId,
     required double quantidade,
     required OrdemModel ordem,
-  }) async {
-    try {
-      var estoque = BackendClient.estoques.getByProdutoId(produtoId);
-      estoque ??= EstoqueModel.novo(produtoId);
-
-      final novaQtde = estoque.quantidade + quantidade;
-      final estoqueAtualizado = estoque.copyWith(
-        quantidade: novaQtde,
-        updatedAt: DateTime.now(),
+    String? detalhe,
+  }) =>
+      // quantidade positiva = devolução ao estoque
+      _registrarMovimentoProducao(
+        produtoId: produtoId,
+        tipo: EstoqueTipoMovimentacao.estorno,
+        quantidade: quantidade,
+        ordem: ordem,
+        observacao: 'Estorno — Ordem ${ordem.localizator} voltou de Pronto'
+            '${detalhe != null ? ' · $detalhe' : ''}',
       );
-      await BackendClient.estoques.upsert(estoqueAtualizado);
-
-      // Registra movimentação de estorno (tipo = estorno, quantidade positiva = devolução)
-      await BackendClient.estoquesMovimentacao.add(
-        EstoqueMovimentacaoModel.novo(
-          produtoId: produtoId,
-          tipo: EstoqueTipoMovimentacao.estorno,
-          quantidade: quantidade,
-          observacao: 'Estorno — Ordem ${ordem.localizator} voltou de Pronto',
-          ordemId: ordem.id,
-          usuarioNome: usuarioCtrl.usuario?.nome,
-        ),
-      );
-
-    } catch (e) {
-      // Não bloqueia a operação em caso de erro
-      NotificationService.showNegative(
-        'Erro no estorno de estoque',
-        e.toString(),
-        position: NotificationPosition.bottom,
-      );
-    }
-  }
 }
