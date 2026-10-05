@@ -52,15 +52,8 @@ class PaiPedidoSaldoTableWidget extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.neutralLight),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -68,21 +61,21 @@ class PaiPedidoSaldoTableWidget extends StatelessWidget {
         children: [
           // ── Cabeçalho ──────────────────────────────────────────────────
           _headerRow(produtos),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          Divider(height: 1, color: AppColors.neutralLightest),
 
           // ── Linha Mestre ────────────────────────────────────────────────
           _mestreRow(mestre, produtos),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          Divider(height: 1, color: AppColors.neutralLightest),
 
           // ── Linhas Parciais ─────────────────────────────────────────────
           for (int i = 0; i < filhos.length; i++) ...[
             _filhoRow(context, filhos[i], produtos, isEven: i.isEven),
             if (i < filhos.length - 1)
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              Divider(height: 1, color: AppColors.neutralLightest),
           ],
 
           // ── Linha Saldo ─────────────────────────────────────────────────
-          const Divider(height: 1, thickness: 2, color: Color(0xFFCBD5E1)),
+          Divider(height: 1, thickness: 2, color: AppColors.neutralLight),
           _saldoRow(produtos, _saldo),
         ],
       ),
@@ -93,16 +86,16 @@ class PaiPedidoSaldoTableWidget extends StatelessWidget {
 
   Widget _headerRow(List<PedidoBitolaModel> produtos) {
     return Container(
-      color: const Color(0xFFF8FAFC),
+      color: AppColorsSystem.light.primary[50],
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(
         children: [
           Expanded(
             flex: 3,
             child: Text(
-              'Pedido',
+              'PEDIDO',
               style: AppCss.minimumBold.copyWith(
-                color: const Color(0xFF64748B),
+                color: AppColors.neutralMedium,
                 fontSize: 11,
                 letterSpacing: 0.6,
               ),
@@ -116,7 +109,7 @@ class PaiPedidoSaldoTableWidget extends StatelessWidget {
                 textAlign: TextAlign.right,
                 maxLines: 1,
                 style: AppCss.minimumBold.copyWith(
-                  color: const Color(0xFF64748B),
+                  color: AppColors.neutralMedium,
                   fontSize: 10,
                   letterSpacing: 0.4,
                 ),
@@ -143,15 +136,13 @@ class PaiPedidoSaldoTableWidget extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEF3C7),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(
-                        color: const Color(0xFFF59E0B), width: 0.5),
+                    color: const Color(0xFFFEF3E2),
+                    borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
                     'MESTRE',
                     style: AppCss.minimumBold.copyWith(
-                        fontSize: 8, color: const Color(0xFF92400E)),
+                        fontSize: 9, color: const Color(0xFFB45309)),
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -213,15 +204,13 @@ class PaiPedidoSaldoTableWidget extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 5, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFDBEAFE),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                          color: const Color(0xFF3B82F6), width: 0.5),
+                      color: const Color(0xFFE8EFFE),
+                      borderRadius: BorderRadius.circular(999),
                     ),
                     child: Text(
                       'PARCIAL',
                       style: AppCss.minimumBold.copyWith(
-                          fontSize: 8, color: const Color(0xFF1E40AF)),
+                          fontSize: 9, color: const Color(0xFF1D4ED8)),
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -260,8 +249,8 @@ class PaiPedidoSaldoTableWidget extends StatelessWidget {
                     style: AppCss.minimumRegular.copyWith(
                       fontSize: 12,
                       color: qtde > 0
-                          ? const Color(0xFFDC2626)
-                          : Colors.grey[400],
+                          ? AppColors.statusCritico
+                          : AppColors.neutralMedium,
                       fontWeight:
                           qtde > 0 ? FontWeight.w600 : FontWeight.normal,
                     ),
@@ -281,7 +270,7 @@ class PaiPedidoSaldoTableWidget extends StatelessWidget {
     double Function(PedidoBitolaModel) saldoFn,
   ) {
     return Container(
-      color: const Color(0xFFF0FDF4), // verde clarinho
+      color: AppColors.statusPronto.withValues(alpha: 0.06),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       child: Row(
         children: [
@@ -290,13 +279,13 @@ class PaiPedidoSaldoTableWidget extends StatelessWidget {
             child: Row(
               children: [
                 const Icon(Icons.account_balance_wallet_outlined,
-                    size: 14, color: Color(0xFF16A34A)),
+                    size: 14, color: AppColors.statusPronto),
                 const SizedBox(width: 6),
                 Text(
                   'SALDO',
                   style: AppCss.minimumBold.copyWith(
                     fontSize: 11,
-                    color: const Color(0xFF16A34A),
+                    color: AppColors.statusPronto,
                     letterSpacing: 0.6,
                   ),
                 ),
@@ -315,8 +304,8 @@ class PaiPedidoSaldoTableWidget extends StatelessWidget {
                   style: AppCss.minimumBold.copyWith(
                     fontSize: 13,
                     color: isNegative
-                        ? const Color(0xFFDC2626)
-                        : const Color(0xFF16A34A),
+                        ? AppColors.statusCritico
+                        : AppColors.statusPronto,
                   ),
                 );
               }),

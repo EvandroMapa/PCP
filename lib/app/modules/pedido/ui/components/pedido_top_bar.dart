@@ -210,12 +210,6 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
         tooltip: 'Importar dados',
         onTap: () => _mostrarModulosImportacao(context),
       ),
-      if (pedido.podeGerarParcial)
-        _botaoAcao(
-          icon: Icons.add,
-          tooltip: 'Criar Pedido Parcial',
-          onTap: () => push(context, PedidoCreatePage(pai: pedido)),
-        ),
       _botaoAcao(
         icon: Icons.local_shipping,
         tooltip: 'Acompanhar pedido',

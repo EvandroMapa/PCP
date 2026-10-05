@@ -32,6 +32,7 @@ import 'package:aco_plus/app/modules/pedido/ui/components/pedido_top_bar.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_users_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_vinculados_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/components/pedido_localizacao_widget.dart';
+import 'package:aco_plus/app/modules/pedido/ui/pedido_create_page.dart';
 import 'package:aco_plus/app/modules/relatorio/view_models/relatorio_pedido_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
@@ -579,6 +580,111 @@ class _PedidoPageState extends State<PedidoPage>
     );
   }
 
+  /// Botão das barras de ação das abas: contorno ou principal (cheio).
+  /// Normal tem 36 px (igual Elementos); [pequeno] serve aos cabeçalhos
+  Widget _botaoSecao({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    bool primario = false,
+    bool pequeno = false,
+  }) {
+    final raio = pequeno ? 7.0 : 10.0;
+    final cor = primario ? Colors.white : AppColors.neutralDark;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(raio),
+      child: Container(
+        height: pequeno ? null : 36,
+        padding: pequeno
+            ? const EdgeInsets.symmetric(horizontal: 10, vertical: 5)
+            : const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: primario ? AppColors.primaryMain : Colors.white,
+          borderRadius: BorderRadius.circular(raio),
+          border: Border.all(
+              color: primario ? AppColors.primaryMain : AppColors.neutralLight),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: pequeno ? 15 : 16, color: cor),
+            const SizedBox(width: 6),
+            Text(label, style: AppCss.minimumBold.setSize(12).setColor(cor)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Os dois relatórios do pedido mestre num botão só
+  Widget _menuRelatorioMestre(PedidoModel pedido) {
+    return PopupMenuButton<RelatorioPedidoTipo>(
+      tooltip: 'Relatórios',
+      position: PopupMenuPosition.under,
+      onSelected: (tipo) => pedidoCtrl.onGeneratePDF(pedido, type: tipo),
+      itemBuilder: (_) => [
+        for (final tipo in [
+          RelatorioPedidoTipo.parciais,
+          RelatorioPedidoTipo.mestre,
+        ])
+          PopupMenuItem(
+            value: tipo,
+            child: Row(
+              children: [
+                Icon(Icons.picture_as_pdf_outlined,
+                    size: 18, color: AppColors.neutralDark),
+                const SizedBox(width: 10),
+                Text(tipo.label),
+              ],
+            ),
+          ),
+      ],
+      child: Container(
+        height: 36,
+        padding: const EdgeInsets.only(left: 14, right: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.neutralLight),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.picture_as_pdf_outlined,
+                size: 16, color: AppColors.neutralDark),
+            const SizedBox(width: 6),
+            Text('Relatório',
+                style: AppCss.minimumBold
+                    .setSize(12)
+                    .setColor(AppColors.neutralDark)),
+            Icon(Icons.arrow_drop_down,
+                size: 20, color: AppColors.neutralDark),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Título da aba à esquerda e ações à direita (quebra em tela estreita)
+  Widget _barraSecao({required String titulo, required List<Widget> acoes}) {
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 12,
+      runSpacing: 10,
+      children: [
+        Text(titulo, style: AppCss.mediumBold),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: acoes,
+        ),
+      ],
+    );
+  }
+
   Widget _dashboardContent(PedidoModel pedido) {
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -788,23 +894,36 @@ class _PedidoPageState extends State<PedidoPage>
   }
 
   Widget _produtosBody(PedidoModel pedido) {
-    final relatorio = _botaoRelatorio(
-      pedido,
-      label: pedido.isMestre ? 'Relatório de Parciais' : 'Relatório de Pedido',
-      onTap: () => pedido.isMestre
-          ? pedidoCtrl.onGeneratePDF(pedido,
-              type: RelatorioPedidoTipo.parciais)
-          : pedidoCtrl.onGeneratePDF(pedido,
-              type: RelatorioPedidoTipo.geral),
-    );
+    // Criar parcial fica num lugar só (a mesma regra da barra de cima)
+    final VoidCallback? novaParcial = pedido.podeGerarParcial
+        ? () => push(context, PedidoCreatePage(pai: pedido))
+        : null;
     return Container(
       color: AppColors.neutralLightest,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // ── Pedido Mestre: tabela de saldo + cards dos parciais ──
+          // ── Pedido Mestre: saldo + parciais, ações numa barra só ──
           if (pedido.pedidosFilhos.isNotEmpty) ...[
-            Align(alignment: Alignment.centerRight, child: relatorio),
+            _barraSecao(
+              titulo: 'Saldo do pedido mestre',
+              acoes: [
+                _menuRelatorioMestre(pedido),
+                _botaoSecao(
+                  icon: Symbols.calculate,
+                  label: 'Recalcular saldo',
+                  onTap: () =>
+                      pedidoCtrl.verificarERecalcularSaldo(context, pedido),
+                ),
+                if (novaParcial != null)
+                  _botaoSecao(
+                    icon: Icons.add,
+                    label: 'Nova parcial',
+                    primario: true,
+                    onTap: novaParcial,
+                  ),
+              ],
+            ),
             const H(12),
             PaiPedidoSaldoTableWidget(
               mestre: pedido,
@@ -816,14 +935,37 @@ class _PedidoPageState extends State<PedidoPage>
                   .where((f) => !f.localizador.startsWith('NOTFOUND'))
                   .toList(),
             ),
-            const H(16),
+            const H(20),
             PedidoFilhosWidget(
                 pedido: pedido, filhos: pedido.getTodosFilhos()),
           ],
 
-          // ── Produtos (Pedido Normal ou Parcial): relatório no cabeçalho ──
+          // ── Produtos (Pedido Normal ou Parcial): ações no cabeçalho ──
           if (pedido.pedidosFilhos.isEmpty) ...[
-            PedidoProdutosWidget(pedido, acao: relatorio),
+            PedidoProdutosWidget(
+              pedido,
+              acoes: [
+                _botaoRelatorio(
+                  pedido,
+                  label: pedido.isMestre
+                      ? 'Relatório de Parciais'
+                      : 'Relatório de Pedido',
+                  onTap: () => pedido.isMestre
+                      ? pedidoCtrl.onGeneratePDF(pedido,
+                          type: RelatorioPedidoTipo.parciais)
+                      : pedidoCtrl.onGeneratePDF(pedido,
+                          type: RelatorioPedidoTipo.geral),
+                ),
+                if (novaParcial != null)
+                  _botaoSecao(
+                    icon: Icons.add,
+                    label: 'Nova parcial',
+                    primario: true,
+                    pequeno: true,
+                    onTap: novaParcial,
+                  ),
+              ],
+            ),
             if (pedido.getPedidosVinculados().isNotEmpty) ...[
               const H(16),
               PedidoVinculadosWidget(

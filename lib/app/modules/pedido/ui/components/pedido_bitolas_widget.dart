@@ -20,9 +20,9 @@ import 'package:material_symbols_icons/symbols.dart';
 class PedidoProdutosWidget extends StatefulWidget {
   final PedidoModel pedido;
 
-  /// Botão no canto do cabeçalho do cartão (ex.: relatório)
-  final Widget? acao;
-  const PedidoProdutosWidget(this.pedido, {this.acao, super.key});
+  /// Botões no canto do cabeçalho do cartão (ex.: relatório, nova parcial)
+  final List<Widget> acoes;
+  const PedidoProdutosWidget(this.pedido, {this.acoes = const [], super.key});
 
   @override
   State<PedidoProdutosWidget> createState() => _PedidoProdutosWidgetState();
@@ -89,19 +89,27 @@ class _PedidoProdutosWidgetState extends State<PedidoProdutosWidget> {
         children: [
           Icon(Symbols.stacks, size: 18, color: AppColors.neutralMedium),
           const SizedBox(width: 8),
+          Text(n == 1 ? '1 bitola' : '$n bitolas',
+              style: AppCss.minimumBold.setSize(14)),
+          const SizedBox(width: 12),
+          // Selo e botões à direita; em tela estreita quebram de linha
           Expanded(
-            child: Text(n == 1 ? '1 bitola' : '$n bitolas',
-                style: AppCss.minimumBold.setSize(14)),
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                if (_aguardandoEntrada)
+                  _chip('Aguardando entrada na produção',
+                      AppColors.neutralMedium)
+                else if (pedido.produtos.isNotEmpty)
+                  _chip('${(pedido.getPrcntgPronto() * 100).percent}% pronto',
+                      AppColors.statusPronto),
+                ...widget.acoes,
+              ],
+            ),
           ),
-          if (_aguardandoEntrada)
-            _chip('Aguardando entrada na produção', AppColors.neutralMedium)
-          else if (pedido.produtos.isNotEmpty)
-            _chip('${(pedido.getPrcntgPronto() * 100).percent}% pronto',
-                AppColors.statusPronto),
-          if (widget.acao != null) ...[
-            const SizedBox(width: 10),
-            widget.acao!,
-          ],
         ],
       ),
     );

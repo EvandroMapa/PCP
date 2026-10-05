@@ -6,7 +6,6 @@ import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
-import 'package:aco_plus/app/modules/pedido/ui/pedido_create_page.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_page.dart';
 import 'package:flutter/material.dart';
 
@@ -24,62 +23,8 @@ class PedidoFilhosWidget extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Cabeçalho ──
-        Row(
-          children: [
-            Expanded(
-              child: Text('Informações Gerais',
-                  style: AppCss.smallBold.setSize(13)),
-            ),
-            InkWell(
-              onTap: () => pedidoCtrl.onGeneratePDF(pedido),
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.picture_as_pdf_outlined,
-                    color: Colors.redAccent, size: 20),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Tooltip(
-              message: 'Recalcular Saldo',
-              preferBelow: false,
-              waitDuration: const Duration(milliseconds: 300),
-              child: InkWell(
-                onTap: () async {
-                  await pedidoCtrl.verificarERecalcularSaldo(context, pedido);
-                },
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.calculate_outlined,
-                      color: Colors.orange, size: 20),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            InkWell(
-              onTap: () async => push(context, PedidoCreatePage(pai: pedido)),
-              child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryMain,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.add, color: Colors.white, size: 20),
-              ),
-            ),
-          ],
-        ),
+        // ── Título (as ações ficam na barra da aba) ──
+        Text('Pedidos parciais (${filhos.length})', style: AppCss.mediumBold),
         const SizedBox(height: 12),
 
         // ── Grid de cards ──
@@ -121,24 +66,20 @@ class _ParcialCardState extends State<_ParcialCard> {
       duration: const Duration(milliseconds: 200),
       width: 264,
       decoration: BoxDecoration(
-        color: isArquivado ? const Color(0xFFF8FAFC) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: isArquivado ? AppColors.neutralLightest : Colors.white,
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: isArquivado
-              ? const Color(0xFFCBD5E1)
-              : Colors.black,
-          width: isArquivado ? 1.0 : 1.5,
+          color: _isHovered ? AppColors.neutralMedium : AppColors.neutralLight,
         ),
-        boxShadow: isArquivado
-            ? []
-            : [
+        boxShadow: _isHovered && !isArquivado
+            ? [
                 BoxShadow(
-                  color:
-                      Colors.black.withValues(alpha: _isHovered ? 0.15 : 0.06),
-                  blurRadius: _isHovered ? 16 : 8,
-                  offset: Offset(0, _isHovered ? 6 : 3),
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
-              ],
+              ]
+            : [],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -150,11 +91,11 @@ class _ParcialCardState extends State<_ParcialCard> {
                 const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
             decoration: BoxDecoration(
               color: isArquivado
-                  ? const Color(0xFF64748B)
-                  : Colors.black,
+                  ? AppColors.neutralMedium
+                  : AppColors.primaryMain,
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(14),
-                topRight: Radius.circular(14),
+                topLeft: Radius.circular(9),
+                topRight: Radius.circular(9),
               ),
             ),
             child: Row(
@@ -307,8 +248,8 @@ class _ParcialCardState extends State<_ParcialCard> {
                     top: BorderSide(color: Color(0xFFE2E8F0)),
                   ),
                   borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(14),
-                    bottomRight: Radius.circular(14),
+                    bottomLeft: Radius.circular(9),
+                    bottomRight: Radius.circular(9),
                   ),
                 ),
                 child: Column(
@@ -364,7 +305,7 @@ class _ParcialCardState extends State<_ParcialCard> {
               FirestoreClient.pedidos.getById(widget.mestre.id);
           pedidoCtrl.pedidoStream.add(mestreAtualizado);
         },
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(10),
         child: card,
       ),
     );
