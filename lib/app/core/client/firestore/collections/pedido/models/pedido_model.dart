@@ -511,10 +511,15 @@ class PedidoModel {
     late ClienteModel cliente;
     late ObraModel obra;
     late StepModel step;
+    // Etapa exatamente como está no banco. É ela que volta a ser gravada:
+    // o [step] abaixo pode ser um substituto de exibição (primeira etapa ou
+    // "não encontrada") quando a lista de etapas ainda não carregou ou o id
+    // é desconhecido — gravar esse substituto zerava ou trocava a etapa.
+    final stepIdBanco = (map['step_id'] ?? '').toString();
     try {
       final clienteId = (map['cliente_id'] ?? '').toString();
       final obraId = (map['obra_id'] ?? '').toString();
-      final stepId = (map['step_id'] ?? '').toString();
+      final stepId = stepIdBanco;
       cliente = FirestoreClient.clientes.getById(clienteId);
       obra = cliente.obras.firstWhereOrNull((e) => e.id == obraId) ??
           ObraModel.empty();
@@ -579,6 +584,7 @@ class PedidoModel {
               PedidoStepModel(
                 id: (map['id'] ?? '').toString(),
                 step: step,
+                stepId: stepIdBanco,
                 createdAt: _parseDate(map['created_at']),
               )
             ],
@@ -655,6 +661,16 @@ class PedidoModel {
     return DateTime.tryParse(val.toString()) ?? DateTime.now();
   }
 
+  /// Id da etapa atual que pode ser gravado, ou null se desconhecido.
+  /// Usa o id bruto do histórico (vindo do banco ou de PedidoStepModel.create),
+  /// nunca o StepModel de exibição.
+  String? get _stepIdParaSalvar {
+    if (steps.isEmpty) return null;
+    final id = steps.last.stepId;
+    if (id.isEmpty || id == StepModel.notFound.id) return null;
+    return id;
+  }
+
   Map<String, dynamic> toSupabaseMap() => {
         'id': id,
         'localizador': localizador,
@@ -662,14 +678,10 @@ class PedidoModel {
         'tipo': tipo.name,
         'cliente_id': cliente.id.isEmpty ? null : cliente.id,
         'obra_id': (obra.id.isEmpty || obra.id == 'NOTFOUND') ? null : obra.id,
-        'step_id': steps.isNotEmpty
-            ? (steps.last.stepId.isNotEmpty &&
-                    steps.last.stepId != 'step-not-found'
-                ? steps.last.stepId
-                : steps.last.step.id != 'step-not-found'
-                    ? steps.last.step.id
-                    : null)
-            : null,
+        // Só grava a etapa quando ela é conhecida; caso contrário omite a
+        // coluna e o valor do banco é preservado (antes gravava null ou a
+        // etapa substituta de exibição — bug do pedido "mudando de etapa").
+        if (_stepIdParaSalvar != null) 'step_id': _stepIdParaSalvar,
         'status': statusess.isNotEmpty ? statusess.last.status.name : null,
         'is_archived': isArchived,
         'checklist_id':
