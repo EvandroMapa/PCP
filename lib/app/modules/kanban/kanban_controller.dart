@@ -10,6 +10,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/enums/sort_step_type.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
@@ -74,7 +75,11 @@ class StepController {
     });
   }
 
-  Future<void> onInit() async {
+  /// [recarregar] = false na abertura do app: espera a carga inicial do
+  /// AppSupabaseClient em vez de buscar os pedidos por conta própria — a
+  /// busca antecipada montava os pedidos antes dos elementos chegarem
+  /// (números errados no dashboard até a próxima atualização).
+  Future<void> onInit({bool recarregar = true}) async {
     try {
       _pedidosSubscription?.cancel();
       _pedidosSubscription =
@@ -87,7 +92,11 @@ class StepController {
         }
       });
 
-      await BackendClient.pedidos.fetch();
+      if (recarregar) {
+        await BackendClient.pedidos.fetch();
+      } else {
+        await AppSupabaseClient.aguardarCarga;
+      }
       final kanban = mountKanban();
       final calendar = _mountCalendar();
       utilsStream.add(KanbanUtils(kanban: kanban, calendar: calendar));

@@ -26,8 +26,8 @@ class AppController {
       usuarioCtrl.setup();
       await usuarioCtrl.getCurrentUser();
       // Não aguarda o kanban — carrega em background para não travar o startup
-      kanbanCtrl.onInit();
-      pedidoCtrl.onInit();
+      kanbanCtrl.onInit(recarregar: false);
+      pedidoCtrl.onInit(recarregar: false);
       _setupCascadeListeners();
     } catch (e) {
       log('AppController: Erro no onInit: $e');

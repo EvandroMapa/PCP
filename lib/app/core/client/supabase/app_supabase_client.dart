@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:developer';
+import 'package:aco_plus/app/core/models/app_stream.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/cliente/cliente_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/fabricante/fabricante_supabase_collection.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/materia_prima/materia_prima_supabase_collection.dart';
@@ -62,6 +64,20 @@ class AppSupabaseClient {
   static EquipamentoSupabaseCollection equipamentos =
       EquipamentoSupabaseCollection();
 
+  /// Carga inicial. As tabelas independentes são buscadas em PARALELO, em
+  /// fases que respeitam as dependências de mapeamento:
+  ///   1. cadastros base + elementos + estoque (independentes entre si)
+  ///   2. matéria-prima e ordens (usam bitolas/fabricantes)
+  ///   3. pedidos (usam clientes, steps, ordens e o índice de elementos)
+  /// Antes era tudo sequencial (~22 s de rede); em paralelo fica ~5 s.
+  /// true quando a carga inicial terminou. Telas que mostram totais (ex.:
+  /// dashboard) esperam por ele para não exibir números parciais.
+  static final AppStream<bool> carregadoStream = AppStream<bool>.seed(false);
+  static final Completer<void> _carga = Completer<void>();
+
+  /// Completa quando a carga inicial termina (com ou sem erros).
+  static Future<void> get aguardarCarga => _carga.future;
+
   static Future<void> init() async {
     try {
       // ── 1. Realtime primeiro ────────────────────────────────────────────
@@ -75,7 +91,8 @@ class AppSupabaseClient {
       ordens.listen();
       materiaPrima.listen();
       // pedidoArquivos.listen() removido — arquivos do pedido são salvos no campo JSON archives
-      pedidoBitolas.listen();
+      // pedidoBitolas.listen()/start() removidos — nenhum módulo lê esse cache
+      // (os itens chegam junto com os pedidos) e a tabela inteira tinha 11 MB
       tags.listen();
       checklists.listen();
       automatizacao.listen();
@@ -90,74 +107,54 @@ class AppSupabaseClient {
       pedidosCompra.listen();
       equipamentos.listen();
 
-      // ── 2. Fetches sequenciais (dados iniciais) ─────────────────────────
-      await usuarioTipos
-          .start()
-          .catchError((e) => log('Error starting usuarioTipos: $e'));
-      await usuarios
-          .start()
-          .catchError((e) => log('Error starting usuarios: $e'));
-      await clientes
-          .start()
-          .catchError((e) => log('Error starting clientes: $e'));
-      await steps.start().catchError((e) => log('Error starting steps: $e'));
-      await ordens.start().catchError((e) => log('Error starting ordens: $e'));
-      await bitolas
-          .start()
-          .catchError((e) => log('Error starting bitolas: $e'));
-      await fabricantes
-          .start()
-          .catchError((e) => log('Error starting fabricantes: $e'));
-      await materiaPrima
-          .start()
-          .catchError((e) => log('Error starting materiaPrima: $e'));
-      // pedidoArquivos.start() removido — arquivos carregados via PedidoModel
-      await pedidoBitolas
-          .start()
-          .catchError((e) => log('Error starting pedidoBitolas: $e'));
-      await tags.start().catchError((e) => log('Error starting tags: $e'));
-      await checklists
-          .start()
-          .catchError((e) => log('Error starting checklists: $e'));
-      await automatizacao
-          .start()
-          .catchError((e) => log('Error starting automatizacao: $e'));
-      await notificacoes
-          .start()
-          .catchError((e) => log('Error starting notificacoes: $e'));
-      // elementoArquivos.start() removido — arquivos já carregados via elementos.start() (batch)
-      await elementos
-          .start()
-          .catchError((e) => log('Error starting elementos: $e'));
-      await patios
-          .start()
-          .catchError((e) => log('Error starting patios: $e'));
-      await boxes
-          .start()
-          .catchError((e) => log('Error starting boxes: $e'));
-      await pedidoBoxes
-          .start()
-          .catchError((e) => log('Error starting pedidoBoxes: $e'));
-      await estoques
-          .start()
-          .catchError((e) => log('Error starting estoques: $e'));
-      await estoquesMovimentacao
-          .start()
-          .catchError((e) => log('Error starting estoquesMovimentacao: $e'));
-      await pedidosCompra
-          .start()
-          .catchError((e) => log('Error starting pedidosCompra: $e'));
-      await equipamentos
-          .start()
-          .catchError((e) => log('Error starting equipamentos: $e'));
+      // ── 2. Fetches iniciais em fases paralelas ──────────────────────────
+      await Future.wait([
+        _safeStart('usuarios', () async {
+          await usuarioTipos.start();
+          await usuarios.start();
+        }),
+        _safeStart('clientes', () => clientes.start()),
+        _safeStart('steps', () => steps.start()),
+        _safeStart('bitolas', () => bitolas.start()),
+        _safeStart('fabricantes', () => fabricantes.start()),
+        _safeStart('tags', () => tags.start()),
+        _safeStart('checklists', () => checklists.start()),
+        _safeStart('automatizacao', () => automatizacao.start()),
+        _safeStart('notificacoes', () => notificacoes.start()),
+        _safeStart('elementos', () => elementos.start()),
+        _safeStart('patios', () => patios.start()),
+        _safeStart('boxes', () => boxes.start()),
+        _safeStart('pedidoBoxes', () => pedidoBoxes.start()),
+        _safeStart('estoques', () => estoques.start()),
+        _safeStart('estoquesMovimentacao', () => estoquesMovimentacao.start()),
+        _safeStart('pedidosCompra', () => pedidosCompra.start()),
+        _safeStart('equipamentos', () => equipamentos.start()),
+      ]);
 
-      // Pedidos depende de clientes/steps para mapeamento
-      await pedidos
-          .start()
-          .catchError((e) => log('Error starting pedidos: $e'));
+      await Future.wait([
+        _safeStart('materiaPrima', () => materiaPrima.start()),
+        _safeStart('ordens', () => ordens.start()),
+      ]);
+
+      // Pedidos depende de clientes/steps/ordens/elementos para mapeamento.
+      // fetch() (e não start()) garante o mapeamento com os elementos já
+      // carregados, mesmo que algo tenha disparado uma carga antecipada.
+      await _safeStart('pedidos', () => pedidos.fetch());
       // Arquivados (pedidos e ordens) são carregados sob demanda ao abrir suas respectivas páginas
     } catch (e) {
       log('AppSupabaseClient: Critical error during init: $e');
+    } finally {
+      carregadoStream.add(true);
+      if (!_carga.isCompleted) _carga.complete();
+    }
+  }
+
+  static Future<void> _safeStart(
+      String nome, Future<void> Function() start) async {
+    try {
+      await start();
+    } catch (e) {
+      log('Error starting $nome: $e');
     }
   }
 }

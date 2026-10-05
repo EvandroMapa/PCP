@@ -64,10 +64,14 @@ class PedidoController {
       AppStream<PedidoArquivedUtils>.seed(PedidoArquivedUtils());
   PedidoArquivedUtils get utilsArquiveds => utilsArquivedsStream.value;
 
-  void onInit() {
+  /// [recarregar] = false na abertura do app: os pedidos chegam pela carga
+  /// inicial do AppSupabaseClient (buscar aqui montava pedidos sem elementos).
+  void onInit({bool recarregar = true}) {
     try {
       utilsStream.add(PedidoUtils());
-      BackendClient.pedidos.fetch();
+      if (recarregar) {
+        BackendClient.pedidos.fetch();
+      }
       _listenChecklists();
       _listenGlobalPedidos();
     } catch (e) {

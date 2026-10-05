@@ -73,7 +73,12 @@ class ArchiveModel {
   Map<String, dynamic> toMap() {
     return {
       'url': url,
-      'bytes': bytes != null ? base64.encode(bytes!) : null,
+      // Com url o arquivo já está no Storage: não embute o conteúdo em base64
+      // (fromMap nem lê 'bytes'; uma foto embutida chegou a 2,5 MB por linha
+      // em pedido_bitolas.materia_prima_raw e pesava na abertura do app).
+      'bytes': bytes != null && (url == null || url!.isEmpty)
+          ? base64.encode(bytes!)
+          : null,
       'description': description,
       'createdAt': createdAt.millisecondsSinceEpoch,
       'thumbnail': thumbnail?.toMap(),

@@ -46,52 +46,22 @@ class ElementoSupabaseCollection {
     if (_isStarted) return;
     _isStarted = true;
     try {
-      // 1. Buscar tabela principal
-      final elementosRaw =
-          await SupabaseService.client.from(name).select().order('nome');
+      // 1. Elementos e posições em PARALELO, cada um numa única consulta.
+      // Como todos os elementos são carregados, não é preciso filtrar as
+      // posições por elemento_id — antes eram ~140 requisições "in" em lotes
+      // de 50 (≈8 s na abertura); agora são 2 (≈3,5 s). Posições órfãs são
+      // simplesmente ignoradas pelo índice abaixo.
+      final resultados = await Future.wait([
+        SupabaseService.client.from(name).select().order('nome'),
+        SupabaseService.client.from('elemento_posicoes').select(),
+      ]);
+      final elementosRaw = resultados[0];
+      final allPosicoes = resultados[1];
 
       if (elementosRaw.isEmpty) {
         dataStream.add(<ElementoModel>[]);
         return;
       }
-
-      final List<String> eIds =
-          elementosRaw.map((e) => e['id'].toString()).toList();
-
-      // 2. Buscar tabelas auxiliares em lotes PARALELOS (evita URL too long)
-      Future<List<Map<String, dynamic>>> safeFetch(String table) async {
-        try {
-          const batchSize = 50;
-          const parallelLimit = 10; // Executa 10 batches em paralelo
-          final resultados = <Map<String, dynamic>>[];
-
-          // Monta todos os batches de IDs
-          final batches = <List<String>>[];
-          for (int i = 0; i < eIds.length; i += batchSize) {
-            batches.add(eIds.sublist(
-                i, i + batchSize > eIds.length ? eIds.length : i + batchSize));
-          }
-
-          // Executa em blocos de parallelLimit
-          for (int i = 0; i < batches.length; i += parallelLimit) {
-            final chunk = batches.sublist(
-                i, i + parallelLimit > batches.length ? batches.length : i + parallelLimit);
-            final futures = chunk.map((batch) => SupabaseService.client
-                .from(table)
-                .select()
-                .filter('elemento_id', 'in', batch));
-            final results = await Future.wait(futures);
-            for (final res in results) {
-              resultados.addAll(List<Map<String, dynamic>>.from(res));
-            }
-          }
-          return resultados;
-        } catch (_) {
-          return [];
-        }
-      }
-
-      final allPosicoes = await safeFetch('elemento_posicoes');
 
       // 3. Indexar posições por elemento_id — evita O(n×m)
       final posicoesIndex = <String, List<Map<String, dynamic>>>{};

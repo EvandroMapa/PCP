@@ -22,6 +22,7 @@ import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 
 import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/modules/ponta/ponta_model.dart';
 import 'package:aco_plus/app/core/services/preferences_service.dart';
@@ -99,6 +100,29 @@ class DashboardPageState extends State<DashboardPage> {
   }
 
   Widget body() {
+    // Só mostra os totais depois da carga inicial: antes disso os pedidos e
+    // elementos estão incompletos e os números apareciam errados por alguns
+    // segundos até se corrigirem sozinhos.
+    return StreamOut<bool>(
+      stream: AppSupabaseClient.carregadoStream.listen,
+      builder: (_, carregado) => carregado ? _bodyCarregado() : _carregando(),
+    );
+  }
+
+  Widget _carregando() => Container(
+        color: const Color(0xFFCBD5E1),
+        alignment: Alignment.center,
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 12),
+            Text('Carregando dados da produção...'),
+          ],
+        ),
+      );
+
+  Widget _bodyCarregado() {
     return StreamOut(
       stream: FirestoreClient.pedidos.pedidosUnarchivedsStream.listen,
       builder: (_, pedidos) => StreamOut(

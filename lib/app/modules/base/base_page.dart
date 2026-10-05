@@ -24,7 +24,7 @@ class _BasePageState extends State<BasePage> {
   @override
   void initState() {
     baseCtrl.onInit().then((_) {
-      kanbanCtrl.onInit();
+      kanbanCtrl.onInit(recarregar: false);
     });
     // Inicia o agendador de backup para QUALQUER usuário logado,
     // independentemente de visitar a tela de Backups.
