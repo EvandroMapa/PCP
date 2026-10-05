@@ -3,9 +3,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/usuario/enums/use
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 
 import 'package:aco_plus/app/core/components/app_field.dart';
-import 'package:aco_plus/app/core/components/app_multiple_registers.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
-import 'package:aco_plus/app/core/components/done_button.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
 import 'package:aco_plus/app/core/enums/obra_status.dart';
@@ -19,20 +17,7 @@ import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:cpf_cnpj_validator/cnpj_validator.dart';
 import 'package:cpf_cnpj_validator/cpf_validator.dart';
 import 'package:flutter/material.dart';
-
-enum _ClienteSection { dadosGerais, obras }
-
-extension _ClienteSectionExt on _ClienteSection {
-  String get label => switch (this) {
-        _ClienteSection.dadosGerais => 'Dados Gerais',
-        _ClienteSection.obras => 'Obras',
-      };
-
-  IconData get icon => switch (this) {
-        _ClienteSection.dadosGerais => Icons.badge_outlined,
-        _ClienteSection.obras => Icons.construction_outlined,
-      };
-}
+import 'package:material_symbols_icons/symbols.dart';
 
 class ClienteCreatePage extends StatefulWidget {
   final ClienteModel? cliente;
@@ -43,10 +28,12 @@ class ClienteCreatePage extends StatefulWidget {
   State<ClienteCreatePage> createState() => _ClienteCreatePageState();
 }
 
-class _ClienteCreatePageState extends State<ClienteCreatePage> {
-  _ClienteSection _selected = _ClienteSection.dadosGerais;
+class _ClienteCreatePageState extends State<ClienteCreatePage>
+    with SingleTickerProviderStateMixin {
+  late final TabController _abas = TabController(length: 2, vsync: this);
   String _initialSnapshot = '';
   bool _clienteSalvo = false;
+  bool _salvando = false;
 
   String _snapshot(ClienteCreateModel form) =>
       '${form.nome.text}|${form.telefone.text}|${form.cpf.text}';
@@ -56,9 +43,16 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
   bool get _obrasBlockedByDirty =>
       _isDirty || (!clienteCtrl.form.isEdit && !_clienteSalvo);
 
+  bool get _podeSalvar =>
+      (widget.cliente != null &&
+          usuario.permission.cliente.contains(UserPermissionType.update)) ||
+      (widget.cliente == null &&
+          usuario.permission.cliente.contains(UserPermissionType.create));
+
   @override
   void initState() {
     setWebTitle(widget.cliente != null ? 'Editar Cliente' : 'Novo Cliente');
+    _abas.addListener(() => setState(() {}));
 
     // Ao editar, busca a versão mais atualizada do cliente no dataStream
     // (widget.cliente pode ter sido capturado antes do fetch completar)
@@ -88,6 +82,24 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
   }
 
   @override
+  void dispose() {
+    _abas.dispose();
+    super.dispose();
+  }
+
+  Future<void> _salvar() async {
+    setState(() => _salvando = true);
+    try {
+      await clienteCtrl.onConfirm(context, widget.cliente, widget.isFromOrder);
+      if (mounted) {
+        _initialSnapshot = _snapshot(clienteCtrl.form);
+        _clienteSalvo = true;
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _salvando = false);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AppScaffold(
       resizeAvoid: true,
@@ -109,365 +121,419 @@ class _ClienteCreatePageState extends State<ClienteCreatePage> {
           },
           icon: Icon(Icons.arrow_back, color: AppColors.white),
         ),
-        title: Text(
-          '${clienteCtrl.form.isEdit ? 'Editar' : 'Adicionar'} Cliente',
-          style: AppCss.largeBold.setColor(AppColors.white),
+        titleSpacing: 0,
+        title: StreamOut(
+          stream: clienteCtrl.formStream.listen,
+          builder: (_, form) => Row(
+            children: [
+              Flexible(
+                child: Text(
+                  form.isEdit
+                      ? (form.nome.text.trim().isEmpty
+                          ? 'Cliente'
+                          : form.nome.text.trim())
+                      : 'Novo cliente',
+                  overflow: TextOverflow.ellipsis,
+                  style: AppCss.largeBold.setColor(AppColors.white).setSize(18),
+                ),
+              ),
+              if (form.isEdit) ...[
+                const SizedBox(width: 10),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    'Cód. ${form.codigo}',
+                    style: AppCss.minimumBold
+                        .setSize(11)
+                        .setColor(AppColors.white),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
         actions: [
-          if ((widget.cliente != null &&
-                  usuario.permission.cliente
-                      .contains(UserPermissionType.update)) ||
-              (widget.cliente == null &&
-                  usuario.permission.cliente
-                      .contains(UserPermissionType.create)))
-            IconLoadingButton(
-              () async {
-                await clienteCtrl.onConfirm(
-                  context,
-                  widget.cliente,
-                  widget.isFromOrder,
-                );
-                if (mounted) {
-                  setState(() {
-                    _initialSnapshot = _snapshot(clienteCtrl.form);
-                    _clienteSalvo = true;
-                  });
-                }
-              },
+          if (_podeSalvar)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.white,
+                  foregroundColor: AppColors.primaryMain,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  minimumSize: const Size(0, 36),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                  textStyle: AppCss.minimumBold.setSize(13),
+                ),
+                onPressed: _salvando ? null : _salvar,
+                icon: _salvando
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.check, size: 18),
+                label: const Text('Salvar'),
+              ),
             ),
+          // Excluir longe de um clique acidental
+          if (clienteCtrl.form.isEdit &&
+              usuario.permission.cliente.contains(UserPermissionType.delete))
+            PopupMenuButton<String>(
+              tooltip: 'Mais ações',
+              icon: Icon(Icons.more_vert, color: AppColors.white),
+              onSelected: (_) => clienteCtrl.onDelete(context, widget.cliente!),
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: 'excluir',
+                  child: Row(children: [
+                    Icon(Icons.delete_outline,
+                        size: 18, color: AppColors.error),
+                    const SizedBox(width: 10),
+                    Text('Excluir cliente',
+                        style: TextStyle(color: AppColors.error)),
+                  ]),
+                ),
+              ],
+            )
+          else
+            const SizedBox(width: 8),
         ],
         backgroundColor: AppColors.primaryMain,
       ),
       body: StreamOut(
         stream: clienteCtrl.formStream.listen,
-        builder: (_, form) => Row(
+        builder: (_, form) => Column(
           children: [
-            _buildSidebar(form),
-            Expanded(child: _buildContent(form)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Sidebar ────────────────────────────────────────────────────────────────
-
-  Widget _buildSidebar(ClienteCreateModel form) {
-    return Container(
-      width: 60,
-      height: double.infinity,
-      decoration: const BoxDecoration(
-        color: Color(0xFFF1F5F9),
-        border: Border(right: BorderSide(color: Color(0xFFE2E8F0))),
-      ),
-      child: Column(
-        children: [
-          _buildSidebarPreview(form),
-          const SizedBox(height: 8),
-          ..._ClienteSection.values.map((s) => _buildMenuItem(s)),
-          const Spacer(),
-          if (form.isEdit &&
-              usuario.permission.cliente.contains(UserPermissionType.delete))
-            _buildSidebarDelete(form),
-          const SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSidebarPreview(ClienteCreateModel form) {
-    return Tooltip(
-      message: form.nome.text.isEmpty ? 'Novo Cliente' : form.nome.text,
-      preferBelow: false,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 14),
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: AppColors.primaryMain,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primaryMain.withValues(alpha: 0.5),
-              blurRadius: 8,
-            ),
-          ],
-        ),
-        child: Center(
-          child: Text(
-            form.nome.text.isEmpty ? '?' : form.nome.text[0].toUpperCase(),
-            style: AppCss.mediumBold.setColor(AppColors.white).setSize(14),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMenuItem(_ClienteSection section) {
-    final isSelected = _selected == section;
-    final isBlocked =
-        section == _ClienteSection.obras && _obrasBlockedByDirty;
-    final tooltipMsg = isBlocked
-        ? (_isDirty
-            ? 'Salve as alterações antes de acessar Obras'
-            : 'Salve o cliente primeiro')
-        : section.label;
-
-    return Tooltip(
-      message: tooltipMsg,
-      preferBelow: false,
-      waitDuration: const Duration(milliseconds: 300),
-      child: InkWell(
-        onTap: () {
-          if (isBlocked) {
-            showDialog(
-              context: context,
-              builder: (_) => AlertDialog(
-                icon: Icon(Icons.info_outline,
-                    size: 40, color: Colors.orange[700]),
-                title: Text(
-                    _isDirty ? 'Alterações não salvas' : 'Cliente não salvo'),
-                content: Text(_isDirty
-                    ? 'Salve as alterações do cliente antes de gerenciar obras.'
-                    : 'Salve o cliente primeiro para gerenciar suas obras.'),
-                actions: [
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryMain),
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Entendi'),
+            _barraAbas(form),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 820),
+                      child: _abas.index == 0
+                          ? _buildDados(form)
+                          : _buildObras(form),
+                    ),
                   ),
                 ],
               ),
-            );
-            return;
-          }
-          setState(() => _selected = section);
-        },
-        borderRadius: BorderRadius.circular(8),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.primaryMain.withValues(alpha: 0.10)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            border: isSelected
-                ? Border.all(
-                    color: AppColors.primaryMain.withValues(alpha: 0.20))
-                : null,
-          ),
-          child: Icon(
-            section.icon,
-            size: 18,
-            color: isBlocked
-                ? Colors.grey[300]
-                : isSelected
-                    ? AppColors.primaryMain
-                    : Colors.grey[400],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSidebarDelete(ClienteCreateModel form) {
-    return Tooltip(
-      message: 'Excluir ${form.nome.text}',
-      preferBelow: false,
-      child: InkWell(
-        onTap: () => clienteCtrl.onDelete(context, widget.cliente!),
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: AppColors.error.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(Icons.delete_outline, size: 18, color: AppColors.error),
-        ),
-      ),
-    );
-  }
-
-  // ── Conteúdo principal ─────────────────────────────────────────────────────
-
-  Widget _buildContent(ClienteCreateModel form) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 200),
-      child: KeyedSubtree(
-        key: ValueKey(_selected),
-        child: _buildSectionContent(form),
-      ),
-    );
-  }
-
-  Widget _buildSectionContent(ClienteCreateModel form) {
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        Row(
-          children: [
-            Icon(_selected.icon, color: AppColors.primaryMain, size: 20),
-            const SizedBox(width: 12),
-            Text(_selected.label.toUpperCase(),
-                style: AppCss.mediumBold.setSize(16).setLetterSpacing(1)),
+            ),
           ],
         ),
-        const SizedBox(height: 24),
-        switch (_selected) {
-          _ClienteSection.dadosGerais => _buildDadosGerais(form),
-          _ClienteSection.obras => _buildObras(form),
-        },
-      ],
+      ),
     );
   }
 
-  // ── Dados gerais ───────────────────────────────────────────────────────────
+  // ── Abas (mesmo padrão do pedido) ──────────────────────────────────────────
 
-  Widget _buildDadosGerais(ClienteCreateModel form) {
+  Widget _barraAbas(ClienteCreateModel form) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      width: double.maxFinite,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[300]!, width: 1.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
+        border: Border(bottom: BorderSide(color: AppColors.neutralLight)),
+      ),
+      child: TabBar(
+        controller: _abas,
+        isScrollable: true,
+        tabAlignment: TabAlignment.start,
+        labelStyle: AppCss.minimumBold.setSize(13.5),
+        unselectedLabelStyle: AppCss.minimumBold.setSize(13.5),
+        labelColor: AppColors.black,
+        unselectedLabelColor: AppColors.neutralMedium,
+        indicatorColor: AppColors.brand,
+        indicatorWeight: 3,
+        indicatorSize: TabBarIndicatorSize.tab,
+        dividerColor: Colors.transparent,
+        tabs: [
+          _aba(Symbols.badge, 'Dados'),
+          _aba(Symbols.apartment, 'Obras', form.obras.length),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (form.isEdit) ...[
-            AppField(
-              label: 'Código',
-              controllerObj:
-                  TextEditingController(text: form.codigo.toString()),
-              isDisable: true,
-            ),
-            const SizedBox(height: 16),
+    );
+  }
+
+  Tab _aba(IconData icon, String label, [int? count]) => Tab(
+        height: 46,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18),
+            const SizedBox(width: 7),
+            Text(label),
+            if (count != null) ...[
+              const SizedBox(width: 7),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
+                decoration: BoxDecoration(
+                  color: AppColors.neutralLightest,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '$count',
+                  style: AppCss.minimumBold
+                      .setSize(11)
+                      .setColor(AppColors.neutralDark),
+                ),
+              ),
+            ],
           ],
-          AppField(
-            label: 'Nome',
-            controller: form.nome,
-            onChanged: (_) => clienteCtrl.formStream.update(),
+        ),
+      );
+
+  // ── Cartão de seção ────────────────────────────────────────────────────────
+
+  Widget _secao({
+    required IconData icon,
+    required String titulo,
+    Widget? acao,
+    required Widget child,
+    EdgeInsets padding = const EdgeInsets.all(16),
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.neutralLight),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            constraints: const BoxConstraints(minHeight: 48),
+            decoration: BoxDecoration(
+              border: Border(
+                  bottom: BorderSide(color: AppColors.neutralLightest)),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, size: 18, color: AppColors.neutralMedium),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(titulo, style: AppCss.minimumBold.setSize(14)),
+                ),
+                if (acao != null) acao,
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          AppField(
-            label: 'Telefone',
-            hint: '(00) 00000-000',
-            controller: form.telefone,
-            onChanged: (_) => clienteCtrl.formStream.update(),
-          ),
-          const SizedBox(height: 16),
-          AppField(
-            label: 'CPF/CNPJ',
-            required: false,
-            controller: form.cpf,
-            onChanged: (value) {
-              if (value.length == 11 && CPFValidator.isValid(form.cpf.text)) {
-                form.cpf.updateMask('000.000.000-00');
-              } else if (value.length == 14 &&
-                  CNPJValidator.isValid(form.cpf.text)) {
-                form.cpf.updateMask('00.000.000/0000-00');
-              } else {
-                form.cpf.updateMask('00000000000000000');
-              }
-              clienteCtrl.formStream.update();
-            },
-          ),
+          Padding(padding: padding, child: child),
         ],
+      ),
+    );
+  }
+
+  // ── Dados ──────────────────────────────────────────────────────────────────
+
+  Widget _buildDados(ClienteCreateModel form) {
+    final nome = AppField(
+      label: 'Nome',
+      controller: form.nome,
+      onChanged: (_) => clienteCtrl.formStream.update(),
+    );
+    final telefone = AppField(
+      label: 'Telefone',
+      hint: '(00) 00000-0000',
+      controller: form.telefone,
+      onChanged: (_) => clienteCtrl.formStream.update(),
+    );
+    final documento = AppField(
+      label: 'CPF/CNPJ',
+      required: false,
+      controller: form.cpf,
+      onChanged: (value) {
+        if (value.length == 11 && CPFValidator.isValid(form.cpf.text)) {
+          form.cpf.updateMask('000.000.000-00');
+        } else if (value.length == 14 &&
+            CNPJValidator.isValid(form.cpf.text)) {
+          form.cpf.updateMask('00.000.000/0000-00');
+        } else {
+          form.cpf.updateMask('00000000000000000');
+        }
+        clienteCtrl.formStream.update();
+      },
+    );
+
+    return _secao(
+      icon: Symbols.badge,
+      titulo: 'Identificação',
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final largo = constraints.maxWidth >= 560;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              nome,
+              const SizedBox(height: 14),
+              if (largo)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: telefone),
+                    const SizedBox(width: 12),
+                    Expanded(child: documento),
+                  ],
+                )
+              else ...[
+                telefone,
+                const SizedBox(height: 14),
+                documento,
+              ],
+            ],
+          );
+        },
       ),
     );
   }
 
   // ── Obras ──────────────────────────────────────────────────────────────────
 
+  Future<void> _novaObra(ClienteCreateModel form) async {
+    // A obra é gravada pelo ObraController; aqui só refletimos na lista
+    final obra = await push(
+      context,
+      ObraCreatePage(endereco: form.endereco, clienteId: form.id),
+    );
+    if (obra is ObraModel) {
+      form.obras.add(obra);
+      clienteCtrl.formStream.update();
+    }
+  }
+
+  Future<void> _abrirObra(ClienteCreateModel form, ObraModel obraForm) async {
+    // O ObraController já persiste a edição/exclusão via clienteId.
+    final obra = await push(
+      context,
+      ObraCreatePage(obra: obraForm, clienteId: form.id),
+    ) as ObraModel?;
+    if (obra == null) return;
+    final idx = form.obras.map((e) => e.id).toList().indexOf(obraForm.id);
+    if (idx < 0) return;
+    if (obra.id != 'delete') {
+      form.obras[idx] = obra;
+    } else {
+      form.obras.removeAt(idx);
+    }
+    clienteCtrl.formStream.update();
+  }
+
   Widget _buildObras(ClienteCreateModel form) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[300]!, width: 1.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    final bloqueado = _obrasBlockedByDirty;
+    return _secao(
+      icon: Symbols.apartment,
+      titulo: 'Obras (${form.obras.length})',
+      padding: EdgeInsets.zero,
+      acao: bloqueado
+          ? null
+          : OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.black,
+                side: BorderSide(color: AppColors.neutralLight),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+                visualDensity: VisualDensity.compact,
+              ),
+              onPressed: () => _novaObra(form),
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Nova obra'),
+            ),
+      child: bloqueado
+          ? _aviso(
+              Icons.info_outline,
+              _isDirty
+                  ? 'Salve as alterações do cliente antes de mexer nas obras.'
+                  : 'Salve o cliente para cadastrar obras.',
+            )
+          : form.obras.isEmpty
+              ? _aviso(Symbols.apartment, 'Nenhuma obra cadastrada.')
+              : Column(
+                  children: [
+                    for (final obra in form.obras) _linhaObra(form, obra),
+                  ],
+                ),
+    );
+  }
+
+  Widget _aviso(IconData icon, String texto) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 22),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: AppColors.neutralMedium),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              texto,
+              style: AppCss.minimumRegular
+                  .setSize(13.5)
+                  .setColor(AppColors.neutralDark),
+            ),
           ),
         ],
       ),
-      child: AppMultipleRegisters<ObraModel>(
-        icon: Icons.business_outlined,
-        title: 'Gerenciar Obras',
-        // clienteId é passado para que ObraController persista direto no banco
-        createPage: ObraCreatePage(
-          endereco: form.endereco,
-          clienteId: form.id,
+    );
+  }
+
+  Widget _linhaObra(ClienteCreateModel form, ObraModel obra) {
+    final end = obra.endereco;
+    final cidade = end == null
+        ? ''
+        : [end.localidade, end.estado]
+            .where((e) => e.trim().isNotEmpty)
+            .join(' / ');
+    final cor = obra.status.color;
+    return InkWell(
+      onTap: () => _abrirObra(form, obra),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: AppColors.neutralLightest)),
         ),
-        onEdit: (obraForm) async {
-          // O ObraController já persiste a edição/exclusão via clienteId.
-          // Aqui apenas sincronizamos a lista local para refletir na UI.
-          final obra = await push(
-            context,
-            ObraCreatePage(obra: obraForm, clienteId: form.id),
-          ) as ObraModel?;
-
-          if (obra == null) return;
-
-          final idx =
-              form.obras.map((e) => e.id).toList().indexOf(obraForm.id);
-          if (idx < 0) return;
-
-          if (obra.id != 'delete') {
-            form.obras[idx] = obra;
-          } else {
-            form.obras.removeAt(idx);
-          }
-          clienteCtrl.formStream.update();
-        },
-        onAdd: (novaObra) async {
-          // A obra já foi persistida pelo ObraController.
-          // Apenas refletimos na lista local.
-          form.obras.add(novaObra);
-          clienteCtrl.formStream.update();
-        },
-        itens: form.obras,
-        titleBuilder: (e) => Row(
+        child: Row(
           children: [
             Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(obra.descricao, style: AppCss.minimumBold.setSize(14)),
+                  if (cidade.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      cidade,
+                      style: AppCss.minimumRegular
+                          .setSize(12.5)
+                          .setColor(AppColors.neutralMedium),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+              decoration: BoxDecoration(
+                color: cor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(999),
+              ),
               child: Text(
-                e.descricao,
-                style: AppCss.minimumBold.setSize(14),
-                overflow: TextOverflow.ellipsis,
+                obra.status.label,
+                style: AppCss.minimumBold.setSize(11.5).setColor(cor),
               ),
             ),
             const SizedBox(width: 8),
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: e.status.color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-                border:
-                    Border.all(color: e.status.color.withValues(alpha: 0.2)),
-              ),
-              child: Text(
-                e.status.label.toUpperCase(),
-                style:
-                    AppCss.minimumBold.setSize(10).setColor(e.status.color),
-              ),
-            ),
+            Icon(Icons.chevron_right, size: 20, color: AppColors.neutralMedium),
           ],
         ),
       ),

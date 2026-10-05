@@ -1,17 +1,14 @@
 import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
 import 'package:aco_plus/app/core/components/app_field.dart';
-import 'package:aco_plus/app/core/components/app_scaffold.dart';
-import 'package:aco_plus/app/core/components/done_button.dart';
+import 'package:aco_plus/app/core/components/cadastro/cadastro_form.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
-import 'package:aco_plus/app/core/utils/app_colors.dart';
-import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/fabricante/fabricante_controller.dart';
-import 'package:aco_plus/app/modules/fabricante/fabricante_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class FabricanteCreatePage extends StatefulWidget {
   final FabricanteModel? fabricante;
@@ -22,218 +19,122 @@ class FabricanteCreatePage extends StatefulWidget {
 }
 
 class _FabricanteCreatePageState extends State<FabricanteCreatePage> {
+  String _initialSnapshot = '';
+
+  String _snapshot() {
+    final f = fabricanteCtrl.form;
+    return '${f.nome.text}|${f.descricao.text}|${f.contato.text}|'
+        '${f.telefone.text}|${f.email.text}';
+  }
+
   @override
   void initState() {
     setWebTitle('Novo Fabricante');
     fabricanteCtrl.init(widget.fabricante);
+    _initialSnapshot = _snapshot();
     super.initState();
+  }
+
+  Future<void> _voltar() async {
+    // Sem mudança, sai direto
+    if (_snapshot() == _initialSnapshot) {
+      pop(context);
+      return;
+    }
+    if (await showConfirmDialog(
+          'Deseja realmente sair?',
+          widget.fabricante != null
+              ? 'A edição que realizou será perdida'
+              : 'Os dados do fabricante serão perdidos.',
+        ) &&
+        mounted) {
+      pop(context);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      resizeAvoid: true,
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () async {
-            if (await showConfirmDialog(
-              'Deseja realmente sair?',
-              widget.fabricante != null
-                  ? 'A edicao que realizou sera perdida'
-                  : 'Os dados do fabricante serao perdidos.',
-            )) {
-              pop(context);
-            }
-          },
-          icon: Icon(Icons.arrow_back, color: AppColors.white),
-        ),
-        title: Text(
-          '${fabricanteCtrl.form.isEdit ? 'Editar' : 'Adicionar'} Fabricante',
-          style: AppCss.largeBold.setColor(AppColors.white),
-        ),
-        actions: [
-          IconLoadingButton(
-            () async =>
-                await fabricanteCtrl.onConfirm(context, widget.fabricante),
+    return StreamOut(
+      stream: fabricanteCtrl.formStream.listen,
+      builder: (_, form) => CadastroFormPage(
+        titulo: form.isEdit
+            ? (form.nome.text.trim().isEmpty
+                ? 'Fabricante'
+                : form.nome.text.trim())
+            : 'Novo fabricante',
+        selo: form.isEdit ? form.descricao.text : null,
+        onVoltar: _voltar,
+        onSalvar: () => fabricanteCtrl.onConfirm(context, widget.fabricante),
+        onExcluir: form.isEdit
+            ? () => fabricanteCtrl.onDelete(context, widget.fabricante!)
+            : null,
+        rotuloExcluir: 'Excluir fabricante',
+        secoes: [
+          CadastroSecao(
+            icon: Symbols.factory,
+            titulo: 'Identificação',
+            child: CadastroLinhaCampos([
+              AppField(
+                label: 'Nome do fabricante / fornecedor',
+                controller: form.nome,
+                onChanged: (_) => fabricanteCtrl.formStream.update(),
+              ),
+              AppField(
+                label: 'Ramo',
+                required: false,
+                hint: 'Ex.: Usina siderúrgica, distribuidora de aço',
+                controller: form.descricao,
+                onChanged: (_) => fabricanteCtrl.formStream.update(),
+              ),
+            ]),
+          ),
+          CadastroSecao(
+            icon: Symbols.person,
+            titulo: 'Contato (A/C)',
+            apoio: 'Responsável no fornecedor; aparece no PDF',
+            child: AppField(
+              label: 'Nome do contato',
+              required: false,
+              hint: 'Ex.: Carlos Silva, Depto. de Vendas',
+              capitalization: TextCapitalization.words,
+              controller: form.contato,
+              onChanged: (_) => fabricanteCtrl.formStream.update(),
+            ),
+          ),
+          CadastroSecao(
+            icon: Symbols.contact_phone,
+            titulo: 'Comunicação',
+            apoio: 'Para enviar cotação e pedido de compra direto',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                CadastroLinhaCampos([
+                  AppField(
+                    label: 'WhatsApp',
+                    required: false,
+                    hint: 'País + DDD + número. Ex.: 5511999999999',
+                    type: TextInputType.phone,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9\+]')),
+                    ],
+                    controller: form.telefone,
+                    onChanged: (_) => fabricanteCtrl.formStream.update(),
+                  ),
+                  AppField(
+                    label: 'E-mail',
+                    required: false,
+                    hint: 'compras@fornecedor.com.br',
+                    type: TextInputType.emailAddress,
+                    controller: form.email,
+                    onChanged: (_) => fabricanteCtrl.formStream.update(),
+                  ),
+                ]),
+                const H(2),
+              ],
+            ),
           ),
         ],
-        backgroundColor: AppColors.primaryMain,
-      ),
-      body: StreamOut(
-        stream: fabricanteCtrl.formStream.listen,
-        builder: (_, form) => body(form),
       ),
     );
   }
-
-  Widget body(FabricanteCreateModel form) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        // ── Identificacao ─────────────────────────────────────────
-        _sectionLabel(Icons.factory_outlined, 'Identificacao'),
-        const H(8),
-        AppField(
-          label: 'Nome do Fabricante / Fornecedor *',
-          controller: form.nome,
-          onChanged: (_) => fabricanteCtrl.formStream.update(),
-        ),
-        const H(12),
-        // Descricao
-        TextFormField(
-          controller: form.descricao.controller,
-          decoration: InputDecoration(
-            labelText: 'Descricao (opcional)',
-            hintText: 'Ex: Distribuidora de Aco, Usina Siderurgica...',
-            prefixIcon: const Icon(Icons.description_outlined, size: 20),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: AppColors.primaryMain),
-            ),
-            isDense: true,
-          ),
-          onChanged: (_) => fabricanteCtrl.formStream.update(),
-        ),
-
-        const H(20),
-
-        // ── Contato ───────────────────────────────────────────────
-        _sectionLabel(Icons.person_outline, 'Contato (A/C)'),
-        const H(4),
-        Text(
-          'Nome do responsavel pelo contato no fornecedor (aparece no PDF).',
-          style: AppCss.minimumRegular.setColor(Colors.grey[500]!).setSize(12),
-        ),
-        const H(12),
-        TextFormField(
-          controller: form.contato.controller,
-          keyboardType: TextInputType.name,
-          textCapitalization: TextCapitalization.words,
-          decoration: InputDecoration(
-            labelText: 'Nome do Contato (opcional)',
-            hintText: 'Ex: Carlos Silva, Depto. de Vendas...',
-            prefixIcon: const Icon(Icons.badge_outlined, size: 20),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: AppColors.primaryMain),
-            ),
-            isDense: true,
-          ),
-          onChanged: (_) => fabricanteCtrl.formStream.update(),
-        ),
-
-        const H(20),
-
-        // ── Comunicacao ───────────────────────────────────────────
-        _sectionLabel(Icons.contact_phone_outlined, 'Comunicacao (opcional)'),
-        const H(4),
-        Text(
-          'Usados para envio direto de pedidos de cotacao e compra.',
-          style: AppCss.minimumRegular.setColor(Colors.grey[500]!).setSize(12),
-        ),
-        const H(12),
-
-        // WhatsApp
-        TextFormField(
-          controller: form.telefone.controller,
-          keyboardType: TextInputType.phone,
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[0-9\+]')),
-          ],
-          decoration: InputDecoration(
-            labelText: 'WhatsApp',
-            hintText: 'Ex: 5511999999999 (somente numeros)',
-            prefixIcon: const Icon(Icons.phone_outlined, size: 20),
-            helperText: 'Codigo do pais + DDD + numero',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: AppColors.primaryMain),
-            ),
-            isDense: true,
-          ),
-          onChanged: (_) => fabricanteCtrl.formStream.update(),
-        ),
-        const H(12),
-
-        // E-mail
-        TextFormField(
-          controller: form.email.controller,
-          keyboardType: TextInputType.emailAddress,
-          decoration: InputDecoration(
-            labelText: 'E-mail',
-            hintText: 'compras@fornecedor.com.br',
-            prefixIcon: const Icon(Icons.email_outlined, size: 20),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: AppColors.primaryMain),
-            ),
-            isDense: true,
-          ),
-          onChanged: (_) => fabricanteCtrl.formStream.update(),
-        ),
-
-        const H(24),
-
-        if (form.isEdit)
-          TextButton.icon(
-            style: ButtonStyle(
-              fixedSize: const WidgetStatePropertyAll(
-                Size.fromWidth(double.maxFinite),
-              ),
-              foregroundColor: WidgetStatePropertyAll(AppColors.error),
-              backgroundColor: WidgetStatePropertyAll(AppColors.white),
-              shape: WidgetStatePropertyAll(
-                RoundedRectangleBorder(
-                  borderRadius: AppCss.radius8,
-                  side: BorderSide(color: AppColors.error),
-                ),
-              ),
-            ),
-            onPressed: () =>
-                fabricanteCtrl.onDelete(context, widget.fabricante!),
-            label: const Text('Excluir'),
-            icon: const Icon(Icons.delete_outline),
-          ),
-      ],
-    );
-  }
-
-  Widget _sectionLabel(IconData icon, String label) => Row(
-        children: [
-          Icon(icon, size: 15, color: AppColors.primaryMain),
-          const SizedBox(width: 6),
-          Text(label,
-              style: AppCss.minimumBold
-                  .setSize(13)
-                  .setColor(AppColors.primaryMain)),
-        ],
-      );
 }

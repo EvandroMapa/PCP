@@ -33,11 +33,19 @@ class MateriaPrimaCreatePage extends StatefulWidget {
 
 class _MateriaPrimaCreatePageState extends State<MateriaPrimaCreatePage> {
   bool _salvando = false;
+  String _initialSnapshot = '';
+
+  String _snapshot() {
+    final f = materiaPrimaCtrl.form;
+    return '${f.fabricanteModel?.id}|${f.produtoModel?.id}|'
+        '${f.corridaLote.text}|${f.status}|${f.anexos.length}';
+  }
 
   @override
   void initState() {
     setWebTitle('Nova Matéria Prima');
     materiaPrimaCtrl.init(widget.materiaPrima);
+    _initialSnapshot = _snapshot();
     super.initState();
   }
 
@@ -56,10 +64,8 @@ class _MateriaPrimaCreatePageState extends State<MateriaPrimaCreatePage> {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () async {
-            if (widget.materiaPrima != null &&
-                !materiaPrimaCtrl.hasChangeInMateriaPrima(
-                  widget.materiaPrima!,
-                )) {
+            // Sem mudança (novo ou edição), sai direto
+            if (_snapshot() == _initialSnapshot) {
               pop(context);
               return;
             }

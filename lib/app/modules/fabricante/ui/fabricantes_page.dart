@@ -1,16 +1,15 @@
 import 'package:aco_plus/app/core/client/firestore/collections/fabricante/fabricante_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
-import 'package:aco_plus/app/core/components/app_field.dart';
-import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
-import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:aco_plus/app/modules/fabricante/fabricante_controller.dart';
 import 'package:aco_plus/app/modules/fabricante/fabricante_view_model.dart';
 import 'package:aco_plus/app/modules/fabricante/ui/fabricante_create_page.dart';
+import 'package:aco_plus/app/core/components/cadastro/cadastro_lista.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/material.dart';
 
 class FabricantesPage extends StatefulWidget {
@@ -40,69 +39,55 @@ class _FabricantesPageState extends State<FabricantesPage> {
   Widget build(BuildContext context) {
     return StreamOut<List<FabricanteModel>>(
       stream: FirestoreClient.fabricantes.dataStream.listen,
-      builder: (_, __) => StreamOut<FabricanteUtils>(
+      builder: (_, todos) => StreamOut<FabricanteUtils>(
         stream: fabricanteCtrl.utilsStream.listen,
         builder: (_, utils) {
           final fabricantes = fabricanteCtrl
-              .getFabricanteesFiltered(utils.search.text, __)
+              .getFabricanteesFiltered(utils.search.text, todos)
               .toList();
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: AppField(
-                  hint: 'Pesquisar',
+          return Container(
+            color: AppColors.neutralLightest,
+            child: Column(
+              children: [
+                CadastroBusca(
+                  hint: 'Buscar fabricante',
                   controller: utils.search,
-                  suffixIcon: Icons.search,
-                  onChanged: (_) => fabricanteCtrl.utilsStream.update(),
+                  contador: fabricantes.length == 1
+                      ? '1 fabricante'
+                      : '${fabricantes.length} fabricantes',
+                  onChanged: () => fabricanteCtrl.utilsStream.update(),
                 ),
-              ),
-              Expanded(
-                child: fabricantes.isEmpty
-                    ? const EmptyData()
-                    : RefreshIndicator(
-                        onRefresh: () async =>
-                            FirestoreClient.fabricantes.fetch(),
-                        child: ListView.separated(
-                          itemCount: fabricantes.length,
-                          separatorBuilder: (_, i) => const Divisor(),
-                          itemBuilder: (_, i) =>
-                              _itemFabricanteWidget(fabricantes[i]),
+                Expanded(
+                  child: fabricantes.isEmpty
+                      ? const EmptyData()
+                      : CadastroLista(
+                          onRefresh: () async =>
+                              FirestoreClient.fabricantes.fetch(),
+                          itens:
+                              fabricantes.map(_itemFabricanteWidget).toList(),
                         ),
-                      ),
-              ),
-            ],
+                ),
+              ],
+            ),
           );
         },
       ),
     );
   }
 
-  ListTile _itemFabricanteWidget(FabricanteModel usuario) {
-    return ListTile(
-      onTap: () => push(context, FabricanteCreatePage(fabricante: usuario)),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      title: Text(usuario.nome, style: AppCss.mediumBold),
-      // subtitle: Column(
-      //   crossAxisAlignment: CrossAxisAlignment.start,
-      //   children: [
-      //     Text(
-      //       'Tel: ${usuario.telefone} - Qtd. Obras: ${usuario.obras.length}',
-      //     ),
-      //     Text(
-      //       usuario.endereco.name,
-      //       style: AppCss.minimumRegular
-      //           .setSize(12)
-      //           .setColor(AppColors.neutralMedium),
-      //     ),
-      //   ],
-      // ),
-      trailing: Icon(
-        Icons.arrow_forward_ios,
-        size: 14,
-        color: AppColors.neutralMedium,
-      ),
+  Widget _itemFabricanteWidget(FabricanteModel fabricante) {
+    final ramo = fabricante.descricao?.trim() ?? '';
+    return CadastroLinha(
+      onTap: () =>
+          push(context, FabricanteCreatePage(fabricante: fabricante)),
+      leading: const CadastroIcone(Symbols.factory),
+      titulo: fabricante.nome,
+      selos: [if (ramo.isNotEmpty) CadastroSelo(ramo)],
+      pares: [
+        ('Contato', fabricante.contato ?? ''),
+        ('Telefone', fabricante.telefone ?? ''),
+        ('E-mail', fabricante.email ?? ''),
+      ],
     );
   }
 }
-

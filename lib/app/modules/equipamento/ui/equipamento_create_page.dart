@@ -1,16 +1,13 @@
 import 'package:aco_plus/app/core/client/firestore/collections/equipamento/equipamento_model.dart';
 import 'package:aco_plus/app/core/components/app_field.dart';
-import 'package:aco_plus/app/core/components/app_scaffold.dart';
-import 'package:aco_plus/app/core/components/done_button.dart';
-import 'package:aco_plus/app/core/components/h.dart';
+import 'package:aco_plus/app/core/components/cadastro/cadastro_form.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
-import 'package:aco_plus/app/core/utils/app_colors.dart';
-import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/equipamento/equipamento_controller.dart';
 import 'package:aco_plus/app/modules/equipamento/equipamento_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class EquipamentoCreatePage extends StatefulWidget {
   final EquipamentoModel? equipamento;
@@ -34,123 +31,64 @@ class _EquipamentoCreatePageState extends State<EquipamentoCreatePage> {
     super.initState();
   }
 
+  Future<void> _voltar() async {
+    final isDirty = _snapshot(equipamentoCtrl.form) != _initialSnapshot;
+    if (!isDirty) {
+      pop(context);
+      return;
+    }
+    if (await showConfirmDialog(
+          'Deseja realmente sair?',
+          widget.equipamento != null
+              ? 'A edição que realizou será perdida'
+              : 'Os dados do equipamento serão perdidos.',
+        ) &&
+        mounted) {
+      pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      resizeAvoid: true,
-      backgroundColor: const Color(0xFFCBD5E1),
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () async {
-            final isDirty =
-                _snapshot(equipamentoCtrl.form) != _initialSnapshot;
-            if (isDirty) {
-              if (await showConfirmDialog(
-                'Deseja realmente sair?',
-                widget.equipamento != null
-                    ? 'A edição que realizou será perdida'
-                    : 'Os dados do equipamento serão perdidos.',
-              )) {
-                pop(context);
-              }
-            } else {
-              pop(context);
-            }
-          },
-          icon: Icon(Icons.arrow_back, color: AppColors.white),
-        ),
-        title: Text(
-          '${equipamentoCtrl.form.isEdit ? 'Editar' : 'Adicionar'} Equipamento',
-          style: AppCss.largeBold.setColor(AppColors.white),
-        ),
-        actions: [
-          IconLoadingButton(
-            () async =>
-                await equipamentoCtrl.onConfirm(context, widget.equipamento),
+    return StreamOut(
+      stream: equipamentoCtrl.formStream.listen,
+      builder: (_, form) => CadastroFormPage(
+        titulo: form.isEdit
+            ? (form.descricao.text.trim().isEmpty
+                ? 'Equipamento'
+                : form.descricao.text.trim())
+            : 'Novo equipamento',
+        selo: form.isEdit && form.codigo.text.trim().isNotEmpty
+            ? 'Cód. ${form.codigo.text.trim()}'
+            : null,
+        onVoltar: _voltar,
+        onSalvar: () => equipamentoCtrl.onConfirm(context, widget.equipamento),
+        onExcluir: form.isEdit
+            ? () => equipamentoCtrl.onDelete(context, widget.equipamento!)
+            : null,
+        rotuloExcluir: 'Excluir equipamento',
+        secoes: [
+          CadastroSecao(
+            icon: Symbols.precision_manufacturing,
+            titulo: 'Dados do equipamento',
+            child: CadastroLinhaCampos(
+              [
+                AppField(
+                  label: 'Código',
+                  controller: form.codigo,
+                  onChanged: (_) => equipamentoCtrl.formStream.update(),
+                ),
+                AppField(
+                  label: 'Descrição',
+                  hint: 'Ex.: Dobradeira automática',
+                  controller: form.descricao,
+                  onChanged: (_) => equipamentoCtrl.formStream.update(),
+                ),
+              ],
+              flex: const [1, 3],
+            ),
           ),
         ],
-        backgroundColor: AppColors.primaryMain,
-      ),
-      body: StreamOut(
-        stream: equipamentoCtrl.formStream.listen,
-        builder: (_, form) => body(form),
-      ),
-    );
-  }
-
-  Widget body(EquipamentoCreateModel form) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey[300]!, width: 1.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.precision_manufacturing_outlined,
-                      color: AppColors.primaryMain),
-                  const SizedBox(width: 12),
-                  Text('DADOS DO EQUIPAMENTO',
-                      style: AppCss.mediumBold.setSize(16)),
-                ],
-              ),
-              const SizedBox(height: 24),
-              AppField(
-                label: 'Código',
-                controller: form.codigo,
-                onChanged: (_) => equipamentoCtrl.formStream.update(),
-              ),
-              const H(16),
-              AppField(
-                label: 'Descrição',
-                controller: form.descricao,
-                onChanged: (_) => equipamentoCtrl.formStream.update(),
-              ),
-            ],
-          ),
-        ),
-        const H(24),
-        if (form.isEdit) _buildDeleteButton(),
-      ],
-    );
-  }
-
-  Widget _buildDeleteButton() {
-    return InkWell(
-      onTap: () => equipamentoCtrl.onDelete(context, widget.equipamento!),
-      child: Container(
-        height: 54,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-              color: AppColors.error.withValues(alpha: 0.3), width: 1.0),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.delete_outline, color: AppColors.error),
-            const SizedBox(width: 8),
-            Text(
-              'EXCLUIR EQUIPAMENTO',
-              style: AppCss.mediumBold.setColor(AppColors.error).setSize(14),
-            ),
-          ],
-        ),
       ),
     );
   }
