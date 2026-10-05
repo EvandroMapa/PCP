@@ -329,10 +329,11 @@ class PedidoCompraController {
 
   // ── Gerar PDF de Cotação (somente Pendente) ───────────────────────────────
 
+  /// [fabricante] null = cotação aberta (sem fornecedor definido).
   Future<void> onGerarCotacao(
     BuildContext context,
     List<PedidoCompraModel> itens,
-    FabricanteModel fabricante,
+    FabricanteModel? fabricante,
   ) async {
     try {
       NotificationService.showNeutral(
@@ -357,7 +358,7 @@ class PedidoCompraController {
       final bytes = await pdfDoc.save();
       final ts = DateFormat('yyyyMMdd_HHmm').format(DateTime.now());
       await downloadPDF(
-        'cotacao_${fabricante.nome.toLowerCase().replaceAll(' ', '_')}_$ts.pdf',
+        'cotacao_${_sufixoArquivoCotacao(fabricante)}_$ts.pdf',
         '/pedido_compra/cotacao/',
         Uint8List.fromList(bytes),
       );
@@ -375,7 +376,7 @@ class PedidoCompraController {
   Future<void> onEnviarCotacaoWhatsApp(
     BuildContext context,
     List<PedidoCompraModel> itens,
-    FabricanteModel fabricante,
+    FabricanteModel? fabricante,
   ) async {
     try {
       NotificationService.showNeutral(
@@ -417,10 +418,11 @@ class PedidoCompraController {
 
       final ts = DateFormat('yyyyMMdd_HHmm').format(DateTime.now());
       final nomeArquivo =
-          'cotacao_${fabricante.nome.toLowerCase().replaceAll(' ', '_')}_$ts.png';
+          'cotacao_${_sufixoArquivoCotacao(fabricante)}_$ts.png';
 
       // Web Share API — abre menu de compartilhamento (WhatsApp, etc)
-      await _compartilharImagemWeb(imageBytes, nomeArquivo);
+      if (!context.mounted) return;
+      await _compartilharImagemWeb(context, imageBytes, nomeArquivo);
 
       NotificationService.showPositive(
         'Imagem gerada',
@@ -436,8 +438,15 @@ class PedidoCompraController {
     }
   }
 
+  String _sufixoArquivoCotacao(FabricanteModel? fabricante) =>
+      fabricante == null
+          ? 'aberta'
+          : fabricante.nome.toLowerCase().replaceAll(' ', '_');
+
   // ── Compartilhar imagem via Web Share API ─────────────────────────────────
-  Future<void> _compartilharImagemWeb(Uint8List bytes, String fileName) async {
+  Future<void> _compartilharImagemWeb(
+      BuildContext context, Uint8List bytes, String fileName) async {
+    web.ShareData? shareData;
     try {
       final file = web.File(
         [bytes.toJS].toJS,
@@ -445,7 +454,7 @@ class PedidoCompraController {
         web.FilePropertyBag(type: 'image/png'),
       );
 
-      final shareData = web.ShareData(
+      shareData = web.ShareData(
         files: [file].toJS,
         title: 'Cotação de materiais',
       );
@@ -454,8 +463,57 @@ class PedidoCompraController {
         await web.window.navigator.share(shareData).toDart;
         return;
       }
+      shareData = null; // navegador não compartilha arquivos → download
     } catch (e) {
       if (e.toString().contains('AbortError')) return; // usuário cancelou
+    }
+
+    // O navegador só aceita abrir o compartilhamento poucos segundos após o
+    // clique. Se a geração da imagem demorou (ex.: fontes do PDF ainda não
+    // estavam em cache), o share é recusado — então pedimos um novo clique
+    // em vez de cair direto no download.
+    if (shareData != null && context.mounted) {
+      final dados = shareData;
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Row(children: [
+            Icon(Icons.check_circle_outline, color: Color(0xFF25D366)),
+            SizedBox(width: 8),
+            Text('Cotação pronta'),
+          ]),
+          content: const Text(
+              'Toque em Enviar para abrir o compartilhamento (WhatsApp).'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _downloadImageWeb(bytes, fileName);
+              },
+              child: const Text('Baixar imagem'),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF25D366),
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                // Chamado direto no clique: o navegador permite o share
+                web.window.navigator.share(dados).toDart.catchError((e) {
+                  if (!e.toString().contains('AbortError')) {
+                    _downloadImageWeb(bytes, fileName);
+                  }
+                  return null;
+                });
+                Navigator.pop(ctx);
+              },
+              icon: const Icon(Icons.send_outlined, size: 15),
+              label: const Text('Enviar'),
+            ),
+          ],
+        ),
+      );
+      return;
     }
 
     // Fallback: download direto no browser

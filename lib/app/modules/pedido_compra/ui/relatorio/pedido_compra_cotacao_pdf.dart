@@ -7,11 +7,12 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
-/// PDF de Pedido de Cotação — enviado para um único fornecedor (nominal).
+/// PDF de Pedido de Cotação — nominal a um fornecedor, ou aberto (sem
+/// fornecedor) para ser enviado a vários.
 /// Aparece somente em pedidos com status [PedidoCompraStatus.pendente].
 class PedidoCompraCotacaoPdfPage {
   final List<PedidoCompraModel> itens;
-  final FabricanteModel fabricante;
+  final FabricanteModel? fabricante;
   final String nomeEmpresa;
   final String descricaoEmpresa;
   final String? usuarioNome;
@@ -24,7 +25,7 @@ class PedidoCompraCotacaoPdfPage {
 
   PedidoCompraCotacaoPdfPage({
     required this.itens,
-    required this.fabricante,
+    this.fabricante,
     required this.nomeEmpresa,
     required this.descricaoEmpresa,
     this.usuarioNome,
@@ -187,44 +188,7 @@ class PedidoCompraCotacaoPdfPage {
                   ),
                 ),
                 pw.SizedBox(height: 6),
-                pw.Text(
-                  fabricante.nome,
-                  style: pw.TextStyle(
-                      fontSize: 13,
-                      fontWeight: pw.FontWeight.bold,
-                      color: _texto),
-                ),
-                if (fabricante.temDescricao) ...[
-                  pw.SizedBox(height: 2),
-                  pw.Text(
-                    fabricante.descricao!,
-                    style: pw.TextStyle(fontSize: 9, color: _subtexto),
-                  ),
-                ],
-                if (fabricante.temContato) ...[
-                  pw.SizedBox(height: 6),
-                  pw.Text(
-                    'A/C: ${fabricante.contato!}',
-                    style: pw.TextStyle(
-                        fontSize: 9,
-                        fontWeight: pw.FontWeight.bold,
-                        color: _azulMedio),
-                  ),
-                ],
-                if (fabricante.temWhatsApp) ...[
-                  pw.SizedBox(height: 4),
-                  pw.Text(
-                    'WhatsApp: ${fabricante.telefone}',
-                    style: pw.TextStyle(fontSize: 9, color: _subtexto),
-                  ),
-                ],
-                if (fabricante.temEmail) ...[
-                  pw.SizedBox(height: 2),
-                  pw.Text(
-                    'E-mail: ${fabricante.email}',
-                    style: pw.TextStyle(fontSize: 9, color: _subtexto),
-                  ),
-                ],
+                ..._buildDadosFornecedor(),
               ],
             ),
           ),
@@ -312,6 +276,56 @@ class PedidoCompraCotacaoPdfPage {
         ),
       ],
     );
+  }
+
+  List<pw.Widget> _buildDadosFornecedor() {
+    final f = fabricante;
+    if (f == null) {
+      // Cotação aberta: sem fornecedor definido
+      return [
+        pw.Text(
+          'Prezado(a) Fornecedor(a)',
+          style: pw.TextStyle(
+              fontSize: 13, fontWeight: pw.FontWeight.bold, color: _texto),
+        ),
+      ];
+    }
+    return [
+      pw.Text(
+        f.nome,
+        style: pw.TextStyle(
+            fontSize: 13, fontWeight: pw.FontWeight.bold, color: _texto),
+      ),
+      if (f.temDescricao) ...[
+        pw.SizedBox(height: 2),
+        pw.Text(
+          f.descricao!,
+          style: pw.TextStyle(fontSize: 9, color: _subtexto),
+        ),
+      ],
+      if (f.temContato) ...[
+        pw.SizedBox(height: 6),
+        pw.Text(
+          'A/C: ${f.contato!}',
+          style: pw.TextStyle(
+              fontSize: 9, fontWeight: pw.FontWeight.bold, color: _azulMedio),
+        ),
+      ],
+      if (f.temWhatsApp) ...[
+        pw.SizedBox(height: 4),
+        pw.Text(
+          'WhatsApp: ${f.telefone}',
+          style: pw.TextStyle(fontSize: 9, color: _subtexto),
+        ),
+      ],
+      if (f.temEmail) ...[
+        pw.SizedBox(height: 2),
+        pw.Text(
+          'E-mail: ${f.email}',
+          style: pw.TextStyle(fontSize: 9, color: _subtexto),
+        ),
+      ],
+    ];
   }
 
   // ── Tabela de itens ──────────────────────────────────────────────────────

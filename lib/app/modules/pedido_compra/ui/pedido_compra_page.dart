@@ -461,18 +461,16 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
                           minimumSize: Size.zero,
                         ),
                         onPressed: () async {
-                          // Dialog para escolher o fornecedor
+                          // Dialog para escolher o fornecedor (opcional:
+                          // sem fornecedor = cotação aberta, para enviar a vários)
                           final fabricantes =
                               [...BackendClient.fabricantes.data]
                                 ..sort((a, b) => a.nome.compareTo(b.nome));
                           // Pré-seleciona o fornecedor já atribuído ao grupo (se existir)
                           final fabricanteAtualId = itens.first.fabricanteId;
-                          FabricanteModel? escolhido = fabricantes.isEmpty
-                              ? null
-                              : fabricantes.firstWhere(
-                                  (f) => f.id == fabricanteAtualId,
-                                  orElse: () => fabricantes.first,
-                                );
+                          FabricanteModel? escolhido = fabricantes
+                              .where((f) => f.id == fabricanteAtualId)
+                              .firstOrNull;
                           await showDialog<void>(
                             context: context,
                             builder: (_) => StatefulBuilder(
@@ -491,17 +489,16 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        'Selecione o fornecedor para quem deseja enviar esta cotação.',
+                                        'Selecione o fornecedor ou deixe "Sem fornecedor" para gerar uma cotação aberta, que pode ser enviada a vários fornecedores.',
                                         style: TextStyle(
                                             fontSize: 13,
                                             color: Colors.grey[600]),
                                       ),
                                       const SizedBox(height: 16),
-                                      DropdownButtonFormField<FabricanteModel>(
+                                      DropdownButtonFormField<FabricanteModel?>(
                                         value: escolhido,
                                         decoration: InputDecoration(
-                                          hintText:
-                                              'Selecione o fornecedor',
+                                          hintText: 'Sem fornecedor',
                                           prefixIcon: const Icon(
                                               Icons.factory_outlined,
                                               size: 18),
@@ -510,12 +507,22 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
                                                 BorderRadius.circular(8),
                                           ),
                                         ),
-                                        items: fabricantes
-                                            .map((f) => DropdownMenuItem(
-                                                  value: f,
-                                                  child: Text(f.nome),
-                                                ))
-                                            .toList(),
+                                        items: [
+                                          DropdownMenuItem<FabricanteModel?>(
+                                            value: null,
+                                            child: Text(
+                                              'Sem fornecedor',
+                                              style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontStyle: FontStyle.italic),
+                                            ),
+                                          ),
+                                          ...fabricantes.map(
+                                              (f) => DropdownMenuItem<FabricanteModel?>(
+                                                    value: f,
+                                                    child: Text(f.nome),
+                                                  )),
+                                        ],
                                         onChanged: (v) =>
                                             setS(() => escolhido = v),
                                       ),
@@ -533,16 +540,14 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
                                       backgroundColor: const Color(0xFF25D366),
                                       foregroundColor: Colors.white,
                                     ),
-                                    onPressed: escolhido != null
-                                        ? () {
-                                            Navigator.pop(ctx);
-                                            pedidoCompraCtrl.onEnviarCotacaoWhatsApp(
-                                              context,
-                                              itens,
-                                              escolhido!,
-                                            );
-                                          }
-                                        : null,
+                                    onPressed: () {
+                                      Navigator.pop(ctx);
+                                      pedidoCompraCtrl.onEnviarCotacaoWhatsApp(
+                                        context,
+                                        itens,
+                                        escolhido,
+                                      );
+                                    },
                                     icon: const Icon(
                                         Icons.send_outlined,
                                         size: 15),
@@ -553,16 +558,14 @@ class _PedidoCompraPageState extends State<PedidoCompraPage> {
                                       backgroundColor: Colors.orange[700],
                                       foregroundColor: Colors.white,
                                     ),
-                                    onPressed: escolhido != null
-                                        ? () {
-                                            Navigator.pop(ctx);
-                                            pedidoCompraCtrl.onGerarCotacao(
-                                              context,
-                                              itens,
-                                              escolhido!,
-                                            );
-                                          }
-                                        : null,
+                                    onPressed: () {
+                                      Navigator.pop(ctx);
+                                      pedidoCompraCtrl.onGerarCotacao(
+                                        context,
+                                        itens,
+                                        escolhido,
+                                      );
+                                    },
                                     icon: const Icon(
                                         Icons.picture_as_pdf_outlined,
                                         size: 15),
