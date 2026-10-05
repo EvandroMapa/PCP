@@ -1,5 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 
 /// Barra de progresso CDA com contagem de elementos posicionados esquerda/centro/direita.
@@ -44,17 +45,17 @@ class KanbanCardElementosWidget extends StatelessWidget {
                   if (pPronto > 0)
                     Flexible(
                       flex: (pPronto * 1000).toInt().clamp(1, 1000),
-                      child: Container(color: Colors.green[600]),
+                      child: Container(color: AppColors.statusPronto),
                     ),
                   if (pArmando > 0)
                     Flexible(
                       flex: (pArmando * 1000).toInt().clamp(1, 1000),
-                      child: Container(color: Colors.yellow[700]),
+                      child: Container(color: AppColors.statusProduzindo),
                     ),
                   if (pAguardando > 0)
                     Flexible(
                       flex: (pAguardando * 1000).toInt().clamp(1, 1000),
-                      child: Container(color: Colors.grey[300]),
+                      child: Container(color: AppColors.neutralLight),
                     ),
                 ],
               ),
@@ -65,13 +66,13 @@ class KanbanCardElementosWidget extends StatelessWidget {
           Row(
             children: [
               _countLabel(
-                  aguardando.toInt(), pAguardando, Colors.grey[500]!, 'Ag.'),
+                  aguardando.toInt(), pAguardando, AppColors.neutralMedium, 'Ag.'),
               const Spacer(),
               _countLabel(
-                  armando.toInt(), pArmando, Colors.amber[700]!, 'Armando'),
+                  armando.toInt(), pArmando, AppColors.statusProduzindo, 'Armando'),
               const Spacer(),
               _countLabel(
-                  pronto.toInt(), pPronto, Colors.green[600]!, 'Pronto'),
+                  pronto.toInt(), pPronto, AppColors.statusPronto, 'Pronto'),
             ],
           ),
         ],
@@ -87,7 +88,7 @@ class KanbanCardElementosWidget extends StatelessWidget {
           TextSpan(
             text: '$count ($pctStr)',
             style: TextStyle(
-              fontSize: 9,
+              fontSize: 10,
               fontWeight: FontWeight.w700,
               color: color,
             ),
@@ -95,7 +96,7 @@ class KanbanCardElementosWidget extends StatelessWidget {
           TextSpan(
             text: ' $label',
             style: TextStyle(
-              fontSize: 8,
+              fontSize: 9.5,
               fontWeight: FontWeight.w400,
               color: Colors.grey[500],
             ),

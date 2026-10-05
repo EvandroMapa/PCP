@@ -3,6 +3,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_view_model.dart';
 import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_draggable_widget.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class KanbanStepBodyWidget extends StatelessWidget {
@@ -17,16 +18,16 @@ class KanbanStepBodyWidget extends StatelessWidget {
       width: double.maxFinite,
       decoration: BoxDecoration(
         color: step.isEnable
-            ? Colors.grey[50]
-            : Colors.red.withValues(alpha: 0.05),
+            ? AppColors.neutralLightest
+            : const Color(0xFFFBEDEC),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(8),
           bottomRight: Radius.circular(8),
         ),
       ),
       child: RawScrollbar(
-        trackColor: const Color(0xFFFAFAFA),
-        thumbColor: Colors.grey.withValues(alpha: 0.7),
+        trackColor: Colors.transparent,
+        thumbColor: AppColors.primaryMedium,
         crossAxisMargin: 2,
         interactive: true,
         radius: const Radius.circular(4),
@@ -97,7 +98,7 @@ class KanbanStepBodyWidget extends StatelessWidget {
                   : null,
               height: isHover || isLast ? 70 : 16,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: AppColors.primaryLight,
                 borderRadius: BorderRadius.circular(8),
               ),
             ),

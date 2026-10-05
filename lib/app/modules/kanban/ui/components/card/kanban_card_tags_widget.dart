@@ -42,7 +42,7 @@ class KanbanCardTagsWidget extends StatelessWidget {
                 color: e.color.computeLuminance() > 0.5
                     ? Colors.black
                     : Colors.white,
-                fontSize: 9.5,
+                fontSize: 10,
                 fontWeight: FontWeight.bold,
               ),
             )

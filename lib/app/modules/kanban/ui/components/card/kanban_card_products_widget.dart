@@ -77,7 +77,7 @@ class KanbanCardProductsWidget extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 2),
       decoration: BoxDecoration(
-        color: produto.status.status.corKanbanLegado.withValues(alpha: 0.2),
+        color: produto.status.status.color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
       ),
@@ -144,7 +144,7 @@ class KanbanCardProductsWidget extends StatelessWidget {
                   margin: const EdgeInsets.only(left: 8),
                   padding: const EdgeInsets.all(1.6),
                   decoration: BoxDecoration(
-                    color: produto.status.status.corKanbanLegado.withValues(alpha: 0.2),
+                    color: produto.status.status.color.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.grey[700]!),
                   ),

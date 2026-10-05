@@ -1,6 +1,7 @@
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/extensions/date_ext.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class KanbanCardDetailsWidget extends StatelessWidget {
@@ -19,11 +20,7 @@ class KanbanCardDetailsWidget extends StatelessWidget {
       spacing: 8,
       children: [
         if (showDeliveryAt)
-          if (pedido.deliveryAt != null)
-            _detailWidget(
-              Icons.timer_outlined,
-              value: pedido.deliveryAt!.toddMM(),
-            ),
+          if (pedido.deliveryAt != null) _entregaWidget(pedido.deliveryAt!),
         if (pedido.archives.isNotEmpty)
           _detailWidget(
             Icons.file_present,
@@ -41,6 +38,42 @@ class KanbanCardDetailsWidget extends StatelessWidget {
             value: pedido.comments.length.toString(),
           ),
       ],
+    );
+  }
+
+  /// Entrega: cinza no prazo, âmbar hoje, vermelho com os dias de atraso
+  /// (pedidos entregues ficam sempre em cinza)
+  Widget _entregaWidget(DateTime entrega) {
+    final hoje = DateTime.now();
+    final dias = DateTime(hoje.year, hoje.month, hoje.day)
+        .difference(DateTime(entrega.year, entrega.month, entrega.day))
+        .inDays;
+    if (pedido.isEntregue || dias < 0) {
+      return _detailWidget(Icons.timer_outlined, value: entrega.toddMM());
+    }
+    final atrasado = dias > 0;
+    final cor = atrasado ? AppColors.statusCritico : const Color(0xFFB45309);
+    final texto = atrasado
+        ? '${entrega.toddMM()} · ${dias == 1 ? '1 dia' : '$dias dias'}'
+        : 'Hoje';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: atrasado ? const Color(0xFFFDECEA) : const Color(0xFFFEF3E2),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(atrasado ? Icons.schedule : Icons.today, color: cor, size: 13),
+          const W(4),
+          Text(
+            texto,
+            style: TextStyle(
+                color: cor, fontSize: 11.5, fontWeight: FontWeight.w700),
+          ),
+        ],
+      ),
     );
   }
 

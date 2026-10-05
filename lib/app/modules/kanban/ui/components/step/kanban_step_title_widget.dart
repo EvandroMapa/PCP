@@ -82,7 +82,7 @@ class KanbanStepTitleWidget extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                   decoration: BoxDecoration(
-                    color: AppColors.white.withValues(alpha: 0.7),
+                    color: AppColors.neutralLightest,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(

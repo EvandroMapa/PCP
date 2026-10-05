@@ -4,6 +4,7 @@ import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/enums/widget_view_mode.dart';
 import 'package:aco_plus/app/core/extensions/double_ext.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:aco_plus/app/modules/kanban/ui/components/card/kanban_card_comments_widget.dart';
@@ -44,7 +45,7 @@ class KanbanCardPedidoWidget extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: _getColor(pedido),
-          borderRadius: const BorderRadius.all(Radius.circular(6)),
+          borderRadius: const BorderRadius.all(Radius.circular(8)),
           border: stripeColor != null
               ? Border(
                   left: BorderSide(color: stripeColor, width: 4),
@@ -52,22 +53,43 @@ class KanbanCardPedidoWidget extends StatelessWidget {
               : null,
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF000000).withValues(alpha: 0.1),
-              spreadRadius: 1,
-              blurRadius: 1,
-              offset: const Offset(0, 0),
+              color: const Color(0xFF000000).withValues(alpha: 0.12),
+              blurRadius: 2,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Comentário fixado: faixa âmbar no topo (antes pintava o cartão)
+            if (pedido.comments.any((e) => e.isFixed)) ...[
+              Container(
+                width: double.maxFinite,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3E2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.push_pin,
+                        size: 13, color: Color(0xFFB45309)),
+                    const W(4),
+                    Text(
+                      'Comentário fixado',
+                      style: AppCss.minimumBold
+                          .setSize(10.5)
+                          .setColor(const Color(0xFFB45309)),
+                    ),
+                  ],
+                ),
+              ),
+              const H(6),
+            ],
             Row(
               children: [
-                if (pedido.comments.any((e) => e.isFixed)) ...[
-                  Icon(Icons.warning, color: Colors.orange, size: 16),
-                  const W(4),
-                ],
                 if (pedido.tags.isNotEmpty) ...[
                   Expanded(
                     child: KanbanCardTagsWidget(
@@ -109,15 +131,13 @@ class KanbanCardPedidoWidget extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 5, vertical: 1),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFEF3C7),
+                      color: const Color(0xFFFEF3E2),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                          color: const Color(0xFFF59E0B), width: 0.5),
                     ),
                     child: Text(
                       'MESTRE',
                       style: AppCss.minimumBold.copyWith(
-                          fontSize: 8, color: const Color(0xFF92400E)),
+                          fontSize: 10, color: const Color(0xFFB45309)),
                     ),
                   ),
                   if (pedido.todosFilhosArquivados) ...[
@@ -126,21 +146,19 @@ class KanbanCardPedidoWidget extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 5, vertical: 1),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFD1FAE5),
+                        color: const Color(0xFFE7F5EC),
                         borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                            color: const Color(0xFF10B981), width: 0.5),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const Icon(Icons.archive_outlined,
-                              size: 8, color: Color(0xFF065F46)),
+                              size: 11, color: AppColors.statusPronto),
                           const W(2),
                           Text(
                             'ARQUIVADOS',
                             style: AppCss.minimumBold.copyWith(
-                                fontSize: 8, color: const Color(0xFF065F46)),
+                                fontSize: 10, color: AppColors.statusPronto),
                           ),
                         ],
                       ),
@@ -153,15 +171,13 @@ class KanbanCardPedidoWidget extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 5, vertical: 1),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFDBEAFE),
+                      color: const Color(0xFFE8EFFE),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                          color: const Color(0xFF3B82F6), width: 0.5),
                     ),
                     child: Text(
                       'PARCIAL',
                       style: AppCss.minimumBold.copyWith(
-                          fontSize: 8, color: const Color(0xFF1E40AF)),
+                          fontSize: 10, color: const Color(0xFF1D4ED8)),
                     ),
                   ),
                 ],
@@ -198,18 +214,24 @@ class KanbanCardPedidoWidget extends StatelessWidget {
   }
 
   Color _getColor(PedidoModel pedido) {
-    if (pedido.todosFilhosArquivados) return const Color(0xFFECFDF5);
-    if (pedido.comments.any((e) => e.isFixed)) {
-      return const Color.fromARGB(255, 255, 227, 177);
-    }
+    if (pedido.todosFilhosArquivados) return const Color(0xFFF3FAF5);
     return const Color(0xFFFFFFFF);
   }
 
   /// Cor da borda lateral (stripe): verde p/ todos arquivados, âmbar p/ mestre, azul p/ parcial
   Color? _getStripeColor(PedidoModel pedido) {
-    if (pedido.todosFilhosArquivados) return const Color(0xFF10B981);
-    if (pedido.isMestre) return const Color(0xFFF59E0B);
-    if (pedido.isParcial) return const Color(0xFF3B82F6);
+    if (pedido.todosFilhosArquivados) return AppColors.statusPronto;
+    if (pedido.isMestre) return AppColors.statusAtencao;
+    if (pedido.isParcial) return AppColors.statusProduzindo;
+    if (_isAtrasado(pedido)) return AppColors.statusCritico;
     return null;
+  }
+
+  bool _isAtrasado(PedidoModel pedido) {
+    final entrega = pedido.deliveryAt;
+    if (entrega == null || pedido.isEntregue) return false;
+    final hoje = DateTime.now();
+    return DateTime(entrega.year, entrega.month, entrega.day)
+        .isBefore(DateTime(hoje.year, hoje.month, hoje.day));
   }
 }

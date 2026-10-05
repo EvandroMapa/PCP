@@ -1,3 +1,4 @@
+import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class KanbanBackgroundWidget extends StatelessWidget {
@@ -9,17 +10,7 @@ class KanbanBackgroundWidget extends StatelessWidget {
     return Container(
       width: double.maxFinite,
       height: double.maxFinite,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF4A5568),
-            Color(0xFF3D4A5C),
-            Color(0xFF354152),
-          ],
-        ),
-      ),
+      decoration: BoxDecoration(color: AppColors.primaryDark),
       child: child,
     );
   }

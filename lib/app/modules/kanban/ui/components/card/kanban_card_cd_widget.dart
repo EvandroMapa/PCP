@@ -1,5 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 
 /// Barra de progresso CD com percentuais posicionados esquerda/centro/direita.
@@ -42,21 +43,18 @@ class KanbanCardCDWidget extends StatelessWidget {
                   if (pPronto > 0)
                     Flexible(
                       flex: (pPronto * 1000).toInt().clamp(1, 1000),
-                      child: Container(color: PedidoBitolaStatus.pronto.corKanbanLegado),
+                      child: Container(color: PedidoBitolaStatus.pronto.color),
                     ),
                   if (pProduzindo > 0)
                     Flexible(
                       flex: (pProduzindo * 1000).toInt().clamp(1, 1000),
                       child: Container(
-                          color: PedidoBitolaStatus.produzindo.corKanbanLegado),
+                          color: PedidoBitolaStatus.produzindo.color),
                     ),
                   if (pAguardando > 0)
                     Flexible(
                       flex: (pAguardando * 1000).toInt().clamp(1, 1000),
-                      child: Container(
-                        color: PedidoBitolaStatus.aguardandoProducao.corKanbanLegado
-                            .withValues(alpha: 0.35),
-                      ),
+                      child: Container(color: AppColors.neutralLight),
                     ),
                 ],
               ),
@@ -68,13 +66,13 @@ class KanbanCardCDWidget extends StatelessWidget {
             children: [
               _pctLabel(
                   pctAg,
-                  PedidoBitolaStatus.aguardandoProducao.corKanbanLegado
+                  PedidoBitolaStatus.aguardandoProducao.color
                       .withValues(alpha: 0.8),
                   'Ag.'),
               const Spacer(),
-              _pctLabel(pctProd, PedidoBitolaStatus.produzindo.corKanbanLegado, 'Prod.'),
+              _pctLabel(pctProd, PedidoBitolaStatus.produzindo.color, 'Prod.'),
               const Spacer(),
-              _pctLabel(pctPronto, PedidoBitolaStatus.pronto.corKanbanLegado, 'Pronto'),
+              _pctLabel(pctPronto, PedidoBitolaStatus.pronto.color, 'Pronto'),
             ],
           ),
         ],
@@ -89,7 +87,7 @@ class KanbanCardCDWidget extends StatelessWidget {
           TextSpan(
             text: pct,
             style: TextStyle(
-              fontSize: 9,
+              fontSize: 10,
               fontWeight: FontWeight.w700,
               color: color,
             ),
@@ -97,7 +95,7 @@ class KanbanCardCDWidget extends StatelessWidget {
           TextSpan(
             text: ' $label',
             style: TextStyle(
-              fontSize: 8,
+              fontSize: 9.5,
               fontWeight: FontWeight.w400,
               color: Colors.grey[500],
             ),
