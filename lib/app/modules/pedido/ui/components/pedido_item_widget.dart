@@ -338,14 +338,18 @@ class PedidoItemWidget extends StatelessWidget {
                       flex: (produzindo * 1000).round().clamp(1, 1000),
                       child: Container(color: AppColors.statusProduzindo),
                     ),
-                  Flexible(
-                    flex: aguardandoEntrada
-                        ? 1000
-                        : ((1 - pronto - produzindo) * 1000)
-                            .round()
-                            .clamp(0, 1000),
-                    child: const SizedBox.expand(),
-                  ),
+                  // Parte "aguardando" = fundo cinza da barra. Só entra se
+                  // tiver tamanho: flex 0 quebrava o layout (barra toda cinza
+                  // em pedidos 100% prontos).
+                  if (aguardandoEntrada || pronto + produzindo < 0.999)
+                    Flexible(
+                      flex: aguardandoEntrada
+                          ? 1000
+                          : ((1 - pronto - produzindo) * 1000)
+                              .round()
+                              .clamp(1, 1000),
+                      child: const SizedBox.expand(),
+                    ),
                 ],
               ),
             ),

@@ -1,5 +1,7 @@
 import 'dart:developer';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
+import 'package:aco_plus/app/core/extensions/date_ext.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/services/notification_service.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
@@ -60,60 +62,131 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  // ── Título com badges MESTRE / PARCIAL ───────────────────────────────────
+  // ── Título: localizador, selos e cliente ─────────────────────────────────
+  Widget _selo(String texto, {Color? fundo, Color? cor, Widget? icone}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: fundo ?? Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icone != null) ...[icone, const SizedBox(width: 5)],
+          Text(
+            texto,
+            style: AppCss.minimumBold.copyWith(
+                fontSize: 11, color: cor ?? AppColors.white),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String get _tipoCurto => switch (pedido.tipo) {
+        PedidoTipo.cd => 'CD',
+        PedidoTipo.cda => 'CDA',
+        PedidoTipo.outros => 'Outros',
+      };
+
+  /// Entrega com cor: âmbar hoje, vermelho atrasado (exceto entregues)
+  Widget? _seloEntrega() {
+    final entrega = pedido.deliveryAt;
+    if (entrega == null) return null;
+    final hoje = DateTime.now();
+    final dias = DateTime(entrega.year, entrega.month, entrega.day)
+        .difference(DateTime(hoje.year, hoje.month, hoje.day))
+        .inDays;
+    String texto = 'Entrega ${entrega.ddMMyyyy()}';
+    Color? fundo;
+    if (!pedido.isEntregue) {
+      if (dias < 0) {
+        texto = '$texto · ${-dias == 1 ? '1 dia' : '${-dias} dias'} de atraso';
+        fundo = AppColors.statusCritico;
+      } else if (dias == 0) {
+        texto = 'Entrega hoje';
+        fundo = AppColors.statusAtencao;
+      } else {
+        texto = '$texto · em ${dias == 1 ? '1 dia' : '$dias dias'}';
+      }
+    }
+    return _selo(
+      texto,
+      fundo: fundo,
+      icone: const Icon(Icons.event, size: 13, color: Colors.white),
+    );
+  }
+
   Widget _titulo() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Row(
+    final entrega = _seloEntrega();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Selos só cabem com espaço; em telas estreitas fica o essencial
+        final largo = constraints.maxWidth >= 640;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Flexible(
-              child: Text(
-                pedido.isArchived
-                    ? '${pedido.localizador} - Arquivado'
-                    : pedido.localizador,
-                style: AppCss.largeBold.setColor(AppColors.white).setSize(20),
-                overflow: TextOverflow.ellipsis,
-              ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    pedido.isArchived
+                        ? '${pedido.localizador} - Arquivado'
+                        : pedido.localizador,
+                    style:
+                        AppCss.largeBold.setColor(AppColors.white).setSize(19),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (pedido.isMestre) ...[
+                  const SizedBox(width: 8),
+                  _selo('MESTRE',
+                      fundo: const Color(0xFFFEF3E2),
+                      cor: const Color(0xFFB45309)),
+                ],
+                if (pedido.isParcial) ...[
+                  const SizedBox(width: 8),
+                  _selo('PARCIAL',
+                      fundo: const Color(0xFFE8EFFE),
+                      cor: const Color(0xFF1D4ED8)),
+                ],
+                if (largo) ...[
+                  const SizedBox(width: 10),
+                  _selo(_tipoCurto),
+                  if (pedido.steps.isNotEmpty) ...[
+                    const SizedBox(width: 6),
+                    _selo(
+                      pedido.step.name,
+                      icone: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: pedido.step.color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (entrega != null) ...[const SizedBox(width: 6), entrega],
+                ],
+              ],
             ),
-            if (pedido.isMestre) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text('MESTRE',
-                    style: AppCss.minimumBold.copyWith(
-                        fontSize: 9, color: const Color(0xFF92400E))),
-              ),
-            ],
-            if (pedido.isParcial) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDBEAFE),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text('PARCIAL',
-                    style: AppCss.minimumBold.copyWith(
-                        fontSize: 9, color: const Color(0xFF1E40AF))),
-              ),
-            ],
+            const SizedBox(height: 2),
+            Text(
+              [pedido.cliente.nome.trim(), pedido.obra.descricao.trim()]
+                  .where((e) => e.isNotEmpty)
+                  .join(' · '),
+              style: AppCss.minimumRegular
+                  .setColor(Colors.white.withValues(alpha: 0.7))
+                  .setSize(11.5),
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
-        ),
-        Text(
-          pedido.cliente.nome,
-          style: AppCss.minimumRegular
-              .setColor(Colors.white.withValues(alpha: 0.7))
-              .setSize(11),
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -148,33 +221,68 @@ class PedidoTopBar extends StatelessWidget implements PreferredSizeWidget {
         tooltip: 'Acompanhar pedido',
         onTap: () => context.push('/acompanhamento/pedidos/${pedido.id}'),
       ),
-      if (pedido.step.isArchivedAvailable && !pedido.isArchived)
-        _botaoAcao(
-          icon: Icons.archive,
-          tooltip: 'Arquivar pedido',
-          onTap: () => isKanban
-              ? pedidoCtrl
-                  .onArchive(context, pedido, isPedido: false)
-                  .then((result) {
-                  if (result) kanbanCtrl.setPedido(null);
-                })
-              : pedidoCtrl.onArchive(context, pedido),
+      // Editar com nome, em destaque
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: FilledButton.icon(
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.white,
+            foregroundColor: AppColors.primaryMain,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            minimumSize: const Size(0, 36),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8)),
+            textStyle: AppCss.minimumBold.setSize(13),
+          ),
+          onPressed: () => push(context, PedidoCreatePage(pedido: pedido)),
+          icon: const Icon(Icons.edit, size: 16),
+          label: const Text('Editar'),
         ),
-      _botaoAcao(
-        icon: Icons.edit,
-        tooltip: 'Editar pedido',
-        onTap: () => push(context, PedidoCreatePage(pedido: pedido)),
       ),
-      _botaoAcao(
-        icon: Icons.delete,
-        tooltip: 'Excluir pedido',
-        onTap: () => isKanban
-            ? pedidoCtrl
-                .onDelete(context, pedido, isPedido: false)
-                .then((e) {
-                if (e) kanbanCtrl.setPedido(null);
-              })
-            : pedidoCtrl.onDelete(context, pedido),
+      // Arquivar e Excluir no menu ⋮ (longe de um clique acidental)
+      PopupMenuButton<String>(
+        tooltip: 'Mais ações',
+        icon: Icon(Icons.more_vert, color: AppColors.white),
+        style: IconButton.styleFrom(backgroundColor: Colors.transparent),
+        onSelected: (acao) {
+          if (acao == 'arquivar') {
+            isKanban
+                ? pedidoCtrl
+                    .onArchive(context, pedido, isPedido: false)
+                    .then((result) {
+                    if (result) kanbanCtrl.setPedido(null);
+                  })
+                : pedidoCtrl.onArchive(context, pedido);
+          } else if (acao == 'excluir') {
+            isKanban
+                ? pedidoCtrl
+                    .onDelete(context, pedido, isPedido: false)
+                    .then((e) {
+                    if (e) kanbanCtrl.setPedido(null);
+                  })
+                : pedidoCtrl.onDelete(context, pedido);
+          }
+        },
+        itemBuilder: (_) => [
+          if (pedido.step.isArchivedAvailable && !pedido.isArchived)
+            const PopupMenuItem(
+              value: 'arquivar',
+              child: Row(children: [
+                Icon(Icons.archive_outlined, size: 18),
+                SizedBox(width: 10),
+                Text('Arquivar pedido'),
+              ]),
+            ),
+          PopupMenuItem(
+            value: 'excluir',
+            child: Row(children: [
+              Icon(Icons.delete_outline, size: 18, color: AppColors.error),
+              const SizedBox(width: 10),
+              Text('Excluir pedido',
+                  style: TextStyle(color: AppColors.error)),
+            ]),
+          ),
+        ],
       ),
     ];
   }

@@ -18,7 +18,10 @@ import 'package:file_picker/file_picker.dart';
 
 class ElementosTab extends StatefulWidget {
   final PedidoModel pedido;
-  const ElementosTab({required this.pedido, super.key});
+
+  /// Botão extra na barra de ações (ex.: relatório), antes do Comparativo
+  final Widget? acaoExtra;
+  const ElementosTab({required this.pedido, this.acaoExtra, super.key});
 
   @override
   State<ElementosTab> createState() => _ElementosTabState();
@@ -133,18 +136,35 @@ class _ElementosTabState extends State<ElementosTab> {
                                 .copyWith(color: Colors.grey[500])),
                       );
                     }
-                    return ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
-                      itemCount: filtrados.length,
-                      itemBuilder: (_, i) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _ElementoTile(
-                          elemento: filtrados[i],
-                          pedido: widget.pedido,
-                          fmt: _fmt,
+                    return LayoutBuilder(builder: (context, constraints) {
+                      const gap = 10.0;
+                      final util = constraints.maxWidth - 32;
+                      final colunas = util >= 1100
+                          ? 3
+                          : util >= 700
+                              ? 2
+                              : 1;
+                      final largura = (util - gap * (colunas - 1)) / colunas;
+                      return SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 40),
+                        child: Wrap(
+                          spacing: gap,
+                          runSpacing: gap,
+                          crossAxisAlignment: WrapCrossAlignment.start,
+                          children: [
+                            for (final el in filtrados)
+                              SizedBox(
+                                width: largura,
+                                child: _ElementoTile(
+                                  elemento: el,
+                                  pedido: widget.pedido,
+                                  fmt: _fmt,
+                                ),
+                              ),
+                          ],
                         ),
-                      ),
-                    );
+                      );
+                    });
                   },
                 ),
               ),
@@ -169,37 +189,10 @@ class _ElementosTabState extends State<ElementosTab> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              if (usuarioCtrl.usuario?.podeEditarElementos ?? false) ...[
-                // ── Limpar (danger ghost) ──
-                StreamOut<List<ElementoModel>>(
-                  stream: elementoCtrl.elementosStream.listen,
-                  builder: (_, elementos) {
-                    if (elementos.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
-                    return _ActionButton(
-                      icon: Icons.delete_sweep_rounded,
-                      label: 'Limpar',
-                      color: AppColors.error,
-                      variant: _ButtonVariant.outlined,
-                      onTap: () => _onLimpar(elementos),
-                    );
-                  },
-                ),
-                // ── Novo Elemento (primary solid) ──
-                _ActionButton(
-                  icon: Icons.add_rounded,
-                  label: 'Novo Elemento',
-                  color: AppColors.primaryMain,
-                  variant: _ButtonVariant.filled,
-                  onTap: () => showElementoFormDialog(
-                    context,
-                    pedido: widget.pedido,
-                  ),
-                ),
-              ],
-              // ── Comparativo (status pill) ──
+              if (widget.acaoExtra != null) widget.acaoExtra!,
+              // ── Comparativo (contorno, cor indica se bate) ──
               _ActionButton(
                 icon: validacao.isOk
                     ? Icons.check_circle_rounded
@@ -212,6 +205,42 @@ class _ElementosTabState extends State<ElementosTab> {
                   validacao: validacao,
                 ),
               ),
+              if (usuarioCtrl.usuario?.podeEditarElementos ?? false) ...[
+                // ── Novo elemento (principal) ──
+                _ActionButton(
+                  icon: Icons.add_rounded,
+                  label: 'Novo elemento',
+                  color: AppColors.primaryMain,
+                  variant: _ButtonVariant.filled,
+                  onTap: () => showElementoFormDialog(
+                    context,
+                    pedido: widget.pedido,
+                  ),
+                ),
+                // ── Limpar: ação destrutiva no menu ⋮ ──
+                if (elementos.isNotEmpty)
+                  PopupMenuButton<String>(
+                    tooltip: 'Mais ações',
+                    icon: Icon(Icons.more_vert, color: AppColors.neutralDark),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      side: BorderSide(color: AppColors.neutralLight),
+                    ),
+                    onSelected: (_) => _onLimpar(elementos),
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: 'limpar',
+                        child: Row(children: [
+                          Icon(Icons.delete_sweep_rounded,
+                              size: 18, color: AppColors.error),
+                          const SizedBox(width: 10),
+                          Text('Limpar todos os elementos',
+                              style: TextStyle(color: AppColors.error)),
+                        ]),
+                      ),
+                    ],
+                  ),
+              ],
             ],
           ),
         ],
@@ -232,6 +261,10 @@ class _ElementosTabState extends State<ElementosTab> {
               style: AppCss.smallBold.setSize(13),
             ),
           ),
+          if (widget.acaoExtra != null) ...[
+            widget.acaoExtra!,
+            const SizedBox(width: 8),
+          ],
           // Comparativo
           _iconBtn(
             icon: validacao.isOk
@@ -327,7 +360,6 @@ class _ElementosTabState extends State<ElementosTab> {
   // ─── BARRA DE RESUMO DE STATUS ──────────────────────────────────────────────
   Widget _buildStatusSummaryBar(List<ElementoModel> elementos) {
     int totalQtd = 0;
-    double totalPeso = 0;
     final Map<ElementoStatus, double> qtdPorStatus = {
       ElementoStatus.aguardando: 0,
       ElementoStatus.armando: 0,
@@ -341,7 +373,6 @@ class _ElementosTabState extends State<ElementosTab> {
 
     for (final e in elementos) {
       totalQtd += e.qtde;
-      totalPeso += e.pesoTotal;
 
       if (e.status == ElementoStatus.aguardando) {
         qtdPorStatus[ElementoStatus.aguardando] =
@@ -373,70 +404,50 @@ class _ElementosTabState extends State<ElementosTab> {
       }
     }
 
-    Widget col(ElementoStatus status) {
+    Widget chip(ElementoStatus status) {
       final qtd = qtdPorStatus[status] ?? 0;
       final peso = pesoPorStatus[status] ?? 0;
-      final pctQtd = totalQtd > 0 ? (qtd / totalQtd * 100) : 0;
+      final pct = totalQtd > 0 ? (qtd / totalQtd * 100) : 0;
+      final visivel = _statusVisivel[status] ?? true;
+      final qtdTxt = qtd % 1 == 0 ? qtd.toInt().toString() : qtd.toStringAsFixed(1);
 
-      return Expanded(
-        child: GestureDetector(
-          onTap: () => setState(() => _statusVisivel[status] =
-              !(_statusVisivel[status] ?? true)),
+      return Tooltip(
+        message: visivel ? 'Ocultar ${status.label.toLowerCase()}' : 'Mostrar ${status.label.toLowerCase()}',
+        waitDuration: const Duration(milliseconds: 400),
+        child: InkWell(
+          onTap: () => setState(() => _statusVisivel[status] = !visivel),
+          borderRadius: BorderRadius.circular(999),
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(
-              color: status.backgroundColor,
-              border: Border(
-                top: BorderSide(color: status.color, width: 3),
+              color: visivel ? Colors.white : AppColors.neutralLightest,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: visivel
+                    ? status.color.withValues(alpha: 0.5)
+                    : AppColors.neutralLight,
               ),
             ),
-            child: Column(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        status.label.toUpperCase(),
-                        textAlign: TextAlign.center,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800,
-                          color: (_statusVisivel[status] ?? true)
-                              ? status.color
-                              : Colors.grey[400],
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-                    Icon(
-                      (_statusVisivel[status] ?? true)
-                          ? Icons.visibility_rounded
-                          : Icons.visibility_off_rounded,
-                      size: 12,
-                      color: (_statusVisivel[status] ?? true)
-                          ? status.color
-                          : Colors.grey[400],
-                    ),
-                  ],
+                Icon(
+                  visivel ? Icons.check_circle : Icons.circle_outlined,
+                  size: 15,
+                  color: visivel ? status.color : AppColors.primaryMedium,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(width: 6),
                 Text(
-                  '${qtd % 1 == 0 ? qtd.toInt() : qtd.toStringAsFixed(1)} (${pctQtd.toStringAsFixed(0)}%)',
-                  style: const TextStyle(
-                      fontSize: 11, fontWeight: FontWeight.w700),
-                  textAlign: TextAlign.center,
+                  status.label,
+                  style: AppCss.minimumBold.setSize(12.5).setColor(
+                      visivel ? AppColors.black : AppColors.neutralMedium),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(width: 6),
                 Text(
-                  '${_fmt(peso)} kg',
-                  style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[500]),
-                  textAlign: TextAlign.center,
+                  '$qtdTxt (${pct.toStringAsFixed(0)}%) · ${_fmt(peso)} kg',
+                  style: AppCss.minimumRegular
+                      .setSize(12)
+                      .setColor(AppColors.neutralMedium),
                 ),
               ],
             ),
@@ -446,20 +457,16 @@ class _ElementosTabState extends State<ElementosTab> {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey.shade300, width: 0.5),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Row(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
-            col(ElementoStatus.aguardando),
-            Container(width: 0.5, height: 60, color: Colors.grey.shade300),
-            col(ElementoStatus.armando),
-            Container(width: 0.5, height: 60, color: Colors.grey.shade300),
-            col(ElementoStatus.pronto),
+            chip(ElementoStatus.aguardando),
+            chip(ElementoStatus.armando),
+            chip(ElementoStatus.pronto),
           ],
         ),
       ),
@@ -486,18 +493,13 @@ class _ElementoTileState extends State<_ElementoTile> {
   Widget build(BuildContext context) {
     final el = widget.elemento;
     return Container(
-      margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
-        color: el.status.backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(color: el.status.color.withValues(alpha: 0.3)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+            color: _expanded
+                ? el.status.color.withValues(alpha: 0.5)
+                : AppColors.neutralLight),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -509,11 +511,7 @@ class _ElementoTileState extends State<_ElementoTile> {
               child: Row(
                 children: [
                   // Indicador lateral colorido pelo status
-                  Container(
-                    width: 4,
-                    color: el.status.color
-                        .withValues(alpha: _expanded ? 1.0 : 0.6),
-                  ),
+                  Container(width: 3, color: el.status.color),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Padding(
@@ -528,7 +526,7 @@ class _ElementoTileState extends State<_ElementoTile> {
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               Text(el.nome,
-                                  style: AppCss.mediumBold.setSize(15)),
+                                  style: AppCss.mediumBold.setSize(14.5)),
                               if (el.qtde > 1)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
@@ -549,12 +547,8 @@ class _ElementoTileState extends State<_ElementoTile> {
                                     horizontal: 8, vertical: 2),
                                 decoration: BoxDecoration(
                                   color:
-                                      el.status.color.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                      color: el.status.color
-                                          .withValues(alpha: 0.4),
-                                      width: 0.5),
+                                      el.status.color.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Text(
                                   el.status.label,
@@ -569,9 +563,10 @@ class _ElementoTileState extends State<_ElementoTile> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${el.posicoes.length} pos. · Unit: ${widget.fmt(el.pesoUnitario)} kg',
+                            '${el.posicoes.length} posições · unitário ${widget.fmt(el.pesoUnitario)} kg',
                             style: AppCss.minimumRegular
-                                .copyWith(color: Colors.grey[600]),
+                                .setSize(12.5)
+                                .copyWith(color: AppColors.neutralMedium),
                           ),
                           const SizedBox(height: 6),
                           // Peso + botões na mesma linha
@@ -584,14 +579,13 @@ class _ElementoTileState extends State<_ElementoTile> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryMain
-                                      .withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(10),
+                                  color: AppColors.neutralLightest,
+                                  borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
                                   '${widget.fmt(el.pesoTotal)} kg',
                                   style: AppCss.mediumBold
-                                      .setColor(AppColors.primaryMain)
+                                      .setColor(AppColors.black)
                                       .setSize(13),
                                 ),
                               ),
@@ -660,20 +654,17 @@ class _ElementoTileState extends State<_ElementoTile> {
                     child: LinearProgressIndicator(
                       value: el.progressoPronto,
                       minHeight: 18,
-                      backgroundColor: Colors.grey[200],
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        el.status == ElementoStatus.pronto
-                            ? Colors.green[700]!
-                            : Colors.green[500]!,
-                      ),
+                      backgroundColor: AppColors.neutralLightest,
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppColors.statusPronto),
                     ),
                   ),
                   Text(
-                    '${el.qtdePronto} / ${el.qtde} PÇ PRONTAS',
+                    '${el.qtdePronto} de ${el.qtde} peças prontas',
                     style: AppCss.minimumBold.setSize(10).setColor(
                         el.progressoPronto > 0.5
                             ? Colors.white
-                            : Colors.green[900]!),
+                            : AppColors.black),
                   ),
                 ],
               ),
@@ -683,7 +674,7 @@ class _ElementoTileState extends State<_ElementoTile> {
           if (_expanded)
             Container(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              color: Colors.grey.shade50.withValues(alpha: 0.5),
+              color: AppColorsSystem.light.primary[50],
               child: Column(
                 children: [
                   const Divisor(height: 1),

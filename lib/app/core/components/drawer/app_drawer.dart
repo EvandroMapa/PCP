@@ -62,11 +62,58 @@ class AppDrawer extends StatelessWidget {
                     title:
                         Text('Sair', style: TextStyle(color: AppColors.error)),
                   ),
+                  const AppDrawerVersao(),
                 ],
               );
             },
           );
         },
+      ),
+    );
+  }
+}
+
+/// Rodapé do menu: versão, commit e data/hora da compilação, discretos.
+/// O selo DEV aparece só fora de produção (APP_ENV != prod).
+class AppDrawerVersao extends StatelessWidget {
+  const AppDrawerVersao({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.maxFinite,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: AppColors.neutralLight)),
+      ),
+      child: Row(
+        children: [
+          if (kIsDev) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
+                color: AppColors.statusAtencao,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: const Text(
+                'DEV',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const W(6),
+          ],
+          Expanded(
+            child: Text(
+              kVersaoLabel,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11, color: AppColors.neutralMedium),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -313,43 +360,8 @@ class AppDrawerHeader extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
+              // A versão fica no rodapé do menu (AppDrawerVersao)
               if (usuario.isAdmin) ...[
-                if (kIsDev)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      kBuildHash,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                if (kIsDev) const W(4),
-                // Versão sempre visível para admin
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    kVersaoLabel,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                const W(4),
                 InkWell(
                   onTap: () {
                     Navigator.pop(context);
