@@ -87,6 +87,7 @@ class _KanbanCalendarWidgetState extends State<KanbanCalendarWidget> {
                 child: SingleChildScrollView(
                   controller: _scrollController,
                   child: TableCalendar(
+                    locale: 'pt_BR',
                     availableGestures: AvailableGestures.horizontalSwipe,
                     firstDay: getBorderDates(first: true),
                     lastDay: getBorderDates(last: true),
@@ -100,9 +101,14 @@ class _KanbanCalendarWidgetState extends State<KanbanCalendarWidget> {
                             : MediaQuery.of(context).size.height * 1.4,
                     daysOfWeekHeight: 30,
                     calendarFormat: widget.utils.calendarFormat,
-                    headerStyle: const HeaderStyle(
+                    headerStyle: HeaderStyle(
                       formatButtonVisible: false,
                       titleCentered: true,
+                      // "Outubro de 2026"
+                      titleTextFormatter: (date, locale) {
+                        final t = DateFormat.yMMMM('pt_BR').format(date);
+                        return t[0].toUpperCase() + t.substring(1);
+                      },
                       decoration: BoxDecoration(color: Colors.white60),
                       titleTextStyle: TextStyle(
                         color: Colors.black,

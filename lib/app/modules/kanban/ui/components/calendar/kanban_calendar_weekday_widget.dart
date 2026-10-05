@@ -17,7 +17,8 @@ class KanbanCalendarWeekdayWidget extends StatelessWidget {
       ),
       child: Center(
         child: Text(
-          DateFormat('E').format(day).toUpperCase(),
+          // "SEG", "TER"... (pt_BR vem como "seg.")
+          DateFormat('E', 'pt_BR').format(day).replaceAll('.', '').toUpperCase(),
           style: AppCss.minimumRegular.copyWith(
             color: Colors.grey[700],
             fontWeight: FontWeight.bold,

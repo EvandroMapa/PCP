@@ -119,7 +119,6 @@ class AppSupabaseClient {
         _safeStart('fabricantes', () => fabricantes.start()),
         _safeStart('tags', () => tags.start()),
         _safeStart('checklists', () => checklists.start()),
-        _safeStart('automatizacao', () => automatizacao.start()),
         _safeStart('notificacoes', () => notificacoes.start()),
         _safeStart('elementos', () => elementos.start()),
         _safeStart('patios', () => patios.start()),
@@ -131,7 +130,11 @@ class AppSupabaseClient {
         _safeStart('equipamentos', () => equipamentos.start()),
       ]);
 
+      // Automatização guarda só os ids das etapas e troca pelo StepModel ao
+      // ler: precisa das etapas já carregadas, senão vira "step-not-found"
+      // (calendário e "aguardando entrada na produção" param de funcionar).
       await Future.wait([
+        _safeStart('automatizacao', () => automatizacao.start()),
         _safeStart('materiaPrima', () => materiaPrima.start()),
         _safeStart('ordens', () => ordens.start()),
       ]);
