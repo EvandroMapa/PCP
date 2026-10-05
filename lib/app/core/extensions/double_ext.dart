@@ -22,12 +22,13 @@ extension DoubleExt on double {
   String toMoney() =>
       MoneyMaskedTextController(leftSymbol: 'R\$ ', initialValue: this).text;
 
+  /// "1.234,56 kg" — unidade em minúsculo, separada por espaço que não quebra
   String toKg() =>
-      '${NumberFormat.currency(locale: 'pt_BR', symbol: '', decimalDigits: 2).format(this).trim()}Kg';
+      '${NumberFormat.currency(locale: 'pt_BR', symbol: '', decimalDigits: 2).format(this).trim()} kg';
 
-  /// Formata em kg sem casas decimais (ex: 4.000Kg)
+  /// Formata em kg sem casas decimais (ex: 4.000 kg)
   String toKgInt() =>
-      '${NumberFormat.currency(locale: 'pt_BR', symbol: '', decimalDigits: 0).format(this).trim()}Kg';
+      '${NumberFormat.currency(locale: 'pt_BR', symbol: '', decimalDigits: 0).format(this).trim()} kg';
 
   double get precision => double.parse(toStringAsFixed(2));
 }

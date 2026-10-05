@@ -3,6 +3,7 @@ import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:aco_plus/app/core/models/text_controller.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_arquivo_model.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 
 // ─── STATUS DO ELEMENTO w───────────────────────────────────────────────────────
@@ -25,22 +26,22 @@ enum ElementoStatus {
   Color get color {
     switch (this) {
       case ElementoStatus.aguardando:
-        return Colors.grey[400]!;
+        return AppColors.statusAguardando;
       case ElementoStatus.armando:
-        return Colors.yellow[700]!;
+        return AppColors.statusProduzindo;
       case ElementoStatus.pronto:
-        return Colors.green[600]!;
+        return AppColors.statusPronto;
     }
   }
 
   Color get backgroundColor {
     switch (this) {
       case ElementoStatus.aguardando:
-        return Colors.grey[100]!;
+        return const Color(0xFFF1F3F6);
       case ElementoStatus.armando:
-        return Colors.yellow[50]!;
+        return const Color(0xFFE8EFFE);
       case ElementoStatus.pronto:
-        return Colors.green[50]!;
+        return const Color(0xFFE7F5EC);
     }
   }
 }
@@ -68,13 +69,13 @@ enum PosicaoStatus {
   Color get color {
     switch (this) {
       case PosicaoStatus.aguardando:
-        return Colors.grey[400]!;
+        return AppColors.statusAguardando;
       case PosicaoStatus.produzindo:
-        return Colors.orange[700]!;
+        return AppColors.statusProduzindo;
       case PosicaoStatus.aguardaSegundaEtapa:
-        return Colors.deepOrange[400]!;
+        return AppColors.statusAtencao;
       case PosicaoStatus.pronto:
-        return Colors.green[600]!;
+        return AppColors.statusPronto;
     }
   }
 }

@@ -18,10 +18,10 @@ class KanbanStepTitleWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double kgsTotal = pedidos
-        .where((e) => utils.isPedidoVisibleFiltered(e))
-        .map((e) => e.getQtdeTotal())
-        .fold(.0, (a, b) => a + b);
+    final visiveis =
+        pedidos.where((e) => utils.isPedidoVisibleFiltered(e)).toList();
+    final double kgsTotal =
+        visiveis.map((e) => e.getQtdeTotal()).fold(.0, (a, b) => a + b);
 
     return Container(
       decoration: BoxDecoration(
@@ -75,6 +75,24 @@ class KanbanStepTitleWidget extends StatelessWidget {
                       .setSize(15.0)
                       .setWeight(FontWeight.w800) // Mais negrito (negritop)
                       .setColor(AppColors.neutralDark),
+                ),
+                const W(8),
+                // Quantidade de pedidos na coluna (respeita os filtros)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: AppColors.white.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    visiveis.length == 1
+                        ? '1 pedido'
+                        : '${visiveis.length} pedidos',
+                    style: AppCss.minimumBold
+                        .setSize(11)
+                        .setColor(AppColors.neutralDark),
+                  ),
                 ),
                 const Spacer(),
                 // Botão ordenação

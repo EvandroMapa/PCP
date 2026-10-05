@@ -155,7 +155,7 @@ class _PedidoArchivedsPageState extends State<PedidosArchivedsPage> {
                           pedido.produtos
                               .map(
                                 (e) =>
-                                    '${'${e.produto.descricao} - ${e.qtde}'}Kg',
+                                    '${e.produto.descricao} - ${e.qtde} kg',
                               )
                               .join(', '),
                           style: AppCss.minimumRegular

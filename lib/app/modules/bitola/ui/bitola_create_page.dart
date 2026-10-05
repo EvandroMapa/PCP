@@ -129,7 +129,7 @@ class _BitolaCreatePageState extends State<BitolaCreatePage> {
                 label: 'MASSA NOMINAL LINEAR (Kg/Metro)',
                 controller: form.massaFinal,
                 onChanged: (_) => bitolaCtrl.formStream.update(),
-                suffixText: 'Kg',
+                suffixText: 'kg',
               ),
             ],
           ),

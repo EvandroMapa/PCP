@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:aco_plus/app/core/services/hash_service.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 
 enum PedidoBitolaStatus { separado, aguardandoProducao, produzindo, aguardaSegundaEtapa, pronto }
@@ -24,7 +25,27 @@ extension PedidoBitolaStatusExt on PedidoBitolaStatus {
     }
   }
 
+  /// Cores de status da paleta (significado fixo em todas as telas):
+  /// aguardando = cinza (esperar não é erro), produzindo = azul,
+  /// 2ª etapa = âmbar, pronto = verde.
   Color get color {
+    switch (this) {
+      case PedidoBitolaStatus.separado:
+        return AppColors.neutralMedium;
+      case PedidoBitolaStatus.aguardandoProducao:
+        return AppColors.statusAguardando;
+      case PedidoBitolaStatus.produzindo:
+        return AppColors.statusProduzindo;
+      case PedidoBitolaStatus.aguardaSegundaEtapa:
+        return AppColors.statusAtencao;
+      case PedidoBitolaStatus.pronto:
+        return AppColors.statusPronto;
+    }
+  }
+
+  /// Cores anteriores, mantidas só no cartão do Kanban (decisão de não
+  /// alterar o cartão). Para alinhar o Kanban à paleta, troque por [color].
+  Color get corKanbanLegado {
     switch (this) {
       case PedidoBitolaStatus.separado:
         return Colors.grey;

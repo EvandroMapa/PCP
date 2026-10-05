@@ -58,7 +58,7 @@ class _GrapOrdemhTotalWidgetState extends State<BitolaStatusWidget> {
             ),
             tooltipBehavior: TooltipBehavior(
               enable: true,
-              format: 'point.x : point.y Kg',
+              format: 'point.x : point.y kg',
             ),
             enableMultiSelection: true,
             onDataLabelRender: (dataLabelArgs) {
@@ -68,7 +68,7 @@ class _GrapOrdemhTotalWidgetState extends State<BitolaStatusWidget> {
               );
               double qtde = double.parse(dataLabelArgs.text ?? '0');
               dataLabelArgs.text =
-                  qtde == 0 ? empty : qtde.toKg().replaceAll('Kg', '');
+                  qtde == 0 ? empty : qtde.toKg().replaceAll(' kg', '');
             },
             legend: const Legend(
               isVisible: true,

@@ -113,7 +113,7 @@ class SignUpPageState extends State<SignUpPage>
                             _buildCard(),
                             const SizedBox(height: 16),
                             Text(
-                              'v1.0.0+425 · $kBuildHash',
+                              kVersaoLabel,
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.white.withValues(alpha: 0.35),

@@ -1,4 +1,3 @@
-import 'dart:developer';
 
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_model.dart';
@@ -8,7 +7,6 @@ import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:aco_plus/app/core/components/app_drop_down.dart';
 import 'package:aco_plus/app/core/components/app_drop_down_list.dart';
 import 'package:aco_plus/app/core/components/app_field.dart';
-import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -16,6 +14,7 @@ import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/enums/sort_type.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
+import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/base/base_controller.dart';
 import 'package:aco_plus/app/modules/pedido/pedido_controller.dart';
@@ -110,20 +109,43 @@ class _PedidosPageState extends State<PedidosPage> {
           Widget body = RefreshIndicator(
             onRefresh: () async => await FirestoreClient.pedidos.fetch(),
             child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               children: [
+                // Busca sempre visível + contagem
+                Row(
+                  children: [
+                    Expanded(
+                      child: AppField(
+                        hint: 'Buscar pedido, cliente ou obra',
+                        controller: utils.search,
+                        suffixIcon: Icons.search,
+                        onChanged: (_) => pedidoCtrl.utilsStream.update(),
+                      ),
+                    ),
+                    const W(16),
+                    Text(
+                      pedidos.length == 1
+                          ? '1 pedido'
+                          : '${pedidos.length} pedidos',
+                      style: AppCss.minimumBold
+                          .setSize(13)
+                          .setColor(AppColors.neutralMedium),
+                    ),
+                  ],
+                ),
+                const H(12),
                 Visibility(
                   visible: utils.showFilter,
-                  child: Padding(
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.neutralLight),
+                    ),
                     child: Column(
                       children: [
-                        AppField(
-                          hint: 'Pesquisar',
-                          controller: utils.search,
-                          suffixIcon: Icons.search,
-                          onChanged: (_) => pedidoCtrl.utilsStream.update(),
-                        ),
-                        const H(16),
                         AppField(
                           hint: 'Buscar por cidade',
                           controller: utils.localidadeEC,
@@ -200,23 +222,22 @@ class _PedidosPageState extends State<PedidosPage> {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         cacheExtent: 200,
-                        separatorBuilder: (_, i) => Divisor(),
-                        itemBuilder: (_, i) {
-                          log('${pedidos[i].localizador} - ${pedidos[i].pedidosVinculados.toString()}');
-                          return PedidoItemWidget(
-                            pedido: pedidos[i],
-                            onTap: (pedido) => push(
-                              PedidoPage(
-                                pedido: pedido,
-                                reason: PedidoInitReason.page,
-                              ),
+                        separatorBuilder: (_, i) => const H(10),
+                        itemBuilder: (_, i) => PedidoItemWidget(
+                          pedido: pedidos[i],
+                          asCard: true,
+                          onTap: (pedido) => push(
+                            PedidoPage(
+                              pedido: pedido,
+                              reason: PedidoInitReason.page,
                             ),
-                          );
-                        },
+                          ),
+                        ),
                       ),
               ],
             ),
           );
+          body = ColoredBox(color: AppColors.neutralLightest, child: body);
           if (widget.standalone) {
             return Scaffold(
               appBar: AppBar(

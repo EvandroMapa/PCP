@@ -31,20 +31,22 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
   // Vermelho: estoque < mínimo
   // Neutro: nenhum limite configurado
 
-  static const _verde = Color(0xFF16A34A);
-  static const _verdeBg = Color(0xFFF0FDF4);
-  static const _verdeBorder = Color(0xFFBBF7D0);
+  // Card sempre branco: a cor fica no ícone, no selo e na barra. Só o nível
+  // crítico (abaixo do mínimo) ganha borda colorida, para se destacar.
+  static const _verde = AppColors.statusPronto;
+  static const _verdeBg = Colors.white;
+  static const _verdeBorder = Color(0xFFDCE1E7);
 
-  static const _amarelo = Color(0xFFCA8A04);
-  static const _amareloBg = Color(0xFFFEFCE8);
-  static const _amareloBorder = Color(0xFFFDE68A);
+  static const _amarelo = Color(0xFFB45309);
+  static const _amareloBg = Colors.white;
+  static const _amareloBorder = Color(0xFFDCE1E7);
 
-  static const _vermelho = Color(0xFFDC2626);
-  static const _vermelhoBg = Color(0xFFFEF2F2);
-  static const _vermelhoBorder = Color(0xFFFECACA);
+  static const _vermelho = AppColors.statusCritico;
+  static const _vermelhoBg = Colors.white;
+  static const _vermelhoBorder = Color(0xFFF2B8B2);
 
-  static const _neutroBg = Color(0xFFFAFAFA);
-  static const _neutroBorder = Color(0xFFE2E8F0);
+  static const _neutroBg = Colors.white;
+  static const _neutroBorder = Color(0xFFDCE1E7);
 
   /// Retorna (bgColor, borderColor, accentColor, icon, label)
   _NivelEstoque _calcularNivel(double saldo, double minimo, double ideal) {
@@ -301,7 +303,7 @@ class _EstoqueSaldoSectionState extends State<EstoqueSaldoSection> {
                                   nivel.label,
                                   style: AppCss.minimumBold
                                       .setColor(nivel.accent)
-                                      .setSize(9),
+                                      .setSize(10),
                                 ),
                               ),
                             ],

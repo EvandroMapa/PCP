@@ -21,4 +21,5 @@ export PATH="$PATH:$(pwd)/flutter/bin"
 echo "Building Flutter Web com Flutter ${FLUTTER_VERSION}..."
 flutter pub get
 BUILD_HASH=${VERCEL_GIT_COMMIT_SHA:0:7}
-flutter build web --release --dart-define=APP_ENV=${APP_ENV:-dev} --dart-define=BUILD_HASH=${BUILD_HASH:-local}
+BUILD_TIME=$(TZ=America/Sao_Paulo date +'%d/%m %H:%M')
+flutter build web --release --dart-define=APP_ENV=${APP_ENV:-dev} --dart-define=BUILD_HASH=${BUILD_HASH:-local} --dart-define="BUILD_TIME=${BUILD_TIME}"

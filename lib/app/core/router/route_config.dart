@@ -7,10 +7,8 @@ import 'package:aco_plus/app/modules/sign/ui/sign_up_page.dart';
 import 'package:aco_plus/app/core/router/flutter_web_plugins_shim.dart'
     if (dart.library.html) 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:aco_plus/app/modules/armacao/ui/armacao_page.dart';
-import 'package:aco_plus/app/modules/kanban/ui/kanban_page.dart';
 import 'package:aco_plus/app/modules/ordem/ui/ordens_page.dart';
 import 'package:aco_plus/app/modules/painel_gerencial/ui/painel_gerencial_page.dart';
-import 'package:aco_plus/app/modules/pedido/ui/pedidos_page.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_acompanhamento_page.dart';
 import 'package:aco_plus/app/modules/totem/ui/totem_box_page.dart';
 import 'package:aco_plus/app/core/components/standalone/standalone_scaffold.dart';
@@ -28,29 +26,16 @@ class RouteConfig {
     config = GoRouter(
       initialLocation: '/',
       navigatorKey: appCtrl.key,
+      // Telas avulsas extintas: favoritos antigos voltam para o app principal
+      redirect: (context, state) =>
+          const {'/kanban', '/pedidos', '/ordens'}.contains(state.uri.path)
+              ? '/'
+              : null,
       routes: [
         GoRoute(
           path: '/',
           pageBuilder: (context, state) =>
               const NoTransitionPage(child: HomePage()),
-        ),
-        GoRoute(
-          path: '/kanban',
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: GlobalLoadingWrapper(subtitulo: 'Kanban', child: KanbanPage(standalone: true)),
-          ),
-        ),
-        GoRoute(
-          path: '/pedidos',
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: GlobalLoadingWrapper(subtitulo: 'Pedidos', child: PedidosPage(standalone: true)),
-          ),
-        ),
-        GoRoute(
-          path: '/ordens',
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: GlobalLoadingWrapper(subtitulo: 'Ordens de Produção', child: OrdensPage(standalone: true)),
-          ),
         ),
         GoRoute(
           path: '/gerencial',

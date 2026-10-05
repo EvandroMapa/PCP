@@ -1629,9 +1629,9 @@ class DashboardPageState extends State<DashboardPage> {
                   children: [
                     Text(
                       switch (_modoDash) {
-                        1 => 'Mapa Pátio',
-                        2 => 'Mapa de Obras',
-                        _ => 'Gestão a Vista',
+                        1 => 'Mapa do pátio',
+                        2 => 'Mapa de obras',
+                        _ => 'Gestão à Vista',
                       },
                       style: AppCss.mediumBold.setSize(isSmall ? 15 : 20).setColor(Colors.white),
                       overflow: TextOverflow.ellipsis,

@@ -156,14 +156,14 @@ class RelatorioOrdemPdfStatusPage {
               children: [
                 _itemInfo(
                   'Quantidade Total Bitola ${produto.produto.descricao}',
-                  '${produto.qtde} Kg',
+                  '${produto.qtde} kg',
                 ),
                 PdfDivisor.build(color: Colors.grey[200]),
               ],
             ),
           _itemInfo(
             'Quantidade Total Bitolas',
-            '${relatorioCtrl.getOrdemTotal()} Kg',
+            '${relatorioCtrl.getOrdemTotal()} kg',
           ),
         ],
       ),

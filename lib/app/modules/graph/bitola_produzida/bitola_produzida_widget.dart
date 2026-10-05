@@ -59,7 +59,7 @@ class _GrapOrdemhTotalWidgetState extends State<BitolaProduzidaWidget> {
             ),
             tooltipBehavior: TooltipBehavior(
               enable: true,
-              format: 'point.x : point.y Kg',
+              format: 'point.x : point.y kg',
             ),
             enableMultiSelection: true,
             onDataLabelRender: (dataLabelArgs) {

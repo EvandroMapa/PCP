@@ -42,19 +42,19 @@ class KanbanCardCDWidget extends StatelessWidget {
                   if (pPronto > 0)
                     Flexible(
                       flex: (pPronto * 1000).toInt().clamp(1, 1000),
-                      child: Container(color: PedidoBitolaStatus.pronto.color),
+                      child: Container(color: PedidoBitolaStatus.pronto.corKanbanLegado),
                     ),
                   if (pProduzindo > 0)
                     Flexible(
                       flex: (pProduzindo * 1000).toInt().clamp(1, 1000),
                       child: Container(
-                          color: PedidoBitolaStatus.produzindo.color),
+                          color: PedidoBitolaStatus.produzindo.corKanbanLegado),
                     ),
                   if (pAguardando > 0)
                     Flexible(
                       flex: (pAguardando * 1000).toInt().clamp(1, 1000),
                       child: Container(
-                        color: PedidoBitolaStatus.aguardandoProducao.color
+                        color: PedidoBitolaStatus.aguardandoProducao.corKanbanLegado
                             .withValues(alpha: 0.35),
                       ),
                     ),
@@ -68,13 +68,13 @@ class KanbanCardCDWidget extends StatelessWidget {
             children: [
               _pctLabel(
                   pctAg,
-                  PedidoBitolaStatus.aguardandoProducao.color
+                  PedidoBitolaStatus.aguardandoProducao.corKanbanLegado
                       .withValues(alpha: 0.8),
                   'Ag.'),
               const Spacer(),
-              _pctLabel(pctProd, PedidoBitolaStatus.produzindo.color, 'Prod.'),
+              _pctLabel(pctProd, PedidoBitolaStatus.produzindo.corKanbanLegado, 'Prod.'),
               const Spacer(),
-              _pctLabel(pctPronto, PedidoBitolaStatus.pronto.color, 'Pronto'),
+              _pctLabel(pctPronto, PedidoBitolaStatus.pronto.corKanbanLegado, 'Pronto'),
             ],
           ),
         ],

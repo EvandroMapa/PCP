@@ -19,8 +19,6 @@ import 'package:aco_plus/app/modules/estoque/ui/estoque_page.dart';
 import 'package:aco_plus/app/modules/pedido_compra/ui/pedido_compra_page.dart';
 import 'package:aco_plus/app/modules/equipamento/ui/equipamentos_page.dart';
 
-
-import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -90,12 +88,13 @@ extension AppModuleExt on AppModule {
         return const PainelGerencialPage();
       case AppModule.equipamentos:
         return const EquipamentosPage();
-
     }
   }
 
   PreferredSizeWidget? appBar(BuildContext context) {
-    if (this == AppModule.kanban || this == AppModule.dashboard || this == AppModule.painelGerencial) {
+    if (this == AppModule.kanban ||
+        this == AppModule.dashboard ||
+        this == AppModule.painelGerencial) {
       return PreferredSize(
         preferredSize: Size.zero,
         child: SizedBox.shrink(),
@@ -104,70 +103,68 @@ extension AppModuleExt on AppModule {
     return null;
   }
 
+  /// Um ícone diferente por item (Material Symbols, mesmo traço em todos).
   IconData get icon {
     switch (this) {
       case AppModule.dashboard:
-        return Icons.dashboard_outlined;
+        return Symbols.space_dashboard;
       case AppModule.cliente:
-        return Icons.group_outlined;
+        return Symbols.groups;
       case AppModule.pedidos:
-        return Icons.shopping_cart_outlined;
+        return Symbols.list_alt;
       case AppModule.ordens:
-        return (usuarioCtrl.usuario?.isNotOperador ?? false)
-            ? Icons.list
-            : Icons.work_outline;
+        return Symbols.assignment;
       case AppModule.relatoriosProducao:
-        return Icons.assessment_outlined;
+        return Symbols.analytics;
       case AppModule.estoqueRelatorio:
-        return Icons.inventory_2_outlined;
+        return Symbols.inventory;
       case AppModule.planoCorte:
-        return Icons.content_cut;
+        return Symbols.content_cut;
       case AppModule.steps:
-        return Icons.list_alt_outlined;
+        return Symbols.linear_scale;
       case AppModule.tags:
-        return Icons.label_outlined;
+        return Symbols.sell;
       case AppModule.kanban:
         return Symbols.view_kanban;
       case AppModule.fabricantes:
-        return Icons.business_outlined;
+        return Symbols.apartment;
       case AppModule.produtos:
-        return Icons.inventory_2_outlined;
+        return Symbols.stacks;
       case AppModule.materiaPrima:
-        return Icons.warehouse_outlined;
+        return Symbols.forklift;
       case AppModule.pontas:
-        return Icons.flip_to_back;
+        return Symbols.straighten;
       case AppModule.armacao:
-        return Icons.iron_rounded;
+        return Symbols.construction;
       case AppModule.estoqueSaldo:
-        return Icons.inventory_2_outlined;
+        return Symbols.inventory_2;
       case AppModule.estoqueMovimentacao:
-        return Icons.swap_vert_outlined;
+        return Symbols.swap_vert;
       case AppModule.pedidoCompra:
-        return Icons.shopping_cart_outlined;
+        return Symbols.shopping_cart;
       case AppModule.painelGerencial:
-        return Icons.phone_android;
+        return Symbols.monitoring;
       case AppModule.equipamentos:
-        return Icons.precision_manufacturing_outlined;
-
+        return Symbols.precision_manufacturing;
     }
   }
 
   String get label {
     switch (this) {
       case AppModule.dashboard:
-        return 'Gestão a Vista';
+        return 'Gestão à Vista';
       case AppModule.cliente:
         return 'Clientes';
       case AppModule.pedidos:
-        return 'Listagem';
+        return 'Lista de pedidos';
       case AppModule.ordens:
-        return 'Ordens de Produção';
+        return 'Ordens de produção';
       case AppModule.relatoriosProducao:
         return 'Relatórios';
       case AppModule.estoqueRelatorio:
-        return 'Posição de Estoque';
+        return 'Posição de estoque';
       case AppModule.planoCorte:
-        return 'Plano de Corte';
+        return 'Plano de corte';
       case AppModule.steps:
         return 'Etapas';
       case AppModule.kanban:
@@ -179,22 +176,21 @@ extension AppModuleExt on AppModule {
       case AppModule.produtos:
         return 'Bitolas';
       case AppModule.materiaPrima:
-        return 'Matéria Prima';
+        return 'Matéria-prima';
       case AppModule.pontas:
-        return 'Cadastro de Pontas';
+        return 'Pontas';
       case AppModule.armacao:
         return 'Armação';
       case AppModule.estoqueSaldo:
-        return 'Painel';
+        return 'Saldos de estoque';
       case AppModule.estoqueMovimentacao:
-        return 'Movimentação de Estoque';
+        return 'Movimentações';
       case AppModule.pedidoCompra:
-        return 'Pedidos de Compra';
+        return 'Pedidos de compra';
       case AppModule.painelGerencial:
-        return 'Painel Gerencial';
+        return 'Painel gerencial';
       case AppModule.equipamentos:
         return 'Equipamentos';
-
     }
   }
 

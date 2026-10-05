@@ -147,7 +147,8 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
         ),
       ),
     );
-  }  Widget _sidebar(PedidoCreateModel form) {
+  }
+  Widget _sidebar(PedidoCreateModel form) {
     return Container(
       width: 60,
       height: double.infinity,
@@ -900,7 +901,7 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
                     isDense: true,
                     contentPadding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                    suffixText: 'Kg',
+                    suffixText: 'kg',
                     suffixStyle: AppCss.minimumRegular
                         .setSize(11)
                         .setColor(Colors.grey[400]!),
@@ -1076,7 +1077,7 @@ class _PedidoCreatePageState extends State<PedidoCreatePage> {
                   type: const TextInputType.numberWithOptions(decimal: true),
                   controller: form.produto.qtde,
                   action: TextInputAction.done,
-                  suffixText: 'Kg',
+                  suffixText: 'kg',
                   onChanged: (_) => pedidoCtrl.formStream.update(),
                   onEditingComplete: () {
                     if (form.produto.isEnable) {

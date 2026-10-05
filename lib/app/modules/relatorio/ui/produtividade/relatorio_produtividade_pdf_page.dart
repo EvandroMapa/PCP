@@ -185,7 +185,7 @@ class RelatorioProdutividadePdfPage {
         mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
         children: [
           _kpiItem(
-              'TOTAL KG', '${_fmt.format(relatorio.kgTotal)} Kg'),
+              'TOTAL KG', '${_fmt.format(relatorio.kgTotal)} kg'),
           _kpiItem('TOTAL METROS',
               '${_fmtMetros.format(relatorio.metrosTotal)} m'),
           _kpiItem('PRODUÇÕES', relatorio.qtdeProducoes.toString()),

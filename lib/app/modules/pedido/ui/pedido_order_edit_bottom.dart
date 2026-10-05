@@ -111,7 +111,7 @@ class _PedidoOrderEditBottomState extends State<PedidoOrderEditBottom> {
                       ),
                       controller: qtdeEC,
                       action: TextInputAction.done,
-                      suffixText: 'Kg',
+                      suffixText: 'kg',
                       onChanged: (_) => setState(() {}),
                       onEditingComplete: () {
                         if (qtdeEC.doubleValue <= 0) return;
@@ -119,7 +119,7 @@ class _PedidoOrderEditBottomState extends State<PedidoOrderEditBottom> {
                             qtdeEC.doubleValue > widget.qtdeDisponivel!) {
                           NotificationService.showNegative(
                               'Quantidade indisponível',
-                              'A quantidade disponível é de ${widget.qtdeDisponivel!.toStringAsFixed(3)}Kg');
+                              'A quantidade disponível é de ${widget.qtdeDisponivel!.toStringAsFixed(3)} kg');
                           return;
                         }
                         FocusScope.of(context).unfocus();
@@ -133,7 +133,7 @@ class _PedidoOrderEditBottomState extends State<PedidoOrderEditBottom> {
                           children: [
                             const Spacer(),
                             Text(
-                              'Quantidade disponível: ${widget.qtdeDisponivel!.toStringAsFixed(3)}Kg',
+                              'Quantidade disponível: ${widget.qtdeDisponivel!.toStringAsFixed(3)} kg',
                               style: AppCss.minimumRegular.copyWith(
                                 color: qtdeEC.doubleValue > widget.qtdeDisponivel!
                                     ? Colors.red
@@ -158,7 +158,7 @@ class _PedidoOrderEditBottomState extends State<PedidoOrderEditBottom> {
                         } else {
                           NotificationService.showNegative(
                               'Quantidade indisponível',
-                              'A quantidade disponível é de ${widget.qtdeDisponivel!.toStringAsFixed(3)}Kg');
+                              'A quantidade disponível é de ${widget.qtdeDisponivel!.toStringAsFixed(3)} kg');
                         }
                       },
                     ),

@@ -64,7 +64,9 @@ extension DateExt on DateTime {
   String toFileName() =>
       DateFormat('dd_mm_yyyy_HH_mm').format(this).toLowerCase();
 
-  String toddMM() => DateFormat('d \'de\' MMM').format(this);
+  /// "12 de out" — mês em português (sem locale saía "12 de Oct")
+  String toddMM() =>
+      DateFormat('d \'de\' MMM', 'pt_BR').format(this).replaceAll('.', '');
 
   String timeAgo() {
     final now = DateTime.now();
