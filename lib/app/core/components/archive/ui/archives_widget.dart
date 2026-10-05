@@ -14,11 +14,16 @@ class ArchivesWidget extends StatelessWidget {
   final void Function(List<ArchiveModel>) onChanged;
   final String path;
 
+  /// false quando o título já vem de fora (ex.: cabeçalho de um cartão);
+  /// no lugar do título fica só o botão de adicionar
+  final bool mostrarTitulo;
+
   const ArchivesWidget({
     required this.path,
     required this.archives,
     required this.onChanged,
     this.label = 'Arquivos',
+    this.mostrarTitulo = true,
     super.key,
   });
 
@@ -26,6 +31,16 @@ class ArchivesWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        if (!mostrarTitulo)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: () => onAdd(),
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Adicionar arquivo'),
+            ),
+          )
+        else
         Row(
           children: [
             Text(label, style: AppCss.largeBold),

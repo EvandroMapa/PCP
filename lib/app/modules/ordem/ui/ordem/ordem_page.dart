@@ -263,7 +263,7 @@ class _OrdemPageState extends State<OrdemPage> {
               _pill(
                 icon: Icons.schedule_rounded,
                 label: ordem.createdAt.textHour(),
-                color: Colors.blueGrey,
+                color: AppColors.neutralDark,
               ),
               if (materiaPrimaLabel != null)
                 GestureDetector(
@@ -278,16 +278,16 @@ class _OrdemPageState extends State<OrdemPage> {
                   child: _pill(
                     icon: Icons.inventory_2_outlined,
                     label: materiaPrimaLabel,
-                    color: Colors.orange,
+                    color: const Color(0xFFB45309),
                     trailing: const Icon(Icons.chevron_right,
-                        size: 12, color: Colors.orange),
+                        size: 12, color: Color(0xFFB45309)),
                   ),
                 ),
               if (ordem.endAt != null)
                 _pill(
                   icon: Icons.check_circle_outline,
                   label: 'Finalizada ${ordem.endAt.text()}',
-                  color: Colors.green,
+                  color: AppColors.statusPronto,
                 ),
             ],
           ),

@@ -134,7 +134,8 @@ class _OrdensPageState extends State<OrdensPage> {
   void _toggleFullscreen() {
     _emFullscreen ? _sairFullscreen() : _entrarFullscreen();
   }
-
+
+
   @override
   Widget build(BuildContext context) {
     if (widget.standalone) {
@@ -388,15 +389,8 @@ class _OrdensPageState extends State<OrdensPage> {
       child: Container(
         decoration: BoxDecoration(
           color: isFreezed ? Colors.grey[100] : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: statusColor.withValues(alpha: 0.25)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.neutralLight),
         ),
         clipBehavior: Clip.antiAlias,
         child: IntrinsicHeight(
@@ -483,14 +477,14 @@ class _OrdensPageState extends State<OrdensPage> {
                         Row(
                           children: [
                             Icon(Icons.circle,
-                                size: 6, color: Colors.grey[400]),
+                                size: 6, color: AppColors.neutralMedium),
                             const SizedBox(width: 6),
                             Expanded(
                               child: Text(
                                 '${ordem.produto.nome} · ${ordem.produto.descricao}',
                                 style: AppCss.minimumRegular
                                     .setSize(12)
-                                    .setColor(Colors.grey[700]!),
+                                    .setColor(AppColors.neutralDark),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -500,15 +494,15 @@ class _OrdensPageState extends State<OrdensPage> {
                           const SizedBox(height: 2),
                           Row(
                             children: [
-                              Icon(Icons.inventory_2_outlined,
-                                  size: 12, color: Colors.grey[400]),
+                              const Icon(Icons.inventory_2_outlined,
+                                  size: 12, color: Color(0xFFB45309)),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
                                   ordem.materiaPrima!.label,
                                   style: AppCss.minimumRegular
                                       .setSize(11)
-                                      .setColor(Colors.grey[500]!),
+                                      .setColor(const Color(0xFFB45309)),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -552,11 +546,11 @@ class _OrdensPageState extends State<OrdensPage> {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 8, vertical: 3),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFF1F5F9),
+                                      color: AppColorsSystem.light.primary[50],
                                       borderRadius:
                                           BorderRadius.circular(6),
                                       border: Border.all(
-                                        color: const Color(0xFFE2E8F0),
+                                        color: AppColors.neutralLight,
                                       ),
                                     ),
                                     child: Text(
@@ -564,8 +558,8 @@ class _OrdensPageState extends State<OrdensPage> {
                                       style: AppCss.minimumRegular
                                           .setSize(10)
                                           .setColor(estoqueDepois < 0
-                                              ? Colors.red[400]!
-                                              : Colors.grey[600]!),
+                                              ? AppColors.statusCritico
+                                              : AppColors.neutralDark),
                                     ),
                                   ),
                                   if (ordem.produtos.isNotEmpty)
@@ -595,12 +589,12 @@ class _OrdensPageState extends State<OrdensPage> {
                                       children: [
                                         Icon(Symbols.brightness_empty,
                                             size: 18,
-                                            color: Colors.grey[400]),
+                                            color: AppColors.neutralMedium),
                                         const SizedBox(width: 4),
                                         Text('Vazia',
                                             style: AppCss.minimumRegular
                                                 .setColor(
-                                                    Colors.grey[400]!)),
+                                                    AppColors.neutralMedium)),
                                       ],
                                     ),
                                 ],
@@ -610,13 +604,13 @@ class _OrdensPageState extends State<OrdensPage> {
                               Row(
                                 children: [
                                   Icon(Icons.calendar_today_outlined,
-                                      size: 12, color: Colors.grey[400]),
+                                      size: 12, color: AppColors.neutralMedium),
                                   const SizedBox(width: 4),
                                   Text(
                                     'Criada em ${ordem.createdAt.textHour()}',
                                     style: AppCss.minimumRegular
                                         .setSize(11)
-                                        .setColor(Colors.grey[400]!),
+                                        .setColor(AppColors.neutralMedium),
                                   ),
                                 ],
                               ),
@@ -734,7 +728,7 @@ class _OrdensPageState extends State<OrdensPage> {
               : status == PedidoBitolaStatus.produzindo
                   ? 'Prod.'
                   : 'Pronto',
-          style: AppCss.minimumRegular.setSize(9).setColor(Colors.grey[500]!),
+          style: AppCss.minimumRegular.setSize(9).setColor(AppColors.neutralMedium),
         ),
       ],
     );

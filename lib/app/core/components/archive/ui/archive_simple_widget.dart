@@ -17,11 +17,15 @@ class ArchiveSimpleWidget extends StatefulWidget {
   final void Function(ArchiveModel? archive) onChanged;
   final String path;
 
+  /// false quando o título já vem de fora (ex.: cabeçalho de um cartão)
+  final bool mostrarTitulo;
+
   const ArchiveSimpleWidget({
     required this.path,
     required this.archive,
     required this.onChanged,
     this.label = 'Arquivos',
+    this.mostrarTitulo = true,
     super.key,
   });
 
@@ -44,8 +48,10 @@ class _ArchiveSimpleWidgetState extends State<ArchiveSimpleWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(widget.label, style: AppCss.largeBold),
-        const H(16),
+        if (widget.mostrarTitulo) ...[
+          Text(widget.label, style: AppCss.largeBold),
+          const H(16),
+        ],
         archive != null ? _addedWidget() : _addWidget(),
       ],
     );

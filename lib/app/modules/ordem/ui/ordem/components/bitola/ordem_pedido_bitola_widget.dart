@@ -374,7 +374,7 @@ class _OrdemPedidoProdutoWidgetState extends State<OrdemPedidoProdutoWidget> {
                                   '${produto.cliente.nome} · ${produto.obra.descricao}',
                                   style: AppCss.minimumRegular
                                       .setSize(12)
-                                      .setColor(Colors.grey[600]!),
+                                      .setColor(AppColors.neutralDark),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
@@ -385,13 +385,13 @@ class _OrdemPedidoProdutoWidgetState extends State<OrdemPedidoProdutoWidget> {
                             Row(
                               children: [
                                 Icon(Icons.event_outlined,
-                                    size: 12, color: Colors.grey[400]),
+                                    size: 12, color: AppColors.neutralMedium),
                                 const SizedBox(width: 4),
                                 Text(
                                   'Entrega: ${produto.pedido.deliveryAt?.text()}',
                                   style: AppCss.minimumRegular
                                       .setSize(11)
-                                      .setColor(Colors.grey[500]!),
+                                      .setColor(AppColors.neutralMedium),
                                 ),
                               ],
                             ),
@@ -413,14 +413,14 @@ class _OrdemPedidoProdutoWidgetState extends State<OrdemPedidoProdutoWidget> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.inventory_2_outlined,
-                                      size: 12, color: Colors.orange[400]),
+                                  const Icon(Icons.inventory_2_outlined,
+                                      size: 12, color: Color(0xFFB45309)),
                                   const SizedBox(width: 4),
                                   Text(
                                     materiaPrima!.label,
                                     style: AppCss.minimumRegular
                                         .setSize(11)
-                                        .setColor(Colors.orange[700]!)
+                                        .setColor(const Color(0xFFB45309))
                                         .copyWith(
                                             decoration: TextDecoration.underline),
                                   ),
