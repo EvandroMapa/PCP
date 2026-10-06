@@ -94,7 +94,8 @@ class _CommentAddWidgetState extends State<CommentAddWidget> {
                     fontWeight: FontWeight.bold,
                   ),
                   data: usuarios
-                      .where((e) => e.id != usuario.id)
+                      .where((e) =>
+                          e.id != usuario.id && e.isEscolhivelNaPlataforma)
                       .map((e) => e.toMention())
                       .toList(),
                 ),

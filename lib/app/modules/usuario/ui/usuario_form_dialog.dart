@@ -4,15 +4,14 @@ import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/us
 import 'package:aco_plus/app/core/components/app_drop_down.dart';
 
 import 'package:aco_plus/app/core/components/app_field.dart';
-import 'package:aco_plus/app/core/components/h.dart';
+import 'package:aco_plus/app/core/components/cadastro/cadastro_form.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
-import 'package:aco_plus/app/core/components/w.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
-import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 Future<void> showUsuarioFormDialog(BuildContext context,
     {UsuarioModel? usuario}) async {
@@ -32,216 +31,131 @@ class UsuarioFormDialog extends StatefulWidget {
 }
 
 class _UsuarioFormDialogState extends State<UsuarioFormDialog> {
+  bool _verSenha = false;
+
+  /// Mesma regra de antes: com registros na auditoria não exclui (inativa)
+  Future<void> _excluir() async {
+    final podeExcluir =
+        await usuarioCtrl.verificarPodeExcluir(widget.usuario!);
+    if (!mounted) return;
+    if (!podeExcluir) {
+      showDialog(
+        context: context,
+        builder: (dialogCtx) => AlertDialog(
+          icon: Icon(Icons.info_outline, size: 40, color: Colors.orange[700]),
+          title: const Text('Exclusão bloqueada'),
+          content: const Text(
+            'Este usuário possui registros no log de auditoria e não pode ser excluído. '
+            'Para impedir o acesso, inative o usuário.',
+          ),
+          actions: [
+            FilledButton(
+              style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primaryMain),
+              onPressed: () => pop(dialogCtx),
+              child: const Text('Entendi'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Excluir usuário'),
+        content: Text(
+            'Deseja realmente excluir o usuário "${widget.usuario!.nome}"?'),
+        actions: [
+          TextButton(
+            style: TextButton.styleFrom(backgroundColor: Colors.transparent),
+            onPressed: () => Navigator.pop(dialogCtx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(dialogCtx, true),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar == true && mounted) {
+      usuarioCtrl.onDelete(context, widget.usuario!);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamOut<UsuarioCreateModel>(
       stream: usuarioCtrl.formStream.listen,
-      builder: (_, form) => AlertDialog(
-        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-        title: Row(
+      builder: (_, form) => CadastroDialog(
+        icon: Symbols.person,
+        titulo: form.isEdit ? 'Editar usuário' : 'Novo usuário',
+        onSalvar: () => usuarioCtrl.onConfirm(context, widget.usuario),
+        onExcluir: form.isEdit ? _excluir : null,
+        rotuloExcluir: 'Excluir usuário',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: Text(
-                '${form.isEdit ? 'Editar' : 'Adicionar'} Usuário',
-                style: AppCss.largeBold,
-              ),
+            const CadastroSubtitulo('Identificação'),
+            CadastroLinhaCampos(
+              [
+                AppField(
+                  label: 'Nome',
+                  controller: form.nome,
+                  onChanged: (_) => usuarioCtrl.formStream.update(),
+                ),
+                AppDropDown<UsuarioTipoModel?>(
+                  label: 'Perfil',
+                  item: form.usuarioTipoId.isNotEmpty
+                      ? BackendClient.usuarioTipos.data
+                          .where((t) => t.id == form.usuarioTipoId)
+                          .firstOrNull
+                      : null,
+                  itens: BackendClient.usuarioTipos.data,
+                  itemLabel: (e) => e?.nome ?? 'Selecione',
+                  onSelect: (e) {
+                    if (e != null) form.usuarioTipoId = e.id;
+                    usuarioCtrl.formStream.update();
+                  },
+                ),
+              ],
+              flex: const [3, 2],
             ),
-            if (form.isEdit)
-              IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.red),
-                onPressed: () async {
-                  final podeExcluir = await usuarioCtrl.verificarPodeExcluir(widget.usuario!);
-                  if (!podeExcluir) {
-                    if (context.mounted) {
-                      showDialog(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          icon: Icon(Icons.info_outline, size: 40, color: Colors.orange[700]),
-                          title: const Text('Exclusão Bloqueada'),
-                          content: const Text(
-                            'Este usuário possui registros no log de auditoria e não pode ser excluído.\n\n'
-                            'Para impedir o acesso, utilize a opção de inativar o usuário.',
-                          ),
-                          actions: [
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryMain,
-                                foregroundColor: Colors.white,
-                              ),
-                              onPressed: () => pop(_),
-                              child: const Text('Entendi'),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-                    return;
-                  }
-                  if (context.mounted) {
-                    // Confirmar exclusão
-                    final confirmar = await showDialog<bool>(
-                      context: context,
-                      builder: (_) => AlertDialog(
-                        title: const Text('Excluir Usuário'),
-                        content: Text('Deseja realmente excluir o usuário "${widget.usuario!.nome}"?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(_, false),
-                            child: const Text('Cancelar'),
-                          ),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                            ),
-                            onPressed: () => Navigator.pop(_, true),
-                            child: const Text('Excluir'),
-                          ),
-                        ],
-                      ),
-                    );
-                    if (confirmar == true && context.mounted) {
-                      usuarioCtrl.onDelete(context, widget.usuario!);
-                    }
-                  }
-                },
-                tooltip: 'Excluir Usuário',
+            const SizedBox(height: 18),
+            const CadastroSubtitulo('Acesso ao sistema'),
+            CadastroLinhaCampos([
+              AppField(
+                label: 'Login',
+                controller: form.email,
+                onChanged: (_) => usuarioCtrl.formStream.update(),
               ),
+              AppField(
+                label: 'Senha',
+                controller: form.senha,
+                obscure: !_verSenha,
+                suffixIcon: _verSenha ? Icons.visibility_off : Icons.visibility,
+                onSuffix: () => setState(() => _verSenha = !_verSenha),
+                onChanged: (_) => usuarioCtrl.formStream.update(),
+              ),
+            ]),
+            if (form.isEdit) ...[
+              const SizedBox(height: 12),
+              CadastroOpcao(
+                titulo: form.isAtivo ? 'Usuário ativo' : 'Usuário inativo',
+                explicacao: form.isAtivo
+                    ? 'Pode entrar no sistema'
+                    : 'Não consegue entrar no sistema; o histórico é mantido',
+                valor: form.isAtivo,
+                onChanged: (v) {
+                  form.isAtivo = v;
+                  usuarioCtrl.formStream.update();
+                },
+              ),
+            ],
           ],
         ),
-        content: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 500),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // ── Linha 1: Nome e Perfil ──
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      flex: 2,
-                      child: AppField(
-                        label: 'Nome',
-                        controller: form.nome,
-                        onChanged: (_) => usuarioCtrl.formStream.update(),
-                      ),
-                    ),
-                    const W(16),
-                    Expanded(
-                      flex: 1,
-                      child: AppDropDown<UsuarioTipoModel?>(
-                        label: 'Perfil',
-                        item: form.usuarioTipoId.isNotEmpty
-                            ? BackendClient.usuarioTipos
-                                .data
-                                .where((t) => t.id == form.usuarioTipoId)
-                                .firstOrNull
-                            : null,
-                        itens: BackendClient.usuarioTipos.data,
-                        itemLabel: (e) => e?.nome ?? 'Selecione',
-                        onSelect: (e) {
-                          if (e != null) {
-                            form.usuarioTipoId = e.id;
-                          }
-                          usuarioCtrl.formStream.update();
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const H(16),
-                // ── Linha 2: Login e Senha ──
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: AppField(
-                        label: 'Login',
-                        controller: form.email,
-                        onChanged: (_) => usuarioCtrl.formStream.update(),
-                      ),
-                    ),
-                    const W(16),
-                    Expanded(
-                      child: AppField(
-                        label: 'Senha',
-                        controller: form.senha,
-                        onChanged: (_) => usuarioCtrl.formStream.update(),
-                      ),
-                    ),
-                  ],
-                ),
-                const H(16),
-                // ── Linha 3: Ativo/Inativo (só na edição) ──
-                if (form.isEdit)
-                  Row(
-                    children: [
-                      Text(
-                        'Status: ',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Switch(
-                        value: form.isAtivo,
-                        activeColor: AppColors.primaryMain,
-                        onChanged: (v) {
-                          form.isAtivo = v;
-                          usuarioCtrl.formStream.update();
-                        },
-                      ),
-                      const SizedBox(width: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: form.isAtivo
-                              ? Colors.green.withValues(alpha: 0.1)
-                              : Colors.red.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          form.isAtivo ? 'Ativo' : 'Inativo',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: form.isAtivo ? Colors.green : Colors.red,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                const H(16),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => pop(context),
-            child: Text('Cancelar', style: TextStyle(color: Colors.grey[700])),
-          ),
-          const W(8),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryMain,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () async =>
-                await usuarioCtrl.onConfirm(context, widget.usuario),
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Text('Salvar'),
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -1,17 +1,13 @@
 import 'package:aco_plus/app/core/client/firestore/collections/tag/models/tag_model.dart';
 import 'package:aco_plus/app/core/components/app_color_picker.dart';
 import 'package:aco_plus/app/core/components/app_field.dart';
-import 'package:aco_plus/app/core/components/app_scaffold.dart';
-import 'package:aco_plus/app/core/components/done_button.dart';
-import 'package:aco_plus/app/core/components/h.dart';
+import 'package:aco_plus/app/core/components/cadastro/cadastro_form.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/dialogs/confirm_dialog.dart';
-import 'package:aco_plus/app/core/utils/app_colors.dart';
-import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/tag/tag_controller.dart';
-import 'package:aco_plus/app/modules/tag/tag_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class TagCreatePage extends StatefulWidget {
   final TagModel? tag;
@@ -22,128 +18,114 @@ class TagCreatePage extends StatefulWidget {
 }
 
 class _TagCreatePageState extends State<TagCreatePage> {
+  String _initialSnapshot = '';
+
+  String _snapshot() {
+    final f = tagCtrl.form;
+    return '${f.nome.text}|${f.descricao.text}|${f.color.toARGB32()}|'
+        '${f.isDefaultCD}|${f.isDefaultCDA}';
+  }
+
   @override
   void initState() {
     setWebTitle('Nova Etiqueta');
     tagCtrl.init(widget.tag);
+    _initialSnapshot = _snapshot();
     super.initState();
+  }
+
+  /// Sem mudança, sai direto
+  Future<void> _voltar() async {
+    if (_snapshot() == _initialSnapshot) {
+      pop(context);
+      return;
+    }
+    if (await showConfirmDialog(
+          'Deseja realmente sair?',
+          widget.tag != null
+              ? 'A edição que realizou será perdida'
+              : 'Os dados da etiqueta serão perdidos.',
+        ) &&
+        mounted) {
+      pop(context);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      resizeAvoid: true,
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () async {
-            if (await showConfirmDialog(
-              'Deseja realmente sair?',
-              widget.tag != null
-                  ? 'A edição que realizou será perdida'
-                  : 'Os dados do Etapa serão perdidos.',
-            )) {
-              pop(context);
-            }
-          },
-          icon: Icon(Icons.arrow_back, color: AppColors.white),
-        ),
-        title: Text(
-          '${tagCtrl.form.isEdit ? 'Editar' : 'Adicionar'} Etiqueta',
-          style: AppCss.largeBold.setColor(AppColors.white),
-        ),
-        actions: [
-          IconLoadingButton(
-            () async => await tagCtrl.onConfirm(context, widget.tag),
+    return StreamOut(
+      stream: tagCtrl.formStream.listen,
+      builder: (_, form) => CadastroFormPage(
+        titulo: form.isEdit
+            ? (form.nome.text.trim().isEmpty ? 'Etiqueta' : form.nome.text.trim())
+            : 'Nova etiqueta',
+        onVoltar: _voltar,
+        onSalvar: () => tagCtrl.onConfirm(context, widget.tag),
+        onExcluir: form.isEdit
+            ? () => tagCtrl.onDelete(context, widget.tag!)
+            : null,
+        rotuloExcluir: 'Excluir etiqueta',
+        secoes: [
+          CadastroSecao(
+            icon: Symbols.sell,
+            titulo: 'Identificação',
+            child: CadastroLinhaCampos([
+              AppField(
+                label: 'Nome',
+                controller: form.nome,
+                onChanged: (_) => tagCtrl.formStream.update(),
+              ),
+              AppField(
+                label: 'Descrição',
+                required: false,
+                controller: form.descricao,
+                onChanged: (_) => tagCtrl.formStream.update(),
+              ),
+            ]),
+          ),
+          CadastroSecao(
+            icon: Symbols.palette,
+            titulo: 'Cor',
+            apoio: 'Cor da etiqueta nos cartões do Kanban',
+            child: AppColorPicker(
+              label: 'Cor:',
+              color: form.color,
+              onChanged: (e) {
+                form.color = e;
+                tagCtrl.formStream.update();
+              },
+            ),
+          ),
+          CadastroSecao(
+            icon: Symbols.auto_mode,
+            titulo: 'Vincular automaticamente',
+            child: Column(
+              children: [
+                CadastroOpcao(
+                  titulo: 'Em todo pedido CD',
+                  explicacao:
+                      'Pedidos de corte e dobra recebem esta etiqueta ao serem criados',
+                  valor: form.isDefaultCD,
+                  onChanged: (v) {
+                    form.isDefaultCD = v;
+                    tagCtrl.formStream.update();
+                  },
+                ),
+                CadastroOpcao(
+                  titulo: 'Em todo pedido CDA',
+                  explicacao:
+                      'Pedidos com armação recebem esta etiqueta ao serem criados',
+                  valor: form.isDefaultCDA,
+                  onChanged: (v) {
+                    form.isDefaultCDA = v;
+                    tagCtrl.formStream.update();
+                  },
+                ),
+              ],
+            ),
           ),
         ],
-        backgroundColor: AppColors.primaryMain,
       ),
-      body: StreamOut(
-        stream: tagCtrl.formStream.listen,
-        builder: (_, form) => body(form),
-      ),
-    );
-  }
-
-  Widget body(TagCreateModel form) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        AppField(
-          label: 'Nome',
-          controller: form.nome,
-          onChanged: (_) => tagCtrl.formStream.update(),
-        ),
-        const H(16),
-        AppField(
-          label: 'Descrição',
-          controller: form.descricao,
-          onChanged: (_) => tagCtrl.formStream.update(),
-        ),
-        const H(16),
-        AppColorPicker(
-          label: 'Cor:',
-          color: form.color,
-          onChanged: (e) {
-            form.color = e;
-            tagCtrl.formStream.update();
-          },
-        ),
-        const H(16),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(
-            'Etiqueta padrão para Pedido CD',
-            style: AppCss.mediumBold,
-          ),
-          subtitle: Text(
-            'Esta etiqueta será vinculada automaticamente a todo pedido do tipo Corte e Dobra',
-            style: AppCss.minimumRegular.setColor(AppColors.neutralMedium),
-          ),
-          value: form.isDefaultCD,
-          onChanged: (v) {
-            form.isDefaultCD = v;
-            tagCtrl.formStream.update();
-          },
-        ),
-        const H(8),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(
-            'Etiqueta padrão para Pedido CDA',
-            style: AppCss.mediumBold,
-          ),
-          subtitle: Text(
-            'Esta etiqueta será vinculada automaticamente a todo pedido do tipo Armado',
-            style: AppCss.minimumRegular.setColor(AppColors.neutralMedium),
-          ),
-          value: form.isDefaultCDA,
-          onChanged: (v) {
-            form.isDefaultCDA = v;
-            tagCtrl.formStream.update();
-          },
-        ),
-        const H(24),
-        if (form.isEdit)
-          TextButton.icon(
-            style: ButtonStyle(
-              fixedSize: const WidgetStatePropertyAll(
-                Size.fromWidth(double.maxFinite),
-              ),
-              foregroundColor: WidgetStatePropertyAll(AppColors.error),
-              backgroundColor: WidgetStatePropertyAll(AppColors.white),
-              shape: WidgetStatePropertyAll(
-                RoundedRectangleBorder(
-                  borderRadius: AppCss.radius8,
-                  side: BorderSide(color: AppColors.error),
-                ),
-              ),
-            ),
-            onPressed: () => tagCtrl.onDelete(context, widget.tag!),
-            label: const Text('Excluir'),
-            icon: const Icon(Icons.delete_outline),
-          ),
-      ],
     );
   }
 }

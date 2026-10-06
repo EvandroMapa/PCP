@@ -83,7 +83,9 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
                       AppDropDownList<UsuarioModel>(
                         label: 'Filtrar por Usuário',
                         addeds: utils.usuarios,
-                        itens: FirestoreClient.usuarios.data,
+                        itens: FirestoreClient.usuarios.data
+                            .where((u) => !u.isSoTelaDedicada)
+                            .toList(),
                         itemLabel: (e) => e.nome,
                         onChanged: () => notificacaoCtrl.utilsStream.update(),
                       ),

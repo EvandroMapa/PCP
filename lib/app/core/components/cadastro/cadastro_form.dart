@@ -253,3 +253,223 @@ class CadastroLinhaCampos extends StatelessWidget {
     );
   }
 }
+
+/// Opção de liga/desliga com título e explicação (mesmo visual em todos
+/// os formulários)
+class CadastroOpcao extends StatelessWidget {
+  final String titulo;
+  final String? explicacao;
+  final bool valor;
+  final ValueChanged<bool>? onChanged;
+
+  const CadastroOpcao({
+    required this.titulo,
+    required this.valor,
+    required this.onChanged,
+    this.explicacao,
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onChanged == null ? null : () => onChanged!(!valor),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(titulo, style: AppCss.minimumBold.setSize(13.5)),
+                  if (explicacao != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      explicacao!,
+                      style: AppCss.minimumRegular
+                          .setSize(12.5)
+                          .setColor(AppColors.neutralMedium),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Switch(
+              value: valor,
+              onChanged: onChanged,
+              activeTrackColor: AppColors.primaryMain,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Moldura padrão das janelas de cadastro (usuário, perfil...): cabeçalho
+/// com ícone e título, conteúdo com rolagem e rodapé com Excluir à esquerda
+/// e Cancelar / Salvar à direita
+class CadastroDialog extends StatefulWidget {
+  final IconData icon;
+  final String titulo;
+  final Widget child;
+  final Future<void> Function() onSalvar;
+  final VoidCallback? onExcluir;
+  final String rotuloExcluir;
+  final double largura;
+
+  const CadastroDialog({
+    required this.icon,
+    required this.titulo,
+    required this.child,
+    required this.onSalvar,
+    this.onExcluir,
+    this.rotuloExcluir = 'Excluir',
+    this.largura = 560,
+    super.key,
+  });
+
+  @override
+  State<CadastroDialog> createState() => _CadastroDialogState();
+}
+
+class _CadastroDialogState extends State<CadastroDialog> {
+  bool _salvando = false;
+
+  Future<void> _salvar() async {
+    setState(() => _salvando = true);
+    try {
+      await widget.onSalvar();
+    } catch (_) {}
+    if (mounted) setState(() => _salvando = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.white,
+      insetPadding: const EdgeInsets.all(16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: widget.largura),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Cabeçalho
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 8, 14),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.neutralLightest,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(widget.icon,
+                        size: 19, color: AppColors.neutralDark),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(widget.titulo,
+                        style: AppCss.largeBold.setSize(17)),
+                  ),
+                  IconButton(
+                    tooltip: 'Fechar',
+                    style: IconButton.styleFrom(
+                        backgroundColor: Colors.transparent),
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Icon(Icons.close, color: AppColors.neutralMedium),
+                  ),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: AppColors.neutralLight),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: widget.child,
+              ),
+            ),
+            Divider(height: 1, color: AppColors.neutralLight),
+            // Rodapé
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 16, 10),
+              child: Row(
+                children: [
+                  if (widget.onExcluir != null)
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        foregroundColor: AppColors.error,
+                      ),
+                      onPressed: widget.onExcluir,
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      label: Text(widget.rotuloExcluir),
+                    ),
+                  const Spacer(),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppColors.neutralDark,
+                      side: BorderSide(color: AppColors.neutralLight),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Cancelar'),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primaryMain,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    onPressed: _salvando ? null : _salvar,
+                    icon: _salvando
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.check, size: 18),
+                    label: const Text('Salvar'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Título de grupo dentro de uma janela ou cartão
+class CadastroSubtitulo extends StatelessWidget {
+  final String texto;
+  const CadastroSubtitulo(this.texto, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6, bottom: 8),
+      child: Text(
+        texto.toUpperCase(),
+        style: AppCss.minimumBold
+            .setSize(11.5)
+            .setColor(AppColors.neutralMedium)
+            .copyWith(letterSpacing: 0.8),
+      ),
+    );
+  }
+}

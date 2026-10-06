@@ -87,7 +87,12 @@ class _PedidoUsersBottomState extends State<PedidoUsersBottom> {
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                children: FirestoreClient.usuarios.data.toList().map((user) {
+                // Só quem usa a plataforma (os já marcados continuam)
+                children: FirestoreClient.usuarios.data
+                    .where((u) =>
+                        u.isEscolhivelNaPlataforma ||
+                        selectedUsers.any((s) => s.id == u.id))
+                    .map((user) {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8),
                     decoration: BoxDecoration(

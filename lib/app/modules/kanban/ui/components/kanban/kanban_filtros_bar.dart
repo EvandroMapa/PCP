@@ -448,7 +448,7 @@ class _KanbanFiltrosBarState extends State<KanbanFiltrosBar> {
         const PopupMenuDivider(height: 1),
         // Só usuários ativos (o já escolhido continua aparecendo)
         ...FirestoreClient.usuarios.data
-            .where((u) => u.isAtivo || u.id == sel?.id)
+            .where((u) => u.isEscolhivelNaPlataforma || u.id == sel?.id)
             .map(
           (user) => PopupMenuItem<Object>(
             value: user,

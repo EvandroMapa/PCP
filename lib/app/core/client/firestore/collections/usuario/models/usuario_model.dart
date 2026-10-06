@@ -18,6 +18,15 @@ class UsuarioModel {
   final List<String> deviceTokens;
   final bool isAtivo;
 
+  /// Usa só a tela dedicada (/operador ou /armador): perfil com "acesso
+  /// exclusivo". Não aparece nas listas de pessoas da plataforma
+  /// (responsável, @ nos comentários...). Quem é administrador e também
+  /// armador/operador não tem acesso exclusivo e continua aparecendo.
+  bool get isSoTelaDedicada => tipo?.isExclusivo ?? false;
+
+  /// Pode ser escolhido nas listas de pessoas da plataforma
+  bool get isEscolhivelNaPlataforma => isAtivo && !isSoTelaDedicada;
+
   /// Permissões CRUD agora derivam do perfil (tipo).
   /// Se não há perfil vinculado, libera tudo por segurança (fallback).
   UserPermissionModel get permission => tipo != null
