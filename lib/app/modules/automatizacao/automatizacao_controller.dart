@@ -67,8 +67,14 @@ class AutomatizacaoController {
           // Flag real: só salva se pelo menos um step foi de fato adicionado
           var algumStepAdicionado = false;
           for (var step in stepsToAdd) {
-            if (pedido.step.index < step.index) {
-              final stepById = FirestoreClient.steps.getById(step.id);
+            final stepById = FirestoreClient.steps.getById(step.id);
+            // Etapa ainda não carregada / apagada: não move (antes gravava
+            // "step-not-found" e o pedido ia para a etapa errada)
+            if (stepById.id == StepModel.notFound.id) {
+              log('[Automação] Etapa ${step.id} não encontrada; ${pedido.localizador} não foi movido.');
+              continue;
+            }
+            if (pedido.step.index < stepById.index) {
               pedido.steps.add(PedidoStepModel.create(stepById));
 
               // Registrar histórico
@@ -124,9 +130,9 @@ class AutomatizacaoController {
     if (targetStep == null) return null;
 
     // Só sugere se não for mover para "trás" ou para a mesma etapa
-    if (pedido.step.index < targetStep.index) {
-      return FirestoreClient.steps.getById(targetStep.id);
-    }
+    final alvo = FirestoreClient.steps.getById(targetStep.id);
+    if (alvo.id == StepModel.notFound.id) return null;
+    if (pedido.step.index < alvo.index) return alvo;
 
     return null;
   }

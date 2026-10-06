@@ -15,50 +15,50 @@ extension AutomatizacaoItemTypeExtension on AutomatizacaoItemType {
   String get label {
     switch (this) {
       case AutomatizacaoItemType.criacaoPedido:
-        return 'Criação do pedido';
+        return 'Pedido novo';
       case AutomatizacaoItemType.produtoPedidoSeparado:
-        return 'Produto do pedido separado';
+        return 'Entrada na produção';
       case AutomatizacaoItemType.produzindoCDPedido:
-        return 'Produzindo CD do pedido';
+        return 'Corte e dobra começou';
       case AutomatizacaoItemType.prontoCDPedido:
-        return 'CD do pedido pronto';
+        return 'Corte e dobra pronto (pedido CD)';
       case AutomatizacaoItemType.aguardandoArmacaoPedido:
-        return 'Aguardando armação do pedido';
+        return 'Corte e dobra pronto (pedido CDA)';
       case AutomatizacaoItemType.produzindoArmacaoPedido:
-        return 'Produzindo armação do pedido';
+        return 'Produzindo armação (sem uso)';
       case AutomatizacaoItemType.prontoArmacaoPedido:
-        return 'Armação do pedido pronta';
+        return 'Armação pronta (sem uso)';
       case AutomatizacaoItemType.naoMostrarNoCalendario:
         return 'Não mostrar no calendário';
       case AutomatizacaoItemType.removerListaPrioridade:
-        return 'Remover da lista de prioridade';
+        return 'Remover da lista de prioridade (sem uso)';
       case AutomatizacaoItemType.finalizacaoArmacaoPedido:
-        return 'Finalização da Armação (CDA)';
+        return 'Armação concluída (pedido CDA)';
     }
   }
 
   String get desc {
     switch (this) {
       case AutomatizacaoItemType.criacaoPedido:
-        return 'Pedido é inserido no sistema';
+        return 'Pedido novo começa nesta etapa';
       case AutomatizacaoItemType.produtoPedidoSeparado:
-        return 'Bitolas separadas em uma ordem de produção';
+        return 'A partir desta etapa o pedido conta como em produção';
       case AutomatizacaoItemType.produzindoCDPedido:
-        return 'Primeiro vergalhão é separado para produção';
+        return 'A primeira bitola entrou numa ordem de produção';
       case AutomatizacaoItemType.prontoCDPedido:
-        return 'Pedido apenas de Corte e Dobra pronto';
+        return 'Todas as bitolas de um pedido CD ficaram prontas';
       case AutomatizacaoItemType.aguardandoArmacaoPedido:
-        return 'Armação é solicitada';
+        return 'Todas as bitolas de um pedido CDA ficaram prontas';
       case AutomatizacaoItemType.produzindoArmacaoPedido:
-        return 'Armação começa a ser produzida';
+        return 'Só disparava com troca manual de status; fora da tela';
       case AutomatizacaoItemType.prontoArmacaoPedido:
-        return 'Armação está pronta';
+        return 'Só disparava com troca manual de status; fora da tela';
       case AutomatizacaoItemType.naoMostrarNoCalendario:
-        return 'Ao cair em alguma das etapas na lista, não será exibido no calendário';
+        return 'Pedidos nestas etapas não aparecem no calendário';
       case AutomatizacaoItemType.removerListaPrioridade:
-        return 'Ao cair em alguma das etapas na lista, será removido da lista de prioridade';
+        return 'Nenhuma parte do sistema usa esta regra';
       case AutomatizacaoItemType.finalizacaoArmacaoPedido:
-        return 'Quando todos os elementos cadastrados forem finalizados (Prontos)';
+        return 'O armador concluiu todos os elementos do pedido';
     }
   }
 }

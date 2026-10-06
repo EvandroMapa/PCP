@@ -5,11 +5,52 @@ import 'package:aco_plus/app/core/client/firestore/collections/step/models/step_
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
 import 'package:flutter/foundation.dart';
 
+/// Uma regra de automação. Guarda só os ids das etapas e procura a etapa
+/// na hora de usar: assim não importa se a regra foi lida antes das etapas
+/// carregarem (app abrindo, aparelho voltando da suspensão, conexão
+/// voltando). Antes a etapa era resolvida na leitura e, nesse caso, virava
+/// "step-not-found" e a automação movia o pedido para uma etapa inexistente.
 class AutomatizacaoItemModel {
   final AutomatizacaoItemType type;
-  StepModel? step;
-  List<StepModel>? steps;
-  AutomatizacaoItemModel({required this.type, required this.step, this.steps});
+  String? _stepId;
+  List<String>? _stepIds;
+
+  AutomatizacaoItemModel({
+    required this.type,
+    required StepModel? step,
+    List<StepModel>? steps,
+  }) {
+    this.step = step;
+    this.steps = steps;
+  }
+
+  AutomatizacaoItemModel._ids({
+    required this.type,
+    String? stepId,
+    List<String>? stepIds,
+  })  : _stepId = _valido(stepId) ? stepId : null,
+        _stepIds = stepIds?.where(_valido).toList();
+
+  static bool _valido(String? id) =>
+      id != null && id.isNotEmpty && id != StepModel.notFound.id;
+
+  /// Etapa da regra, ou null se não configurada / ainda não encontrada
+  static StepModel? _resolver(String? id) {
+    if (!_valido(id)) return null;
+    final step = FirestoreClient.steps.getById(id!);
+    return step.id == StepModel.notFound.id ? null : step;
+  }
+
+  StepModel? get step => _resolver(_stepId);
+  set step(StepModel? value) =>
+      _stepId = _valido(value?.id) ? value!.id : null;
+
+  List<StepModel>? get steps => _stepIds
+      ?.map(_resolver)
+      .whereType<StepModel>()
+      .toList();
+  set steps(List<StepModel>? value) =>
+      _stepIds = value?.map((e) => e.id).where(_valido).toList();
 
   AutomatizacaoItemModel copyWith({
     AutomatizacaoItemType? type,
@@ -17,18 +58,20 @@ class AutomatizacaoItemModel {
     StepModel? step,
     List<StepModel>? steps,
   }) {
-    return AutomatizacaoItemModel(
+    return AutomatizacaoItemModel._ids(
       type: type ?? this.type,
-      step: step ?? this.step,
-      steps: steps ?? this.steps,
+      stepId: step?.id ?? _stepId,
+      stepIds: steps?.map((e) => e.id).toList() ?? _stepIds,
     );
   }
 
+  /// Grava os ids como estão (mesmo os de etapas ainda não carregadas),
+  /// nunca "step-not-found"
   Map<String, dynamic> toMap() {
     return {
       'type': type.index,
-      if (step != null) 'stepId': step!.id,
-      if (steps != null) 'steps': steps!.map((e) => e.id).toList(),
+      if (_stepId != null) 'stepId': _stepId,
+      if (_stepIds != null) 'steps': _stepIds,
     };
   }
 
@@ -43,15 +86,12 @@ class AutomatizacaoItemModel {
       }
     }
 
-    return AutomatizacaoItemModel(
+    return AutomatizacaoItemModel._ids(
       type: AutomatizacaoItemType.values[map['type']],
-      step: parsedStepId != null
-          ? FirestoreClient.steps.getById(parsedStepId)
-          : null,
-      steps: map['steps']?.map<StepModel>((e) {
-        if (e is Map) return FirestoreClient.steps.getById(e['id']);
-        return FirestoreClient.steps.getById(e.toString());
-      }).toList(),
+      stepId: parsedStepId,
+      stepIds: (map['steps'] as List?)
+          ?.map((e) => e is Map ? e['id'].toString() : e.toString())
+          .toList(),
     );
   }
 
@@ -62,7 +102,7 @@ class AutomatizacaoItemModel {
 
   @override
   String toString() {
-    return 'AutomatizacaoItemModel(type: $type, step: $step, steps: $steps)';
+    return 'AutomatizacaoItemModel(type: $type, stepId: $_stepId, steps: $_stepIds)';
   }
 
   @override
@@ -71,12 +111,12 @@ class AutomatizacaoItemModel {
 
     return other is AutomatizacaoItemModel &&
         other.type == type &&
-        other.step == step &&
-        listEquals(other.steps, steps);
+        other._stepId == _stepId &&
+        listEquals(other._stepIds, _stepIds);
   }
 
   @override
   int get hashCode {
-    return type.hashCode ^ step.hashCode ^ steps.hashCode;
+    return type.hashCode ^ _stepId.hashCode ^ _stepIds.hashCode;
   }
 }

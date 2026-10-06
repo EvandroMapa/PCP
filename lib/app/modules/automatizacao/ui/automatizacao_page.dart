@@ -68,6 +68,8 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
           }
           // Mantendo os steps sempre fresquinhos (caso tenham adicionado/removido um)
           final steps = FirestoreClient.steps.data;
+          // Lista editada pela tela (o getter devolve uma lista nova a cada leitura)
+          final ocultasNoCalendario = model.naoMostrarNoCalendario.steps ?? [];
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -78,8 +80,8 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                 const SizedBox(height: 16),
                 _buildCriacaoPedidoRule(steps),
                 _buildSingleStepRule(
-                  '02 - Aguardando Produção (Corte e Dobra)',
-                  'Quando o pedido recém-criado estiver aguardando para entrar na fábrica, mover para:',
+                  '02 - Entrada na produção',
+                  'A partir desta etapa o pedido conta como em produção. Nas etapas anteriores ele aparece como "Aguardando entrada na produção":',
                   model.produtoPedidoSeparado.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
@@ -87,8 +89,8 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                           model.produtoPedidoSeparado.copyWith(step: step))),
                 ),
                 _buildSingleStepRule(
-                  '03 - Início de Produção (Corte e Dobra)',
-                  'Quando pelo menos um item do pedido entrar em uma Ordem de Produção, mover para:',
+                  '03 - Corte e dobra começou',
+                  'Quando a primeira bitola do pedido entra numa ordem de produção, mover para:',
                   model.produzindoCDPedido.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
@@ -96,8 +98,8 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                           model.produzindoCDPedido.copyWith(step: step))),
                 ),
                 _buildSingleStepRule(
-                  '04 - Pedido Finalizado (Apenas Corte e Dobra)',
-                  'Quando 100% das bitolas de um pedido "CD" estiverem prontas, mover para:',
+                  '04 - Corte e dobra pronto (pedido CD)',
+                  'Quando todas as bitolas de um pedido CD ficam prontas, mover para:',
                   model.prontoCDPedido.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
@@ -105,8 +107,8 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                           model.prontoCDPedido.copyWith(step: step))),
                 ),
                 _buildSingleStepRule(
-                  '05 - Aguardando Armação (Pedidos CDA)',
-                  'Quando o Corte/Dobra terminar e o pedido for liberado para a fila dos armadores, mover para:',
+                  '05 - Corte e dobra pronto (pedido CDA)',
+                  'Quando todas as bitolas de um pedido CDA ficam prontas, ele vai esperar a armação em:',
                   model.aguardandoArmacaoPedido.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
@@ -114,26 +116,8 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                           model.aguardandoArmacaoPedido.copyWith(step: step))),
                 ),
                 _buildSingleStepRule(
-                  '06 - Início da Montagem (Armação)',
-                  'Quando o armador sinalizar o início da montagem das peças, mover para:',
-                  model.produzindoArmacaoPedido.step,
-                  steps,
-                  (step) => setState(() => model = model.copyWith(
-                      produzindoArmacaoPedido:
-                          model.produzindoArmacaoPedido.copyWith(step: step))),
-                ),
-                _buildSingleStepRule(
-                  '07 - Pronto Armação',
-                  'Ao finalizar a produção de Armação:',
-                  model.prontoArmacaoPedido.step,
-                  steps,
-                  (step) => setState(() => model = model.copyWith(
-                      prontoArmacaoPedido:
-                          model.prontoArmacaoPedido.copyWith(step: step))),
-                ),
-                _buildSingleStepRule(
-                  '07.1 - Finalização de Armação (CDA)',
-                  'Quando todos os elementos cadastrados forem finalizados (Prontos), mover para:',
+                  '06 - Armação concluída (pedido CDA)',
+                  'Quando o armador conclui todos os elementos, o sistema pergunta e move para (vale para pedidos numa etapa com "Exibir armação"):',
                   model.finalizacaoArmacaoPedido.step,
                   steps,
                   (step) => setState(() => model = model.copyWith(
@@ -144,15 +128,13 @@ class _AutomatizacaoPageState extends State<AutomatizacaoPage> {
                 _buildSectionHeader('Regras de Filtro / Ocultação'),
                 const SizedBox(height: 16),
                 _buildMultiStepRule(
-                  '08 - Não Mostrar no Calendário',
-                  'Selecionar etapas onde o Pedido não deve constar na visualização de calendário:',
-                  model.naoMostrarNoCalendario.steps ?? [],
+                  '07 - Não mostrar no calendário',
+                  'Pedidos nestas etapas não aparecem no calendário do Kanban:',
+                  ocultasNoCalendario,
                   steps,
                   () => setState(() => model = model.copyWith(
                       naoMostrarNoCalendario: model.naoMostrarNoCalendario
-                          .copyWith(
-                              steps: List.from(
-                                  model.naoMostrarNoCalendario.steps ?? [])))),
+                          .copyWith(steps: List.from(ocultasNoCalendario)))),
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
