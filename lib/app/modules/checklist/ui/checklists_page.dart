@@ -1,8 +1,6 @@
 import 'package:aco_plus/app/core/client/firestore/collections/checklist/models/checklist_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
-import 'package:aco_plus/app/core/components/app_field.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
-import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
@@ -12,6 +10,8 @@ import 'package:aco_plus/app/modules/checklist/checklist_controller.dart';
 import 'package:aco_plus/app/modules/checklist/checklist_view_model.dart';
 import 'package:aco_plus/app/modules/checklist/ui/checklist_create_page.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:aco_plus/app/core/components/cadastro/cadastro_lista.dart';
 
 class ChecklistsPage extends StatefulWidget {
   const ChecklistsPage({super.key});
@@ -33,67 +33,65 @@ class _ChecklistsPageState extends State<ChecklistsPage> {
     return AppScaffold(
       appBar: AppBar(
         title: Text(
-          'Modelos de checklists',
+          'Modelos de checklist',
           style: AppCss.largeBold.setColor(AppColors.white),
         ),
         actions: [
-          IconButton(
-            onPressed: () => push(context, const ChecklistCreatePage()),
-            icon: Icon(Icons.add, color: AppColors.white),
-          ),
+          CadastroBotaoNovo('Novo modelo',
+              onTap: () => push(context, const ChecklistCreatePage())),
         ],
         backgroundColor: AppColors.primaryMain,
       ),
       body: StreamOut<List<ChecklistModel>>(
         stream: FirestoreClient.checklists.dataStream.listen,
-        builder: (_, __) => StreamOut<ChecklistUtils>(
+        builder: (_, todos) => StreamOut<ChecklistUtils>(
           stream: checklistCtrl.utilsStream.listen,
           builder: (_, utils) {
             final checklists = checklistCtrl
-                .getChecklistsFiltered(utils.search.text, __)
+                .getChecklistsFiltered(utils.search.text, todos)
                 .toList();
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: AppField(
-                    hint: 'Pesquisar',
+            return Container(
+              color: AppColors.neutralLightest,
+              child: Column(
+                children: [
+                  CadastroBusca(
+                    hint: 'Buscar modelo',
                     controller: utils.search,
-                    suffixIcon: Icons.search,
-                    onChanged: (_) => checklistCtrl.utilsStream.update(),
+                    contador: checklists.length == 1
+                        ? '1 modelo'
+                        : '${checklists.length} modelos',
+                    onChanged: () => checklistCtrl.utilsStream.update(),
                   ),
-                ),
-                Expanded(
-                  child: checklists.isEmpty
-                      ? const EmptyData()
-                      : RefreshIndicator(
-                          onRefresh: () async =>
-                              FirestoreClient.checklists.fetch(),
-                          child: ListView.separated(
-                            itemCount: checklists.length,
-                            separatorBuilder: (_, i) => const Divisor(),
-                            itemBuilder: (_, i) =>
-                                _itemChecklistWidget(checklists[i]),
+                  Expanded(
+                    child: checklists.isEmpty
+                        ? const EmptyData()
+                        : CadastroLista(
+                            onRefresh: () async =>
+                                FirestoreClient.checklists.fetch(),
+                            itens: checklists
+                                .map((c) => CadastroLinha(
+                                      onTap: () => push(context,
+                                          ChecklistCreatePage(checklist: c)),
+                                      leading: const CadastroIcone(
+                                          Symbols.checklist),
+                                      titulo: c.nome,
+                                      pares: [
+                                        (
+                                          'Itens',
+                                          c.checklist.length == 1
+                                              ? '1 item'
+                                              : '${c.checklist.length} itens'
+                                        ),
+                                      ],
+                                    ))
+                                .toList(),
                           ),
-                        ),
-                ),
-              ],
+                  ),
+                ],
+              ),
             );
           },
         ),
-      ),
-    );
-  }
-
-  ListTile _itemChecklistWidget(ChecklistModel checklist) {
-    return ListTile(
-      onTap: () => push(context, ChecklistCreatePage(checklist: checklist)),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      title: Text(checklist.nome, style: AppCss.mediumBold),
-      trailing: Icon(
-        Icons.arrow_forward_ios,
-        size: 14,
-        color: AppColors.neutralMedium,
       ),
     );
   }

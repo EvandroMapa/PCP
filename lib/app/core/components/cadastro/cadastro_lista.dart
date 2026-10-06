@@ -16,11 +16,15 @@ class CadastroBusca extends StatelessWidget {
   final String contador;
   final VoidCallback onChanged;
 
+  /// Atalhos ao lado da busca (ex.: "Mostrar inativos")
+  final List<Widget> acoes;
+
   const CadastroBusca({
     required this.controller,
     required this.hint,
     required this.contador,
     required this.onChanged,
+    this.acoes = const [],
     super.key,
   });
 
@@ -38,6 +42,7 @@ class CadastroBusca extends StatelessWidget {
               onChanged: (_) => onChanged(),
             ),
           ),
+          for (final acao in acoes) ...[const W(10), acao],
           const W(12),
           Text(
             contador,
@@ -70,22 +75,132 @@ class CadastroIcone extends StatelessWidget {
   }
 }
 
-/// Selo pequeno ao lado do título (código, ramo...)
+/// Selo pequeno ao lado do título (código, ramo...). Com [cor], fica
+/// num tom dessa cor (ex.: "Inativo" em vermelho)
 class CadastroSelo extends StatelessWidget {
   final String texto;
-  const CadastroSelo(this.texto, {super.key});
+  final Color? cor;
+  const CadastroSelo(this.texto, {this.cor, super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.neutralLightest,
+        color: cor?.withValues(alpha: 0.12) ?? AppColors.neutralLightest,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         texto,
-        style: AppCss.minimumBold.setSize(11).setColor(AppColors.neutralDark),
+        style: AppCss.minimumBold
+            .setSize(11)
+            .setColor(cor ?? AppColors.neutralDark),
+      ),
+    );
+  }
+}
+
+/// Amostra de cor à esquerda da linha (etapas, etiquetas)
+class CadastroCor extends StatelessWidget {
+  final Color cor;
+  const CadastroCor(this.cor, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: AppColors.neutralLightest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      alignment: Alignment.center,
+      child: Container(
+        width: 20,
+        height: 20,
+        decoration: BoxDecoration(
+          color: cor,
+          borderRadius: BorderRadius.circular(5),
+          border: Border.all(color: Colors.black.withValues(alpha: 0.12)),
+        ),
+      ),
+    );
+  }
+}
+
+/// Botão "Novo ..." escrito, para a barra de cima das telas de cadastro
+class CadastroBotaoNovo extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  const CadastroBotaoNovo(this.label, {required this.onTap, super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: FilledButton.icon(
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.white,
+          foregroundColor: AppColors.primaryMain,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          minimumSize: const Size(0, 36),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          textStyle: AppCss.minimumBold.setSize(13),
+        ),
+        onPressed: onTap,
+        icon: const Icon(Icons.add, size: 18),
+        label: Text(label),
+      ),
+    );
+  }
+}
+
+/// Ação do menu ⋮ da linha
+class CadastroAcao {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool destrutiva;
+  const CadastroAcao(this.icon, this.label, this.onTap,
+      {this.destrutiva = false});
+}
+
+/// Menu ⋮ da linha (editar, excluir...), sem o fundo escuro do tema
+class CadastroMenu extends StatelessWidget {
+  final List<CadastroAcao> acoes;
+  const CadastroMenu(this.acoes, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<int>(
+      tooltip: 'Mais ações',
+      position: PopupMenuPosition.under,
+      color: Colors.white,
+      surfaceTintColor: Colors.white,
+      onSelected: (i) => acoes[i].onTap(),
+      itemBuilder: (_) => [
+        for (int i = 0; i < acoes.length; i++)
+          PopupMenuItem<int>(
+            value: i,
+            child: Row(children: [
+              Icon(acoes[i].icon,
+                  size: 18,
+                  color: acoes[i].destrutiva
+                      ? AppColors.error
+                      : AppColors.neutralDark),
+              const SizedBox(width: 10),
+              Text(acoes[i].label,
+                  style: TextStyle(
+                      color: acoes[i].destrutiva ? AppColors.error : null)),
+            ]),
+          ),
+      ],
+      child: Container(
+        width: 32,
+        height: 32,
+        alignment: Alignment.center,
+        child: Icon(Icons.more_vert, color: AppColors.neutralMedium),
       ),
     );
   }

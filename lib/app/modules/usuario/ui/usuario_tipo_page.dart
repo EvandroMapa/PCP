@@ -1,5 +1,4 @@
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
-import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
@@ -8,6 +7,8 @@ import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/us
 import 'package:aco_plus/app/modules/usuario/usuario_tipo_controller.dart';
 import 'package:aco_plus/app/modules/usuario/ui/usuario_tipo_form_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:aco_plus/app/core/components/cadastro/cadastro_lista.dart';
 
 class UsuarioTipoPage extends StatefulWidget {
   const UsuarioTipoPage({super.key});
@@ -27,52 +28,69 @@ class _UsuarioTipoPageState extends State<UsuarioTipoPage> {
   Widget build(BuildContext context) {
     return AppScaffold(
       appBar: AppBar(
-        title: const Text('Perfis de Usuário'),
+        title: const Text('Perfis de acesso'),
+        actions: [
+          CadastroBotaoNovo('Novo perfil',
+              onTap: () => showUsuarioTipoFormDialog(context)),
+        ],
       ),
       body: StreamOut<List<UsuarioTipoModel>>(
         stream: usuarioTipoCtrl.tiposStream.listen,
         builder: (_, tipos) {
-          return ListView.separated(
-            itemCount: tipos.length,
-            separatorBuilder: (_, __) => const Divisor(),
-            itemBuilder: (_, i) {
-              final tipo = tipos[i];
-              return ListTile(
-                title: Text(tipo.nome, style: AppCss.mediumBold),
-                subtitle: Text(
-                  '${tipo.isPermitirElementos ? 'Acesso a Elementos' : 'Sem acesso a Elementos'} · ${tipo.isOperador ? 'Operador' : 'Gestor'}',
-                  style: AppCss.smallRegular.copyWith(color: Colors.grey[600]),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                      icon: const Icon(Icons.edit_outlined, size: 20),
-                      onPressed: () =>
-                          showUsuarioTipoFormDialog(context, tipo: tipo),
+          return Container(
+            color: AppColors.neutralLightest,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      tipos.length == 1 ? '1 perfil' : '${tipos.length} perfis',
+                      style: AppCss.minimumBold
+                          .setSize(12.5)
+                          .setColor(AppColors.neutralMedium),
                     ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                      icon: const Icon(Icons.delete_outline,
-                          size: 20, color: Colors.red),
-                      onPressed: () => _confirmDelete(context, tipo),
-                    ),
-                  ],
+                  ),
                 ),
-              );
-            },
+                Expanded(
+                  child: CadastroLista(
+                    itens: tipos.map((tipo) => _itemTipo(tipo)).toList(),
+                  ),
+                ),
+              ],
+            ),
           );
         },
       ),
-      fab: FloatingActionButton(
-        backgroundColor: AppColors.primaryMain,
-        onPressed: () => showUsuarioTipoFormDialog(context),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+    );
+  }
+
+  Widget _itemTipo(UsuarioTipoModel tipo) {
+    final papel = tipo.isAdministrador
+        ? 'Administrador'
+        : tipo.isOperador
+            ? 'Operador'
+            : tipo.isArmador
+                ? 'Armador'
+                : 'Gestor';
+    return CadastroLinha(
+      onTap: () => showUsuarioTipoFormDialog(context, tipo: tipo),
+      leading: const CadastroIcone(Symbols.badge),
+      titulo: tipo.nome,
+      selos: [
+        CadastroSelo(papel),
+        if (tipo.isPermitirElementos) const CadastroSelo('Elementos'),
+        if (tipo.isPermitirExcluirPedido) const CadastroSelo('Exclui pedido'),
+        if (tipo.isPermitirAjusteEstoque) const CadastroSelo('Ajusta estoque'),
+      ],
+      trailing: CadastroMenu([
+        CadastroAcao(Icons.edit_outlined, 'Editar perfil',
+            () => showUsuarioTipoFormDialog(context, tipo: tipo)),
+        CadastroAcao(Icons.delete_outline, 'Excluir perfil',
+            () => _confirmDelete(context, tipo),
+            destrutiva: true),
+      ]),
     );
   }
 

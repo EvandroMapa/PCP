@@ -1,6 +1,5 @@
 import 'package:aco_plus/app/core/client/firestore/collections/tag/models/tag_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
-import 'package:aco_plus/app/core/components/app_field.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
 import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
@@ -11,6 +10,7 @@ import 'package:aco_plus/app/modules/tag/tag_controller.dart';
 import 'package:aco_plus/app/modules/tag/tag_view_model.dart';
 import 'package:aco_plus/app/modules/tag/ui/tag_create_page.dart';
 import 'package:flutter/material.dart';
+import 'package:aco_plus/app/core/components/cadastro/cadastro_lista.dart';
 
 class TagsPage extends StatefulWidget {
   const TagsPage({super.key});
@@ -36,45 +36,42 @@ class _TagsPageState extends State<TagsPage> {
           style: AppCss.largeBold.setColor(AppColors.white),
         ),
         actions: [
-          IconButton(
-            onPressed: () => push(context, const TagCreatePage()),
-            icon: const Icon(Icons.add, color: Colors.white),
-          ),
+          CadastroBotaoNovo('Nova etiqueta',
+              onTap: () => push(context, const TagCreatePage())),
         ],
         backgroundColor: AppColors.primaryMain,
       ),
       body: StreamOut<List<TagModel>>(
         stream: FirestoreClient.tags.dataStream.listen,
-        builder: (_, __) => StreamOut<TagUtils>(
+        builder: (_, todas) => StreamOut<TagUtils>(
           stream: tagCtrl.utilsStream.listen,
           builder: (_, utils) {
             final tags =
-                tagCtrl.getTagsFiltered(utils.search.text, __).toList();
+                tagCtrl.getTagsFiltered(utils.search.text, todas).toList();
             tags.sort(
                 (a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()));
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: AppField(
-                    hint: 'Pesquisar',
+            return Container(
+              color: AppColors.neutralLightest,
+              child: Column(
+                children: [
+                  CadastroBusca(
+                    hint: 'Buscar etiqueta',
                     controller: utils.search,
-                    suffixIcon: Icons.search,
-                    onChanged: (_) => tagCtrl.utilsStream.update(),
+                    contador: tags.length == 1
+                        ? '1 etiqueta'
+                        : '${tags.length} etiquetas',
+                    onChanged: () => tagCtrl.utilsStream.update(),
                   ),
-                ),
-                Expanded(
-                  child: tags.isEmpty
-                      ? const EmptyData()
-                      : RefreshIndicator(
-                          onRefresh: () async => FirestoreClient.tags.fetch(),
-                          child: ListView.builder(
-                            itemCount: tags.length,
-                            itemBuilder: (_, i) => _itemTagWidget(tags[i]),
+                  Expanded(
+                    child: tags.isEmpty
+                        ? const EmptyData()
+                        : CadastroLista(
+                            onRefresh: () async => FirestoreClient.tags.fetch(),
+                            itens: tags.map(_itemTagWidget).toList(),
                           ),
-                        ),
-                ),
-              ],
+                  ),
+                ],
+              ),
             );
           },
         ),
@@ -83,66 +80,22 @@ class _TagsPageState extends State<TagsPage> {
   }
 
   Widget _itemTagWidget(TagModel tag) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: Colors.grey[200]!, width: 1),
-        ),
-      ),
-      child: ListTile(
-        onTap: () => push(context, TagCreatePage(tag: tag)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-        leading: Container(
-          width: 25,
-          height: 25,
-          decoration: BoxDecoration(
-            color: tag.color,
-            borderRadius: BorderRadius.circular(5),
-            border: Border.all(color: AppColors.neutralMedium),
-          ),
-        ),
-        title: Text(tag.nome, style: AppCss.mediumBold),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (tag.isDefaultCD)
-              Text(
-                'Vinculada automaticamente a pedidos de Corte e Dobra',
-                style: AppCss.minimumBold.setColor(AppColors.secondary),
-              ),
-            if (tag.isDefaultCDA)
-              Text(
-                'Vinculada automaticamente a pedidos de Armado',
-                style: AppCss.minimumBold.setColor(AppColors.secondary),
-              ),
-            if (tag.descricao.isNotEmpty)
-              Text(tag.descricao, style: AppCss.minimumRegular),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon:
-                  Icon(Icons.edit_outlined, color: Colors.blue[600], size: 16),
-              iconSize: 16,
-              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-              padding: EdgeInsets.zero,
-              onPressed: () => push(context, TagCreatePage(tag: tag)),
-            ),
-            const SizedBox(width: 6),
-            IconButton(
-              icon:
-                  Icon(Icons.delete_outline, color: Colors.red[600], size: 16),
-              iconSize: 16,
-              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-              padding: EdgeInsets.zero,
-              onPressed: () => tagCtrl.onDelete(context, tag),
-            ),
-          ],
-        ),
-      ),
+    return CadastroLinha(
+      onTap: () => push(context, TagCreatePage(tag: tag)),
+      leading: CadastroCor(tag.color),
+      titulo: tag.nome,
+      selos: [
+        if (tag.isDefaultCD) const CadastroSelo('Automática em pedidos CD'),
+        if (tag.isDefaultCDA) const CadastroSelo('Automática em pedidos CDA'),
+      ],
+      pares: [('Descrição', tag.descricao)],
+      trailing: CadastroMenu([
+        CadastroAcao(Icons.edit_outlined, 'Editar etiqueta',
+            () => push(context, TagCreatePage(tag: tag))),
+        CadastroAcao(Icons.delete_outline, 'Excluir etiqueta',
+            () => tagCtrl.onDelete(context, tag),
+            destrutiva: true),
+      ]),
     );
   }
 }

@@ -1,8 +1,7 @@
 import 'package:aco_plus/app/core/client/firestore/collections/usuario/models/usuario_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
-import 'package:aco_plus/app/core/components/app_field.dart';
+import 'package:aco_plus/app/core/components/cadastro/cadastro_lista.dart';
 import 'package:aco_plus/app/core/components/app_scaffold.dart';
-import 'package:aco_plus/app/core/components/divisor.dart';
 import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
@@ -12,6 +11,7 @@ import 'package:aco_plus/app/modules/usuario/ui/usuario_form_dialog.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_controller.dart';
 import 'package:aco_plus/app/modules/usuario/usuario_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class UsuariosPage extends StatefulWidget {
   const UsuariosPage({super.key});
@@ -33,172 +33,91 @@ class _UsuariosPageState extends State<UsuariosPage> {
     return AppScaffold(
       appBar: AppBar(
         title: const Text('Usuários'),
+        actions: [
+          CadastroBotaoNovo('Novo usuário',
+              onTap: () => showUsuarioFormDialog(context)),
+        ],
       ),
       body: StreamOut<List<UsuarioModel>>(
         stream: FirestoreClient.usuarios.dataStream.listen,
-        builder: (_, __) => StreamOut<UsuarioUtils>(
+        builder: (_, todos) => StreamOut<UsuarioUtils>(
           stream: usuarioCtrl.utilsStream.listen,
           builder: (_, utils) {
             final usuarios = usuarioCtrl.getUsuariosFiltered(
               utils.search.text,
-              __,
+              todos,
               mostrarInativos: utils.mostrarInativos,
             );
+            final inativos = todos.where((u) => !u.isAtivo).length;
 
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: AppField(
-                          hint: 'Pesquisar Login / Nome',
-                          controller: utils.search,
-                          suffixIcon: Icons.search,
-                          onChanged: (_) => usuarioCtrl.utilsStream.update(),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      InkWell(
-                        onTap: () {
-                          utils.mostrarInativos = !utils.mostrarInativos;
+            return Container(
+              color: AppColors.neutralLightest,
+              child: Column(
+                children: [
+                  CadastroBusca(
+                    hint: 'Buscar por login ou nome',
+                    controller: utils.search,
+                    contador: usuarios.length == 1
+                        ? '1 usuário'
+                        : '${usuarios.length} usuários',
+                    onChanged: () => usuarioCtrl.utilsStream.update(),
+                    acoes: [
+                      FilterChip(
+                        label: Text('Mostrar inativos ($inativos)'),
+                        selected: utils.mostrarInativos,
+                        showCheckmark: true,
+                        backgroundColor: Colors.white,
+                        selectedColor: AppColors.brandSoft,
+                        side: BorderSide(color: AppColors.neutralLight),
+                        labelStyle: AppCss.minimumBold.setSize(12.5),
+                        onSelected: (v) {
+                          utils.mostrarInativos = v;
                           usuarioCtrl.utilsStream.update();
                         },
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 6),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: Checkbox(
-                                  value: utils.mostrarInativos,
-                                  activeColor: AppColors.primaryMain,
-                                  onChanged: (v) {
-                                    utils.mostrarInativos = v ?? false;
-                                    usuarioCtrl.utilsStream.update();
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Mostrar inativos',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey[600],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       ),
                     ],
                   ),
-                ),
-                Expanded(
-                  child: usuarios.isEmpty
-                      ? const EmptyData()
-                      : ListView.separated(
-                          itemCount: usuarios.length,
-                          separatorBuilder: (_, i) => const Divisor(),
-                          itemBuilder: (_, i) =>
-                              _itemUsuarioWidget(usuarios[i]),
-                        ),
-                ),
-              ],
+                  Expanded(
+                    child: usuarios.isEmpty
+                        ? const EmptyData()
+                        : CadastroLista(
+                            itens: usuarios.map(_itemUsuarioWidget).toList(),
+                          ),
+                  ),
+                ],
+              ),
             );
           },
         ),
       ),
-      fab: FloatingActionButton(
-        backgroundColor: AppColors.primaryMain,
-        onPressed: () => showUsuarioFormDialog(context),
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
     );
   }
 
-  ListTile _itemUsuarioWidget(UsuarioModel usuario) {
-    return ListTile(
-      onTap: () => showUsuarioFormDialog(context, usuario: usuario),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-      title: Row(
-        children: [
-          Flexible(
-            child: Text(
-              usuario.nome,
-              style: AppCss.mediumBold.copyWith(
-                color: usuario.isAtivo ? null : Colors.grey[400],
-              ),
-            ),
-          ),
-          if (!usuario.isAtivo) ...[
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Text(
-                'Inativo',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.red,
-                ),
-              ),
-            ),
-          ],
+  Widget _itemUsuarioWidget(UsuarioModel usuario) {
+    return Opacity(
+      opacity: usuario.isAtivo ? 1 : 0.6,
+      child: CadastroLinha(
+        onTap: () => showUsuarioFormDialog(context, usuario: usuario),
+        leading: const CadastroIcone(Symbols.person),
+        titulo: usuario.nome,
+        selos: [
+          if (usuario.tipo != null) CadastroSelo(usuario.tipo!.nome),
+          if (!usuario.isAtivo)
+            CadastroSelo('Inativo', cor: AppColors.statusCritico),
         ],
-      ),
-      subtitle: usuario.tipo != null
-          ? Text(
-              usuario.tipo!.nome,
-              style: TextStyle(
-                color: usuario.isAtivo ? null : Colors.grey[400],
-              ),
-            )
-          : null,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Botão ativar/inativar
-          Tooltip(
-            message: usuario.isAtivo ? 'Inativar usuário' : 'Ativar usuário',
-            child: IconButton(
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              icon: Icon(
-                usuario.isAtivo
-                    ? Icons.toggle_on_outlined
-                    : Icons.toggle_off_outlined,
-                size: 28,
-                color: usuario.isAtivo ? Colors.green : Colors.grey[400],
-              ),
-              onPressed: () => _confirmToggleAtivo(context, usuario),
-            ),
+        pares: [('Login', usuario.email)],
+        trailing: CadastroMenu([
+          CadastroAcao(Icons.edit_outlined, 'Editar usuário',
+              () => showUsuarioFormDialog(context, usuario: usuario)),
+          CadastroAcao(
+            usuario.isAtivo ? Icons.toggle_off_outlined : Icons.toggle_on_outlined,
+            usuario.isAtivo ? 'Inativar usuário' : 'Reativar usuário',
+            () => _confirmToggleAtivo(context, usuario),
           ),
-          const SizedBox(width: 4),
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero,
-            icon: const Icon(Icons.edit_outlined, size: 20),
-            onPressed: () => showUsuarioFormDialog(context, usuario: usuario),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            padding: EdgeInsets.zero,
-            icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-            onPressed: () => _confirmDelete(context, usuario),
-          ),
-        ],
+          CadastroAcao(Icons.delete_outline, 'Excluir usuário',
+              () => _confirmDelete(context, usuario),
+              destrutiva: true),
+        ]),
       ),
     );
   }
@@ -207,7 +126,7 @@ class _UsuariosPageState extends State<UsuariosPage> {
     final novoStatus = !usuario.isAtivo;
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
         title: Text(novoStatus ? 'Ativar Usuário' : 'Inativar Usuário'),
         content: Text(
           novoStatus
@@ -226,7 +145,7 @@ class _UsuariosPageState extends State<UsuariosPage> {
               foregroundColor: Colors.white,
             ),
             onPressed: () {
-              pop(_);
+              pop(dialogCtx);
               usuarioCtrl.toggleAtivo(usuario);
             },
             child: Text(novoStatus ? 'Ativar' : 'Inativar'),
