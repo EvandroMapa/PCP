@@ -193,7 +193,15 @@ class StepController {
     utilsStream.update();
   }
 
+  /// Abre o painel de pedidos com uma lista que não é de um dia
+  void abrirLista(String titulo, List<PedidoModel> pedidos) {
+    utils.listaTitulo = titulo;
+    utils.day = {DateTime.now(): pedidos};
+    utilsStream.update();
+  }
+
   void setDay(Map<DateTime, List<PedidoModel>>? day) {
+    utils.listaTitulo = null;
     if (day != null) {
       if (day.keys.isNotEmpty) {
         utils.focusedDay = day.keys.first;

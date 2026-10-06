@@ -29,6 +29,14 @@ class PedidoUtils {
   bool showFilter = false;
   final TextController localidadeEC = TextController();
   TagModel? tag;
+
+  // Atalhos da lista
+  bool soAtrasados = false;
+  final Set<PedidoTipo> tipos = {};
+
+  /// A ordenação só é aplicada depois que alguém escolhe uma; sem escolha,
+  /// a lista mantém a ordem de sempre
+  bool ordenacaoEscolhida = false;
 }
 
 class PedidoArquivedUtils {

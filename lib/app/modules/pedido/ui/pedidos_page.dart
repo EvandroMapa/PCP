@@ -11,6 +11,7 @@ import 'package:aco_plus/app/core/components/empty_data.dart';
 import 'package:aco_plus/app/core/components/h.dart';
 import 'package:aco_plus/app/core/components/stream_out.dart';
 import 'package:aco_plus/app/core/components/w.dart';
+import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
 import 'package:aco_plus/app/core/enums/sort_type.dart';
 import 'package:aco_plus/app/core/extensions/string_ext.dart';
 import 'package:aco_plus/app/core/utils/app_colors.dart';
@@ -106,6 +107,16 @@ class _PedidosPageState extends State<PedidosPage> {
                     pedido.tags.any((tag) => tag.id == utils.tag!.id))
                 .toList();
           }
+          // Atrasados contados antes dos atalhos, para o número não sumir
+          final atrasados = pedidos.where(_atrasado).length;
+          if (utils.tipos.isNotEmpty) {
+            pedidos =
+                pedidos.where((p) => utils.tipos.contains(p.tipo)).toList();
+          }
+          if (utils.soAtrasados) {
+            pedidos = pedidos.where(_atrasado).toList();
+          }
+          if (utils.ordenacaoEscolhida) pedidoCtrl.onSortPedidos(pedidos);
           Widget body = RefreshIndicator(
             onRefresh: () async => await FirestoreClient.pedidos.fetch(),
             child: ListView(
@@ -133,6 +144,8 @@ class _PedidosPageState extends State<PedidosPage> {
                     ),
                   ],
                 ),
+                const H(10),
+                _atalhos(utils, atrasados),
                 const H(12),
                 Visibility(
                   visible: utils.showFilter,
@@ -191,6 +204,7 @@ class _PedidosPageState extends State<PedidosPage> {
                                 itemLabel: (e) => e.name,
                                 onSelect: (e) {
                                   utils.sortType = e ?? SortType.localizator;
+                                  utils.ordenacaoEscolhida = true;
                                   pedidoCtrl.utilsStream.update();
                                 },
                               ),
@@ -205,6 +219,7 @@ class _PedidosPageState extends State<PedidosPage> {
                                 itemLabel: (e) => e.getName(utils.sortType),
                                 onSelect: (e) {
                                   utils.sortOrder = e ?? SortOrder.asc;
+                                  utils.ordenacaoEscolhida = true;
                                   pedidoCtrl.utilsStream.update();
                                 },
                               ),
@@ -273,6 +288,100 @@ class _PedidosPageState extends State<PedidosPage> {
           return body;
         },
       ),
+    );
+  }
+
+  /// Entrega vencida e ainda não entregue
+  bool _atrasado(PedidoModel p) {
+    if (p.deliveryAt == null || p.isEntregue) return false;
+    final now = DateTime.now();
+    return p.deliveryAt!.isBefore(DateTime(now.year, now.month, now.day));
+  }
+
+  // ── Atalhos sempre à mostra: atrasados, tipo, entrega, mais filtros ──────
+  Widget _atalhos(PedidoUtils utils, int atrasados) {
+    Widget chip(String texto,
+        {required bool ativo, required VoidCallback onTap, Color? cor}) {
+      final c = cor ?? AppColors.primaryMain;
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: ativo ? c : Colors.white,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: ativo ? c : AppColors.neutralLight),
+          ),
+          child: Text(
+            texto,
+            style: AppCss.minimumBold
+                .setSize(12.5)
+                .setColor(ativo ? Colors.white : (cor ?? AppColors.neutralDark)),
+          ),
+        ),
+      );
+    }
+
+    void tipo(PedidoTipo t) {
+      if (!utils.tipos.remove(t)) utils.tipos.add(t);
+      pedidoCtrl.utilsStream.update();
+    }
+
+    final porEntrega = utils.ordenacaoEscolhida &&
+        utils.sortType == SortType.deliveryAt &&
+        utils.sortOrder == SortOrder.asc;
+    final filtrosNoPainel = [
+      utils.steps.isNotEmpty,
+      utils.tag != null,
+      utils.localidadeEC.text.isNotEmpty,
+    ].where((e) => e).length;
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        chip(
+          'Atrasados $atrasados',
+          ativo: utils.soAtrasados,
+          cor: atrasados > 0 ? AppColors.statusCritico : null,
+          onTap: () {
+            utils.soAtrasados = !utils.soAtrasados;
+            pedidoCtrl.utilsStream.update();
+          },
+        ),
+        chip('CD',
+            ativo: utils.tipos.contains(PedidoTipo.cd),
+            onTap: () => tipo(PedidoTipo.cd)),
+        chip('CDA',
+            ativo: utils.tipos.contains(PedidoTipo.cda),
+            onTap: () => tipo(PedidoTipo.cda)),
+        chip('Outros',
+            ativo: utils.tipos.contains(PedidoTipo.outros),
+            onTap: () => tipo(PedidoTipo.outros)),
+        chip(
+          'Entrega mais próxima primeiro',
+          ativo: porEntrega,
+          onTap: () {
+            if (porEntrega) {
+              utils.ordenacaoEscolhida = false;
+            } else {
+              utils.sortType = SortType.deliveryAt;
+              utils.sortOrder = SortOrder.asc;
+              utils.ordenacaoEscolhida = true;
+            }
+            pedidoCtrl.utilsStream.update();
+          },
+        ),
+        chip(
+          filtrosNoPainel == 0 ? 'Mais filtros' : 'Mais filtros ($filtrosNoPainel)',
+          ativo: utils.showFilter,
+          onTap: () {
+            utils.showFilter = !utils.showFilter;
+            pedidoCtrl.utilsStream.update();
+          },
+        ),
+      ],
     );
   }
 }

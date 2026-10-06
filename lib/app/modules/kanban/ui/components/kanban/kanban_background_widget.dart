@@ -1,4 +1,3 @@
-import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class KanbanBackgroundWidget extends StatelessWidget {
@@ -10,7 +9,8 @@ class KanbanBackgroundWidget extends StatelessWidget {
     return Container(
       width: double.maxFinite,
       height: double.maxFinite,
-      decoration: BoxDecoration(color: AppColors.primaryDark),
+      // Cinza-aço claro: separa as colunas sem o peso do fundo escuro
+      decoration: const BoxDecoration(color: Color(0xFFC9D1DB)),
       child: child,
     );
   }

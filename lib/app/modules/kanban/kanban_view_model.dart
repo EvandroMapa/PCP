@@ -19,6 +19,9 @@ class KanbanUtils {
   Map<StepModel, List<PedidoModel>> kanban;
   Map<String, List<PedidoModel>> calendar;
   Map<DateTime, List<PedidoModel>>? day;
+
+  /// Quando a lista aberta não é de um dia (ex.: "Atrasados", "Sem data")
+  String? listaTitulo;
   final ScrollController scroll = ScrollController();
   PedidoModel? pedido;
   bool get isPedidoSelected => pedido != null;
@@ -35,6 +38,17 @@ class KanbanUtils {
   TextController localidadeEC = TextController();
   List<TagModel> tagsSelecionadas = [];
   TextController tagEC = TextController();
+
+  // Filtros rápidos (quadro e calendário)
+  bool soAtrasados = false;
+  bool soSemData = false;
+
+  /// Entrega vencida e ainda não entregue
+  static bool isAtrasado(PedidoModel pedido) {
+    if (pedido.deliveryAt == null || pedido.isEntregue) return false;
+    final now = DateTime.now();
+    return pedido.deliveryAt!.isBefore(DateTime(now.year, now.month, now.day));
+  }
 
   void cancelTimer() {
     if (timer?.isActive ?? false) {
@@ -63,6 +77,8 @@ class KanbanUtils {
     if (usuarioEC.text.isNotEmpty) {
       qtde++;
     }
+    if (soAtrasados) qtde++;
+    if (soSemData) qtde++;
     return qtde;
   }
 
@@ -72,10 +88,19 @@ class KanbanUtils {
       usuario != null ||
       localidadeEC.text.isNotEmpty ||
       tagsSelecionadas.isNotEmpty ||
-      usuarioEC.text.isNotEmpty;
+      usuarioEC.text.isNotEmpty ||
+      soAtrasados ||
+      soSemData;
 
-  bool isPedidoVisibleFiltered(PedidoModel pedido) {
+  /// [ignorarRapidos] serve para contar quantos atrasados / sem data
+  /// existem dentro dos outros filtros
+  bool isPedidoVisibleFiltered(PedidoModel pedido,
+      {bool ignorarRapidos = false}) {
     if (!hasFilter()) return true;
+    if (!ignorarRapidos) {
+      if (soAtrasados && !isAtrasado(pedido)) return false;
+      if (soSemData && pedido.deliveryAt != null) return false;
+    }
     if (search.text.isNotEmpty) {
       if (!pedido.filtro.toCompare.contains(search.text.toCompare)) {
         return false;

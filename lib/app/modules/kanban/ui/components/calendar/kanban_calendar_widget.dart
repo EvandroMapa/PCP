@@ -1,12 +1,14 @@
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/models/automatizacao_model.dart';
+import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_model.dart';
+import 'package:aco_plus/app/core/utils/app_colors.dart';
+import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_view_model.dart';
 import 'package:aco_plus/app/modules/kanban/ui/components/calendar/kanban_calendar_builder_widget.dart';
 import 'package:aco_plus/app/modules/kanban/ui/components/calendar/kanban_calendar_weekday_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class KanbanCalendarWidget extends StatefulWidget {
@@ -53,6 +55,111 @@ class _KanbanCalendarWidgetState extends State<KanbanCalendarWidget> {
     return pedidosByMostramNoCalendario;
   }
 
+  /// Mesma conta do filtro rápido "Sem data" (todas as etapas)
+  List<PedidoModel> _semData() => BackendClient.pedidos.pepidosUnarchiveds
+      .where((p) =>
+          p.deliveryAt == null &&
+          !p.isEntregue &&
+          widget.utils.isPedidoVisibleFiltered(p))
+      .toList();
+
+  // ── Barra do calendário: Hoje, Atrasados, Sem data, Semanal/Mensal ──────
+  Widget _barraCalendario() {
+    final semData = _semData();
+    final mensal = widget.utils.calendarFormat == CalendarFormat.month;
+
+    Widget botao(String texto, IconData icon, VoidCallback onTap,
+        {Color? cor}) {
+      return OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: cor ?? AppColors.black,
+          backgroundColor: Colors.white,
+          side: BorderSide(
+              color: cor?.withValues(alpha: 0.5) ?? AppColors.neutralLight),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          visualDensity: VisualDensity.compact,
+          textStyle: AppCss.minimumBold.setSize(12.5),
+        ),
+        onPressed: onTap,
+        icon: Icon(icon, size: 17),
+        label: Text(texto),
+      );
+    }
+
+    Widget segmento(String texto, bool ativo, VoidCallback onTap) {
+      return InkWell(
+        onTap: ativo ? null : onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          color: ativo ? AppColors.primaryMain : Colors.white,
+          child: Text(
+            texto,
+            style: AppCss.minimumBold
+                .setSize(12.5)
+                .setColor(ativo ? Colors.white : AppColors.neutralDark),
+          ),
+        ),
+      );
+    }
+
+    void formato(CalendarFormat f) {
+      kanbanCtrl.utils.calendarFormat = f;
+      kanbanCtrl.utilsStream.update();
+    }
+
+    return Container(
+      width: double.maxFinite,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: AppColors.neutralLight)),
+      ),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        alignment: WrapAlignment.spaceBetween,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              botao('Hoje', Icons.today, () {
+                kanbanCtrl.utils.focusedDay = DateTime.now();
+                kanbanCtrl.utilsStream.update();
+              }),
+              // Sem data não tem dia no calendário: aviso com a lista
+              if (widget.utils.soSemData)
+                botao(
+                  'Pedidos sem data não aparecem no calendário · Ver lista (${semData.length})',
+                  Icons.event_busy,
+                  () => kanbanCtrl.abrirLista('Sem data de entrega', semData),
+                  cor: AppColors.statusAtencao,
+                ),
+            ],
+          ),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.neutralLight),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                segmento('Semanal', !mensal,
+                    () => formato(CalendarFormat.week)),
+                segmento('Mensal', mensal,
+                    () => formato(CalendarFormat.month)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   DateTime getCurrentDay() {
     if (widget.utils.pedido != null) {
       if (widget.utils.pedido!.deliveryAt != null) {
@@ -69,7 +176,11 @@ class _KanbanCalendarWidgetState extends State<KanbanCalendarWidget> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return Container(
+        return Column(
+          children: [
+            _barraCalendario(),
+            Expanded(
+              child: Container(
           color: Colors.white.withValues(alpha: 0.5),
           width: double.maxFinite,
           height: double.maxFinite,
@@ -127,8 +238,8 @@ class _KanbanCalendarWidgetState extends State<KanbanCalendarWidget> {
                         day: day,
                         pedidos: getPedidos(day),
                         backgroundColor: [6, 7].contains(day.weekday)
-                            ? Colors.grey[200]!
-                            : Colors.grey[50]!,
+                            ? AppColors.neutralLightest
+                            : Colors.white,
                         calendarFormat: widget.utils.calendarFormat,
                       ),
                       todayBuilder: (context, day, focusedDay) =>
@@ -136,9 +247,8 @@ class _KanbanCalendarWidgetState extends State<KanbanCalendarWidget> {
                         utils: widget.utils,
                         day: day,
                         pedidos: getPedidos(day),
-                        backgroundColor: [6, 7].contains(day.weekday)
-                            ? const Color(0xFFE3EFF5)
-                            : const Color(0xFFE3EFF5),
+                        backgroundColor: AppColors.brandSoft,
+                        hoje: true,
                         calendarFormat: widget.utils.calendarFormat,
                       ),
                       outsideBuilder: (context, day, focusedDay) =>
@@ -153,8 +263,8 @@ class _KanbanCalendarWidgetState extends State<KanbanCalendarWidget> {
                                   day: day,
                                   pedidos: getPedidos(day),
                                   backgroundColor: [6, 7].contains(day.weekday)
-                                      ? Colors.grey[200]!
-                                      : Colors.grey[50]!,
+                                      ? AppColors.neutralLightest
+                                      : Colors.white,
                                   calendarFormat: widget.utils.calendarFormat,
                                 ),
                       disabledBuilder: (context, day, focusedDay) =>
@@ -162,7 +272,7 @@ class _KanbanCalendarWidgetState extends State<KanbanCalendarWidget> {
                         utils: widget.utils,
                         day: day,
                         pedidos: getPedidos(day),
-                        backgroundColor: const Color(0xFFE3EFF5),
+                        backgroundColor: AppColors.neutralLightest,
                         calendarFormat: widget.utils.calendarFormat,
                       ),
                       weekNumberBuilder: (context, weekNumber) =>
@@ -171,33 +281,11 @@ class _KanbanCalendarWidgetState extends State<KanbanCalendarWidget> {
                   ),
                 ),
               ),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 16, right: 22),
-                  child: FloatingActionButton.extended(
-                    onPressed: () {
-                      kanbanCtrl.utils.calendarFormat =
-                          widget.utils.calendarFormat == CalendarFormat.month
-                              ? CalendarFormat.week
-                              : CalendarFormat.month;
-                      kanbanCtrl.utilsStream.update();
-                    },
-                    icon: Icon(
-                      widget.utils.calendarFormat == CalendarFormat.month
-                          ? Symbols.view_week
-                          : Icons.calendar_month,
-                    ),
-                    label: Text(
-                      widget.utils.calendarFormat == CalendarFormat.month
-                          ? 'Semanal'
-                          : 'Mensal',
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
+              ),
+            ),
+          ],
         );
       },
     );

@@ -6,7 +6,7 @@ import 'package:aco_plus/app/core/utils/app_colors.dart';
 import 'package:aco_plus/app/core/utils/app_css.dart';
 import 'package:aco_plus/app/core/utils/global_resource.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_controller.dart';
-import 'package:aco_plus/app/modules/kanban/kanban_filter_widget.dart';
+import 'package:aco_plus/app/modules/kanban/ui/components/kanban/kanban_filtros_bar.dart';
 import 'package:aco_plus/app/modules/kanban/kanban_view_model.dart';
 import 'package:aco_plus/app/modules/kanban/ui/components/kanban/shimmer/kanban_top_bar_shimmer_widget.dart';
 import 'package:aco_plus/app/modules/pedido/ui/pedido_create_page.dart';
@@ -36,16 +36,6 @@ class _KanbanTopbarConcreteWidget extends StatefulWidget {
 
 class _KanbanTopbarConcreteWidgetState
     extends State<_KanbanTopbarConcreteWidget> {
-  bool _filtroAberto = false;
-
-  void _toggleFiltro() {
-    setState(() => _filtroAberto = !_filtroAberto);
-  }
-
-  void _fecharFiltro() {
-    setState(() => _filtroAberto = false);
-  }
-
   @override
   Widget build(BuildContext context) {
     return StreamOut<KanbanUtils>(
@@ -73,80 +63,7 @@ class _KanbanTopbarConcreteWidgetState
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // ── Botão de filtro ──
-                  Stack(
-                    children: [
-                      IconButton(
-                        onPressed: _toggleFiltro,
-                        tooltip: _filtroAberto
-                            ? 'Fechar filtros'
-                            : 'Abrir filtros',
-                        icon: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 200),
-                          child: Icon(
-                            _filtroAberto
-                                ? Icons.filter_list_off_rounded
-                                : Icons.filter_list,
-                            key: ValueKey(_filtroAberto),
-                            color: utils.hasFilter()
-                                ? Colors.redAccent
-                                : AppColors.white,
-                          ),
-                        ),
-                      ),
-                      if (utils.hasFilter() && !_filtroAberto)
-                        Positioned(
-                          right: 8,
-                          top: 0,
-                          child: InkWell(
-                            onTap: () {
-                              utils.search.text = '';
-                              utils.cliente = null;
-                              utils.clienteEC.text = '';
-                              utils.usuario = null;
-                              utils.usuarioEC.text = '';
-                              utils.localidadeEC.text = '';
-                              utils.tagsSelecionadas.clear();
-                              utils.tagEC.text = '';
-                              kanbanCtrl.utilsStream.update();
-                            },
-                            child: Container(
-                              margin: const EdgeInsets.all(2),
-                              width: 14,
-                              height: 14,
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  Icons.close,
-                                  size: 10,
-                                  color: AppColors.primaryMain,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const W(4),
-                  IconButton(
-                    onPressed: () {
-                      if (utils.view == KanbanViewMode.calendar) {
-                        utils.view = KanbanViewMode.kanban;
-                      } else {
-                        utils.view = KanbanViewMode.calendar;
-                      }
-                      kanbanCtrl.utilsStream.update();
-                    },
-                    icon: Icon(
-                      utils.view != KanbanViewMode.calendar
-                          ? Icons.calendar_month
-                          : Icons.view_kanban,
-                      color: AppColors.white,
-                    ),
-                  ),
+                  _alternarVisao(utils),
                   const W(8),
                   if (usuario.permission.pedido
                       .contains(UserPermissionType.create))
@@ -185,12 +102,20 @@ class _KanbanTopbarConcreteWidgetState
                       ],
                       onSelected: (val) async {
                         if (val == 1) {
+                          // Antes: ordenava todos os pedidos pelo id (que é
+                          // aleatório) e "movia" o último, mexendo num pedido
+                          // qualquer. Agora só o pedido criado agora vai
+                          // para o topo da etapa; cancelou, não faz nada.
+                          final antes = FirestoreClient.pedidos.data
+                              .map((e) => e.id)
+                              .toSet();
                           await push(context, const PedidoCreatePage());
-                          final pedidos = FirestoreClient.pedidos.data;
-                          if (pedidos.isEmpty) return;
-                          pedidos.sort((a, b) => a.id.compareTo(b.id));
-                          kanbanCtrl.onAccept(
-                              pedidos.last.step, pedidos.last, 0);
+                          final novos = FirestoreClient.pedidos.data
+                              .where((e) => !antes.contains(e.id))
+                              .toList();
+                          if (novos.length != 1) return;
+                          final novo = novos.first;
+                          kanbanCtrl.onAccept(novo.step, novo, 0);
                         } else if (val == 2) {
                           await showPedidoImportPdfDialog();
                         }
@@ -205,17 +130,55 @@ class _KanbanTopbarConcreteWidgetState
             backgroundColor: AppColors.primaryMain,
           ),
 
-          // ── Painel de filtro animado ──
-          AnimatedSize(
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOutCubic,
-            child: _filtroAberto
-                ? KanbanFilterPanel(
-                    utils: utils,
-                    onClose: _fecharFiltro,
-                  )
-                : const SizedBox.shrink(),
+          // ── Barra única de filtros (quadro e calendário) ──
+          KanbanFiltrosBar(utils: utils),
+        ],
+      ),
+    );
+  }
+
+  Widget _alternarVisao(KanbanUtils utils) {
+    Widget opcao(String texto, IconData icon, KanbanViewMode modo) {
+      final ativo = utils.view == modo;
+      return InkWell(
+        onTap: ativo
+            ? null
+            : () {
+                utils.view = modo;
+                kanbanCtrl.utilsStream.update();
+              },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          color: ativo ? Colors.white : Colors.transparent,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon,
+                  size: 16,
+                  color: ativo ? AppColors.primaryMain : Colors.white70),
+              const W(6),
+              Text(
+                texto,
+                style: AppCss.minimumBold.setSize(12.5).setColor(
+                    ativo ? AppColors.primaryMain : Colors.white70),
+              ),
+            ],
           ),
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          opcao('Quadro', Icons.view_kanban, KanbanViewMode.kanban),
+          opcao('Calendário', Icons.calendar_month, KanbanViewMode.calendar),
         ],
       ),
     );

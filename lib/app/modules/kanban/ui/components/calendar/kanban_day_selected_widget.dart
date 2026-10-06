@@ -77,7 +77,8 @@ class _KanbanDaySelectedWidgetState extends State<KanbanDaySelectedWidget> {
                               const W(16),
                               Expanded(
                                 child: Text(
-                                  'Pedidos ${DateFormat.EEEE('pt_BR').format(date).replaceAll('-feira', '').toCaptalized()} (${DateFormat('dd/MM/yyyy').format(date)})',
+                                  utils.listaTitulo ??
+                                      'Pedidos ${DateFormat.EEEE('pt_BR').format(date).replaceAll('-feira', '').toCaptalized()} (${DateFormat('dd/MM/yyyy').format(date)})',
                                   style: AppCss.largeBold
                                       .setColor(Colors.white)
                                       .setSize(18),
@@ -89,20 +90,24 @@ class _KanbanDaySelectedWidgetState extends State<KanbanDaySelectedWidget> {
                                     .setColor(Colors.white)
                                     .setSize(18),
                               ),
-                              const W(16),
-                              IconButton(
-                                padding: EdgeInsets.all(4),
-                                tooltip: 'Dia anterior',
-                                onPressed: () =>
-                                    kanbanCtrl.setPreviousDay(date),
-                                icon: const Icon(Icons.arrow_back),
-                              ),
-                              IconButton(
-                                padding: EdgeInsets.all(4),
-                                tooltip: 'Dia posterior',
-                                onPressed: () => kanbanCtrl.setNextDay(date),
-                                icon: const Icon(Icons.arrow_forward),
-                              ),
+                              // Setas de dia só fazem sentido numa lista de um dia
+                              if (utils.listaTitulo == null) ...[
+                                const W(16),
+                                IconButton(
+                                  padding: EdgeInsets.all(4),
+                                  tooltip: 'Dia anterior',
+                                  onPressed: () =>
+                                      kanbanCtrl.setPreviousDay(date),
+                                  icon: const Icon(Icons.arrow_back),
+                                ),
+                                IconButton(
+                                  padding: EdgeInsets.all(4),
+                                  tooltip: 'Dia posterior',
+                                  onPressed: () =>
+                                      kanbanCtrl.setNextDay(date),
+                                  icon: const Icon(Icons.arrow_forward),
+                                ),
+                              ],
                             ],
                           ),
                         ),

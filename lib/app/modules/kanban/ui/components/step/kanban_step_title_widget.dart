@@ -23,24 +23,27 @@ class KanbanStepTitleWidget extends StatelessWidget {
     final double kgsTotal =
         visiveis.map((e) => e.getQtdeTotal()).fold(.0, (a, b) => a + b);
 
+    final corEtapa =
+        step.color == Colors.transparent ? AppColors.primaryMain : step.color;
+    // Fundo do cabeçalho: um tom suave da cor da etapa sobre o branco,
+    // para não se confundir com os cartões brancos
+    final fundo = Color.alphaBlend(
+        corEtapa.withValues(alpha: 0.12), Colors.white);
+
     return Container(
       decoration: BoxDecoration(
+        color: fundo,
         border: Border(
-          top: BorderSide(
-            color: step.color == Colors.transparent
-                ? AppColors.primaryMain
-                : step.color,
-            width: 4,
-          ),
+          top: BorderSide(color: corEtapa, width: 4),
+          bottom: BorderSide(color: corEtapa.withValues(alpha: 0.35)),
         ),
       ),
-      child: ExpansionTile(
-        dense: false,
-        minTileHeight: 46,
-        tilePadding: const EdgeInsets.only(left: 8, right: 4),
-        childrenPadding: const EdgeInsets.symmetric(horizontal: 8),
-        trailing: const SizedBox.shrink(),
-        title: Column(
+      // Cabeçalho simples (antes era um ExpansionTile sem filhos, que
+      // reservava espaço à direita e empurrava o botão de ordenar)
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 46),
+        padding: const EdgeInsets.fromLTRB(10, 6, 4, 6),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -95,52 +98,90 @@ class KanbanStepTitleWidget extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                // Botão ordenação
+                // Ordenar os cartões desta etapa
                 PopupMenuButton<SortStepType?>(
-                  style: ButtonStyle(
-                    padding: WidgetStateProperty.all(EdgeInsets.zero),
-                    fixedSize: WidgetStateProperty.all(const Size(22, 22)),
-                    minimumSize: WidgetStateProperty.all(const Size(22, 22)),
-                  ),
+                  tooltip: 'Ordenar cartões',
                   padding: EdgeInsets.zero,
-                  icon: const Icon(Icons.more_vert, size: 16),
+                  position: PopupMenuPosition.under,
                   surfaceTintColor: Colors.white,
                   color: Colors.white,
                   onSelected: (e) => kanbanCtrl.onOrderPedidos(e, pedidos),
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      height: 32,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Ordenação',
-                              style: AppCss.minimumBold.setSize(14),
-                            ),
+                  constraints:
+                      const BoxConstraints(minWidth: 230, maxWidth: 260),
+                  itemBuilder: (context) {
+                    // Grupo (rótulo em maiúsculas, não clicável)
+                    PopupMenuItem<SortStepType?> grupo(String texto) =>
+                        PopupMenuItem<SortStepType?>(
+                          enabled: false,
+                          height: 26,
+                          child: Text(
+                            texto,
+                            style: AppCss.minimumBold
+                                .setSize(10.5)
+                                .setColor(AppColors.neutralMedium)
+                                .copyWith(letterSpacing: 0.6),
                           ),
-                          const Icon(Icons.close,
-                              color: Colors.black, size: 14),
-                        ],
-                      ),
-                    ),
-                    ...SortStepType.values.map(
-                      (e) => PopupMenuItem(
+                        );
+                    PopupMenuItem<SortStepType?> opcao(
+                            SortStepType tipo, IconData icon, String texto) =>
+                        PopupMenuItem<SortStepType?>(
+                          height: 36,
+                          value: tipo,
+                          child: Row(
+                            children: [
+                              Icon(icon,
+                                  size: 17, color: AppColors.neutralDark),
+                              const W(10),
+                              Expanded(
+                                child: Text(
+                                  texto,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppCss.minimumRegular.setSize(13),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                    return [
+                      PopupMenuItem<SortStepType?>(
+                        enabled: false,
                         height: 32,
-                        value: e,
                         child: Text(
-                          e.label,
-                          style: AppCss.minimumRegular.setSize(12),
+                          'Ordenar cartões desta etapa',
+                          style: AppCss.minimumBold
+                              .setSize(12.5)
+                              .setColor(AppColors.black),
                         ),
                       ),
-                    ),
-                  ],
+                      const PopupMenuDivider(height: 1),
+                      grupo('DATA DE ENTREGA'),
+                      opcao(SortStepType.deliveryAtAsc, Icons.arrow_upward,
+                          'Mais cedo primeiro'),
+                      opcao(SortStepType.deliveryAtDesc, Icons.arrow_downward,
+                          'Mais tarde primeiro'),
+                      grupo('DATA DE CRIAÇÃO'),
+                      opcao(SortStepType.createdAtDesc, Icons.arrow_downward,
+                          'Mais recentes primeiro'),
+                      opcao(SortStepType.createdAtAsc, Icons.arrow_upward,
+                          'Mais antigos primeiro'),
+                      const PopupMenuDivider(height: 1),
+                      opcao(SortStepType.localizador, Icons.sort_by_alpha,
+                          'Nome do cartão (A a Z)'),
+                    ];
+                  },
+                  // Ícone sem fundo (o "icon:" pegava o quadrado escuro do tema)
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    alignment: Alignment.center,
+                    child: Icon(Icons.sort,
+                        size: 18, color: AppColors.neutralDark),
+                  ),
                 ),
               ],
             ),
           ],
         ),
-        onExpansionChanged: (e) {},
-        children: const <Widget>[],
       ),
     );
   }

@@ -94,6 +94,8 @@ class _ClientesPageState extends State<ClientesPage> {
       // Excluir no menu, longe de um clique acidental
       trailing: PopupMenuButton<String>(
         tooltip: 'Mais ações',
+        // Sem o quadrado escuro do tema
+        style: IconButton.styleFrom(backgroundColor: Colors.transparent),
         icon: Icon(Icons.more_vert, color: AppColors.neutralMedium),
         onSelected: (acao) => acao == 'editar'
             ? push(context, ClienteCreatePage(cliente: cliente))

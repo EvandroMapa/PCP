@@ -263,9 +263,6 @@ class PedidoController {
     String search,
     List<PedidoModel> pedidos,
   ) {
-    pedidos = utils.steps.isEmpty
-        ? pedidos
-        : pedidos.where((e) => e.step.id == utils.steps.last.id).toList();
     if (search.length < 3) return pedidos;
     List<PedidoModel> filtered = [];
     for (final pedido in pedidos) {
