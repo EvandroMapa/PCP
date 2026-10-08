@@ -48,6 +48,9 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
   List<_PosicaoItem> _posicoes = [];
   bool _isLoading = true;
 
+  /// Status cujos cards estão ocultos (olhinho no resumo)
+  final Set<PosicaoStatus> _statusOcultos = {};
+
   /// Lock anti-duplicata: IDs de posições que estão sendo processadas no momento.
   /// Evita que toques rápidos do operador gerem múltiplas baixas/estornos.
   final Set<String> _processandoPosicoes = {};
@@ -498,6 +501,14 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     }
   }
 
+  List<_PosicaoItem> get _posicoesVisiveis => _posicoes.where((i) {
+        // aguardaSegundaEtapa é agrupada em "produzindo" no resumo
+        final st = i.posicao.status == PosicaoStatus.aguardaSegundaEtapa
+            ? PosicaoStatus.produzindo
+            : i.posicao.status;
+        return !_statusOcultos.contains(st);
+      }).toList();
+
   /// Barra fixa de resumo de produção por status das posições
   Widget _buildResumoBar() {
     int qtdAg = 0, qtdProd = 0, qtdPronto = 0;
@@ -575,6 +586,27 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
     );
   }
 
+  void _alternarOculto(PosicaoStatus status) => setState(() {
+        if (!_statusOcultos.remove(status)) _statusOcultos.add(status);
+      });
+
+  /// Toque longo: mostra só este status (ou volta a mostrar tudo se já era o único)
+  void _mostrarSomente(PosicaoStatus status) {
+    const todos = [
+      PosicaoStatus.aguardando,
+      PosicaoStatus.produzindo,
+      PosicaoStatus.pronto,
+    ];
+    final jaSomente = _statusOcultos.length == todos.length - 1 &&
+        !_statusOcultos.contains(status);
+    setState(() {
+      _statusOcultos.clear();
+      if (!jaSomente) {
+        _statusOcultos.addAll(todos.where((e) => e != status));
+      }
+    });
+  }
+
   Widget _resumoItem(
     String label,
     PosicaoStatus status,
@@ -585,9 +617,16 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
   ) {
     final prcntQtd = totalQtd == 0 ? 0.0 : (qtd / totalQtd * 100);
     final prcntPeso = totalPeso == 0 ? 0.0 : (peso / totalPeso * 100);
+    final oculto = _statusOcultos.contains(status);
 
     return Expanded(
-      child: Container(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _alternarOculto(status),
+        onLongPress: () => _mostrarSomente(status),
+        child: Opacity(
+          opacity: oculto ? 0.45 : 1,
+          child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: status.color.withValues(alpha: 0.06),
@@ -599,12 +638,40 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
           children: [
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 8),
               color: Colors.grey[800],
-              child: Text(
-                label,
-                textAlign: TextAlign.center,
-                style: AppCss.largeBold.setSize(13).setColor(Colors.white),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 5, horizontal: 32),
+                    child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: AppCss.largeBold
+                          .setSize(13)
+                          .setColor(Colors.white)
+                          .copyWith(
+                            decoration:
+                                oculto ? TextDecoration.lineThrough : null,
+                            decorationColor: Colors.white,
+                          ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Icon(
+                        oculto
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        size: 18,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             Padding(
@@ -644,6 +711,8 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
               ),
             ),
           ],
+        ),
+      ),
         ),
       ),
     );
@@ -712,6 +781,28 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
               : Column(
                   children: [
                     _buildResumoBar(),
+                    if (_posicoesVisiveis.length != _posicoes.length)
+                      Container(
+                        width: double.infinity,
+                        color: Colors.amber[100],
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 4),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '${_posicoes.length - _posicoesVisiveis.length} de ${_posicoes.length} OS ocultas',
+                                style: AppCss.minimumBold.setSize(12),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  setState(() => _statusOcultos.clear()),
+                              child: const Text('Mostrar todas'),
+                            ),
+                          ],
+                        ),
+                      ),
                     Expanded(
                       child: GridView.builder(
                         padding: const EdgeInsets.all(20),
@@ -722,9 +813,9 @@ class _OrdemPedidoElementosPageState extends State<OrdemPedidoElementosPage> {
                           crossAxisSpacing: 16,
                           mainAxisSpacing: 16,
                         ),
-                        itemCount: _posicoes.length,
+                        itemCount: _posicoesVisiveis.length,
                         itemBuilder: (context, index) {
-                          final item = _posicoes[index];
+                          final item = _posicoesVisiveis[index];
                           final isReadOnly = widget.readOnly;
                           return _ElementoOSCard(
                             key: ValueKey(
