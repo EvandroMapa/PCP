@@ -152,6 +152,75 @@ class EstoqueProducaoService {
     return posicoes;
   }
 
+  /// Quantas OS dos elementos informados estão prontas no BANCO (já baixadas).
+  static Future<int> osProntasDosElementos(List<String> elementoIds) async {
+    var total = 0;
+    for (var i = 0; i < elementoIds.length; i += 100) {
+      final lote = elementoIds.sublist(
+          i, i + 100 > elementoIds.length ? elementoIds.length : i + 100);
+      final rows = await SupabaseService.client
+          .from('elemento_posicoes')
+          .select('id')
+          .eq('status', _pronto)
+          .inFilter('elemento_id', lote);
+      total += rows.length;
+    }
+    return total;
+  }
+
+  /// Quantas OS do pedido estão prontas no banco.
+  static Future<int> osProntasDoPedido(String pedidoId) async {
+    final elementos = await SupabaseService.client
+        .from('elementos')
+        .select('id')
+        .eq('pedido_id', pedidoId);
+    final ids = elementos.map((e) => e['id'].toString()).toList();
+    if (ids.isEmpty) return 0;
+    return osProntasDosElementos(ids);
+  }
+
+  /// O pedido tem algum item pronto ou alguma OS pronta no banco?
+  /// (ou seja, material já baixado do estoque)
+  static Future<bool> pedidoTemBaixa(String pedidoId) async {
+    final itens = await SupabaseService.client
+        .from('pedido_bitolas')
+        .select('id')
+        .eq('pedido_id', pedidoId)
+        .eq('status', _pronto)
+        .limit(1);
+    if (itens.isNotEmpty) return true;
+    return await osProntasDoPedido(pedidoId) > 0;
+  }
+
+  /// Itens (pedido_bitolas) que já tiveram baixa: estão prontos no banco ou
+  /// têm alguma OS pronta. Usado para impedir que sejam removidos/zerados
+  /// sem passar pelo fluxo normal (que faz o estorno).
+  static Future<List<String>> itensComBaixa(List<String> pedidoBitolaIds) async {
+    final comBaixa = <String>[];
+    for (var i = 0; i < pedidoBitolaIds.length; i += 100) {
+      final lote = pedidoBitolaIds.sublist(
+          i,
+          i + 100 > pedidoBitolaIds.length ? pedidoBitolaIds.length : i + 100);
+      final rows = await SupabaseService.client
+          .from('pedido_bitolas')
+          .select('id, pedido_id, bitola_id, status')
+          .inFilter('id', lote);
+      for (final r in rows) {
+        final id = r['id'].toString();
+        if (r['status'] == _pronto) {
+          comBaixa.add(id);
+          continue;
+        }
+        final posicoes = await posicoesDoBanco(
+            r['pedido_id'].toString(), r['bitola_id'].toString());
+        if (posicoes.any((p) => p.status == PosicaoStatus.pronto)) {
+          comBaixa.add(id);
+        }
+      }
+    }
+    return comBaixa;
+  }
+
   /// Parte da qtde do item que NÃO é coberta pelas OS (ou a qtde inteira
   /// quando o pedido não tem OS). É baixada quando o item entra em pronto e
   /// estornada quando sai — em qualquer modo de apontamento.

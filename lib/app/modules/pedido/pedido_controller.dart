@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:aco_plus/app/core/client/backend_client.dart';
+import 'package:aco_plus/app/modules/estoque/estoque_producao_service.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/automatizacao/automatizacao_collection.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/ordem/models/ordem_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/enums/pedido_tipo.dart';
@@ -656,6 +657,27 @@ class PedidoController {
     if (pedido.pedidosFilhos.isNotEmpty && filhosReais.isEmpty) {
       pedido.pedidosFilhos.clear();
       await BackendClient.pedidos.update(pedido);
+    }
+
+    // Regra 1.5: confere no BANCO se há material já baixado do estoque. A regra
+    // 2 abaixo usa as ordens carregadas em memória (as arquivadas nem sempre
+    // estão carregadas), então não basta para garantir que o pedido não foi
+    // produzido.
+    try {
+      if (await EstoqueProducaoService.pedidoTemBaixa(pedido.id)) {
+        await showInfoDialog(
+          'Não é possível excluir o pedido: ele já tem itens ou OS prontos '
+          '(material baixado do estoque).',
+        );
+        return true;
+      }
+    } catch (e) {
+      log('Erro ao conferir baixa do pedido ${pedido.id}: $e');
+      await showInfoDialog(
+        'Não foi possível conferir se o pedido já teve baixa de estoque. '
+        'Tente novamente.',
+      );
+      return true;
     }
 
     // Regra 2: Pedido em produção não pode ser excluído

@@ -360,11 +360,30 @@ class EstoqueController {
   ///
   /// Não lança exceção para não travar a produção, mas uma falha definitiva
   /// fica registrada no audit (`falha_movimentacao_estoque`) para conciliação.
+  /// Acerto automático de estoque quando uma OS já baixada (pronta) é editada
+  /// (peso, quantidade, bitola) ou removida. `quantidade` com sinal:
+  /// positivo devolve ao estoque, negativo baixa. Fica no histórico como
+  /// ajuste, com a observação explicando o motivo.
+  Future<void> lancarAcertoPorEdicao({
+    required String produtoId,
+    required double quantidade,
+    required String observacao,
+  }) =>
+      _registrarMovimentoProducao(
+        produtoId: produtoId,
+        tipo: quantidade > 0
+            ? EstoqueTipoMovimentacao.ajusteEntrada
+            : EstoqueTipoMovimentacao.ajusteSaida,
+        quantidade: quantidade,
+        ordem: null,
+        observacao: observacao,
+      );
+
   Future<void> _registrarMovimentoProducao({
     required String produtoId,
     required EstoqueTipoMovimentacao tipo,
     required double quantidade,
-    required OrdemModel ordem,
+    required OrdemModel? ordem,
     required String observacao,
   }) async {
     if (quantidade.abs() < 0.0005) return;
@@ -376,7 +395,7 @@ class EstoqueController {
       tipo: tipo,
       quantidade: quantidade,
       observacao: observacao,
-      ordemId: ordem.id,
+      ordemId: ordem?.id,
       usuarioNome: usuarioCtrl.usuario?.nome,
     );
 
@@ -406,11 +425,11 @@ class EstoqueController {
         acao: 'falha_movimentacao_estoque',
         modulo: 'estoque',
         entidadeId: produtoId,
-        entidadeLabel: ordem.localizator,
+        entidadeLabel: ordem?.localizator ?? 'acerto por edição de OS',
         detalhes: {
           'tipo': tipo.value,
           'quantidade': quantidade,
-          'ordem_id': ordem.id,
+          'ordem_id': ordem?.id,
           'observacao': observacao,
           'erro': e.toString(),
         },

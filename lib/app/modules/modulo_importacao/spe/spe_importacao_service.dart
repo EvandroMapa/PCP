@@ -4,6 +4,7 @@ import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/ped
 import 'package:aco_plus/app/core/client/firestore/collections/pedido/models/pedido_bitola_status_model.dart';
 import 'package:aco_plus/app/core/client/firestore/collections/bitola/bitola_model.dart';
 import 'package:aco_plus/app/core/client/firestore/firestore_client.dart';
+import 'package:aco_plus/app/modules/estoque/estoque_producao_service.dart';
 import 'package:aco_plus/app/core/client/supabase/collections/elemento/elemento_supabase_collection.dart';
 import 'package:aco_plus/app/core/services/hash_service.dart';
 import 'package:aco_plus/app/core/services/supabase_service.dart';
@@ -321,6 +322,13 @@ class SpeImportacaoService {
     try {
       // ── 1. Tratar produtos (bitolas) ──────────────────────────────────────
       if (modo == 'substituir') {
+        // Substituir apaga itens, elementos e OS: se algo já foi baixado do
+        // estoque, a baixa ficaria órfã e baixaria de novo na nova produção.
+        if (await EstoqueProducaoService.pedidoTemBaixa(pedido.id)) {
+          throw Exception(
+              'Este pedido tem itens ou OS já prontos (material baixado do estoque). '
+              'Volte-os de Pronto antes de substituir, ou use o modo "acrescentar".');
+        }
         // Remover produtos existentes do pedido
         await SupabaseService.client
             .from('pedido_bitolas')

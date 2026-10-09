@@ -10,6 +10,8 @@ import 'package:aco_plus/app/core/services/preferences_service.dart';
 import 'package:aco_plus/app/core/utils/logo_helper.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_model.dart';
 import 'package:aco_plus/app/modules/elemento/elemento_arquivo_model.dart';
+import 'package:aco_plus/app/modules/estoque/estoque_controller.dart';
+import 'package:aco_plus/app/modules/estoque/estoque_producao_service.dart';
 import 'package:aco_plus/app/core/client/supabase/app_supabase_client.dart';
 import 'package:aco_plus/app/core/client/backend_client.dart';
 import 'package:aco_plus/app/core/services/supabase_storage_service.dart';
@@ -26,6 +28,20 @@ import 'package:aco_plus/app/core/extensions/date_ext.dart';
 import 'package:aco_plus/app/modules/relatorio/ui/pedido/relatorio_elemento_pdf_page.dart';
 
 final elementoCtrl = ElementoController();
+
+/// Estado de uma OS no banco antes de o elemento ser editado.
+class _PosicaoAnterior {
+  final String status;
+  final String bitolaId;
+  final double baixado;
+  final String numeroOs;
+  const _PosicaoAnterior({
+    required this.status,
+    required this.bitolaId,
+    required this.baixado,
+    required this.numeroOs,
+  });
+}
 
 class ElementoController {
   static final ElementoController _instance = ElementoController._();
@@ -339,6 +355,32 @@ class ElementoController {
         'qtde': form.qtdeInt,
       };
 
+      // Estado anterior das OS lido do BANCO: o status precisa sobreviver à
+      // edição (as posições são apagadas e recriadas) e o que já foi baixado
+      // do estoque precisa ser acertado se o peso/qtde/bitola mudar.
+      final antigas = <String, _PosicaoAnterior>{};
+      if (form.isEdit) {
+        final elAntigo = await SupabaseService.client
+            .from('elementos')
+            .select('qtde')
+            .eq('id', form.id)
+            .maybeSingle();
+        final qtdeAntes = (elAntigo?['qtde'] as num?)?.toInt() ?? 1;
+        final rows = await SupabaseService.client
+            .from('elemento_posicoes')
+            .select('id, status, bitola_id, peso_kg, numero_os')
+            .eq('elemento_id', form.id);
+        for (final r in rows) {
+          final peso = double.tryParse('${r['peso_kg'] ?? 0}') ?? 0.0;
+          antigas[r['id'].toString()] = _PosicaoAnterior(
+            status: (r['status'] ?? 'aguardando').toString(),
+            bitolaId: (r['bitola_id'] ?? '').toString(),
+            baixado: peso * qtdeAntes,
+            numeroOs: (r['numero_os'] ?? '').toString(),
+          );
+        }
+      }
+
       await SupabaseService.client.from('elementos').upsert(elementoMap);
 
       // Salva as posições
@@ -352,6 +394,7 @@ class ElementoController {
 
       for (final posicao in form.posicoes) {
         if (!posicao.isValid) continue;
+        final anterior = antigas[posicao.id];
         await SupabaseService.client.from('elemento_posicoes').upsert({
           'id': posicao.id,
           'elemento_id': form.id,
@@ -362,6 +405,9 @@ class ElementoController {
           'qtde': posicao.qtdeInt,
           'compr_unit': posicao.comprUnitDouble,
           'compr_corte': posicao.comprCorteDouble,
+          // Preserva o status: sem isso a OS pronta voltava a "aguardando"
+          // e baixava de novo na próxima vez que ficasse pronta.
+          if (anterior != null) 'status': anterior.status,
         });
 
         // Salvar medidas variáveis (limpa e reinsere)
@@ -380,9 +426,47 @@ class ElementoController {
         }
       }
 
+      // Acerta o estoque das OS que já estavam baixadas (prontas)
+      for (final entry in antigas.entries) {
+        final a = entry.value;
+        if (a.status != 'pronto') continue;
+        final nova = form.posicoes
+            .firstWhereOrNull((p) => p.isValid && p.id == entry.key);
+        final baixadoDepois =
+            nova == null ? 0.0 : nova.pesoDouble * form.qtdeInt;
+        final bitolaDepois = nova?.produto!.id;
+        final os = a.numeroOs.isEmpty ? entry.key : a.numeroOs;
+
+        if (nova != null && bitolaDepois == a.bitolaId) {
+          await estoqueCtrl.lancarAcertoPorEdicao(
+            produtoId: a.bitolaId,
+            quantidade: a.baixado - baixadoDepois,
+            observacao:
+                'Acerto automático: OS $os editada (peso/quantidade) depois de pronta',
+          );
+        } else {
+          await estoqueCtrl.lancarAcertoPorEdicao(
+            produtoId: a.bitolaId,
+            quantidade: a.baixado,
+            observacao: nova == null
+                ? 'Acerto automático: OS $os removida depois de pronta'
+                : 'Acerto automático: OS $os mudou de bitola depois de pronta',
+          );
+          if (nova != null && bitolaDepois != null) {
+            await estoqueCtrl.lancarAcertoPorEdicao(
+              produtoId: bitolaDepois,
+              quantidade: -baixadoDepois,
+              observacao:
+                  'Acerto automático: OS $os mudou de bitola depois de pronta',
+            );
+          }
+        }
+      }
+
       await onFetch(pedidoId);
     } catch (e) {
       log('ElementoController.onSaveElemento erro: $e');
+      NotificationService.showNegative('Erro ao salvar elemento', e.toString());
     }
   }
 
@@ -392,6 +476,14 @@ class ElementoController {
       if (elemento.status != ElementoStatus.aguardando) {
         showInfoDialog(
             'Não Permitido: Não é possível excluir um elemento que já está sendo armando ou pronto.');
+        return;
+      }
+      // O status do cache pode estar atrasado: confere no banco se alguma OS
+      // já foi baixada. Apagar OS pronta deixaria a baixa órfã no estoque.
+      if (await EstoqueProducaoService.osProntasDosElementos([elemento.id]) >
+          0) {
+        showInfoDialog(
+            'Não Permitido: este elemento tem OS já prontas (material baixado do estoque). Volte as OS de Pronto antes de excluir, para o estoque ser estornado.');
         return;
       }
       showLoadingDialog();
@@ -586,6 +678,11 @@ class ElementoController {
       if (elementos.any((e) => e.status != ElementoStatus.aguardando)) {
         showInfoDialog(
             'Operação Negada: Existem elementos que já estão em produção ou concluídos. Remova individualmente os que permite exclusão.');
+        return;
+      }
+      if (await EstoqueProducaoService.osProntasDoPedido(pedidoId) > 0) {
+        showInfoDialog(
+            'Operação Negada: existem OS prontas neste pedido (material já baixado do estoque). Volte as OS de Pronto antes de excluir, para o estoque ser estornado.');
         return;
       }
       showLoadingDialog();

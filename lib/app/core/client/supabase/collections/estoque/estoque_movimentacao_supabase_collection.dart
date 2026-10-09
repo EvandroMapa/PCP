@@ -23,13 +23,23 @@ class EstoqueMovimentacaoSupabaseCollection {
     if (_isStarted && lock) return;
     _isStarted = true;
     try {
-      final response = await SupabaseService.client
-          .from(name)
-          .select()
-          .order('data_hora', ascending: false);
-      final lista = List<Map<String, dynamic>>.from(response)
-          .map((e) => EstoqueMovimentacaoModel.fromSupabaseMap(e))
-          .toList();
+      // Pagina: o PostgREST corta em 1000 linhas por requisição, e o saldo é
+      // a soma de TODAS as movimentações — truncar aqui deixa o saldo errado.
+      const pagina = 1000;
+      final linhas = <Map<String, dynamic>>[];
+      for (var inicio = 0;; inicio += pagina) {
+        final response = await SupabaseService.client
+            .from(name)
+            .select()
+            .order('data_hora', ascending: false)
+            .order('id', ascending: false)
+            .range(inicio, inicio + pagina - 1);
+        final lote = List<Map<String, dynamic>>.from(response);
+        linhas.addAll(lote);
+        if (lote.length < pagina) break;
+      }
+      final lista =
+          linhas.map((e) => EstoqueMovimentacaoModel.fromSupabaseMap(e)).toList();
       dataStream.add(lista);
     } catch (e) {
       log('Supabase Error (EstoqueMovimentacao.start): $e');
@@ -66,6 +76,8 @@ class EstoqueMovimentacaoSupabaseCollection {
               final newRecord = payload.newRecord;
               if (newRecord.isNotEmpty) {
                 final novaMov = EstoqueMovimentacaoModel.fromSupabaseMap(newRecord);
+                // Evento repetido (reconexão): não conta a mesma linha duas vezes
+                if (data.any((e) => e.id == novaMov.id)) return;
                 final currentList = List<EstoqueMovimentacaoModel>.from(data);
                 currentList.insert(0, novaMov);
                 dataStream.add(currentList);

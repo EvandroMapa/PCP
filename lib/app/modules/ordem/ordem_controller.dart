@@ -332,6 +332,24 @@ class OrdemController {
       }
     }
 
+    // Item que já teve baixa de estoque (pronto ou com OS prontas) não pode
+    // ser removido da ordem: ele seria zerado para "separado" sem estorno e
+    // baixaria de novo na próxima produção. Precisa voltar de Pronto antes.
+    final removidosIds = <String>{
+      ...bitolaIdsRemovidos,
+      ...statusUpdatesRemovidos.map((e) => e.$1.id),
+    }.toList();
+    if (removidosIds.isNotEmpty) {
+      final comBaixa = await EstoqueProducaoService.itensComBaixa(removidosIds);
+      if (comBaixa.isNotEmpty) {
+        showInfoDialog(
+          'Não é possível remover da ordem ${comBaixa.length == 1 ? 'um item que já foi' : '${comBaixa.length} itens que já foram'} baixado(s) do estoque (pronto ou com OS prontas).\n'
+          'Volte o item de Pronto antes de removê-lo, para o estoque ser estornado.',
+        );
+        return;
+      }
+    }
+
     // Itens mantidos ou adicionados
     for (PedidoBitolaModel produto in ordemEditada.produtos) {
       pedidosAfetados.add(produto.pedidoId);
@@ -470,6 +488,15 @@ class OrdemController {
       final pId = (ref['pedidoId'] ?? '').toString().trim();
       if (bId.isNotEmpty) bitolaIds.add(bId);
       if (pId.isNotEmpty) pedidosAfetados.add(pId);
+    }
+
+    if (bitolaIds.isNotEmpty &&
+        (await EstoqueProducaoService.itensComBaixa(bitolaIds)).isNotEmpty) {
+      showInfoDialog(
+        'Não é possível excluir a ordem: ela tem itens já baixados do estoque (pronto ou com OS prontas).\n'
+        'Volte-os de Pronto antes, para o estoque ser estornado.',
+      );
+      return;
     }
 
     // Reset direto no Supabase para garantir que nenhuma bitola fique órfã

@@ -586,6 +586,52 @@ class PedidoSupabaseCollection extends PedidoCollection {
     }
   }
 
+  /// Protege a fronteira "pronto" (que movimenta estoque) nas escritas em
+  /// lote de `pedido_bitolas` feitas a partir do CACHE local.
+  ///
+  /// Se o status do cache cruza a fronteira em relação ao banco (um é pronto
+  /// e o outro não), `status` e `statusess_raw` do payload são trocados pelos
+  /// valores do banco, que prevalecem. (As chaves são mantidas: num upsert em
+  /// lote, chave ausente em só alguns itens poderia gravar NULL.)
+  /// A mudança legítima passa antes por `EstoqueProducaoService.transicionarItem`
+  /// (que já grava o status no banco e gera a baixa/estorno), então ali o
+  /// banco e o payload coincidem e nada é trocado.
+  Future<void> _protegerFronteiraPronto(
+      List<Map<String, dynamic>> payload) async {
+    if (payload.isEmpty) return;
+    try {
+      final ids = payload.map((e) => e['id'].toString()).toList();
+      final banco = <String, Map<String, dynamic>>{};
+      for (var i = 0; i < ids.length; i += 100) {
+        final lote =
+            ids.sublist(i, i + 100 > ids.length ? ids.length : i + 100);
+        final rows = await SupabaseService.client
+            .from('pedido_bitolas')
+            .select('id, status, statusess_raw')
+            .inFilter('id', lote);
+        for (final r in rows) {
+          banco[r['id'].toString()] = Map<String, dynamic>.from(r);
+        }
+      }
+      for (final p in payload) {
+        final linha = banco[p['id'].toString()];
+        if (linha == null) continue; // item novo: grava normalmente
+        final db = (linha['status'] ?? '').toString();
+        if ((db == 'pronto') != (p['status'] == 'pronto')) {
+          log('Supabase: status de ${p['id']} NÃO sobrescrito '
+              '(banco=$db, cache=${p['status']}): cruzaria a fronteira "pronto" '
+              'sem baixa/estorno de estoque');
+          p['status'] = linha['status'];
+          p['statusess_raw'] = linha['statusess_raw'];
+        }
+      }
+    } catch (e) {
+      // Se nem a leitura funcionou, a escrita seguinte também deve falhar;
+      // não remover status aqui para não quebrar a criação de itens novos.
+      log('Supabase: falha ao conferir fronteira "pronto": $e');
+    }
+  }
+
   Future<List<String>> _syncRelationships(PedidoModel model) async {
     final List<String> syncErrors = [];
     try {
@@ -606,6 +652,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
       if (idsToKeep.isNotEmpty) {
         final payload =
             model.produtos.map((p) => p.toSupabaseMap(model.id)).toList();
+        await _protegerFronteiraPronto(payload);
         await SupabaseService.client.from('pedido_bitolas').upsert(payload);
         // Exclui o que não está mais no modelo
         await SupabaseService.client
@@ -733,6 +780,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
       }
 
       if (payload.isNotEmpty) {
+        await _protegerFronteiraPronto(payload);
         await SupabaseService.client
             .from('pedido_bitolas')
             .upsert(payload, onConflict: 'id');
@@ -834,6 +882,7 @@ class PedidoSupabaseCollection extends PedidoCollection {
       }
 
       if (payload.isNotEmpty) {
+        await _protegerFronteiraPronto(payload);
         await SupabaseService.client
             .from('pedido_bitolas')
             .upsert(payload, onConflict: 'id');
